@@ -10,6 +10,10 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
+  Newspaper,
+  MessageCircle,
+  AtSign,
+  Globe2,
 } from "lucide-react";
 import {
   JUPITER_BASE,
@@ -17,6 +21,10 @@ import {
   BIRDEYE_BASE,
   ALCHEMY_API_KEY,
   QUICKNODE_WSS,
+  OGSCAN_COMMUNITY_URL,
+  OGSCAN_SITE_URL,
+  OGSCAN_TECH_POST_URL,
+  OGSCAN_X_URL,
 } from "@/lib/og";
 
 type Status = "idle" | "checking" | "ok" | "down";
@@ -148,6 +156,15 @@ const colorMap: Record<string, { ring: string; text: string; chip: string }> = {
   cyan: { ring: "border-og-cyan/40", text: "text-og-cyan", chip: "bg-og-cyan/10 text-og-cyan border-og-cyan/40" },
 };
 
+const TECH_BULLETS: string[] = [
+  "Contract address history",
+  "Pair age + liquidity strength",
+  "Volume activity + holder signals",
+  "DexScreener routes + duplicate tickers",
+  "Fresh pairs vs dead clones",
+  "Scam-looking copycat detection",
+];
+
 export const TechStack = () => {
   const [statuses, setStatuses] = useState<Record<string, Status>>(
     Object.fromEntries(PROBES.map((p) => [p.id, "idle"]))
@@ -174,7 +191,58 @@ export const TechStack = () => {
   }, []);
 
   return (
-    <div className="grid gap-4">
+    <section id="tech" className="grid gap-4">
+      <div className="relative overflow-hidden border border-og-gold/40 bg-og-ink/80 p-4 shadow-og-gold sm:p-6">
+        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-og-gold/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 left-12 h-56 w-56 rounded-full bg-og-lime/10 blur-3xl" />
+        <div className="relative grid gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div>
+            <div className="mb-3 inline-flex items-center gap-2 border border-og-gold/45 bg-og-gold/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.3em] text-og-gold">
+              <Newspaper className="h-3 w-3" /> Launch broadcast
+            </div>
+            <h2 className="font-display text-3xl font-bold leading-tight text-foreground sm:text-5xl">
+              Find the <span className="text-og-gold text-glow-gold">OG</span> before the fake finds you.
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+              Most traders do not lose because they are late. They lose because they buy the wrong version of the coin:
+              same ticker, same logo, same hype — but the real OG is buried under low-liquidity traps, dead pairs and scam clones.
+            </p>
+            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground/80">
+              OGScan is built to verify before you ape: search any ticker, scan the market, and surface the contract that actually looks original.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <a href={OGSCAN_TECH_POST_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-og-gold bg-og-gold px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-og-ink transition hover:bg-og-gold/90">
+                <Newspaper className="h-4 w-4" /> Read post
+              </a>
+              <a href={OGSCAN_COMMUNITY_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-og-cyan/50 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-og-cyan transition hover:bg-og-cyan hover:text-og-ink">
+                <MessageCircle className="h-4 w-4" /> Join community
+              </a>
+              <a href={OGSCAN_X_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-og-lime/50 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-og-lime transition hover:bg-og-lime hover:text-og-ink">
+                <AtSign className="h-4 w-4" /> Follow X
+              </a>
+              <a href={OGSCAN_SITE_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-og-grid px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-foreground/70 transition hover:border-og-lime hover:text-og-lime">
+                <Globe2 className="h-4 w-4" /> ogscan.fun
+              </a>
+            </div>
+          </div>
+
+          <div className="border border-og-grid bg-black/25 p-4">
+            <div className="mb-3 flex items-center justify-between gap-3 border-b border-og-grid pb-2 font-mono text-[10px] uppercase tracking-[0.3em]">
+              <span className="text-og-lime">Scanner checks</span>
+              <span className="text-muted-foreground">before ape</span>
+            </div>
+            <div className="grid gap-2">
+              {TECH_BULLETS.map((item) => (
+                <div key={item} className="flex items-center gap-2 border border-og-grid/70 bg-og-ink/65 px-3 py-2 text-xs text-foreground/80">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-og-lime" />
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Pipeline diagram */}
       <div className="border border-og-grid bg-og-ink/70 p-4">
         <div className="mb-3 flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-og-cyan">
@@ -262,7 +330,7 @@ export const TechStack = () => {
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 
