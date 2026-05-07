@@ -71,16 +71,16 @@ const Index = () => {
     }
   }, []);
 
-  const updateMint = (next: string) => {
+  const updateMint = (next: string, nextTab: TabId = "overview") => {
     setMint(next);
     try {
       localStorage.setItem(STORAGE_OG_MINT, next);
     } catch {
       /* noop */
     }
-    setTab("overview");
+    setTab(nextTab);
     try {
-      localStorage.setItem(STORAGE_TAB, "overview");
+      localStorage.setItem(STORAGE_TAB, nextTab);
     } catch {
       /* noop */
     }
@@ -163,7 +163,7 @@ const Index = () => {
         {tab === "pairs" && <PairTracker onSelect={updateMint} />}
         {tab === "migrations" && <Migrations onSelect={updateMint} />}
         {tab === "trending" && <Trending onSelect={updateMint} />}
-        {tab === "swap" && <SwapPanel ogMint={mint} />}
+        {tab === "swap" && <SwapPanel ogMint={mint} onSelectMint={(next) => updateMint(next, "swap")} />}
         {tab === "tech" && <TechStack />}
       </main>
 
