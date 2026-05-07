@@ -33,7 +33,7 @@ type Props = { onSelect: (mint: string) => void };
 const STORAGE_TICKERS = "og_scanner.tracked_tickers";
 const STORAGE_SEEN = "og_scanner.seen_pairs";
 const STORAGE_FILTER = "og_scanner.quality_filter.v3";
-const STORAGE_MODE = "og_scanner.tracker_mode";
+const STORAGE_MODE = "og_scanner.tracker_mode.v2";
 
 type Mode = "tickers" | "any" | "all";
 
@@ -43,6 +43,8 @@ type DexTokenProfile = {
   url?: string;
   description?: string;
   icon?: string;
+  header?: string;
+  openGraph?: string;
 };
 
 type DexBoost = {
@@ -50,6 +52,34 @@ type DexBoost = {
   tokenAddress?: string;
   url?: string;
   amount?: number;
+  totalAmount?: number;
+  icon?: string;
+  description?: string;
+};
+
+type DexFreshToken = {
+  mint: string;
+  icon?: string;
+  description?: string;
+  sourceUrl?: string;
+};
+
+type DexPair = {
+  chainId?: string;
+  dexId?: string;
+  url?: string;
+  pairAddress?: string;
+  baseToken?: { address?: string; name?: string; symbol?: string };
+  quoteToken?: { address?: string; name?: string; symbol?: string };
+  priceUsd?: string;
+  priceChange?: { m5?: number; h1?: number; h6?: number; h24?: number };
+  liquidity?: { usd?: number; base?: number; quote?: number };
+  volume?: { m5?: number; h1?: number; h6?: number; h24?: number };
+  txns?: { m5?: { buys?: number; sells?: number }; h1?: { buys?: number; sells?: number }; h6?: { buys?: number; sells?: number }; h24?: { buys?: number; sells?: number } };
+  fdv?: number;
+  marketCap?: number;
+  pairCreatedAt?: number;
+  info?: { imageUrl?: string; header?: string; openGraph?: string };
 };
 
 type Quality = {
@@ -157,7 +187,7 @@ async function fetchAny(query: string): Promise<JupTokenInfo[]> {
   }
 }
 
-async function fetchDexFreshMints(): Promise<string[]> {
+async function fetchDexFreshTokens(): Promise<DexFreshToken[]> {
   const endpoints = [
     "https://api.dexscreener.com/token-profiles/latest/v1",
     "https://api.dexscreener.com/token-boosts/latest/v1",
@@ -169,14 +199,84 @@ async function fetchDexFreshMints(): Promise<string[]> {
       return (await res.json()) as Array<DexTokenProfile | DexBoost>;
     })
   );
-  const mints: string[] = [];
+  const tokens = new Map<string, DexFreshToken>();
   for (const result of results) {
     if (result.status !== "fulfilled") continue;
     for (const item of result.value) {
-      if (item.chainId === "solana" && item.tokenAddress) mints.push(item.tokenAddress);
+      if (item.chainId !== "solana" || !item.tokenAddress) continue;
+      const previous = tokens.get(item.tokenAddress);
+      tokens.set(item.tokenAddress, {
+        mint: item.tokenAddress,
+        icon: previous?.icon ?? item.icon,
+        description: previous?.description ?? item.description,
+        sourceUrl: previous?.sourceUrl ?? item.url,
+      });
     }
   }
-  return Array.from(new Set(mints));
+  return Array.from(tokens.values());
+}
+
+async function fetchDexPairsForMints(mints: string[]): Promise<DexPair[]> {
+  const chunks: string[][] = [];
+  for (let index = 0; index < mints.length; index += 30) chunks.push(mints.slice(index, index + 30));
+
+  const results = await Promise.allSettled(
+    chunks.map(async (chunk) => {
+      const res = await fetch(`https://api.dexscreener.com/tokens/v1/solana/${chunk.join(",")}`);
+      if (!res.ok) return [];
+      return (await res.json()) as DexPair[];
+    })
+  );
+
+  return results.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
+}
+
+function dexPairToToken(pair: DexPair, fresh?: DexFreshToken): JupTokenInfo | null {
+  const mint = pair.baseToken?.address ?? fresh?.mint;
+  if (!mint) return null;
+  const price = pair.priceUsd ? Number(pair.priceUsd) : undefined;
+  const h24 = pair.txns?.h24;
+  const buyVolume = pair.volume?.h24 ? pair.volume.h24 * ((h24?.buys ?? 1) / Math.max(1, (h24?.buys ?? 0) + (h24?.sells ?? 0))) : undefined;
+  const sellVolume = pair.volume?.h24 != null && buyVolume != null ? Math.max(0, pair.volume.h24 - buyVolume) : undefined;
+
+  return {
+    id: mint,
+    name: pair.baseToken?.name ?? fresh?.description ?? "Fresh Solana token",
+    symbol: pair.baseToken?.symbol ?? "NEW",
+    icon: pair.info?.imageUrl ?? fresh?.icon,
+    decimals: 0,
+    usdPrice: Number.isFinite(price) ? price : undefined,
+    liquidity: pair.liquidity?.usd,
+    mcap: pair.marketCap,
+    fdv: pair.fdv,
+    stats24h: {
+      priceChange: pair.priceChange?.h24 ?? pair.priceChange?.h1 ?? pair.priceChange?.m5,
+      buyVolume,
+      sellVolume,
+      numBuys: h24?.buys,
+      numSells: h24?.sells,
+      numTraders: (h24?.buys ?? 0) + (h24?.sells ?? 0),
+    },
+    stats1h: { priceChange: pair.priceChange?.h1 },
+    stats5m: { priceChange: pair.priceChange?.m5 },
+    firstPool: { createdAt: pair.pairCreatedAt ? new Date(pair.pairCreatedAt).toISOString() : new Date().toISOString() },
+  };
+}
+
+function mergeTokenData(primary: JupTokenInfo, fallback: JupTokenInfo): JupTokenInfo {
+  return {
+    ...fallback,
+    ...primary,
+    icon: primary.icon ?? fallback.icon,
+    usdPrice: primary.usdPrice ?? fallback.usdPrice,
+    liquidity: primary.liquidity ?? fallback.liquidity,
+    mcap: primary.mcap ?? fallback.mcap,
+    fdv: primary.fdv ?? fallback.fdv,
+    stats24h: primary.stats24h ?? fallback.stats24h,
+    stats1h: primary.stats1h ?? fallback.stats1h,
+    stats5m: primary.stats5m ?? fallback.stats5m,
+    firstPool: primary.firstPool?.createdAt ? primary.firstPool : fallback.firstPool,
+  };
 }
 
 async function fetchJupiterDiscovery(): Promise<JupTokenInfo[]> {
@@ -198,18 +298,33 @@ async function fetchJupiterDiscovery(): Promise<JupTokenInfo[]> {
 // Discover mode: DexScreener latest Solana profiles/boosts first, Jupiter discovery as fallback.
 async function fetchAllFresh(): Promise<JupTokenInfo[]> {
   const map = new Map<string, JupTokenInfo>();
-  const [dexMints, jupiterTokens] = await Promise.all([fetchDexFreshMints(), fetchJupiterDiscovery()]);
+  const [dexFresh, jupiterTokens] = await Promise.all([fetchDexFreshTokens(), fetchJupiterDiscovery()]);
+  const dexFreshByMint = new Map(dexFresh.map((token) => [token.mint, token]));
+  const dexMints = dexFresh.map((token) => token.mint);
 
-  const dexTokens = dexMints.length > 0 ? await jupGetTokens(dexMints.slice(0, 30)) : [];
-  for (const t of dexTokens) if (!map.has(t.id)) map.set(t.id, t);
+  const [dexTokens, dexPairs] = await Promise.all([
+    dexMints.length > 0 ? jupGetTokens(dexMints.slice(0, 30)) : Promise.resolve([]),
+    dexMints.length > 0 ? fetchDexPairsForMints(dexMints.slice(0, 60)) : Promise.resolve([]),
+  ]);
 
-  // If Jupiter cannot enrich a brand-new DexScreener mint yet, still show a usable fresh placeholder card.
-  for (const mint of dexMints) {
-    if (!map.has(mint)) {
-      map.set(mint, {
-        id: mint,
-        name: "Fresh Solana token",
+  for (const pair of dexPairs) {
+    const fallback = dexPairToToken(pair, dexFreshByMint.get(pair.baseToken?.address ?? ""));
+    if (fallback && !map.has(fallback.id)) map.set(fallback.id, fallback);
+  }
+
+  for (const t of dexTokens) {
+    const fallback = map.get(t.id);
+    map.set(t.id, fallback ? mergeTokenData(t, fallback) : t);
+  }
+
+  // If neither Jupiter nor DexScreener pair enrichment is ready yet, still show the fresh token instead of an empty tool.
+  for (const token of dexFresh) {
+    if (!map.has(token.mint)) {
+      map.set(token.mint, {
+        id: token.mint,
+        name: token.description ?? "Fresh Solana token",
         symbol: "NEW",
+        icon: token.icon,
         decimals: 0,
         firstPool: { createdAt: new Date().toISOString() },
       });
@@ -241,7 +356,7 @@ export const PairTracker = ({ onSelect }: Props) => {
     } catch {
       /* noop */
     }
-    return "tickers";
+    return "all";
   });
   const [anyQuery, setAnyQuery] = useState("");
   const [anySubmitted, setAnySubmitted] = useState("");
@@ -416,8 +531,7 @@ export const PairTracker = ({ onSelect }: Props) => {
               <span className="text-og-cyan text-glow">FILTERED CLEAN</span>
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              Three modes: lock to tracked tickers, free-form search any token,
-              or sweep ALL fresh Solana pairs. Quality filter enforced on every result.
+              Live fresh-pair radar now opens on ALL fresh Solana pairs by default, with tracked tickers and manual search still available.
             </p>
           </div>
 
@@ -544,10 +658,13 @@ export const PairTracker = ({ onSelect }: Props) => {
         )}
 
         {mode === "all" && (
-          <div className="flex items-center gap-2 border border-og-grid bg-og-ink/80 p-3">
-            <Radar className={`h-4 w-4 ${isFetching ? "animate-pulse text-og-cyan" : "text-og-gold"}`} />
-            <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
-              sweeping DexScreener latest Solana listings + Jupiter discovery · no ticker filter
+          <div className="flex flex-wrap items-center gap-2 border border-og-cyan/35 bg-og-cyan/10 p-3">
+            <Radar className={`h-4 w-4 ${isFetching ? "animate-pulse text-og-cyan" : "text-og-cyan"}`} />
+            <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-foreground/70">
+              live feed: DexScreener newest Solana listings + pair data + Jupiter enrichment
+            </span>
+            <span className="ml-auto font-mono text-[10px] uppercase tracking-widest text-og-lime">
+              {isFetching ? "sweeping..." : "auto-refresh 20s"}
             </span>
           </div>
         )}
@@ -626,7 +743,7 @@ export const PairTracker = ({ onSelect }: Props) => {
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {filtered.length === 0 && !isFetching && (
             <div className="md:col-span-2 xl:col-span-3 border border-dashed border-og-grid p-6 text-center font-mono text-xs uppercase tracking-widest text-muted-foreground">
-              NO PAIRS PASS THE BAR · HIT OPEN FILTERS OR SEARCH ANY TOKEN
+              NO PAIRS PASS THE BAR · TAP OPEN OR RESET FILTERS
             </div>
           )}
           {filtered.map((t) => (
