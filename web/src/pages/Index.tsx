@@ -113,6 +113,7 @@ const Index = () => {
   }, []);
 
   const activeTab = useMemo<TabConfig>(() => TABS.find((x) => x.id === tab) ?? TABS[0], [tab]);
+  const activeTabNumber = useMemo<number>(() => Math.max(1, TABS.findIndex((x) => x.id === tab) + 1), [tab]);
   const headerNavItems = useMemo(() => TABS.map(({ id, label }) => ({ id, label })), []);
 
   const updateMint = (next: string, nextTab: TabId = "overview") => {
@@ -241,34 +242,58 @@ const Index = () => {
               </div>
             </div>
 
-            {tab === "overview" && (
-              <div className="grid gap-4">
-                <OgStats mint={mint} onSelect={updateMint} />
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="border border-og-grid bg-og-ink/70 p-4">
-                    <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-og-cyan">
-                      <Crown className="h-3 w-3" /> WHALES · LIVE
-                    </div>
-                    <Whales mint={mint} />
-                  </div>
-                  <div className="border border-og-grid bg-og-ink/70 p-4">
-                    <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-og-gold">
-                      <Activity className="h-3 w-3" /> TAPE · LIVE
-                    </div>
-                    <TxFeed mint={mint} />
+            <div className="relative overflow-hidden border-2 border-og-grid bg-og-ink/88 shadow-[0_0_0_1px_hsl(var(--og-lime)/0.22),0_34px_120px_-70px_hsl(var(--og-cyan))] backdrop-blur">
+              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,hsl(var(--og-lime)/0.08)_0_1px,transparent_1px_calc(100%-1px),hsl(var(--og-cyan)/0.1)_calc(100%-1px)),radial-gradient(circle_at_0%_0%,hsl(var(--og-lime)/0.12),transparent_28%)]" />
+              <div className="relative flex flex-col gap-3 border-b border-og-grid bg-og-ink/95 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3">
+                  <span className={cn("grid h-9 w-9 place-items-center border font-mono text-[11px] font-black", getAccentTextClass(activeTab.accent), activeTab.accent === "white" ? "border-og-gold/60 bg-og-gold/10" : activeTab.accent === "cyan" ? "border-og-cyan/60 bg-og-cyan/10" : "border-og-lime/60 bg-og-lime/10")}>#{String(activeTabNumber).padStart(2, "0")}</span>
+                  <div>
+                    <div className={cn("font-mono text-[10px] uppercase tracking-[0.34em]", getAccentTextClass(activeTab.accent))}>tool starts here</div>
+                    <div className="font-display text-lg font-bold uppercase tracking-tight text-foreground">{activeTab.label} Workspace</div>
                   </div>
                 </div>
+                <div className="flex flex-wrap items-center gap-2 font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">
+                  <span className="border border-og-grid bg-background/40 px-2 py-1">isolated module</span>
+                  <span className="border border-og-grid bg-background/40 px-2 py-1">click inside panel</span>
+                </div>
               </div>
-            )}
 
-            {tab === "our-coin" && <OurCoin />}
-            {tab === "scanner" && <Scanner onSelect={updateMint} />}
-            {tab === "og-finder" && <OgFinder onSelect={updateMint} />}
-            {tab === "pairs" && <PairTracker onSelect={updateMint} />}
-            {tab === "migrations" && <Migrations onSelect={updateMint} />}
-            {tab === "trending" && <Trending onSelect={updateMint} />}
-            {tab === "swap" && <SwapPanel ogMint={mint} onSelectMint={(next) => updateMint(next, "swap")} />}
-            {tab === "tech" && <TechStack />}
+              <div className="relative p-4 sm:p-5">
+                {tab === "overview" && (
+                  <div className="grid gap-4">
+                    <OgStats mint={mint} onSelect={updateMint} />
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      <div className="border border-og-cyan/45 bg-og-ink/78 p-4 shadow-[inset_4px_0_0_hsl(var(--og-cyan)/0.55)]">
+                        <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-og-cyan">
+                          <Crown className="h-3 w-3" /> WHALES · LIVE
+                        </div>
+                        <Whales mint={mint} />
+                      </div>
+                      <div className="border border-og-gold/45 bg-og-ink/78 p-4 shadow-[inset_4px_0_0_hsl(var(--og-gold)/0.45)]">
+                        <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-og-gold">
+                          <Activity className="h-3 w-3" /> TAPE · LIVE
+                        </div>
+                        <TxFeed mint={mint} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {tab === "our-coin" && <OurCoin />}
+                {tab === "scanner" && <Scanner onSelect={updateMint} />}
+                {tab === "og-finder" && <OgFinder onSelect={updateMint} />}
+                {tab === "pairs" && <PairTracker onSelect={updateMint} />}
+                {tab === "migrations" && <Migrations onSelect={updateMint} />}
+                {tab === "trending" && <Trending onSelect={updateMint} />}
+                {tab === "swap" && <SwapPanel ogMint={mint} onSelectMint={(next) => updateMint(next, "swap")} />}
+                {tab === "tech" && <TechStack />}
+              </div>
+
+              <div className="relative flex items-center justify-between border-t border-og-grid bg-og-ink/95 px-4 py-2 font-mono text-[9px] uppercase tracking-[0.28em] text-muted-foreground">
+                <span>tool ends here</span>
+                <span className={getAccentTextClass(activeTab.accent)}>{activeTab.label}</span>
+              </div>
+            </div>
           </section>
         </div>
       </main>
