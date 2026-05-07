@@ -190,46 +190,46 @@ export const TechStack = () => {
 
   return (
     <section id="tech" className="mx-auto grid w-full max-w-6xl gap-4 scroll-mt-32">
-      <div className="relative overflow-hidden border border-og-gold/40 bg-og-ink/80 p-4 shadow-og-gold sm:p-6 lg:p-7">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-og-gold/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-12 h-56 w-56 rounded-full bg-og-lime/10 blur-3xl" />
-        <div className="relative mx-auto grid max-w-5xl gap-5 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div className="text-center lg:text-left">
-            <div className="mb-3 inline-flex items-center justify-center gap-2 border border-og-gold/45 bg-og-gold/10 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.3em] text-og-gold">
+      <div className="relative mx-auto w-full max-w-4xl overflow-hidden border border-og-gold/35 bg-og-ink/80 p-3 shadow-og-gold sm:p-4">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-og-gold/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-16 left-1/2 h-36 w-36 -translate-x-1/2 rounded-full bg-og-lime/10 blur-3xl" />
+        <div className="relative mx-auto grid max-w-3xl gap-4 text-center">
+          <div>
+            <div className="mb-2 inline-flex items-center justify-center gap-2 border border-og-gold/45 bg-og-gold/10 px-3 py-1 font-mono text-[9px] uppercase tracking-[0.26em] text-og-gold">
               <Newspaper className="h-3 w-3" /> Launch broadcast
             </div>
-            <h2 className="font-display text-3xl font-bold leading-tight text-foreground sm:text-5xl">
+            <h2 className="mx-auto max-w-2xl font-display text-2xl font-bold leading-tight text-foreground sm:text-3xl">
               Find the <span className="text-og-gold text-glow-gold">OG</span> before the fake finds you.
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base lg:mx-0">
+            <p className="mx-auto mt-3 max-w-2xl text-xs leading-relaxed text-muted-foreground sm:text-sm">
               Most traders do not lose because they are late. They lose because they buy the wrong version of the coin:
-              same ticker, same logo, same hype — but the real OG is buried under low-liquidity traps, dead pairs and scam clones.
+              same ticker, same logo, same hype — while the real OG gets buried under copycats.
             </p>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-foreground/80 lg:mx-0">
-              OGScan is built to verify before you ape: search any ticker, scan the market, and surface the contract that actually looks original.
+            <p className="mx-auto mt-2 max-w-2xl text-xs leading-relaxed text-foreground/80 sm:text-sm">
+              OGScan verifies before you ape: search any ticker, scan the market, and surface the contract that actually looks original.
             </p>
-            <div className="mt-5 flex flex-wrap justify-center gap-3 lg:justify-start">
-              <a href={OGSCAN_TECH_POST_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-og-gold bg-og-gold px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-og-ink transition hover:bg-og-gold/90">
-                <Newspaper className="h-4 w-4" /> Read post
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <a href={OGSCAN_TECH_POST_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-og-gold bg-og-gold px-3 py-2 font-mono text-[9px] font-bold uppercase tracking-widest text-og-ink transition hover:bg-og-gold/90">
+                <Newspaper className="h-3.5 w-3.5" /> Read post
               </a>
-              <a href={OGSCAN_X_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-og-lime/50 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-og-lime transition hover:bg-og-lime hover:text-og-ink">
-                <AtSign className="h-4 w-4" /> Follow X
+              <a href={OGSCAN_X_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-og-lime/50 px-3 py-2 font-mono text-[9px] font-bold uppercase tracking-widest text-og-lime transition hover:bg-og-lime hover:text-og-ink">
+                <AtSign className="h-3.5 w-3.5" /> Follow X
               </a>
-              <a href={OGSCAN_SITE_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-og-grid px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-foreground/70 transition hover:border-og-lime hover:text-og-lime">
-                <Globe2 className="h-4 w-4" /> ogscan.fun
+              <a href={OGSCAN_SITE_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-og-grid px-3 py-2 font-mono text-[9px] font-bold uppercase tracking-widest text-foreground/70 transition hover:border-og-lime hover:text-og-lime">
+                <Globe2 className="h-3.5 w-3.5" /> ogscan.fun
               </a>
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-md border border-og-grid bg-black/25 p-4 lg:max-w-none">
-            <div className="mb-3 flex items-center justify-between gap-3 border-b border-og-grid pb-2 font-mono text-[10px] uppercase tracking-[0.3em]">
+          <div className="mx-auto w-full max-w-2xl border border-og-grid bg-black/25 p-3">
+            <div className="mb-2 flex items-center justify-center gap-3 border-b border-og-grid pb-2 font-mono text-[9px] uppercase tracking-[0.24em]">
               <span className="text-og-lime">Scanner checks</span>
               <span className="text-muted-foreground">before ape</span>
             </div>
-            <div className="grid gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               {TECH_BULLETS.map((item) => (
-                <div key={item} className="flex items-center gap-2 border border-og-grid/70 bg-og-ink/65 px-3 py-2 text-xs text-foreground/80">
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-og-lime" />
+                <div key={item} className="flex items-center gap-2 border border-og-grid/70 bg-og-ink/65 px-2.5 py-1.5 text-left text-[11px] text-foreground/80">
+                  <CheckCircle2 className="h-3 w-3 shrink-0 text-og-lime" />
                   {item}
                 </div>
               ))}
