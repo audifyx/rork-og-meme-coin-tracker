@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Globe2,
   Link2,
+  Maximize2,
   Radio,
   ShieldCheck,
   Sparkles,
@@ -54,7 +55,7 @@ const buildDexScreenerUrl = (contractAddress: string, overrideUrl: string): stri
 const buildChartEmbedUrl = (contractAddress: string, overrideUrl: string): string => {
   if (overrideUrl.trim()) return overrideUrl.trim();
   if (!contractAddress.trim()) return "";
-  return `https://dexscreener.com/solana/${contractAddress.trim()}?embed=1&theme=dark&trades=1&info=0`;
+  return `https://dexscreener.com/solana/${contractAddress.trim()}?embed=1&theme=dark&trades=1&info=0&tabs=1&chartLeftToolbar=1&chartTimeframesToolbar=1`;
 };
 
 export const OurCoin = memo(() => {
@@ -134,28 +135,43 @@ export const OurCoin = memo(() => {
             />
           </div>
 
-          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-            <div className="overflow-hidden border border-og-grid bg-black/35">
-              <div className="flex items-center justify-between border-b border-og-grid bg-og-ink/90 px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          <div className="mt-5 grid gap-4">
+            <div className="overflow-hidden border border-og-cyan/55 bg-black shadow-[0_0_0_1px_hsl(var(--og-cyan)/0.18),0_28px_80px_-45px_hsl(var(--og-cyan))]">
+              <div className="flex flex-col gap-3 border-b border-og-grid bg-og-ink/95 px-3 py-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                 <span className="flex items-center gap-2 text-og-cyan">
-                  <TrendingUp className="h-3 w-3" /> LIVE CHART
+                  <TrendingUp className="h-3.5 w-3.5" /> LIVE DEXSCREENER CHART
                 </span>
-                <span>{hasContract ? "DexScreener feed" : "chart placeholder"}</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span>{hasContract ? "chart · trades · tabs enabled" : "chart placeholder"}</span>
+                  {dexScreenerUrl ? (
+                    <a
+                      href={dexScreenerUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 border border-og-cyan/50 px-2 py-1 text-og-cyan transition hover:bg-og-cyan hover:text-og-ink"
+                    >
+                      FULLSCREEN <Maximize2 className="h-3 w-3" />
+                    </a>
+                  ) : null}
+                </div>
               </div>
 
               {chartEmbedUrl ? (
                 <iframe
+                  key={chartEmbedUrl}
                   title={`${OUR_COIN_PROFILE.symbol} DexScreener chart`}
                   src={chartEmbedUrl}
-                  className="h-[620px] min-h-[620px] w-full border-0 sm:h-[680px] sm:min-h-[680px]"
+                  className="relative z-10 h-[760px] min-h-[760px] w-full border-0 bg-black sm:h-[820px] sm:min-h-[820px] xl:h-[880px] xl:min-h-[880px]"
                   loading="lazy"
+                  allow="clipboard-write; fullscreen"
+                  referrerPolicy="no-referrer-when-downgrade"
                 />
               ) : (
                 <ChartPlaceholder />
               )}
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid gap-3 xl:grid-cols-4">
               <ActionLink
                 Icon={Globe2}
                 label="Website"
@@ -177,7 +193,7 @@ export const OurCoin = memo(() => {
                 href={OUR_COIN_PROFILE.xUrl}
                 tone="cyan"
               />
-              <div className="border border-og-grid bg-og-ink/70 p-3">
+              <div className="border border-og-grid bg-og-ink/70 p-3 xl:col-span-1">
                 <div className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-og-lime">
                   <ShieldCheck className="h-3 w-3" /> CONNECTION MAP
                 </div>
