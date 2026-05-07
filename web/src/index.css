@@ -1,0 +1,154 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* OG SCANNER — punk-meme CRT terminal theme */
+
+@layer base {
+  :root {
+    --background: 60 6% 4%;
+    --foreground: 75 95% 75%;
+
+    --card: 60 8% 7%;
+    --card-foreground: 75 95% 80%;
+
+    --popover: 60 8% 6%;
+    --popover-foreground: 75 95% 80%;
+
+    --primary: 78 100% 55%;
+    --primary-foreground: 60 10% 4%;
+
+    --secondary: 47 95% 55%;
+    --secondary-foreground: 60 10% 4%;
+
+    --muted: 60 5% 12%;
+    --muted-foreground: 60 8% 55%;
+
+    --accent: 165 100% 55%;
+    --accent-foreground: 60 10% 4%;
+
+    --destructive: 0 90% 58%;
+    --destructive-foreground: 60 10% 98%;
+
+    --border: 75 30% 18%;
+    --input: 60 5% 12%;
+    --ring: 78 100% 55%;
+
+    --radius: 2px;
+
+    --og-lime: 78 100% 55%;
+    --og-gold: 47 95% 55%;
+    --og-cyan: 165 100% 55%;
+    --og-blood: 0 90% 58%;
+    --og-ink: 60 6% 4%;
+    --og-grid: 75 30% 18%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html, body, #root {
+    @apply bg-background text-foreground;
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: hsl(var(--og-lime));
+    color: hsl(var(--og-ink));
+  }
+}
+
+/* Scanline overlay */
+.crt-scanlines::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.18) 3px,
+    rgba(0, 0, 0, 0) 4px
+  );
+  mix-blend-mode: multiply;
+}
+.crt-scanlines::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 61;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 55%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(hsla(78, 100%, 55%, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, hsla(78, 100%, 55%, 0.06) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+.noise::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.06;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-track {
+  animation: ticker 40s linear infinite;
+}
+
+@keyframes flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; }
+  20%, 24%, 55% { opacity: 0.55; }
+}
+.flicker { animation: flicker 6s infinite; }
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+.blink { animation: blink 1s steps(2) infinite; }
+
+@keyframes scan {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(2000%); }
+}
+.scan-line {
+  animation: scan 3.5s linear infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 hsla(78, 100%, 55%, 0.45); }
+  50%      { box-shadow: 0 0 24px 4px hsla(78, 100%, 55%, 0.25); }
+}
+.pulse-glow { animation: pulse-glow 2.4s ease-in-out infinite; }
+
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.spin-slow { animation: spin-slow 14s linear infinite; }
+
+.text-glow {
+  text-shadow:
+    0 0 6px hsla(78, 100%, 55%, 0.55),
+    0 0 18px hsla(78, 100%, 55%, 0.25);
+}
+.text-glow-gold {
+  text-shadow:
+    0 0 6px hsla(47, 95%, 55%, 0.55),
+    0 0 18px hsla(47, 95%, 55%, 0.25);
+}

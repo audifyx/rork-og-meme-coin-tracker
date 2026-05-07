@@ -1,0 +1,10 @@
+{
+  "$schema": "https://rork.com/schema/rork.json",
+  "apps": [
+    {
+      "name": "ogscan.fun",
+      "path": "web",
+      "framework": "web"
+    }
+  ]
+}
