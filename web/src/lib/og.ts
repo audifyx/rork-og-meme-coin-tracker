@@ -7,6 +7,11 @@ export const HELIUS_API_KEY = "6fb9660c-e27c-4309-a027-251e32fb7b6e";
 export const ALCHEMY_API_KEY = "PAq_PkRjwniLgnpJdLUtc";
 export const QUICKNODE_WSS = "wss://floral-few-frog.solana-mainnet.quiknode.pro/12dfccc83b82aad957cffaa9e22d37033c6ef947/";
 
+export const OGSCAN_SITE_URL = "https://ogscan.fun";
+export const OGSCAN_X_URL = "https://x.com/ogscanfun";
+export const OGSCAN_COMMUNITY_URL = "https://twitter.com/i/communities/2007536315483685053";
+export const OGSCAN_TECH_POST_URL = "https://x.com/i/status/2052413018563084370";
+
 export const JUPITER_BASE = "https://lite-api.jup.ag";
 export const BIRDEYE_BASE = "https://public-api.birdeye.so";
 export const HELIUS_BASE = `https://api.helius.xyz/v0`;

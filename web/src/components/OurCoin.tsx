@@ -6,6 +6,7 @@ import {
   Coins,
   Copy,
   ExternalLink,
+  Globe2,
   Link2,
   MessageCircle,
   Radio,
@@ -16,7 +17,7 @@ import {
   Wallet,
   Zap,
 } from "lucide-react";
-import { shortAddr } from "@/lib/og";
+import { OGSCAN_COMMUNITY_URL, OGSCAN_SITE_URL, OGSCAN_X_URL, shortAddr } from "@/lib/og";
 
 /**
  * Fill these in when the official coin details are ready.
@@ -26,6 +27,7 @@ type OurCoinProfile = {
   name: string;
   symbol: string;
   contractAddress: string;
+  siteUrl: string;
   xUrl: string;
   communityUrl: string;
   dexScreenerUrl: string;
@@ -36,8 +38,9 @@ const OUR_COIN_PROFILE: OurCoinProfile = {
   name: "ogscan.fun",
   symbol: "$OGSCAN",
   contractAddress: "",
-  xUrl: "",
-  communityUrl: "",
+  siteUrl: OGSCAN_SITE_URL,
+  xUrl: OGSCAN_X_URL,
+  communityUrl: OGSCAN_COMMUNITY_URL,
   dexScreenerUrl: "",
   chartEmbedUrl: "",
 };
@@ -91,9 +94,9 @@ export const OurCoin = memo(() => {
                 <span className="text-og-gold text-glow-gold">LAUNCH BAY</span>
               </h2>
               <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                Reserved command center for the official {OUR_COIN_PROFILE.name} coin. CA, X,
-                community, DexScreener and chart are staged as placeholders so the hub can go live
-                fast once the contract address is ready.
+                Reserved command center for the official {OUR_COIN_PROFILE.name} coin. X,
+                community and website are live now. CA, DexScreener and chart stay staged until
+                the contract address is ready, so the wrong token never gets promoted.
               </p>
             </div>
 
@@ -101,7 +104,7 @@ export const OurCoin = memo(() => {
               <div className="flex items-center gap-2">
                 <Radio className="h-3 w-3 animate-pulse" /> STATUS
               </div>
-              <div className="mt-1 text-foreground">AWAITING CA</div>
+              <div className="mt-1 text-foreground">SOCIALS LIVE · AWAITING CA</div>
             </div>
           </div>
 
@@ -127,13 +130,13 @@ export const OurCoin = memo(() => {
             <InfoSlot
               Icon={AtSign}
               label="X"
-              value={OUR_COIN_PROFILE.xUrl ? "official X connected" : "placeholder · add @handle"}
+              value={OUR_COIN_PROFILE.xUrl ? "@ogscanfun connected" : "placeholder · add @handle"}
               accent="text-og-cyan"
             />
             <InfoSlot
               Icon={Users}
               label="COMMUNITY"
-              value={OUR_COIN_PROFILE.communityUrl ? "community connected" : "placeholder · Telegram/Discord"}
+              value={OUR_COIN_PROFILE.communityUrl ? "X community connected" : "placeholder · Telegram/Discord"}
               accent="text-og-lime"
             />
           </div>
@@ -161,6 +164,13 @@ export const OurCoin = memo(() => {
 
             <div className="grid gap-3">
               <ActionLink
+                Icon={Globe2}
+                label="Website"
+                detail="Open ogscan.fun"
+                href={OUR_COIN_PROFILE.siteUrl}
+                tone="lime"
+              />
+              <ActionLink
                 Icon={ExternalLink}
                 label="DexScreener"
                 detail={dexScreenerUrl ? "Open official pair" : "placeholder · auto-builds from CA"}
@@ -177,7 +187,7 @@ export const OurCoin = memo(() => {
               <ActionLink
                 Icon={MessageCircle}
                 label="Community"
-                detail={OUR_COIN_PROFILE.communityUrl ? "Open community" : "placeholder · add Telegram/Discord"}
+                detail={OUR_COIN_PROFILE.communityUrl ? "Join the X community" : "placeholder · add Telegram/Discord"}
                 href={OUR_COIN_PROFILE.communityUrl}
                 tone="lime"
               />
@@ -188,6 +198,7 @@ export const OurCoin = memo(() => {
                 </div>
                 <div className="space-y-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                   <PipelineStep active label="Reserve official coin tab" />
+                  <PipelineStep active label="Connect website + X channels" />
                   <PipelineStep active={hasContract} label="Attach CA" />
                   <PipelineStep active={Boolean(dexScreenerUrl)} label="Open DexScreener route" />
                   <PipelineStep active={Boolean(chartEmbedUrl)} label="Render live chart" />
@@ -204,8 +215,9 @@ export const OurCoin = memo(() => {
             </div>
             <div className="grid gap-2">
               <SetupCard label="Contract address" value="CA placeholder" status={hasContract ? "connected" : "waiting"} />
-              <SetupCard label="X profile" value="@handle placeholder" status={OUR_COIN_PROFILE.xUrl ? "connected" : "waiting"} />
-              <SetupCard label="Community" value="chat link placeholder" status={OUR_COIN_PROFILE.communityUrl ? "connected" : "waiting"} />
+              <SetupCard label="Website" value="ogscan.fun" status={OUR_COIN_PROFILE.siteUrl ? "connected" : "waiting"} />
+              <SetupCard label="X profile" value="@ogscanfun" status={OUR_COIN_PROFILE.xUrl ? "connected" : "waiting"} />
+              <SetupCard label="Community" value="X community live" status={OUR_COIN_PROFILE.communityUrl ? "connected" : "waiting"} />
               <SetupCard label="DexScreener" value="pair/chart placeholder" status={dexScreenerUrl ? "connected" : "waiting"} />
             </div>
           </div>
@@ -215,8 +227,9 @@ export const OurCoin = memo(() => {
               <Zap className="h-3 w-3" /> WHAT HAPPENS NEXT
             </div>
             <p className="text-sm text-muted-foreground">
-              Send the CA when ready and this tab can flip from placeholder mode into a live official
-              coin page with copyable contract address, DexScreener route, chart embed and social links.
+              Website, X profile and X community are connected. Send the CA when ready and this tab
+              can flip into a live official coin page with copyable contract address, DexScreener route
+              and chart embed.
             </p>
             <div className="mt-4 border border-dashed border-og-gold/35 bg-og-gold/5 p-3 font-mono text-[10px] uppercase tracking-widest text-og-gold">
               CA slot is intentionally empty so no wrong token gets promoted before launch.
