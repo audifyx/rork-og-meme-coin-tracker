@@ -13,6 +13,7 @@ import {
   Rocket,
   Search,
   ShieldCheck,
+  Target,
   Zap,
 } from "lucide-react";
 import { Scanlines } from "@/components/Scanlines";
@@ -31,6 +32,7 @@ import { Whales } from "@/components/Whales";
 import { SwapPanel } from "@/components/SwapPanel";
 import { TechStack } from "@/components/TechStack";
 import { OurCoin } from "@/components/OurCoin";
+import { SnipeFeed } from "@/components/SnipeFeed";
 import { SiteFooter } from "@/components/SiteFooter";
 import { cn } from "@/lib/utils";
 import { DEFAULT_OG_MINT, STORAGE_OG_MINT } from "@/lib/og";
@@ -40,6 +42,7 @@ const LEGACY_DEFAULT_MINT = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";
 type TabId =
   | "overview"
   | "our-coin"
+  | "snipe-feed"
   | "scanner"
   | "og-finder"
   | "pairs"
@@ -62,6 +65,7 @@ type TabConfig = {
 const TABS: TabConfig[] = [
   { id: "overview", label: "Vitals", eyebrow: "LIVE TOKEN ROOM", description: "Price, liquidity, whales, and real-time tape in one command view.", Icon: Gauge, accent: "blue" },
   { id: "our-coin", label: "Our Coin", eyebrow: "OFFICIAL OG", description: "Brand, links, and the official OG Scan coin destination.", Icon: Coins, accent: "white" },
+  { id: "snipe-feed", label: "Snipe Feed", eyebrow: "DEV WALLET RADAR", description: "Track brand-new launches, repeat creator wallets, hot scores, and risk warnings.", Icon: Target, accent: "cyan" },
   { id: "scanner", label: "Scanner", eyebrow: "RUN THE CHAIN", description: "Paste a mint and inspect signal, score, holders, and market data.", Icon: Search, accent: "blue" },
   { id: "og-finder", label: "OG Finder", eyebrow: "FIND THE ORIGIN", description: "Search tickers and separate the real OG from dead copycats.", Icon: Crosshair, accent: "cyan" },
   { id: "pairs", label: "New Pairs", eyebrow: "PAIR RADAR", description: "Watch fresh Solana pairs before the timeline catches up.", Icon: Radar, accent: "blue" },
@@ -280,6 +284,7 @@ const Index = () => {
                 )}
 
                 {tab === "our-coin" && <OurCoin />}
+                {tab === "snipe-feed" && <SnipeFeed onSelect={updateMint} />}
                 {tab === "scanner" && <Scanner onSelect={updateMint} />}
                 {tab === "og-finder" && <OgFinder onSelect={updateMint} />}
                 {tab === "pairs" && <PairTracker onSelect={updateMint} />}
