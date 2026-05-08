@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   Bell,
@@ -179,6 +180,34 @@ function saveStringList(key: string, value: string[]): void {
     localStorage.setItem(key, JSON.stringify(value.slice(0, 80)));
   } catch {
     /* noop */
+  }
+}
+
+async function copyTextToClipboard(value: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    /* fall through to textarea fallback */
+  }
+
+  try {
+    const textarea: HTMLTextAreaElement = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "true");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const copied: boolean = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return copied;
+  } catch {
+    return false;
   }
 }
 
@@ -516,9 +545,15 @@ export const SnipeFeed = ({ onSelect }: Props) => {
   }, [launches, watchedDevs, watchedMints]);
 
   const copyMint = useCallback((mint: string): void => {
-    void navigator.clipboard.writeText(mint).then(() => {
-      setCopiedMint(mint);
-      window.setTimeout(() => setCopiedMint(null), 1100);
+    void copyTextToClipboard(mint).then((copied) => {
+      if (copied) {
+        setCopiedMint(mint);
+        toast.success("CA copied", { description: shortAddr(mint, 8) });
+        window.setTimeout(() => setCopiedMint(null), 1400);
+        return;
+      }
+
+      window.prompt("Copy this contract address:", mint);
     });
   }, []);
 
@@ -686,7 +721,7 @@ const LaunchRow = ({
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-og-cyan/70 to-transparent opacity-0 transition group-hover:opacity-100" />
       <button type="button" onClick={onSelect} className="absolute inset-0 z-0 cursor-crosshair" aria-label={`Inspect ${launch.symbol}`} />
-      <div className="relative z-10 grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
+      <div className="pointer-events-none relative z-10 grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-3">
             <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden border border-og-grid bg-og-ink text-og-cyan">
@@ -719,26 +754,26 @@ const LaunchRow = ({
         </div>
       </div>
 
-      <div className="relative z-10 mt-3 flex flex-wrap items-center gap-2 border-t border-og-grid/80 pt-3">
+      <div className="pointer-events-none relative z-10 mt-3 flex flex-wrap items-center gap-2 border-t border-og-grid/80 pt-3">
         {launch.riskFlags.slice(0, 4).map((flag) => (
           <span key={flag} className="border border-og-grid bg-og-ink/75 px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
             {flag}
           </span>
         ))}
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <button type="button" onClick={onCopy} className="inline-flex items-center gap-1 border border-og-grid px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-foreground/70 transition hover:border-og-gold hover:text-og-gold">
-            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />} {copied ? "copied" : "CA"}
+        <div className="pointer-events-auto ml-auto flex flex-wrap items-center gap-2">
+          <button type="button" onClick={(event) => { event.stopPropagation(); onCopy(); }} className="inline-flex min-h-9 items-center gap-1.5 border border-og-gold/55 bg-og-gold/10 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-og-gold transition hover:bg-og-gold hover:text-og-ink">
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} {copied ? "copied" : "copy CA"}
           </button>
-          <button type="button" onClick={onWatchDev} disabled={!launch.devWallet} className="inline-flex items-center gap-1 border border-og-grid px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-foreground/70 transition enabled:hover:border-og-lime enabled:hover:text-og-lime disabled:opacity-40">
+          <button type="button" onClick={(event) => { event.stopPropagation(); onWatchDev(); }} disabled={!launch.devWallet} className="inline-flex min-h-9 items-center gap-1 border border-og-grid px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-foreground/70 transition enabled:hover:border-og-lime enabled:hover:text-og-lime disabled:opacity-40">
             <UserSearch className="h-3 w-3" /> {watchedDev ? "unwatch dev" : "watch dev"}
           </button>
-          <button type="button" onClick={onWatchMint} className="inline-flex items-center gap-1 border border-og-grid px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-foreground/70 transition hover:border-og-lime hover:text-og-lime">
+          <button type="button" onClick={(event) => { event.stopPropagation(); onWatchMint(); }} className="inline-flex min-h-9 items-center gap-1 border border-og-grid px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-foreground/70 transition hover:border-og-lime hover:text-og-lime">
             <Bell className="h-3 w-3" /> {watchedMint ? "unwatch" : "watch"}
           </button>
-          <button type="button" onClick={onScan} className="inline-flex items-center gap-1 border border-og-cyan/60 px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-og-cyan transition hover:bg-og-cyan hover:text-og-ink">
+          <button type="button" onClick={(event) => { event.stopPropagation(); onScan(); }} className="inline-flex min-h-9 items-center gap-1 border border-og-cyan/60 px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-og-cyan transition hover:bg-og-cyan hover:text-og-ink">
             <Target className="h-3 w-3" /> scan
           </button>
-          <a href={launch.dexUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 border border-og-grid px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-foreground/70 transition hover:border-og-cyan hover:text-og-cyan">
+          <a href={launch.dexUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} className="inline-flex min-h-9 items-center gap-1 border border-og-grid px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-foreground/70 transition hover:border-og-cyan hover:text-og-cyan">
             chart <ExternalLink className="h-3 w-3" />
           </a>
         </div>
@@ -802,8 +837,8 @@ const LaunchAnalyzer = ({ launch, watched, onCopy, onScan, onWatchMint }: { laun
         <button type="button" onClick={() => onWatchMint(launch.mint)} className="inline-flex items-center justify-center gap-1 border border-og-grid px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-foreground/70 transition hover:border-og-lime hover:text-og-lime">
           <Bell className="h-3.5 w-3.5" /> {watched ? "watching" : "watch"}
         </button>
-        <button type="button" onClick={() => onCopy(launch.mint)} className="inline-flex items-center justify-center gap-1 border border-og-grid px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-foreground/70 transition hover:border-og-gold hover:text-og-gold">
-          <Copy className="h-3.5 w-3.5" /> copy
+        <button type="button" onClick={() => onCopy(launch.mint)} className="inline-flex items-center justify-center gap-1 border border-og-gold/55 bg-og-gold/10 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-og-gold transition hover:bg-og-gold hover:text-og-ink">
+          <Copy className="h-3.5 w-3.5" /> copy CA
         </button>
       </div>
     </div>
