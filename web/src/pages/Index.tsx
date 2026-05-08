@@ -45,12 +45,15 @@ type TabId =
   | "overview"
   | "our-coin"
   | "roadmap"
+  | "market-pulse"
   | "snipe-feed"
   | "scanner"
   | "og-finder"
   | "pairs"
   | "migrations"
   | "trending"
+  | "whales"
+  | "tx-feed"
   | "swap"
   | "tech";
 
@@ -89,6 +92,14 @@ const TABS: TabConfig[] = [
     description: "The path from OGScan into the crypto-native community layer SolTools is building.",
     Icon: Map,
     accent: "cyan",
+  },
+  {
+    id: "market-pulse",
+    label: "Market",
+    eyebrow: "LIVE OVERVIEW",
+    description: "A dedicated market pulse screen for the active mint with price, liquidity, holders, and core signal stats.",
+    Icon: Activity,
+    accent: "blue",
   },
   {
     id: "snipe-feed",
@@ -136,6 +147,22 @@ const TABS: TabConfig[] = [
     eyebrow: "MARKET HEAT",
     description: "See what is actually moving across Solana right now.",
     Icon: Flame,
+    accent: "cyan",
+  },
+  {
+    id: "whales",
+    label: "Whales",
+    eyebrow: "WALLET RADAR",
+    description: "A standalone whale watch screen for holder concentration and largest token accounts.",
+    Icon: Radar,
+    accent: "white",
+  },
+  {
+    id: "tx-feed",
+    label: "Tape",
+    eyebrow: "LIVE TRANSACTIONS",
+    description: "A focused transaction tape for the selected mint, separated from every other tool.",
+    Icon: Activity,
     accent: "cyan",
   },
   {
@@ -229,15 +256,18 @@ const Index = () => {
         {tab === "overview" ? (
           <OverviewPage mint={mint} onSelectMint={updateMint} onSwitchTab={(nextTab: TabId) => switchTab(nextTab)} onScanClick={openScanner} onSwapClick={openSwap} />
         ) : (
-          <ToolPage tab={activeTab} onBack={() => switchTab("overview")}>
+          <ToolPage tab={activeTab} allTabs={TABS} activeId={tab} onBack={() => switchTab("overview")} onSwitchTab={switchTab}>
             {tab === "our-coin" && <OurCoin />}
             {tab === "roadmap" && <SolToolsRoadmap />}
+            {tab === "market-pulse" && <OgStats mint={mint} onSelect={updateMint} />}
             {tab === "snipe-feed" && <SnipeFeed onSelect={updateMint} />}
             {tab === "scanner" && <Scanner onSelect={updateMint} />}
             {tab === "og-finder" && <OgFinder onSelect={updateMint} />}
             {tab === "pairs" && <PairTracker onSelect={updateMint} />}
             {tab === "migrations" && <Migrations onSelect={updateMint} />}
             {tab === "trending" && <Trending onSelect={updateMint} />}
+            {tab === "whales" && <Whales mint={mint} />}
+            {tab === "tx-feed" && <TxFeed mint={mint} />}
             {tab === "swap" && <SwapPanel ogMint={mint} onSelectMint={updateMint} />}
             {tab === "tech" && <TechStack />}
           </ToolPage>
@@ -280,77 +310,79 @@ const OverviewPage = ({
                 Site UI is back. Tools are separated.
               </h2>
             </div>
-            <div className="border border-og-gold/45 bg-og-gold/10 px-4 py-3 font-mono text-[10px] uppercase leading-relaxed tracking-[0.24em] text-og-gold lg:max-w-sm">
+            <button onClick={() => onSwitchTab("our-coin")} className="border border-og-gold/45 bg-og-gold/10 px-4 py-3 text-left font-mono text-[10px] uppercase leading-relaxed tracking-[0.24em] text-og-gold transition hover:bg-og-gold hover:text-og-ink lg:max-w-sm">
               No token out yet · Coming soon · Ignore fake CAs
+            </button>
+          </div>
+
+          <section className="border border-og-grid bg-og-ink/82 p-4 shadow-og sm:p-5">
+            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <PanelTitle icon={Target} eyebrow="Tool tabs" title="Pick one screen" />
+              <p className="max-w-md font-mono text-[10px] uppercase leading-relaxed tracking-[0.22em] text-muted-foreground">
+                Each card opens a separate full-page tab. No more blended tool stack.
+              </p>
             </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[0.82fr_1.18fr]">
-            <section className="border border-og-grid bg-og-ink/82 p-4 shadow-og">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <PanelTitle icon={ShieldCheck} eyebrow="Official notice" title="Token safety banner" />
-                <button onClick={() => onSwitchTab("our-coin")} className="border border-og-gold/50 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-og-gold transition hover:bg-og-gold hover:text-og-ink">
-                  Open
-                </button>
-              </div>
-              <div className="relative overflow-hidden border border-og-gold/35 bg-og-gold/5 p-5">
-                <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-og-gold/10 blur-3xl" />
-                <div className="relative">
-                  <p className="font-display text-4xl font-black uppercase leading-none tracking-tighter text-og-gold text-glow-gold sm:text-5xl">
-                    No token out yet.
-                  </p>
-                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                    OGScan has no public contract address or official chart live. This dashboard remains focused on scanning and discovery until launch.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <section className="border border-og-grid bg-og-ink/82 p-4 shadow-og">
-              <PanelTitle icon={Activity} eyebrow="Live overview" title="Market pulse" />
-              <div className="mt-4">
-                <OgStats mint={mint} onSelect={onSelectMint} />
-              </div>
-            </section>
-          </div>
-
-          <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
-            <section className="border border-og-grid bg-og-ink/82 p-4 shadow-og">
-              <PanelTitle icon={Target} eyebrow="Quick launch" title="Open a tool" />
-              <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2">
-                {featuredTabs.map((tool) => (
-                  <ToolCard key={tool.id} tool={tool} onClick={() => onSwitchTab(tool.id)} />
-                ))}
-              </div>
-            </section>
-
-            <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-1">
-              <div className="border border-og-grid bg-og-ink/82 p-4 shadow-og">
-                <PanelTitle icon={Radar} eyebrow="Wallet radar" title="Whales" />
-                <div className="mt-4 border border-og-grid bg-black/20 p-3">
-                  <Whales mint={mint} />
-                </div>
-              </div>
-              <div className="border border-og-grid bg-og-ink/82 p-4 shadow-og">
-                <PanelTitle icon={Activity} eyebrow="Tape" title="Live transactions" />
-                <div className="mt-4 border border-og-grid bg-black/20 p-3">
-                  <TxFeed mint={mint} />
-                </div>
-              </div>
-            </section>
-          </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {featuredTabs.map((tool) => (
+                <ToolCard key={tool.id} tool={tool} onClick={() => onSwitchTab(tool.id)} />
+              ))}
+            </div>
+          </section>
         </div>
       </section>
     </>
   );
 };
 
-const ToolPage = ({ tab, onBack, children }: { tab: TabConfig; onBack: () => void; children: ReactNode }) => {
+const ToolPage = ({
+  tab,
+  allTabs,
+  activeId,
+  onBack,
+  onSwitchTab,
+  children,
+}: {
+  tab: TabConfig;
+  allTabs: TabConfig[];
+  activeId: TabId;
+  onBack: () => void;
+  onSwitchTab: (nextTab: string) => void;
+  children: ReactNode;
+}) => {
+  const toolTabs: TabConfig[] = allTabs.filter((item) => item.id !== "overview");
+
   return (
     <section className="relative min-h-screen border-b border-og-grid bg-background">
       <div className="absolute inset-0 grid-bg opacity-35" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--og-lime)/0.1),transparent_34%),linear-gradient(180deg,hsl(var(--og-ink)/0.25),hsl(var(--background)))]" />
       <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-12">
+        <div className="mb-4 overflow-x-auto border border-og-grid bg-og-ink/88 p-2 shadow-og ios-scroll">
+          <div className="flex min-w-max gap-2">
+            <button
+              type="button"
+              onClick={onBack}
+              className="border border-og-grid bg-black/20 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground transition hover:border-og-lime hover:text-og-lime"
+            >
+              Command
+            </button>
+            {toolTabs.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onSwitchTab(item.id)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 border px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.18em] transition",
+                  activeId === item.id
+                    ? "border-og-lime bg-og-lime text-og-ink"
+                    : "border-og-grid bg-black/20 text-muted-foreground hover:border-og-cyan hover:text-og-cyan",
+                )}
+              >
+                <item.Icon className="h-3.5 w-3.5" /> {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="mb-5 border border-og-grid bg-og-ink/88 p-4 shadow-og sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-start gap-4">
@@ -375,7 +407,14 @@ const ToolPage = ({ tab, onBack, children }: { tab: TabConfig; onBack: () => voi
           </div>
         </div>
 
-        <div className="border border-og-grid bg-og-ink/72 p-3 shadow-og sm:p-5">
+        <div className="relative border-2 border-og-cyan/35 bg-og-ink/72 p-3 shadow-[0_0_0_1px_hsl(var(--og-grid)),0_26px_100px_-70px_hsl(var(--og-cyan))] sm:p-5">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-og-cyan via-og-lime to-og-gold" />
+          <div className="mb-3 flex items-center justify-between gap-3 border-b border-og-grid pb-3 font-mono text-[9px] uppercase tracking-[0.28em] text-muted-foreground">
+            <span className={cn("inline-flex items-center gap-2", getAccentClass(tab.accent, "text"))}>
+              <tab.Icon className="h-3.5 w-3.5" /> Active tab
+            </span>
+            <span>{tab.label} only</span>
+          </div>
           {children}
         </div>
       </div>
@@ -395,7 +434,7 @@ const PanelTitle = ({ icon: Icon, eyebrow, title }: { icon: ComponentType<{ clas
 const ToolCard = ({ tool, onClick }: { tool: TabConfig; onClick: () => void }) => (
   <button
     onClick={onClick}
-    className="group relative min-h-[132px] overflow-hidden border border-og-grid bg-black/22 p-4 text-left transition hover:border-og-lime hover:bg-og-lime/5"
+    className="group relative min-h-[154px] overflow-hidden border border-og-grid bg-black/22 p-4 text-left transition hover:border-og-lime hover:bg-og-lime/5"
   >
     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-og-lime/50 to-transparent opacity-0 transition group-hover:opacity-100" />
     <div className={cn("mb-3 grid h-10 w-10 place-items-center border", getAccentClass(tool.accent, "icon"))}>
@@ -405,6 +444,10 @@ const ToolCard = ({ tool, onClick }: { tool: TabConfig; onClick: () => void }) =
     <div className="mt-1 flex items-center justify-between gap-3">
       <span className="font-display text-xl font-black uppercase tracking-tight text-foreground">{tool.label}</span>
       <ChevronRight className="h-4 w-4 text-og-lime opacity-0 transition group-hover:translate-x-1 group-hover:opacity-100" />
+    </div>
+    <p className="mt-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{tool.description}</p>
+    <div className="absolute bottom-3 left-4 right-4 border-t border-og-grid/70 pt-2 font-mono text-[8px] uppercase tracking-[0.24em] text-og-cyan">
+      Open full tab
     </div>
   </button>
 );
