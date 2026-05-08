@@ -13,6 +13,7 @@
 - [x] Add **community heat signals** showing which launches are gaining traction fastest.
 - [x] Keep every existing tool intact while making the new intelligence feel like a premium V2 layer.
 - [x] Replace official token/CA/chart content with a clear **No token out yet — coming soon** safety banner.
+- [x] Add the official **SolTools Roadmap** with goal, plan, next step, long-term vision, expansion plans, mobile rollout, mission, and community links.
 
 ## **Design**
 
@@ -23,6 +24,7 @@
 - [x] Use simple beginner-friendly labels like “Clean,” “Watch,” “Risky,” and “Danger” instead of overwhelming users.
 - [x] Add a stronger top summary area showing live launches, risky launches blocked, watched devs, and hot opportunities.
 - [x] Make the layout easier to scan on mobile with stacked cards and sticky quick actions.
+- [x] Present the roadmap as a premium full-page tab instead of a plain text block.
 
 ## **Pages / Screens**
 
@@ -32,6 +34,7 @@
 - [x] **Launch Analyzer**: A deeper report for one new coin with holder risk, liquidity quality, social links, chart, and warnings.
 - [x] **Watchlist**: A saved list of dev wallets, tickers, and coins the user wants to monitor.
 - [x] **Alerts Center**: A clean timeline of new launches, whale moves, dev relaunches, and risk warnings.
+- [x] **SolTools Roadmap**: A polished vision page showing OGScan’s path into the broader SolTools ecosystem.
 
 ## **Suggested build order**
 
