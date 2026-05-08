@@ -102,18 +102,16 @@ serve(async (req) => {
     const chatId = update.message.chat.id;
     const messageId = update.message.message_id;
     const text = update.message.text || "";
-    const botUsername = "@OGScannerAIBot";
-
-    // Immediate response for slow commands
-    if (text.startsWith("/og") || text.startsWith("/ai") || text.startsWith("/ask") || text.startsWith("/search")) {
-      // We don't send a "Processing" message to avoid clutter, but we ensure the function doesn't timeout
-    }
+    const botUsername = "@theogscanbot"; // Corrected username
 
     let responseText = "";
 
-    if (text.startsWith("/start")) {
+    // Handle commands with or without username (e.g., /og or /og@theogscanbot)
+    const cleanText = text.replace(botUsername, "").trim();
+
+    if (cleanText.startsWith("/start")) {
       responseText = "Welcome to *OG Scanner AI*! 🚀\n\nI'm your Solana meme coin assistant. I scan for OG tokens, track whales, and provide real-time stats.\n\nUse /help to see all commands.";
-    } else if (text.startsWith("/help")) {
+    } else if (cleanText.startsWith("/help")) {
       responseText = "*Available Commands:*\n" +
         "/ai <msg> - Chat with Gemini AI\n" +
         "/ask <msg> - Ask a specific question\n" +
@@ -125,17 +123,16 @@ serve(async (req) => {
         "/whales - Recent whale activity\n" +
         "/watch <CA> - Add to watchlist\n" +
         "/watchlist - View your saved tokens";
-    } else if (text.startsWith("/ai") || text.startsWith("/ask")) {
-      const prompt = text.replace(/^\/(ai|ask)/, "").trim();
+    } else if (cleanText.startsWith("/ai") || cleanText.startsWith("/ask")) {
+      const prompt = cleanText.replace(/^\/(ai|ask)/, "").trim();
       responseText = await callGemini(prompt || "Tell me about Solana meme coins.");
-    } else if (text.startsWith("/og") || text.startsWith("/search")) {
-      const query = text.replace(/^\/(og|search)/, "").trim();
+    } else if (cleanText.startsWith("/og") || cleanText.startsWith("/search")) {
+      const query = cleanText.replace(/^\/(og|search)/, "").trim();
       responseText = await getOGInfo(query || "SOL");
-    } else if (text.startsWith("/trending")) {
-      responseText = "🔥 *TRENDING SOLANA PAIRS*\n\n(Fetching live data...)";
-      // Implement actual trending logic here if needed
     } else if (text.includes(botUsername) || update.message.chat.type === "private") {
-      responseText = await callGemini(text);
+      // Auto-reply in DMs or when tagged in groups
+      const prompt = text.replace(botUsername, "").trim();
+      responseText = await callGemini(prompt || "How can I help you today?");
     }
 
     if (responseText) {
@@ -145,6 +142,6 @@ serve(async (req) => {
     return new Response("ok", { status: 200 });
   } catch (error) {
     console.error("Global Error:", error);
-    return new Response("ok", { status: 200 }); // Always return 200 to Telegram to avoid retries
+    return new Response("ok", { status: 200 });
   }
 });
