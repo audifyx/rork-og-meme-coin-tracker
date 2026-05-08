@@ -10,14 +10,9 @@ async function sendChatAction(chatId: number, action: string = "typing") {
     await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendChatAction`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        action: action,
-      }),
+      body: JSON.stringify({ chat_id: chatId, action: action }),
     });
-  } catch (e) {
-    console.error("Telegram Action Error:", e);
-  }
+  } catch (e) { console.error("Action Error:", e); }
 }
 
 async function sendTelegramMessage(chatId: number, text: string, replyToMessageId?: number) {
@@ -30,12 +25,10 @@ async function sendTelegramMessage(chatId: number, text: string, replyToMessageI
         text: text,
         parse_mode: "Markdown",
         reply_to_message_id: replyToMessageId,
-        disable_web_page_preview: false,
+        disable_web_page_preview: true,
       }),
     });
-  } catch (e) {
-    console.error("Telegram Send Error:", e);
-  }
+  } catch (e) { console.error("Send Error:", e); }
 }
 
 async function callGemini(prompt: string) {
@@ -58,10 +51,40 @@ async function callGemini(prompt: string) {
     });
     const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm having trouble connecting to my brain right now.";
-  } catch (e) {
-    console.error("Gemini Error:", e);
-    return "Brain timeout. Try again in a sec.";
-  }
+  } catch (e) { return "Brain timeout. Try again in a sec."; }
+}
+
+async function getTrending() {
+  try {
+    // DexScreener doesn't have a direct "trending" API, so we search for Solana and sort by volume/h24
+    const response = await fetch(`${DEXSCREENER_API}/search?q=solana`);
+    const data = await response.json();
+    const pairs = data.pairs?.filter((p: any) => p.chainId === "solana")
+      .sort((a: any, b: any) => (b.volume?.h24 || 0) - (a.volume?.h24 || 0))
+      .slice(0, 10) || [];
+    
+    if (pairs.length === 0) return "No trending Solana pairs found.";
+
+    return "🔥 *TOP 10 TRENDING SOLANA*\n\n" + pairs.map((p: any, i: number) => 
+      `${i+1}. *${p.baseToken.symbol}* | $${p.priceUsd}\n` +
+      `   Vol: $${p.volume?.h24?.toLocaleString()} | [Chart](${p.url})`
+    ).join("\n\n");
+  } catch (e) { return "Trending data unavailable."; }
+}
+
+async function getNewPairs() {
+  try {
+    const response = await fetch(`${DEXSCREENER_API}/search?q=solana`);
+    const data = await response.json();
+    const pairs = data.pairs?.filter((p: any) => p.chainId === "solana")
+      .sort((a: any, b: any) => b.pairCreatedAt - a.pairCreatedAt)
+      .slice(0, 5) || [];
+    
+    return "🆕 *LATEST SOLANA PAIRS*\n\n" + pairs.map((p: any) => 
+      `✨ *${p.baseToken.symbol}* | ${new Date(p.pairCreatedAt).toLocaleTimeString()}\n` +
+      `   Liq: $${p.liquidity?.usd?.toLocaleString()} | [Chart](${p.url})`
+    ).join("\n\n");
+  } catch (e) { return "New pairs data unavailable."; }
 }
 
 async function getOGInfo(query: string) {
@@ -72,41 +95,35 @@ async function getOGInfo(query: string) {
     
     if (solanaPairs.length === 0) return "No Solana pairs found for this ticker.";
 
+    // Sort by liquidity to find the "Main" (Official) pair for accurate data
     const sortedPairs = solanaPairs.sort((a: any, b: any) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0));
-    const ogPair = sortedPairs[0];
-    const copycats = sortedPairs.slice(1, 4);
+    const mainPair = sortedPairs[0];
+    
+    // Find the actual OG (earliest)
+    const ogPair = [...solanaPairs].sort((a: any, b: any) => a.pairCreatedAt - b.pairCreatedAt)[0];
+    const copycats = sortedPairs.filter(p => p.baseToken.address !== mainPair.baseToken.address).slice(0, 3);
 
-    const ageDays = Math.floor((Date.now() - ogPair.pairCreatedAt) / (1000 * 60 * 60 * 24));
-    const ogScore = Math.min(100, Math.floor((ogPair.liquidity?.usd / 10000) + (ageDays / 10)));
+    const ageDays = Math.floor((Date.now() - mainPair.pairCreatedAt) / (1000 * 60 * 60 * 24));
+    const ogScore = Math.min(100, Math.floor((mainPair.liquidity?.usd / 10000) + (ageDays / 10)));
 
-    let message = `🛡️ *SCAN THE DIRECT OG*\n` +
-      `Ticker: $${ogPair.baseToken.symbol}\n\n` +
-      `👑 *DIRECT OG (ORIGINAL)*\n` +
+    return `🛡️ *SCAN THE DIRECT OG*\n` +
+      `Ticker: $${mainPair.baseToken.symbol}\n\n` +
+      `👑 *MAIN PAIR (OFFICIAL)*\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `💰 Price: $${ogPair.priceUsd}\n` +
+      `💰 Price: $${mainPair.priceUsd}\n` +
       `📈 OG SCORE: *${ogScore}*\n\n` +
-      `📊 MCap: $${ogPair.fdv?.toLocaleString()}\n` +
-      `💧 Liq: $${ogPair.liquidity?.usd?.toLocaleString()}\n` +
+      `📊 MCap: $${mainPair.fdv?.toLocaleString()}\n` +
+      `💧 Liq: $${mainPair.liquidity?.usd?.toLocaleString()}\n` +
       `👥 HLDR: 15.41K (Est.)\n` +
       `📅 Age: ${ageDays}D\n\n` +
       `🔒 *SECURITY:* \n` +
       `🔓 MINT OFF | ❄️ FREEZE OFF\n` +
       `✅ TOP10: 14.3%\n\n` +
-      `CA: \`${ogPair.baseToken.address}\`\n` +
-      `🔗 [DexScreener](${ogPair.url}) | [Birdeye](https://birdeye.so/token/${ogPair.baseToken.address}?chain=solana)\n\n`;
-
-    if (copycats.length > 0) {
-      message += `📂 *COPYCATS (${solanaPairs.length - 1} SHOWN)*\n` +
-        `━━━━━━━━━━━━━━━━━━━━\n`;
-      copycats.forEach((p: any) => {
-        message += `🚫 $${p.baseToken.symbol} | Liq: $${p.liquidity?.usd?.toLocaleString()} | [Link](${p.url})\n`;
-      });
-    }
-    return message;
-  } catch (e) {
-    console.error("DexScreener Error:", e);
-    return "Scanner offline. DexScreener might be rate-limiting.";
-  }
+      `CA: \`${mainPair.baseToken.address}\`\n` +
+      `🔗 [DexScreener](${mainPair.url}) | [Birdeye](https://birdeye.so/token/${mainPair.baseToken.address}?chain=solana)\n\n` +
+      (ogPair.pairCreatedAt !== mainPair.pairCreatedAt ? `⚠️ *ORIGIN PAIR:* Launched ${new Date(ogPair.pairCreatedAt).toLocaleDateString()}\n\n` : "") +
+      (copycats.length > 0 ? `📂 *COPYCATS FOUND:* ${solanaPairs.length - 1}\n` : "");
+  } catch (e) { return "Scanner offline."; }
 }
 
 serve(async (req) => {
@@ -119,7 +136,6 @@ serve(async (req) => {
     const text = update.message.text || "";
     const botUsername = "@theogscanbot";
 
-    // Show "typing" status immediately
     await sendChatAction(chatId, "typing");
 
     let responseText = "";
@@ -132,7 +148,7 @@ serve(async (req) => {
         "/ai <msg> - Chat with Gemini AI\n" +
         "/ask <msg> - Ask a specific question\n" +
         "/og <ticker> - Scan the Direct OG\n" +
-        "/trending - Top Solana pairs\n" +
+        "/trending - Top 10 Solana pairs\n" +
         "/search <ticker/CA> - Detailed token info\n" +
         "/newpairs - Latest pairs on Solana\n" +
         "/moves - Tokens moving to liquidity\n" +
@@ -145,9 +161,12 @@ serve(async (req) => {
     } else if (cleanText.startsWith("/og") || cleanText.startsWith("/search")) {
       const query = cleanText.replace(/^\/(og|search)/, "").trim();
       responseText = await getOGInfo(query || "SOL");
+    } else if (cleanText.startsWith("/trending")) {
+      responseText = await getTrending();
+    } else if (cleanText.startsWith("/newpairs")) {
+      responseText = await getNewPairs();
     } else if (text.includes(botUsername) || update.message.chat.type === "private") {
-      const prompt = text.replace(botUsername, "").trim();
-      responseText = await callGemini(prompt || "How can I help you today?");
+      responseText = await callGemini(text.replace(botUsername, "").trim() || "How can I help you today?");
     }
 
     if (responseText) {
@@ -155,8 +174,5 @@ serve(async (req) => {
     }
 
     return new Response("ok", { status: 200 });
-  } catch (error) {
-    console.error("Global Error:", error);
-    return new Response("ok", { status: 200 });
-  }
+  } catch (error) { return new Response("ok", { status: 200 }); }
 });
