@@ -8,6 +8,7 @@ import {
   Crown,
   Flame,
   Gauge,
+  Map,
   Radar,
   Rocket,
   Search,
@@ -31,6 +32,7 @@ import { SwapPanel } from "@/components/SwapPanel";
 import { TechStack } from "@/components/TechStack";
 import { OurCoin } from "@/components/OurCoin";
 import { SnipeFeed } from "@/components/SnipeFeed";
+import { SolToolsRoadmap } from "@/components/SolToolsRoadmap";
 import { SiteFooter } from "@/components/SiteFooter";
 import { cn } from "@/lib/utils";
 import { DEFAULT_OG_MINT, STORAGE_OG_MINT } from "@/lib/og";
@@ -40,6 +42,7 @@ const LEGACY_DEFAULT_MINT = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";
 type TabId =
   | "overview"
   | "our-coin"
+  | "roadmap"
   | "snipe-feed"
   | "scanner"
   | "og-finder"
@@ -63,6 +66,7 @@ type TabConfig = {
 const TABS: TabConfig[] = [
   { id: "overview", label: "Vitals", eyebrow: "MARKET COMMAND", description: "Price, liquidity, whales, and real-time tape in one dedicated page.", Icon: Gauge, accent: "blue" },
   { id: "our-coin", label: "Token Soon", eyebrow: "OFFICIAL NOTICE", description: "No token out yet. A clean coming-soon banner replaces the old CA/chart hub.", Icon: Coins, accent: "white" },
+  { id: "roadmap", label: "Roadmap", eyebrow: "SOLTOOLS VISION", description: "The official SolTools path from OGScan tools into a crypto-native social ecosystem.", Icon: Map, accent: "cyan" },
   { id: "snipe-feed", label: "Snipe Feed", eyebrow: "DEV WALLET RADAR", description: "Track brand-new launches, repeat creator wallets, hot scores, and risk warnings.", Icon: Target, accent: "cyan" },
   { id: "scanner", label: "Scanner", eyebrow: "RUN THE CHAIN", description: "Paste a mint and inspect signal, score, holders, and market data.", Icon: Search, accent: "blue" },
   { id: "og-finder", label: "OG Finder", eyebrow: "FIND THE ORIGIN", description: "Search tickers and separate the real OG from dead copycats.", Icon: Crosshair, accent: "cyan" },
@@ -268,6 +272,7 @@ const Index = () => {
             )}
 
             {tab === "our-coin" && <OurCoin />}
+            {tab === "roadmap" && <SolToolsRoadmap />}
             {tab === "snipe-feed" && <SnipeFeed onSelect={updateMint} />}
             {tab === "scanner" && <Scanner onSelect={updateMint} />}
             {tab === "og-finder" && <OgFinder onSelect={updateMint} />}
