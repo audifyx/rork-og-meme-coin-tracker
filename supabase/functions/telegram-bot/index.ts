@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") || "";
+const BIRDEYE_API_KEY = "d0b0455f927647d6806ca6d5730746e5";
+const JUPITER_API_KEY = "jup_6e0d123f3459784011eaf91d3c3dc7799964432b0a1b98b566617f8c85c722f4";
 
 const DEXSCREENER_API = "https://api.dexscreener.com/latest/dex";
 
@@ -34,10 +36,11 @@ async function getTrending() {
   
   return pairs.map((p: any) => 
     `🚀 *${p.baseToken.symbol}/${p.quoteToken.symbol}*\n` +
-    `Price: $${p.priceUsd}\n` +
-    `MCap: $${p.fdv?.toLocaleString()}\n` +
-    `24h Vol: $${p.volume?.h24?.toLocaleString()}\n` +
-    `[View on DexScreener](${p.url})`
+    `💰 Price: $${p.priceUsd}\n` +
+    `📊 MCap: $${p.fdv?.toLocaleString()}\n` +
+    `💧 Liq: $${p.liquidity?.usd?.toLocaleString()}\n` +
+    `📈 24h Vol: $${p.volume?.h24?.toLocaleString()}\n` +
+    `🔗 [DexScreener](${p.url}) | [Birdeye](https://birdeye.so/token/${p.baseToken.address}?chain=solana)`
   ).join("\n\n");
 }
 
@@ -47,12 +50,15 @@ async function searchToken(query: string) {
   const pair = data.pairs?.[0];
   if (!pair) return "Token not found.";
   
+  const ca = pair.baseToken.address;
   return `🔍 *${pair.baseToken.name} (${pair.baseToken.symbol})*\n` +
-    `Price: $${pair.priceUsd}\n` +
-    `MCap: $${pair.fdv?.toLocaleString()}\n` +
-    `Liquidity: $${pair.liquidity?.usd?.toLocaleString()}\n` +
-    `24h Change: ${pair.priceChange?.h24}%\n` +
-    `[View on DexScreener](${pair.url})`;
+    `\`${ca}\` (Tap to copy)\n\n` +
+    `💰 Price: $${pair.priceUsd}\n` +
+    `📊 MCap: $${pair.fdv?.toLocaleString()}\n` +
+    `💧 Liquidity: $${pair.liquidity?.usd?.toLocaleString()}\n` +
+    `📈 24h Change: ${pair.priceChange?.h24}%\n` +
+    `📉 24h Vol: $${pair.volume?.h24?.toLocaleString()}\n\n` +
+    `🔗 [DexScreener](${pair.url}) | [Birdeye](https://birdeye.so/token/${ca}?chain=solana) | [Jupiter](https://jup.ag/swap/SOL-${pair.baseToken.symbol})`;
 }
 
 serve(async (req) => {
@@ -67,11 +73,19 @@ serve(async (req) => {
     let responseText = "";
 
     if (text.startsWith("/start")) {
-      responseText = "Welcome to OG Scanner AI! 🚀\n\nI'm your Solana meme coin assistant. Use /help to see what I can do.";
+      responseText = "Welcome to *OG Scanner AI*! 🚀\n\nI'm your Solana meme coin assistant. I scan for OG tokens, track whales, and provide real-time stats.\n\nUse /help to see all commands.";
     } else if (text.startsWith("/help")) {
-      responseText = "Commands:\n/ai <msg> - Chat with Gemini AI\n/trending - Top Solana pairs\n/search <ticker> - Find token info\n/newpairs - Latest pairs\n/whales - Whale activity (coming soon)\n/watch <ca> - Track a token";
-    } else if (text.startsWith("/ai")) {
-      const prompt = text.replace("/ai", "").trim();
+      responseText = "*Available Commands:*\n" +
+        "/ai <msg> - Chat with Gemini AI\n" +
+        "/ask <msg> - Ask a specific question\n" +
+        "/trending - Top Solana pairs\n" +
+        "/search <ticker/CA> - Detailed token info\n" +
+        "/newpairs - Latest pairs on Solana\n" +
+        "/whales - Recent whale activity\n" +
+        "/watch <CA> - Add to watchlist\n" +
+        "/watchlist - View your saved tokens";
+    } else if (text.startsWith("/ai") || text.startsWith("/ask")) {
+      const prompt = text.replace(/^\/(ai|ask)/, "").trim();
       responseText = await callGemini(prompt || "Tell me about Solana meme coins.");
     } else if (text.startsWith("/trending")) {
       responseText = await getTrending();
@@ -90,6 +104,7 @@ serve(async (req) => {
           chat_id: chatId,
           text: responseText,
           parse_mode: "Markdown",
+          disable_web_page_preview: false,
         }),
       });
     }
