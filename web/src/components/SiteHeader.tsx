@@ -1,27 +1,16 @@
-import { useCallback, useState } from "react";
-import { Activity, AtSign, Check, Copy, ExternalLink, Globe2, Newspaper } from "lucide-react";
+import { Activity, AtSign, CalendarClock, ExternalLink, Globe2, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { OFFICIAL_OGSCAN_DEXSCREENER_URL, OGSCAN_SITE_URL, OGSCAN_TECH_POST_URL, OGSCAN_X_URL, shortAddr } from "@/lib/og";
+import { OGSCAN_SITE_URL, OGSCAN_TECH_POST_URL, OGSCAN_X_URL } from "@/lib/og";
 
 type NavItem = { id: string; label: string };
 
 type Props = {
-  mint: string;
   navItems: NavItem[];
   activeId: string;
   onNavigate: (id: string) => void;
 };
 
-export const SiteHeader = ({ mint, navItems, activeId, onNavigate }: Props) => {
-  const [copied, setCopied] = useState<boolean>(false);
-
-  const copyMint = useCallback((): void => {
-    void navigator.clipboard.writeText(mint).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1400);
-    });
-  }, [mint]);
-
+export const SiteHeader = ({ navItems, activeId, onNavigate }: Props) => {
   return (
     <header className="sticky top-0 z-40 border-b border-og-grid bg-og-ink/92 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
@@ -57,27 +46,14 @@ export const SiteHeader = ({ mint, navItems, activeId, onNavigate }: Props) => {
           <span className="hidden items-center gap-2 border border-og-grid bg-og-ink px-2 py-1 text-[10px] uppercase tracking-[0.3em] text-og-cyan xl:inline-flex">
             <Activity className="h-3 w-3" /> MAINNET
           </span>
-          <button
-            type="button"
-            onClick={copyMint}
-            className="group hidden max-w-[310px] items-center gap-2 border border-og-lime/70 bg-og-lime/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-og-lime shadow-og transition hover:bg-og-lime hover:text-og-ink lg:inline-flex"
-            title="Copy official OG SCAN CA"
-          >
-            <span className="border-r border-current/30 pr-2">CA</span>
-            <span className="truncate normal-case tracking-tight text-foreground group-hover:text-og-ink xl:max-w-[190px]">
-              <span className="xl:hidden">{shortAddr(mint, 5)}</span>
-              <span className="hidden xl:inline">{mint}</span>
-            </span>
-            {copied ? <Check className="h-3.5 w-3.5 shrink-0" /> : <Copy className="h-3.5 w-3.5 shrink-0" />}
-          </button>
+          <span className="hidden items-center gap-1.5 border border-og-gold/55 bg-og-gold/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-og-gold md:inline-flex">
+            <CalendarClock className="h-3.5 w-3.5" /> Token soon
+          </span>
           <a href={OGSCAN_SITE_URL} target="_blank" rel="noreferrer" className="hidden items-center gap-1.5 border border-og-grid bg-og-ink px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/70 transition hover:border-og-lime hover:text-og-lime sm:inline-flex" title="Open ogscan.fun">
             <Globe2 className="h-3.5 w-3.5" /> Site
           </a>
           <a href={OGSCAN_TECH_POST_URL} target="_blank" rel="noreferrer" className="hidden items-center gap-1.5 border border-og-grid bg-og-ink px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/70 transition hover:border-og-gold hover:text-og-gold md:inline-flex" title="Read the tech post">
             <Newspaper className="h-3.5 w-3.5" /> Post
-          </a>
-          <a href={OFFICIAL_OGSCAN_DEXSCREENER_URL} target="_blank" rel="noreferrer" className="hidden items-center gap-1.5 border border-og-cyan/60 bg-og-cyan/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-og-cyan transition hover:bg-og-cyan hover:text-og-ink md:inline-flex" title="Open official OG SCAN chart">
-            Chart <ExternalLink className="h-3 w-3" />
           </a>
           <a href={OGSCAN_X_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 border border-og-lime bg-og-lime px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-og-ink transition hover:bg-og-lime/90" title="Follow ogscan.fun on X">
             <AtSign className="h-3.5 w-3.5" /> X <ExternalLink className="h-3 w-3" />
@@ -85,17 +61,8 @@ export const SiteHeader = ({ mint, navItems, activeId, onNavigate }: Props) => {
         </div>
       </div>
 
-      <div className="border-t border-og-grid px-4 py-2 lg:hidden">
-        <button
-          type="button"
-          onClick={copyMint}
-          className="mx-auto flex w-full max-w-xl items-center justify-center gap-2 border border-og-lime/70 bg-og-lime/10 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-og-lime shadow-og transition active:scale-[0.99]"
-          title="Copy official OG SCAN CA"
-        >
-          <span className="shrink-0 border-r border-current/30 pr-2">CA</span>
-          <span className="truncate normal-case tracking-tight text-foreground">{mint}</span>
-          {copied ? <Check className="h-3.5 w-3.5 shrink-0" /> : <Copy className="h-3.5 w-3.5 shrink-0" />}
-        </button>
+      <div className="border-t border-og-grid px-4 py-2 text-center font-mono text-[10px] uppercase tracking-[0.26em] text-og-gold lg:hidden">
+        No token out yet · coming soon
       </div>
 
       <nav className="flex gap-1 overflow-x-auto border-t border-og-grid px-4 py-2 lg:hidden" aria-label="Mobile feature navigation">

@@ -12,11 +12,13 @@
 - [x] Add **quick action buttons** to open chart, copy contract address, inspect dev history, and send the token into scanner or swap.
 - [x] Add **community heat signals** showing which launches are gaining traction fastest.
 - [x] Keep every existing tool intact while making the new intelligence feel like a premium V2 layer.
+- [x] Replace official token/CA/chart content with a clear **No token out yet — coming soon** safety banner.
 
 ## **Design**
 
 - [x] Use a sharper blue, black, and white Solana-style command center theme.
 - [x] Make each tool feel like a separate premium panel with clear headers, borders, labels, and status chips.
+- [x] Redesign the workspace so each tool opens as its own full-page tab instead of one chaotic scrolling page.
 - [x] Give the Snipe Feed a fast live-market feel with pulsing rows, “new launch” badges, and clear risk colors.
 - [x] Use simple beginner-friendly labels like “Clean,” “Watch,” “Risky,” and “Danger” instead of overwhelming users.
 - [x] Add a stronger top summary area showing live launches, risky launches blocked, watched devs, and hot opportunities.
@@ -24,7 +26,7 @@
 
 ## **Pages / Screens**
 
-- [ ] **Main Dashboard**: A premium overview with market pulse, official coin hub, and shortcuts into every tool.
+- [x] **Main Dashboard**: A premium overview with market pulse, a token-coming-soon notice, and shortcuts into every tool.
 - [x] **Snipe Feed**: A live feed of newly launched coins with age, liquidity, buys/sells, chart, risk, and dev score.
 - [x] **Dev Wallet Intel**: A profile view for a creator wallet showing previous launches, wins, rugs, average liquidity, and latest coins.
 - [x] **Launch Analyzer**: A deeper report for one new coin with holder risk, liquidity quality, social links, chart, and warnings.
@@ -36,5 +38,5 @@
 - [x] First build the **Snipe Feed** and launch scoring so the app instantly feels more powerful.
 - [x] Then add **Dev Wallet Intel** because it is the most differentiated feature and matches your idea best.
 - [x] Then add **Watchlist and Alerts** so users have a reason to keep coming back.
-- [ ] Then polish the entire dashboard into a premium V2 experience.
+- [x] Then polish the entire dashboard into a premium V2 experience.
 
