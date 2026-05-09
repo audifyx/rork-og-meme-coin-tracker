@@ -12,6 +12,11 @@ export const OGSCAN_X_URL = "https://x.com/ogscanfun";
 export const OGSCAN_TECH_POST_URL = "https://x.com/i/status/2052413018563084370";
 export const OGSCAN_BRAND_IMAGE = "/og-brand.jpg";
 
+export const OGSCAN_DEV_WALLET = "CicbPxARTDrwQ4XcxWsn6SYeG4FMJHirS633cZUJeQDh";
+export const OGSCAN_TOKEN_MINT = "EfnZmcFKMXofKA5V5ujvjqtSorvuQD2MzJPz3dxXpump";
+export const OGSCAN_DEXSCREENER_URL = `https://dexscreener.com/solana/${OGSCAN_TOKEN_MINT}`;
+export const OGSCAN_PUMPFUN_URL = `https://pump.fun/coin/${OGSCAN_TOKEN_MINT}`;
+
 export const JUPITER_BASE = "https://lite-api.jup.ag";
 export const BIRDEYE_BASE = "https://public-api.birdeye.so";
 export const HELIUS_BASE = `https://api.helius.xyz/v0`;
@@ -19,8 +24,8 @@ export const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_
 
 export const SOL_MINT = "So11111111111111111111111111111111111111112";
 export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-// Default scan target while OG Scan's own token is still unreleased.
-export const DEFAULT_OG_MINT = SOL_MINT;
+// Default scan target is now the official live OG Scan token.
+export const DEFAULT_OG_MINT = OGSCAN_TOKEN_MINT;
 
 export const STORAGE_OG_MINT = "og_scanner.mint";
 

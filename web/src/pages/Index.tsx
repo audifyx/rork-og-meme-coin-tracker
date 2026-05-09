@@ -36,7 +36,7 @@ import { SnipeFeed } from "@/components/SnipeFeed";
 import { SolToolsRoadmap } from "@/components/SolToolsRoadmap";
 import { SiteFooter } from "@/components/SiteFooter";
 import { cn } from "@/lib/utils";
-import { DEFAULT_OG_MINT, STORAGE_OG_MINT } from "@/lib/og";
+import { DEFAULT_OG_MINT, OGSCAN_DEV_WALLET, OGSCAN_TOKEN_MINT, SOL_MINT, STORAGE_OG_MINT, shortAddr } from "@/lib/og";
 
 const LEGACY_DEFAULT_MINT = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";
 const STORAGE_TAB = "og_scanner.active_site_tab";
@@ -79,9 +79,9 @@ const TABS: TabConfig[] = [
   },
   {
     id: "our-coin",
-    label: "Token Soon",
-    eyebrow: "OFFICIAL NOTICE",
-    description: "No public CA yet. A clear launch room that protects users from fake contracts.",
+    label: "Our Coin",
+    eyebrow: "OFFICIAL TOKEN LIVE",
+    description: "Official OGScan coin CA, dev wallet, chart links, and copy buttons in one verified room.",
     Icon: Coins,
     accent: "gold",
   },
@@ -192,9 +192,10 @@ const Index = () => {
   useEffect(() => {
     try {
       const savedMint: string | null = localStorage.getItem(STORAGE_OG_MINT);
-      if (savedMint && savedMint !== LEGACY_DEFAULT_MINT) {
+      if (savedMint && savedMint !== LEGACY_DEFAULT_MINT && savedMint !== SOL_MINT) {
         setMint(savedMint);
       } else {
+        setMint(DEFAULT_OG_MINT);
         localStorage.setItem(STORAGE_OG_MINT, DEFAULT_OG_MINT);
       }
 
@@ -307,11 +308,11 @@ const OverviewPage = ({
                 <span className="h-px w-12 bg-og-cyan" /> SOLTOOLS DECK
               </div>
               <h2 className="font-display text-3xl font-black uppercase tracking-tight text-foreground sm:text-5xl">
-                Site UI is back. Tools are separated.
+                OGScan token is live. Tools are separated.
               </h2>
             </div>
             <button onClick={() => onSwitchTab("our-coin")} className="border border-og-gold/45 bg-og-gold/10 px-4 py-3 text-left font-mono text-[10px] uppercase leading-relaxed tracking-[0.24em] text-og-gold transition hover:bg-og-gold hover:text-og-ink lg:max-w-sm">
-              No token out yet · Coming soon · Ignore fake CAs
+              Token live · CA {shortAddr(OGSCAN_TOKEN_MINT, 5)} · Dev {shortAddr(OGSCAN_DEV_WALLET, 5)}
             </button>
           </div>
 

@@ -1,9 +1,11 @@
-import { AtSign, CalendarClock, ExternalLink, Globe2, Newspaper } from "lucide-react";
+import { AtSign, Coins, ExternalLink, Globe2, Newspaper } from "lucide-react";
 import {
   OGSCAN_BRAND_IMAGE,
   OGSCAN_SITE_URL,
   OGSCAN_TECH_POST_URL,
+  OGSCAN_TOKEN_MINT,
   OGSCAN_X_URL,
+  shortAddr,
 } from "@/lib/og";
 
 export const SiteFooter = () => {
@@ -36,7 +38,7 @@ export const SiteFooter = () => {
                 <Newspaper className="h-3.5 w-3.5" /> Tech post
               </a>
               <span className="inline-flex items-center gap-2 border border-og-cyan/70 px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-og-cyan">
-                <CalendarClock className="h-3.5 w-3.5" /> Token soon
+                <Coins className="h-3.5 w-3.5" /> Token live
               </span>
               <a href={OGSCAN_SITE_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-og-grid px-4 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-foreground/70 transition hover:border-og-lime hover:text-og-lime">
                 <Globe2 className="h-3.5 w-3.5" /> Website
@@ -46,7 +48,7 @@ export const SiteFooter = () => {
               We detect trends before they exist · scanning the chain for OG signals
             </div>
             <div className="block max-w-sm border border-og-grid bg-black/30 px-4 py-3 font-mono text-[10px] uppercase leading-relaxed tracking-[0.2em] text-muted-foreground lg:text-right">
-              No official contract address is published yet. Anything claiming otherwise is not from this site.
+              Official CA: {shortAddr(OGSCAN_TOKEN_MINT, 6)} · copy the full address from the Our Coin tab before trading.
             </div>
             <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[10px] uppercase tracking-[0.3em] text-muted-foreground lg:text-right">
               <a href="https://jup.ag" target="_blank" rel="noreferrer" className="hover:text-og-lime">Jupiter</a>
