@@ -35,6 +35,8 @@ import {
   fmtUsd,
   heliusTxs,
   jupGetTokens,
+  OGSCAN_DEV_WALLET,
+  OGSCAN_TOKEN_MINT,
   shortAddr,
   timeAgo,
   type HeliusTx,
@@ -150,6 +152,8 @@ type SnipePayload = {
 
 const WATCHED_DEVS_STORAGE = "og_scanner.v2.watched_devs";
 const WATCHED_MINTS_STORAGE = "og_scanner.v2.watched_mints";
+const DEFAULT_WATCHED_DEVS: string[] = [OGSCAN_DEV_WALLET];
+const DEFAULT_WATCHED_MINTS: string[] = [OGSCAN_TOKEN_MINT];
 const MAJOR_TICKERS = new Set<string>([
   "BONK",
   "WIF",
@@ -173,6 +177,10 @@ function loadStringList(key: string): string[] {
   } catch {
     return [];
   }
+}
+
+function mergeDefaultWatchList(saved: string[], defaults: string[]): string[] {
+  return Array.from(new Set([...defaults, ...saved])).slice(0, 80);
 }
 
 function saveStringList(key: string, value: string[]): void {
@@ -502,8 +510,8 @@ export const SnipeFeed = ({ onSelect }: Props) => {
   const [selectedMint, setSelectedMint] = useState<string | null>(null);
   const [selectedDev, setSelectedDev] = useState<string | null>(null);
   const [copiedMint, setCopiedMint] = useState<string | null>(null);
-  const [watchedDevs, setWatchedDevs] = useState<string[]>(() => loadStringList(WATCHED_DEVS_STORAGE));
-  const [watchedMints, setWatchedMints] = useState<string[]>(() => loadStringList(WATCHED_MINTS_STORAGE));
+  const [watchedDevs, setWatchedDevs] = useState<string[]>(() => mergeDefaultWatchList(loadStringList(WATCHED_DEVS_STORAGE), DEFAULT_WATCHED_DEVS));
+  const [watchedMints, setWatchedMints] = useState<string[]>(() => mergeDefaultWatchList(loadStringList(WATCHED_MINTS_STORAGE), DEFAULT_WATCHED_MINTS));
 
   const { data, isFetching, error, dataUpdatedAt, refetch } = useQuery({
     queryKey: ["snipe-feed-v2"],
@@ -580,7 +588,7 @@ export const SnipeFeed = ({ onSelect }: Props) => {
               <span className="text-og-cyan text-glow">SNIPER FEED</span>
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-              Tracks fresh Solana launches, scores the tape, flags danger signals, and groups coins by likely creator wallet so users can follow repeat devs before the crowd.
+              Tracks fresh Solana launches, scores the tape, flags danger signals, and groups coins by likely creator wallet. The official OGScan dev wallet and coin are pinned into watch alerts by default.
             </p>
           </div>
 

@@ -1,32 +1,70 @@
-import { memo, type ComponentType } from "react";
-import { Bell, CalendarClock, LockKeyhole, Megaphone, RadioTower, ShieldAlert, Sparkles } from "lucide-react";
-import { OGSCAN_SITE_URL, OGSCAN_X_URL } from "@/lib/og";
+import { memo, useCallback, useState, type ComponentType } from "react";
+import { Bell, Check, Coins, Copy, ExternalLink, Flame, Megaphone, RadioTower, ShieldAlert, Sparkles, Wallet } from "lucide-react";
+import { OGSCAN_DEXSCREENER_URL, OGSCAN_DEV_WALLET, OGSCAN_PUMPFUN_URL, OGSCAN_SITE_URL, OGSCAN_TOKEN_MINT, OGSCAN_X_URL, shortAddr } from "@/lib/og";
 
 const launchSignals: { label: string; value: string; tone: "cyan" | "gold" | "lime" }[] = [
-  { label: "Contract address", value: "Not published", tone: "gold" },
-  { label: "Trading chart", value: "Coming soon", tone: "cyan" },
-  { label: "Launch status", value: "Locked", tone: "lime" },
+  { label: "Official CA", value: shortAddr(OGSCAN_TOKEN_MINT, 6), tone: "gold" },
+  { label: "Dev wallet", value: shortAddr(OGSCAN_DEV_WALLET, 6), tone: "cyan" },
+  { label: "Launch status", value: "Live", tone: "lime" },
 ];
 
 const safetyNotes: { Icon: ComponentType<{ className?: string }>; title: string; detail: string }[] = [
   {
     Icon: ShieldAlert,
-    title: "No official CA yet",
-    detail: "If someone posts a contract address before it appears here, treat it as unofficial.",
+    title: "Use only this CA",
+    detail: "The official OGScan coin address is published here. Copy it from this page before trading.",
   },
   {
     Icon: Megaphone,
-    title: "Announcements first",
-    detail: "The official launch notice will be mirrored on the site and X before any trading links go live.",
+    title: "Verify links first",
+    detail: "Use the chart and Pump.fun buttons here instead of random links posted in replies or DMs.",
   },
   {
     Icon: Bell,
-    title: "Holder tech later",
-    detail: "Reward mechanics and creator-fee features are planned, but not active until launch.",
+    title: "Holder tech next",
+    detail: "Reward mechanics and creator-fee ideas can now be built around the live mint and dev wallet.",
   },
 ];
 
+const copyToClipboard = async (value: string): Promise<boolean> => {
+  try {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    /* fall through */
+  }
+
+  try {
+    const textarea: HTMLTextAreaElement = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "true");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const copied: boolean = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return copied;
+  } catch {
+    return false;
+  }
+};
+
 export const OurCoin = memo(() => {
+  const [copied, setCopied] = useState<"coin" | "dev" | null>(null);
+
+  const copyValue = useCallback(async (kind: "coin" | "dev", value: string): Promise<void> => {
+    const ok: boolean = await copyToClipboard(value);
+    if (ok) {
+      setCopied(kind);
+      window.setTimeout((): void => setCopied(null), 1400);
+    }
+  }, []);
+
   return (
     <section className="relative min-h-[620px] overflow-hidden border border-og-gold/35 bg-og-ink/90 shadow-og-gold">
       <div className="absolute inset-0 grid-bg opacity-25" />
@@ -37,10 +75,10 @@ export const OurCoin = memo(() => {
       <div className="relative flex min-h-[620px] flex-col justify-between p-5 sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2 border border-og-gold/45 bg-og-gold/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-og-gold">
-            <LockKeyhole className="h-3.5 w-3.5" /> Launch bay sealed
+            <Flame className="h-3.5 w-3.5" /> Official token live
           </div>
           <div className="inline-flex items-center gap-2 border border-og-cyan/40 bg-og-cyan/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.26em] text-og-cyan">
-            <RadioTower className="h-3.5 w-3.5 animate-pulse" /> Monitoring only
+            <RadioTower className="h-3.5 w-3.5 animate-pulse" /> Mainnet live
           </div>
         </div>
 
@@ -50,22 +88,43 @@ export const OurCoin = memo(() => {
               <span className="h-px w-12 bg-og-cyan" /> official token room
             </div>
             <h2 className="font-display text-[clamp(3rem,8vw,7.5rem)] font-black uppercase leading-[0.82] tracking-tighter">
-              <span className="block text-og-gold text-glow-gold">No token</span>
-              <span className="block text-og-lime text-glow">out yet.</span>
+              <span className="block text-og-gold text-glow-gold">Token</span>
+              <span className="block text-og-lime text-glow">is live.</span>
             </h2>
             <p className="mt-6 max-w-2xl text-lg font-semibold leading-relaxed text-foreground sm:text-2xl">
-              Coming soon. Until the official launch is posted here, OG Scan has no public CA, no live chart, and no buy/sell feed for its own token.
+              OGScan is live on Solana. Copy the official coin address below before opening charts, swapping, or sharing it with the community.
             </p>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              The app tools stay live for scanning the Solana market. This page is now a clean launch banner only, so nobody confuses a placeholder or fake contract for the real thing.
+              Dev wallet and coin mint are now pinned here as the single source of truth for the beta community.
             </p>
 
+            <div className="mt-7 grid max-w-2xl gap-3">
+              <AddressCard label="Official coin CA" value={OGSCAN_TOKEN_MINT} copied={copied === "coin"} onCopy={() => copyValue("coin", OGSCAN_TOKEN_MINT)} Icon={Coins} />
+              <AddressCard label="Dev wallet" value={OGSCAN_DEV_WALLET} copied={copied === "dev"} onCopy={() => copyValue("dev", OGSCAN_DEV_WALLET)} Icon={Wallet} />
+            </div>
+
             <div className="mt-7 flex flex-wrap gap-3">
+              <a
+                href={OGSCAN_DEXSCREENER_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 border border-og-lime bg-og-lime px-5 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-og-ink transition hover:bg-og-lime/90"
+              >
+                Open chart <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+              <a
+                href={OGSCAN_PUMPFUN_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 border border-og-gold bg-og-gold px-5 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-og-ink transition hover:bg-og-gold/90"
+              >
+                Pump.fun <ExternalLink className="h-3.5 w-3.5" />
+              </a>
               <a
                 href={OGSCAN_X_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 border border-og-lime bg-og-lime px-5 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-og-ink transition hover:bg-og-lime/90"
+                className="inline-flex items-center gap-2 border border-og-grid bg-og-ink/75 px-5 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-foreground/70 transition hover:border-og-cyan hover:text-og-cyan"
               >
                 Follow updates
               </a>
@@ -86,10 +145,10 @@ export const OurCoin = memo(() => {
             ))}
             <div className="mt-2 border border-dashed border-og-gold/45 bg-og-gold/5 p-4">
               <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-og-gold">
-                <CalendarClock className="h-3.5 w-3.5" /> Roadmap slot
+                <Sparkles className="h-3.5 w-3.5" /> Live token room
               </div>
               <p className="text-sm leading-relaxed text-muted-foreground">
-                Drop the roadmap when ready and this tab can become the launch timeline, reward plan, and holder-rule explainer.
+                Next step: connect this live mint to holder tracking, top-holder reward rules, creator-fee experiments, and community announcements.
               </p>
             </div>
           </div>
@@ -106,6 +165,25 @@ export const OurCoin = memo(() => {
 });
 
 OurCoin.displayName = "OurCoin";
+
+const AddressCard = memo(({ label, value, copied, onCopy, Icon }: { label: string; value: string; copied: boolean; onCopy: () => void; Icon: ComponentType<{ className?: string }> }) => (
+  <div className="border border-og-grid bg-black/28 p-3">
+    <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.28em] text-og-cyan">
+      <Icon className="h-3.5 w-3.5" /> {label}
+    </div>
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <code className="min-w-0 flex-1 break-all border border-og-grid bg-og-ink/80 px-3 py-2 font-mono text-xs text-foreground sm:text-sm">
+        {value}
+      </code>
+      <button type="button" onClick={onCopy} className="inline-flex min-h-10 items-center justify-center gap-2 border border-og-gold/60 bg-og-gold/10 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-og-gold transition hover:bg-og-gold hover:text-og-ink">
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+        {copied ? "Copied" : "Copy"}
+      </button>
+    </div>
+  </div>
+));
+
+AddressCard.displayName = "AddressCard";
 
 const LaunchSignal = memo(({ label, value, tone }: { label: string; value: string; tone: "cyan" | "gold" | "lime" }) => {
   const toneClass: string = tone === "cyan" ? "text-og-cyan border-og-cyan/45 bg-og-cyan/10" : tone === "gold" ? "text-og-gold border-og-gold/45 bg-og-gold/10" : "text-og-lime border-og-lime/45 bg-og-lime/10";

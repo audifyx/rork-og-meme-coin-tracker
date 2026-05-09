@@ -5,6 +5,7 @@ import {
   Apple,
   ArrowRight,
   CheckCircle2,
+  Coins,
   Copy,
   ExternalLink,
   Flame,
@@ -14,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Scanlines } from "@/components/Scanlines";
+import { OGSCAN_DEV_WALLET, OGSCAN_TOKEN_MINT, shortAddr } from "@/lib/og";
 import { cn } from "@/lib/utils";
 
 const EXPO_APP_URL = "https://rork.app/?exp=p_ct333efmdotyxkemvlyk6--expo.rork.live&p=ct333efmdotyxkemvlyk6&app=false";
@@ -51,22 +53,30 @@ const platformCards: PlatformCard[] = [
 const issueTips: string[] = ["Check your internet connection", "Restart Expo Go", "Try opening the link in your browser first"];
 
 const BetaHome = memo(() => {
-  const [copied, setCopied] = useState<boolean>(false);
+  const [copied, setCopied] = useState<"beta" | "coin" | null>(null);
 
   const betaSteps: string[] = useMemo<string[]>(
     () => ["Download Expo Go for your phone", "Open the beta link below", "The OGScan app loads automatically in Expo Go"],
     [],
   );
 
-  const copyBetaLink = useCallback(async (): Promise<void> => {
+  const copyValue = useCallback(async (kind: "beta" | "coin", value: string): Promise<void> => {
     try {
-      await navigator.clipboard.writeText(EXPO_APP_URL);
-      setCopied(true);
-      window.setTimeout((): void => setCopied(false), 1800);
+      await navigator.clipboard.writeText(value);
+      setCopied(kind);
+      window.setTimeout((): void => setCopied(null), 1800);
     } catch {
-      setCopied(false);
+      setCopied(null);
     }
   }, []);
+
+  const copyBetaLink = useCallback((): void => {
+    void copyValue("beta", EXPO_APP_URL);
+  }, [copyValue]);
+
+  const copyCoinCa = useCallback((): void => {
+    void copyValue("coin", OGSCAN_TOKEN_MINT);
+  }, [copyValue]);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -138,18 +148,38 @@ const BetaHome = memo(() => {
                 onClick={copyBetaLink}
                 className={cn(
                   "inline-flex min-h-12 flex-1 items-center justify-center gap-2 border px-5 py-3 font-mono text-[11px] font-black uppercase tracking-[0.18em] transition active:scale-[0.98]",
-                  copied
+                  copied === "beta"
                     ? "border-og-cyan bg-og-cyan text-og-ink"
                     : "border-og-grid bg-black/24 text-white hover:border-og-cyan hover:text-og-cyan",
                 )}
               >
-                {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? "Copied" : "Copy beta link"}
+                {copied === "beta" ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied === "beta" ? "Copied" : "Copy beta link"}
               </button>
             </div>
           </section>
 
           <aside className="space-y-4">
+            <section className="border border-og-lime/45 bg-og-lime/10 p-4 shadow-og">
+              <div className="mb-2 flex items-center gap-2 font-mono text-[10px] font-black uppercase tracking-[0.24em] text-og-lime">
+                <Coins className="h-4 w-4" /> Token is live
+              </div>
+              <p className="text-sm font-semibold leading-6 text-white/86">
+                Official CA: <span className="font-mono text-og-gold">{shortAddr(OGSCAN_TOKEN_MINT, 6)}</span>
+              </p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                Dev wallet: <span className="font-mono text-og-cyan">{shortAddr(OGSCAN_DEV_WALLET, 5)}</span>
+              </p>
+              <button
+                type="button"
+                onClick={copyCoinCa}
+                className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 border border-og-gold/60 bg-og-gold/10 px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.2em] text-og-gold transition hover:bg-og-gold hover:text-og-ink"
+              >
+                {copied === "coin" ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copied === "coin" ? "CA copied" : "Copy official CA"}
+              </button>
+            </section>
+
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
               {platformCards.map((platform: PlatformCard) => (
                 <PlatformCardView key={platform.title} platform={platform} />

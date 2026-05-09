@@ -12,7 +12,7 @@
 - [x] Add **quick action buttons** to open chart, copy contract address, inspect dev history, and send the token into scanner or swap.
 - [x] Add **community heat signals** showing which launches are gaining traction fastest.
 - [x] Keep every existing tool intact while making the new intelligence feel like a premium V2 layer.
-- [x] Replace official token/CA/chart content with a clear **No token out yet — coming soon** safety banner.
+- [x] Replace the old token-coming-soon banner with the live official OGScan coin CA, dev wallet, chart links, and copy actions.
 - [x] Add the official **SolTools Roadmap** with goal, plan, next step, long-term vision, expansion plans, mobile rollout, mission, and community links.
 - [x] Add a new **Community Beta homepage** as the first screen with iOS/Android Expo Go instructions, beta link, issue tips, and an enter-OGScan button.
 
@@ -30,7 +30,7 @@
 
 ## **Pages / Screens**
 
-- [x] **Main Dashboard**: A premium overview with market pulse, a token-coming-soon notice, and shortcuts into every tool.
+- [x] **Main Dashboard**: A premium overview with market pulse, live-token notice, and shortcuts into every tool.
 - [x] **Snipe Feed**: A live feed of newly launched coins with age, liquidity, buys/sells, chart, risk, and dev score.
 - [x] **Dev Wallet Intel**: A profile view for a creator wallet showing previous launches, wins, rugs, average liquidity, and latest coins.
 - [x] **Launch Analyzer**: A deeper report for one new coin with holder risk, liquidity quality, social links, chart, and warnings.

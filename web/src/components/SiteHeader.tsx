@@ -1,6 +1,6 @@
-import { Activity, AtSign, CalendarClock, ExternalLink, Globe2, Newspaper } from "lucide-react";
+import { Activity, AtSign, Coins, ExternalLink, Globe2, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { OGSCAN_SITE_URL, OGSCAN_TECH_POST_URL, OGSCAN_X_URL } from "@/lib/og";
+import { OGSCAN_SITE_URL, OGSCAN_TECH_POST_URL, OGSCAN_TOKEN_MINT, OGSCAN_X_URL, shortAddr } from "@/lib/og";
 
 type NavItem = { id: string; label: string };
 
@@ -15,7 +15,7 @@ export const SiteHeader = ({ navItems, activeId, onNavigate }: Props) => {
     <header className="sticky top-0 z-40 border-b border-og-grid bg-og-ink/92 backdrop-blur-xl">
       <div className="border-b border-og-gold/35 bg-og-gold/10 px-4 py-2 text-center font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-og-gold">
         <span className="inline-flex items-center justify-center gap-2">
-          <CalendarClock className="h-3.5 w-3.5" /> No token out yet · coming soon · ignore fake CAs
+          <Coins className="h-3.5 w-3.5" /> Token live · official CA {shortAddr(OGSCAN_TOKEN_MINT, 5)}
         </span>
       </div>
 
@@ -53,7 +53,7 @@ export const SiteHeader = ({ navItems, activeId, onNavigate }: Props) => {
             <Activity className="h-3 w-3" /> MAINNET
           </span>
           <span className="hidden items-center gap-1.5 border border-og-gold/55 bg-og-gold/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-og-gold md:inline-flex">
-            <CalendarClock className="h-3.5 w-3.5" /> Token soon
+            <Coins className="h-3.5 w-3.5" /> Token live
           </span>
           <a href={OGSCAN_SITE_URL} target="_blank" rel="noreferrer" className="hidden items-center gap-1.5 border border-og-grid bg-og-ink px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/70 transition hover:border-og-lime hover:text-og-lime sm:inline-flex" title="Open ogscan.fun">
             <Globe2 className="h-3.5 w-3.5" /> Site
