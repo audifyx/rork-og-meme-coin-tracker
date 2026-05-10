@@ -15,7 +15,8 @@ import {
   ArrowUpRight,
   Activity,
 } from "lucide-react";
-import { fmtUsd, fmtPct, fmtNum, timeAgo } from "@/lib/og";
+import { CopyMintButton } from "@/components/CopyMintButton";
+import { fmtUsd, fmtPct, fmtNum, shortAddr, timeAgo } from "@/lib/og";
 
 type Props = { onSelect: (mint: string) => void };
 
@@ -458,7 +459,9 @@ const PairRow = ({ p, onSelect }: { p: DSPair; onSelect: () => void }) => {
           <div className="text-left md:text-right">
             <div className="text-foreground">{created ? timeAgo(created) : "—"}</div>
             <div className="max-w-[180px] truncate text-og-lime md:max-w-[120px]">{p.dexId}</div>
+            <div className="text-muted-foreground">CA {shortAddr(p.baseToken.address, 4)}</div>
           </div>
+          <CopyMintButton mint={p.baseToken.address} label="copy" copiedLabel="copied" className="shrink-0 px-2 py-2 md:px-1" iconClassName="h-3 w-3" />
           <a
             href={p.url}
             target="_blank"

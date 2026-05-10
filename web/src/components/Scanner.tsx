@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, ShieldCheck, Loader2, Filter } from "lucide-react";
-import { jupSearchToken, fmtPct, fmtUsd, fmtNum, type JupTokenInfo } from "@/lib/og";
+import { CopyMintButton } from "@/components/CopyMintButton";
+import { jupSearchToken, fmtPct, fmtUsd, fmtNum, shortAddr, type JupTokenInfo } from "@/lib/og";
 
 type Props = { onSelect: (mint: string) => void; initialQuery?: string };
 
@@ -192,29 +193,30 @@ const ResultRow = ({ t, onSelect }: { t: JupTokenInfo; onSelect: () => void }) =
   const ch = t.stats24h?.priceChange ?? 0;
   const up = ch >= 0;
   return (
-    <button
-      onClick={onSelect}
-      className="group flex items-center gap-4 border border-og-grid bg-og-ink/70 p-3 text-left transition hover:border-og-lime hover:bg-og-lime/5"
-    >
-      <div className="relative h-10 w-10 shrink-0 overflow-hidden border border-og-grid bg-og-ink">
-        {t.icon ? (
-          <img src={t.icon} alt={t.symbol} className="h-full w-full object-cover" loading="lazy" />
-        ) : (
-          <div className="grid h-full w-full place-items-center text-xs text-og-lime">{t.symbol?.[0]}</div>
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="font-display text-sm font-bold text-og-gold truncate">${t.symbol}</span>
-          {t.isVerified && <ShieldCheck className="h-3 w-3 text-og-lime" />}
-          <span className="ml-auto text-xs text-foreground">{fmtUsd(t.usdPrice)}</span>
+    <article className="group flex items-center gap-3 border border-og-grid bg-og-ink/70 p-3 text-left transition hover:border-og-lime hover:bg-og-lime/5">
+      <button type="button" onClick={onSelect} className="flex min-w-0 flex-1 items-center gap-4 text-left">
+        <div className="relative h-10 w-10 shrink-0 overflow-hidden border border-og-grid bg-og-ink">
+          {t.icon ? (
+            <img src={t.icon} alt={t.symbol} className="h-full w-full object-cover" loading="lazy" />
+          ) : (
+            <div className="grid h-full w-full place-items-center text-xs text-og-lime">{t.symbol?.[0]}</div>
+          )}
         </div>
-        <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-          <span className="truncate">{t.name}</span>
-          <span className={up ? "text-og-lime" : "text-og-blood"}>{fmtPct(ch)}</span>
-          <span>· LQ {fmtUsd(t.liquidity)}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate font-display text-sm font-bold text-og-gold">${t.symbol}</span>
+            {t.isVerified && <ShieldCheck className="h-3 w-3 text-og-lime" />}
+            <span className="ml-auto text-xs text-foreground">{fmtUsd(t.usdPrice)}</span>
+          </div>
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
+            <span className="truncate">{t.name}</span>
+            <span className={up ? "text-og-lime" : "text-og-blood"}>{fmtPct(ch)}</span>
+            <span>· LQ {fmtUsd(t.liquidity)}</span>
+          </div>
+          <div className="mt-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">CA {shortAddr(t.id, 5)}</div>
         </div>
-      </div>
-    </button>
+      </button>
+      <CopyMintButton mint={t.id} className="shrink-0 border-og-cyan/45 text-og-cyan hover:bg-og-cyan hover:text-og-ink" />
+    </article>
   );
 };

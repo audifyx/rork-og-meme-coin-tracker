@@ -15,6 +15,7 @@ import {
   Pause,
   Play,
 } from "lucide-react";
+import { CopyMintButton } from "@/components/CopyMintButton";
 import {
   jupSearchToken,
   jupGetTokens,
@@ -851,9 +852,14 @@ const PairCard = ({
         : `${Math.floor(ageDays)}d`;
 
   return (
-    <button
+    <article
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
-      className={`group relative flex flex-col gap-3 border bg-og-ink/70 p-4 text-left transition ${
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") onSelect();
+      }}
+      className={`group relative flex cursor-pointer flex-col gap-3 border bg-og-ink/70 p-4 text-left transition ${
         flash
           ? "border-og-cyan animate-pulse shadow-[0_0_24px_rgba(0,229,255,0.35)]"
           : isFresh
@@ -919,11 +925,14 @@ const PairCard = ({
         />
       </div>
 
-      <div className="flex items-center justify-between border-t border-og-grid/60 pt-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-        <span>{shortAddr(t.id, 5)}</span>
-        <span className="text-og-gold">OPEN →</span>
+      <div className="flex items-center justify-between gap-2 border-t border-og-grid/60 pt-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+        <span>CA {shortAddr(t.id, 5)}</span>
+        <span className="inline-flex items-center gap-2">
+          <CopyMintButton mint={t.id} label="copy" copiedLabel="copied" className="px-2 py-1" iconClassName="h-3 w-3" />
+          <span className="text-og-gold">OPEN →</span>
+        </span>
       </div>
-    </button>
+    </article>
   );
 };
 

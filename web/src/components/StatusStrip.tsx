@@ -7,6 +7,7 @@ import {
   fmtUsd,
   fmtPct,
   shortAddr,
+  copyTextToClipboard,
 } from "@/lib/og";
 
 type Props = { mint: string; onChangeMint: () => void };
@@ -28,7 +29,11 @@ export const StatusStrip = ({ mint, onChangeMint }: Props) => {
 
   const [copied, setCopied] = useState(false);
   const copy = () => {
-    navigator.clipboard.writeText(mint).then(() => {
+    void copyTextToClipboard(mint).then((didCopy: boolean) => {
+      if (!didCopy) {
+        window.prompt("Copy this contract address:", mint);
+        return;
+      }
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
     });

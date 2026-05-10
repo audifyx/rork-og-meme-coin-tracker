@@ -37,6 +37,7 @@ import {
   jupGetTokens,
   OGSCAN_DEV_WALLET,
   OGSCAN_TOKEN_MINT,
+  copyTextToClipboard,
   shortAddr,
   timeAgo,
   type HeliusTx,
@@ -188,34 +189,6 @@ function saveStringList(key: string, value: string[]): void {
     localStorage.setItem(key, JSON.stringify(value.slice(0, 80)));
   } catch {
     /* noop */
-  }
-}
-
-async function copyTextToClipboard(value: string): Promise<boolean> {
-  try {
-    if (navigator.clipboard?.writeText && window.isSecureContext) {
-      await navigator.clipboard.writeText(value);
-      return true;
-    }
-  } catch {
-    /* fall through to textarea fallback */
-  }
-
-  try {
-    const textarea: HTMLTextAreaElement = document.createElement("textarea");
-    textarea.value = value;
-    textarea.setAttribute("readonly", "true");
-    textarea.style.position = "fixed";
-    textarea.style.left = "-9999px";
-    textarea.style.opacity = "0";
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-    const copied: boolean = document.execCommand("copy");
-    document.body.removeChild(textarea);
-    return copied;
-  } catch {
-    return false;
   }
 }
 
