@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, Loader2, Search, ShieldCheck, Zap } from "lucide-react";
+import { CopyMintButton } from "@/components/CopyMintButton";
 import {
   jupQuote,
   jupGetTokens,
@@ -274,9 +275,14 @@ const SwapSearchRow = ({
   const isUp: boolean = ch >= 0;
 
   return (
-    <button
+    <article
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
-      className={`group flex items-center gap-3 border p-3 text-left transition ${
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") onSelect();
+      }}
+      className={`group flex cursor-pointer items-center gap-3 border p-3 text-left transition ${
         selected
           ? "border-og-lime bg-og-lime/10"
           : "border-og-grid bg-og-ink/70 hover:border-og-gold hover:bg-og-gold/5"
@@ -302,8 +308,11 @@ const SwapSearchRow = ({
           <span>MC {fmtUsd(token.mcap ?? token.fdv)}</span>
           <span>H {fmtNum(token.holderCount)}</span>
         </div>
-        <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-foreground/40">{shortAddr(token.id, 5)}</div>
+        <div className="mt-1 flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-foreground/40">
+          <span>CA {shortAddr(token.id, 5)}</span>
+          <CopyMintButton mint={token.id} label="copy" copiedLabel="copied" className="px-2 py-1" iconClassName="h-3 w-3" />
+        </div>
       </div>
-    </button>
+    </article>
   );
 };

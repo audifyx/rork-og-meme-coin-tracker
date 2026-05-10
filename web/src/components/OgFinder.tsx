@@ -7,7 +7,6 @@ import {
   Loader2,
   Crown,
   Copy,
-  Check,
   Skull,
   Flame,
   Droplets,
@@ -18,6 +17,7 @@ import {
   Unlock,
   Filter,
 } from "lucide-react";
+import { CopyMintButton } from "@/components/CopyMintButton";
 import {
   jupOgCopycats,
   fmtPct,
@@ -351,24 +351,20 @@ const CoinCard = ({
   highlight?: boolean;
   score: number;
 }) => {
-  const [copied, setCopied] = useState(false);
   const ch = t.stats24h?.priceChange ?? 0;
   const up = ch >= 0;
   const created = t.firstPool?.createdAt ? new Date(t.firstPool.createdAt) : null;
   const ageDays = created ? Math.floor((Date.now() - created.getTime()) / 86_400_000) : null;
 
-  const copy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(t.id).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
-    });
-  };
-
   return (
-    <button
+    <article
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
-      className={`group relative flex flex-col gap-3 border p-4 text-left transition ${
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") onSelect();
+      }}
+      className={`group relative flex cursor-pointer flex-col gap-3 border p-4 text-left transition ${
         highlight
           ? "border-og-gold bg-og-gold/5 shadow-[0_0_24px_rgba(234,196,53,0.15)] hover:bg-og-gold/10"
           : "border-og-grid bg-og-ink/70 hover:border-og-blood hover:bg-og-blood/5"
@@ -446,22 +442,10 @@ const CoinCard = ({
         </span>
         <span className="ml-auto flex items-center gap-2">
           <span className="text-muted-foreground">{shortAddr(t.id, 5)}</span>
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={copy}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") copy(e as unknown as React.MouseEvent);
-            }}
-            className="inline-flex items-center gap-1 border border-og-grid px-1.5 py-0.5 text-foreground/70 transition hover:border-og-lime hover:text-og-lime"
-            aria-label="Copy mint address"
-          >
-            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-            {copied ? "COPIED" : "COPY"}
-          </span>
+          <CopyMintButton mint={t.id} label="copy" copiedLabel="copied" className="px-1.5 py-0.5" iconClassName="h-3 w-3" />
         </span>
       </div>
-    </button>
+    </article>
   );
 };
 

@@ -59,6 +59,31 @@ export type JupTokenInfo = {
   smartCtLikes?: number;
 };
 
+type DexSearchPair = {
+  chainId?: string;
+  dexId?: string;
+  url?: string;
+  pairAddress?: string;
+  baseToken?: { address?: string; name?: string; symbol?: string };
+  quoteToken?: { address?: string; name?: string; symbol?: string };
+  priceUsd?: string;
+  priceChange?: { m5?: number; h1?: number; h6?: number; h24?: number };
+  liquidity?: { usd?: number; base?: number; quote?: number };
+  volume?: { m5?: number; h1?: number; h6?: number; h24?: number };
+  txns?: {
+    m5?: { buys?: number; sells?: number };
+    h1?: { buys?: number; sells?: number };
+    h6?: { buys?: number; sells?: number };
+    h24?: { buys?: number; sells?: number };
+  };
+  fdv?: number;
+  marketCap?: number;
+  pairCreatedAt?: number;
+  info?: { imageUrl?: string };
+};
+
+type DexSearchResponse = { pairs?: DexSearchPair[] | null };
+
 const DEFAULT_HEADERS: Record<string, string> = {
   "Content-Type": "application/json",
 };
@@ -112,6 +137,107 @@ function tokenCreatedAtMs(token: JupTokenInfo): number {
   return Number.isFinite(createdAtMs) ? createdAtMs : Number.POSITIVE_INFINITY;
 }
 
+function createdAtIsoFromMs(createdAtMs: number): string | undefined {
+  return Number.isFinite(createdAtMs) ? new Date(createdAtMs).toISOString() : undefined;
+}
+
+function mergeStats(
+  primary: JupTokenInfo["stats24h"] | undefined,
+  fallback: JupTokenInfo["stats24h"] | undefined,
+): JupTokenInfo["stats24h"] | undefined {
+  if (!primary && !fallback) return undefined;
+  return {
+    priceChange: primary?.priceChange ?? fallback?.priceChange,
+    buyVolume: primary?.buyVolume ?? fallback?.buyVolume,
+    sellVolume: primary?.sellVolume ?? fallback?.sellVolume,
+    numTraders: primary?.numTraders ?? fallback?.numTraders,
+    numBuys: primary?.numBuys ?? fallback?.numBuys,
+    numSells: primary?.numSells ?? fallback?.numSells,
+  };
+}
+
+function mergeTokenCandidate(existing: JupTokenInfo, next: JupTokenInfo): JupTokenInfo {
+  const existingCreatedAt: number = tokenCreatedAtMs(existing);
+  const nextCreatedAt: number = tokenCreatedAtMs(next);
+  const oldestCreatedAt: number = Math.min(existingCreatedAt, nextCreatedAt);
+  const oldestCreatedAtIso: string | undefined = createdAtIsoFromMs(oldestCreatedAt);
+
+  return {
+    ...existing,
+    id: existing.id,
+    name: existing.name || next.name,
+    symbol: existing.symbol || next.symbol,
+    icon: existing.icon ?? next.icon,
+    decimals: existing.decimals || next.decimals,
+    usdPrice: existing.usdPrice ?? next.usdPrice,
+    mcap: existing.mcap ?? next.mcap,
+    fdv: existing.fdv ?? next.fdv,
+    liquidity: existing.liquidity ?? next.liquidity,
+    holderCount: existing.holderCount ?? next.holderCount,
+    organicScore: existing.organicScore ?? next.organicScore,
+    organicScoreLabel: existing.organicScoreLabel ?? next.organicScoreLabel,
+    isVerified: existing.isVerified ?? next.isVerified,
+    stats24h: mergeStats(existing.stats24h, next.stats24h),
+    stats1h: existing.stats1h ?? next.stats1h,
+    stats5m: existing.stats5m ?? next.stats5m,
+    audit: existing.audit ?? next.audit,
+    firstPool: oldestCreatedAtIso ? { createdAt: oldestCreatedAtIso } : existing.firstPool ?? next.firstPool,
+    ctLikes: existing.ctLikes ?? next.ctLikes,
+    smartCtLikes: existing.smartCtLikes ?? next.smartCtLikes,
+  };
+}
+
+async function dexSearchPairs(query: string): Promise<DexSearchPair[]> {
+  const url = `https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(query)}`;
+  const response = await jget<DexSearchResponse>(url);
+  return (response.pairs ?? []).filter((pair) => pair.chainId === "solana" && Boolean(pair.baseToken?.address));
+}
+
+function dexPairToToken(pair: DexSearchPair): JupTokenInfo | null {
+  const mint: string | undefined = pair.baseToken?.address;
+  if (!mint) return null;
+
+  const price: number | undefined = pair.priceUsd ? Number(pair.priceUsd) : undefined;
+  const buys24h: number = pair.txns?.h24?.buys ?? 0;
+  const sells24h: number = pair.txns?.h24?.sells ?? 0;
+  const totalTxns24h: number = buys24h + sells24h;
+  const buyRatio: number = totalTxns24h > 0 ? buys24h / totalTxns24h : 0.5;
+  const volume24h: number | undefined = pair.volume?.h24;
+  const createdAt: string | undefined = pair.pairCreatedAt ? new Date(pair.pairCreatedAt).toISOString() : undefined;
+
+  return {
+    id: mint,
+    name: pair.baseToken?.name ?? "Solana token",
+    symbol: pair.baseToken?.symbol ?? "TOKEN",
+    icon: pair.info?.imageUrl,
+    decimals: 0,
+    usdPrice: price != null && Number.isFinite(price) ? price : undefined,
+    mcap: pair.marketCap,
+    fdv: pair.fdv,
+    liquidity: pair.liquidity?.usd,
+    stats24h: {
+      priceChange: pair.priceChange?.h24,
+      buyVolume: volume24h != null ? volume24h * buyRatio : undefined,
+      sellVolume: volume24h != null ? volume24h * (1 - buyRatio) : undefined,
+      numTraders: totalTxns24h || undefined,
+      numBuys: buys24h || undefined,
+      numSells: sells24h || undefined,
+    },
+    stats1h: { priceChange: pair.priceChange?.h1 },
+    stats5m: { priceChange: pair.priceChange?.m5 },
+    firstPool: createdAt ? { createdAt } : undefined,
+  };
+}
+
+function mergeTokenCandidates(tokens: JupTokenInfo[]): JupTokenInfo[] {
+  const byMint = new Map<string, JupTokenInfo>();
+  for (const token of tokens) {
+    const existing = byMint.get(token.id);
+    byMint.set(token.id, existing ? mergeTokenCandidate(existing, token) : token);
+  }
+  return Array.from(byMint.values());
+}
+
 function tokenTrustScore(token: JupTokenInfo, cleanTicker: string): number {
   const normalizedSymbol = normalizeTickerSymbol(token.symbol);
   const normalizedName = normalizeTickerSymbol(token.name);
@@ -154,24 +280,35 @@ function compareByAgeThenTrust(a: JupTokenInfo, b: JupTokenInfo, cleanTicker: st
   return tokenTrustScore(b, cleanTicker) - tokenTrustScore(a, cleanTicker);
 }
 
-// Find OG copycats by ticker symbol. The OG must be the oldest token we can date;
+// Find OG copycats by ticker symbol. The OG must be the oldest exact-symbol token we can date;
 // market quality/trust is only a tie-breaker so an older token never appears as a copycat.
 export async function jupOgCopycats(ticker: string): Promise<{ og: JupTokenInfo | null; copycats: JupTokenInfo[] }> {
   const clean = ticker.replace(/^\$/, "").trim();
   if (!clean) return { og: null, copycats: [] };
 
-  const all = await jupSearchToken(clean);
+  const [jupiterResult, dexResult] = await Promise.allSettled([jupSearchToken(clean), dexSearchPairs(clean)]);
+  const jupiterTokens: JupTokenInfo[] = jupiterResult.status === "fulfilled" ? jupiterResult.value : [];
+  const dexTokens: JupTokenInfo[] = dexResult.status === "fulfilled"
+    ? dexResult.value.map(dexPairToToken).filter((token): token is JupTokenInfo => Boolean(token))
+    : [];
+
+  const all = mergeTokenCandidates([...jupiterTokens, ...dexTokens]);
   const normalizedClean = normalizeTickerSymbol(clean);
   // Exact symbol matching must tolerate symbols like "$WIF" when the user types "wif".
-  const matches = all.filter((t) => normalizeTickerSymbol(t.symbol) === normalizedClean);
-  const pool = (matches.length > 0 ? matches : all).slice(0, 40);
-  const tokensWithDates = pool.filter((t) => Number.isFinite(tokenCreatedAtMs(t)));
+  const exactSymbolMatches = all.filter((token) => normalizeTickerSymbol(token.symbol) === normalizedClean);
+  const looseMatches = all.filter((token) => {
+    const normalizedSymbol = normalizeTickerSymbol(token.symbol);
+    const normalizedName = normalizeTickerSymbol(token.name);
+    return normalizedSymbol.includes(normalizedClean) || normalizedName.includes(normalizedClean);
+  });
+  const pool = exactSymbolMatches.length > 0 ? exactSymbolMatches : looseMatches.length > 0 ? looseMatches : all;
+  const tokensWithDates = pool.filter((token) => Number.isFinite(tokenCreatedAtMs(token)));
   const ogPool = tokensWithDates.length > 0 ? tokensWithDates : pool;
   const og = [...ogPool].sort((a, b) => compareByAgeThenTrust(a, b, clean))[0] ?? null;
   const copycats = pool
-    .filter((t) => t.id !== og?.id)
+    .filter((token) => token.id !== og?.id)
     .sort((a, b) => compareByAgeThenTrust(a, b, clean))
-    .slice(0, 12);
+    .slice(0, 24);
 
   return { og, copycats };
 }
@@ -316,4 +453,32 @@ export function timeAgo(ts: number): string {
   if (h < 24) return `${h}h`;
   const d = Math.floor(h / 24);
   return `${d}d`;
+}
+
+export async function copyTextToClipboard(value: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    /* fall through to textarea fallback */
+  }
+
+  try {
+    const textarea: HTMLTextAreaElement = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "true");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    const copied: boolean = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return copied;
+  } catch {
+    return false;
+  }
 }

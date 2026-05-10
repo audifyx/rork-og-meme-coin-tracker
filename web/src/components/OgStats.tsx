@@ -15,6 +15,7 @@ import {
   RadioTower,
   CandlestickChart,
 } from "lucide-react";
+import { CopyMintButton } from "@/components/CopyMintButton";
 import { jupGetTokens, jupSearchToken, birdeyeOhlcv, fmtUsd, fmtNum, fmtPct, shortAddr, type JupTokenInfo } from "@/lib/og";
 
 type Props = { mint: string; onSelect: (mint: string) => void };
@@ -227,10 +228,14 @@ const SearchResult = ({ token, onSelect }: { token: JupTokenInfo; onSelect: () =
   const change: number = token.stats24h?.priceChange ?? 0;
   const up: boolean = change >= 0;
   return (
-    <button
-      type="button"
+    <article
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
-      className="group grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border border-og-grid bg-og-ink/80 p-3 text-left transition hover:border-og-lime hover:bg-og-lime/5"
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") onSelect();
+      }}
+      className="group grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border border-og-grid bg-og-ink/80 p-3 text-left transition hover:border-og-lime hover:bg-og-lime/5"
     >
       <div className="h-10 w-10 overflow-hidden border border-og-grid bg-og-ink">
         {token.icon ? (
@@ -243,15 +248,16 @@ const SearchResult = ({ token, onSelect }: { token: JupTokenInfo; onSelect: () =
         <div className="flex items-center gap-2">
           <span className="truncate font-display text-sm font-bold text-foreground">${token.symbol}</span>
           {token.isVerified && <ShieldCheck className="h-3 w-3 shrink-0 text-og-lime" />}
-          <span className="hidden text-[10px] uppercase tracking-widest text-muted-foreground sm:inline">{shortAddr(token.id, 4)}</span>
+          <span className="hidden text-[10px] uppercase tracking-widest text-muted-foreground sm:inline">CA {shortAddr(token.id, 4)}</span>
         </div>
         <div className="truncate text-[10px] uppercase tracking-widest text-muted-foreground">{token.name}</div>
       </div>
       <div className="text-right font-mono">
         <div className="text-xs text-foreground">{fmtUsd(token.usdPrice)}</div>
         <div className={`text-[10px] ${up ? "text-og-lime" : "text-og-blood"}`}>{fmtPct(change)}</div>
+        <CopyMintButton mint={token.id} label="copy" copiedLabel="copied" className="mt-1 px-2 py-1" iconClassName="h-3 w-3" />
       </div>
-    </button>
+    </article>
   );
 };
 
@@ -279,7 +285,10 @@ const ActiveTarget = ({ t, mint, loading }: { t?: JupTokenInfo; mint: string; lo
             )}
           </div>
           <p className="mt-1 truncate text-sm text-muted-foreground">{t?.name ?? "Search above to load a Solana token."}</p>
-          <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-foreground/50">mint {shortAddr(mint, 7)}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-foreground/50">
+            <span>CA {shortAddr(mint, 7)}</span>
+            <CopyMintButton mint={mint} label="copy" copiedLabel="copied" className="px-2 py-1" iconClassName="h-3 w-3" />
+          </div>
         </div>
       </div>
     </div>
