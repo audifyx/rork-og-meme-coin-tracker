@@ -2,7 +2,6 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   AlertTriangle,
-  Apple,
   ArrowRight,
   CheckCircle2,
   Coins,
@@ -10,7 +9,8 @@ import {
   ExternalLink,
   Flame,
   Globe2,
-  Smartphone,
+  MessageCircle,
+  Radio,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -18,49 +18,51 @@ import { Scanlines } from "@/components/Scanlines";
 import { OGSCAN_DEV_WALLET, OGSCAN_TOKEN_MINT, shortAddr } from "@/lib/og";
 import { cn } from "@/lib/utils";
 
-const EXPO_APP_URL = "https://rork.app/?exp=p_ct333efmdotyxkemvlyk6--expo.rork.live&p=ct333efmdotyxkemvlyk6&app=false";
-const IOS_EXPO_GO_URL = "https://apps.apple.com/us/app/expo-go/id982107779";
-const ANDROID_EXPO_GO_URL = "https://play.google.com/store/apps/details?id=host.exp.exponent";
+const OGSCAN_TELEGRAM_URL = "https://t.me/ogscanner";
+const OGSCAN_BACKUP_X_URL = "https://x.com/ogscanbackup";
 
-type PlatformCard = {
+type CommunityCard = {
   title: string;
   eyebrow: string;
   Icon: LucideIcon;
-  storeLabel: string;
-  storeUrl: string;
+  ctaLabel: string;
+  url: string;
+  description: string;
   accent: "cyan" | "lime";
 };
 
-const platformCards: PlatformCard[] = [
+const communityCards: CommunityCard[] = [
   {
-    title: "iOS",
-    eyebrow: "Apple beta path",
-    Icon: Apple,
-    storeLabel: "Download Expo Go",
-    storeUrl: IOS_EXPO_GO_URL,
-    accent: "cyan",
+    title: "Telegram",
+    eyebrow: "Live community",
+    Icon: MessageCircle,
+    ctaLabel: "Join the chat",
+    url: OGSCAN_TELEGRAM_URL,
+    description: "The fastest place for OGScan updates, feedback, bug reports, and community notes.",
+    accent: "lime",
   },
   {
-    title: "Android",
-    eyebrow: "Google beta path",
-    Icon: Smartphone,
-    storeLabel: "Download Expo Go",
-    storeUrl: ANDROID_EXPO_GO_URL,
-    accent: "lime",
+    title: "Backup X",
+    eyebrow: "Official posts",
+    Icon: Radio,
+    ctaLabel: "Follow on X",
+    url: OGSCAN_BACKUP_X_URL,
+    description: "Follow our backup X for DEX progress, launch notes, and important announcements.",
+    accent: "cyan",
   },
 ];
 
-const issueTips: string[] = ["Check your internet connection", "Restart Expo Go", "Try opening the link in your browser first"];
+const issueTips: string[] = ["Join Telegram for the fastest support", "Watch backup X for DEX status posts", "Use the scanner while the next DEX update is prepared"];
 
 const BetaHome = memo(() => {
-  const [copied, setCopied] = useState<"beta" | "coin" | null>(null);
+  const [copied, setCopied] = useState<"coin" | null>(null);
 
-  const betaSteps: string[] = useMemo<string[]>(
-    () => ["Download Expo Go for your phone", "Open the beta link below", "The OGScan app loads automatically in Expo Go"],
+  const communityUpdates: string[] = useMemo<string[]>(
+    () => ["Telegram is the main room for quick updates", "Backup X will carry launch notes and status posts", "DEX updates are next and will be announced there first"],
     [],
   );
 
-  const copyValue = useCallback(async (kind: "beta" | "coin", value: string): Promise<void> => {
+  const copyValue = useCallback(async (kind: "coin", value: string): Promise<void> => {
     try {
       await navigator.clipboard.writeText(value);
       setCopied(kind);
@@ -70,9 +72,6 @@ const BetaHome = memo(() => {
     }
   }, []);
 
-  const copyBetaLink = useCallback((): void => {
-    void copyValue("beta", EXPO_APP_URL);
-  }, [copyValue]);
 
   const copyCoinCa = useCallback((): void => {
     void copyValue("coin", OGSCAN_TOKEN_MINT);
@@ -93,7 +92,7 @@ const BetaHome = memo(() => {
             </div>
             <div>
               <p className="font-display text-sm font-black uppercase tracking-[0.28em] text-white">OGScan</p>
-              <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-og-cyan">Community beta</p>
+              <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-og-cyan">Community HQ</p>
             </div>
           </div>
           <Link
@@ -108,23 +107,23 @@ const BetaHome = memo(() => {
           <section className="relative overflow-hidden border border-og-grid bg-og-ink/84 p-5 shadow-[0_0_0_1px_hsl(var(--og-grid)),0_34px_120px_-72px_hsl(var(--og-cyan))] sm:p-7 lg:p-8">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-og-cyan via-og-lime to-white" />
             <div className="absolute right-4 top-4 hidden border border-og-cyan/40 bg-og-cyan/10 px-3 py-1.5 font-mono text-[9px] font-black uppercase tracking-[0.26em] text-og-cyan sm:block">
-              Beta is live
+              Community links live
             </div>
 
             <div className="mb-5 inline-flex items-center gap-2 border border-og-lime/45 bg-og-lime/10 px-3 py-2 font-mono text-[10px] font-black uppercase tracking-[0.26em] text-og-lime">
-              <Sparkles className="h-3.5 w-3.5" /> Community access open
+              <Sparkles className="h-3.5 w-3.5" /> Updates moving here first
             </div>
 
             <h1 className="font-display text-4xl font-black uppercase leading-[0.92] tracking-tighter text-white text-glow sm:text-6xl lg:text-7xl">
-              Hey community beta is open
+              OGScan community is open
             </h1>
 
             <p className="mt-5 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-              Hey! We&apos;re excited to announce our beta is live. Here&apos;s how to get started with OGScan on your phone.
+              The next OGScan DEX update is being worked on now. Until it lands, follow the live community channels for status updates, beta notes, and every official announcement.
             </p>
 
             <div className="mt-6 grid gap-2 sm:grid-cols-3">
-              {betaSteps.map((step: string, index: number) => (
+              {communityUpdates.map((step: string, index: number) => (
                 <div key={step} className="border border-og-grid bg-black/24 p-3">
                   <span className="mb-2 grid h-7 w-7 place-items-center border border-og-cyan/50 bg-og-cyan/10 font-mono text-[10px] font-black text-og-cyan">
                     {index + 1}
@@ -136,26 +135,21 @@ const BetaHome = memo(() => {
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <a
-                href={EXPO_APP_URL}
+                href={OGSCAN_TELEGRAM_URL}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 border border-og-lime bg-og-lime px-5 py-3 font-mono text-[11px] font-black uppercase tracking-[0.18em] text-og-ink shadow-og transition hover:bg-white hover:text-og-ink active:scale-[0.98]"
               >
-                Open beta link <ExternalLink className="h-4 w-4" />
+                Join Telegram <ExternalLink className="h-4 w-4" />
               </a>
-              <button
-                type="button"
-                onClick={copyBetaLink}
-                className={cn(
-                  "inline-flex min-h-12 flex-1 items-center justify-center gap-2 border px-5 py-3 font-mono text-[11px] font-black uppercase tracking-[0.18em] transition active:scale-[0.98]",
-                  copied === "beta"
-                    ? "border-og-cyan bg-og-cyan text-og-ink"
-                    : "border-og-grid bg-black/24 text-white hover:border-og-cyan hover:text-og-cyan",
-                )}
+              <a
+                href={OGSCAN_BACKUP_X_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 border border-og-grid bg-black/24 px-5 py-3 font-mono text-[11px] font-black uppercase tracking-[0.18em] text-white transition hover:border-og-cyan hover:text-og-cyan active:scale-[0.98]"
               >
-                {copied === "beta" ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied === "beta" ? "Copied" : "Copy beta link"}
-              </button>
+                Follow backup X <ExternalLink className="h-4 w-4" />
+              </a>
             </div>
           </section>
 
@@ -181,8 +175,8 @@ const BetaHome = memo(() => {
             </section>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-              {platformCards.map((platform: PlatformCard) => (
-                <PlatformCardView key={platform.title} platform={platform} />
+              {communityCards.map((card: CommunityCard) => (
+                <CommunityCardView key={card.title} card={card} />
               ))}
             </div>
 
@@ -191,7 +185,7 @@ const BetaHome = memo(() => {
                 <AlertTriangle className="h-4 w-4" /> Please note
               </div>
               <p className="text-sm leading-6 text-white/78">
-                I&apos;m building this as I write this post. The app is still being actively developed—expect bugs, missing features, and things that might not work yet. We&apos;re still cooking!
+                We&apos;re updating the DEX experience as fast as possible. For now, Telegram and backup X are the best places to follow progress, report issues, and catch official OGScan updates.
               </p>
             </section>
 
@@ -208,7 +202,7 @@ const BetaHome = memo(() => {
                 ))}
               </ul>
               <p className="mt-4 border-t border-og-grid pt-3 text-xs leading-5 text-white/60">
-                Found a bug or have feedback? Hit us up—we&apos;d love to hear from you.
+                Found a bug or have feedback? Join Telegram or follow backup X so we can keep everyone updated in one place.
               </p>
             </section>
           </aside>
@@ -232,39 +226,30 @@ const BetaHome = memo(() => {
 
 BetaHome.displayName = "BetaHome";
 
-const PlatformCardView = memo(({ platform }: { platform: PlatformCard }) => {
-  const accentClass: string = platform.accent === "cyan" ? "border-og-cyan/45 bg-og-cyan/10 text-og-cyan" : "border-og-lime/45 bg-og-lime/10 text-og-lime";
+const CommunityCardView = memo(({ card }: { card: CommunityCard }) => {
+  const accentClass: string = card.accent === "cyan" ? "border-og-cyan/45 bg-og-cyan/10 text-og-cyan" : "border-og-lime/45 bg-og-lime/10 text-og-lime";
+  const underlineClass: string = card.accent === "cyan" ? "decoration-og-cyan/50 hover:text-og-cyan" : "decoration-og-lime/50 hover:text-og-lime";
 
   return (
     <section className="border border-og-grid bg-og-ink/82 p-4 shadow-og">
       <div className="flex items-start gap-3">
         <div className={cn("grid h-11 w-11 shrink-0 place-items-center border", accentClass)}>
-          <platform.Icon className="h-5 w-5" />
+          <card.Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-[9px] font-black uppercase tracking-[0.26em] text-muted-foreground">{platform.eyebrow}</p>
-          <h2 className="mt-1 font-display text-2xl font-black uppercase tracking-tight text-white">{platform.title}</h2>
+          <p className="font-mono text-[9px] font-black uppercase tracking-[0.26em] text-muted-foreground">{card.eyebrow}</p>
+          <h2 className="mt-1 font-display text-2xl font-black uppercase tracking-tight text-white">{card.title}</h2>
         </div>
       </div>
 
-      <ol className="mt-4 space-y-2 text-sm text-muted-foreground">
-        <li className="flex gap-2">
-          <span className="font-mono text-og-cyan">1.</span>
-          <a href={platform.storeUrl} target="_blank" rel="noreferrer" className="font-bold text-white underline decoration-og-cyan/50 underline-offset-4 transition hover:text-og-cyan">
-            {platform.storeLabel}
-          </a>
-        </li>
-        <li className="flex gap-2">
-          <span className="font-mono text-og-cyan">2.</span>
-          <a href={EXPO_APP_URL} target="_blank" rel="noreferrer" className="font-bold text-white underline decoration-og-lime/50 underline-offset-4 transition hover:text-og-lime">
-            Open the OGScan beta link
-          </a>
-        </li>
-      </ol>
+      <p className="mt-4 text-sm leading-6 text-muted-foreground">{card.description}</p>
+      <a href={card.url} target="_blank" rel="noreferrer" className={cn("mt-3 inline-flex items-center gap-2 font-mono text-[10px] font-black uppercase tracking-[0.2em] text-white underline underline-offset-4 transition", underlineClass)}>
+        {card.ctaLabel} <ExternalLink className="h-3.5 w-3.5" />
+      </a>
     </section>
   );
 });
 
-PlatformCardView.displayName = "PlatformCardView";
+CommunityCardView.displayName = "CommunityCardView";
 
 export default BetaHome;

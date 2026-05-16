@@ -15,6 +15,7 @@
 - [x] Replace the old token-coming-soon banner with the live official OGScan coin CA, dev wallet, chart links, and copy actions.
 - [x] Add the official **SolTools Roadmap** with goal, plan, next step, long-term vision, expansion plans, mobile rollout, mission, and community links.
 - [x] Add a new **Community Beta homepage** as the first screen with iOS/Android Expo Go instructions, beta link, issue tips, and an enter-OGScan button.
+- [x] Update the landing page beta area into a **Community HQ** notice with Telegram, backup X, and DEX-update messaging.
 - [x] Add direct standalone routes for every OGScan tool so each page can be embedded link-for-link in the mobile app.
 - [x] Create a standalone embed prompt file explaining every page, route, numbered path, and mobile-app embedding approach.
 
@@ -30,6 +31,7 @@
 - [x] Make the layout easier to scan on mobile with stacked cards and sticky quick actions.
 - [x] Present the roadmap as a premium full-page tab instead of a plain text block.
 - [x] Make the beta announcement feel like a polished launch page while keeping the existing OG scanner UI behind the enter button.
+- [x] Refresh the root landing page copy so the main calls-to-action point users to Telegram and backup X until the DEX update is ready.
 
 ## **Pages / Screens**
 
@@ -40,7 +42,7 @@
 - [x] **Watchlist**: A saved list of dev wallets, tickers, and coins the user wants to monitor.
 - [x] **Alerts Center**: A clean timeline of new launches, whale moves, dev relaunches, and risk warnings.
 - [x] **SolTools Roadmap**: A polished vision page showing OGScan’s path into the broader SolTools ecosystem.
-- [x] **Community Beta Home**: The new root homepage with beta onboarding, Expo Go links, copy link action, issue tips, and a button into the OG scanner.
+- [x] **Community Beta Home / Community HQ**: The root homepage now directs users to Telegram and backup X while the next DEX update is prepared.
 - [x] **Standalone Tool Routes**: Every existing tool now has a direct canonical route plus numbered page route for mobile embedding.
 
 ## **Suggested build order**
