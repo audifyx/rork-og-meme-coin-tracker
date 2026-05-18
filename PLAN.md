@@ -29,6 +29,7 @@
 - [x] Split classification into **Origin Identity**, **Control Status**, and **Lifecycle Status** so TRUE OG CTO, migrations, revivals, clones, and copycats can all show layered truth without forcing one flat label.
 - [x] Add live DexScreener paid-order intelligence for token profile, CTO, ads, first/last paid timing, and active boost counts.
 - [x] Add CTO/dev-launch wallet history intelligence showing inferred creator wallet, bonded coin count, DEX-paid coin count, boosted coins, and CTO order count.
+- [x] Make DexScreener the chart source across token popups, Vitals, chart actions, and chart/provider labels.
 
 ## **Design**
 
@@ -52,6 +53,7 @@
 - [x] Add premium responsive coin detail modals so every tool can inspect a token without leaving the current route or losing context.
 - [x] Surface layered labels and secondary badges across Scanner results, OG Finder cards, lineage reports, and the shared coin intelligence popup.
 - [x] Add dedicated DEX paid/boost and CTO/dev launch intelligence sections to the shared coin popup and Snipe Feed analyzer.
+- [x] Replace internal/Birdeye-rendered chart panels with DexScreener chart embeds and full-chart links.
 
 ## **Pages / Screens**
 
@@ -69,6 +71,7 @@
 - [x] **Coin Intelligence Popup**: Scanner, OG Finder, Vitals, Pairs, Migrations, Trending, Swap, Status Strip, and Snipe Feed now open a shared token detail popup with chart, metadata, buys/sells, links, and safety data.
 - [x] **Layered Classification Output**: Every forensic search now distinguishes TRUE OG CTO vs TRUE OG vs MIGRATED OG vs REVIVAL vs CLONE/COPYCAT using origin, control, lifecycle, confidence scores, and secondary badges.
 - [x] **DEX Paid + CTO/Dev Intel**: Coin popups and Snipe Feed now show live DEX paid-order status, active boosts, payment timing, CTO/profile/ad flags, and inferred dev wallet bonded-history counts.
+- [x] **DexScreener Charts**: Every visible chart panel and chart action now uses DexScreener as the primary chart source.
 
 ## **Suggested build order**
 
