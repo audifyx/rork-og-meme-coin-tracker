@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
+import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { CopyMintButton } from "@/components/CopyMintButton";
 import {
   enrichTokensWithMarketIntel,
@@ -426,6 +427,7 @@ const TrendingRow = ({
   const marketCap = pair.marketCap ?? pair.fdv;
   const ageSeconds = pair.pairCreatedAt ? Math.floor(pair.pairCreatedAt / 1000) : 0;
   const imageUrl = pair.info?.imageUrl ?? coin.boost?.icon;
+  const detailToken: JupTokenInfo = coin.token ?? pairToToken(pair, coin.boost);
   const dexPaid = coin.token ? tokenDexPaidLabel(coin.token) : tokenDexPaidLabel({ dexPaidAmount: coin.boost?.totalAmount ?? coin.boost?.amount, dexBoostActive: pair.boosts?.active });
 
   return (
@@ -497,6 +499,7 @@ const TrendingRow = ({
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-og-grid/40 pt-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground md:col-span-12 md:ml-[calc(8.333333%+0.75rem)]">
         <span>boost {pair.boosts?.active ?? coin.boost?.amount ?? 0} · DEX {dexPaid} · ATH {fmtUsd(coin.token?.allTimeHighUsd)} · CA {shortAddr(pair.baseToken.address, 4)}</span>
         <span className="inline-flex items-center gap-2">
+          <CoinDetailDialog token={detailToken} onOpenScanner={() => onSelect()} actionLabel="Load" className="px-2 py-1" />
           <CopyMintButton mint={pair.baseToken.address} label="copy" copiedLabel="copied" className="px-2 py-1" iconClassName="h-3 w-3" />
           <button onClick={onSelect} className="inline-flex items-center gap-1 text-og-blood transition group-hover:text-og-lime">
             load coin <ArrowUpRight className="h-3 w-3" />

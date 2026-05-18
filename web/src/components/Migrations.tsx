@@ -15,6 +15,7 @@ import {
   ArrowUpRight,
   Activity,
 } from "lucide-react";
+import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { CopyMintButton } from "@/components/CopyMintButton";
 import {
   enrichTokensWithMarketIntel,
@@ -443,6 +444,7 @@ const PairRow = ({ p, token, onSelect }: { p: DSPair; token?: JupTokenInfo; onSe
   const buyPct = total > 0 ? (buys / total) * 100 : 50;
   const fresh = Boolean(created && Date.now() / 1000 - created < 60 * 60 * 6);
   const meterWidth: CSSProperties = { width: `${buyPct}%` };
+  const detailToken: JupTokenInfo = token ?? pairToToken(p);
   const dexPaid = token ? tokenDexPaidLabel(token) : "—";
 
   return (
@@ -508,6 +510,7 @@ const PairRow = ({ p, token, onSelect }: { p: DSPair; token?: JupTokenInfo; onSe
             <div className="text-muted-foreground">CA {shortAddr(p.baseToken.address, 4)}</div>
             <div className="text-og-gold">ATH {fmtUsd(token?.allTimeHighUsd)}</div>
           </div>
+          <CoinDetailDialog token={detailToken} onOpenScanner={() => onSelect()} actionLabel="Load" className="shrink-0 px-2 py-2 md:px-1" />
           <CopyMintButton mint={p.baseToken.address} label="copy" copiedLabel="copied" className="shrink-0 px-2 py-2 md:px-1" iconClassName="h-3 w-3" />
           <a
             href={p.url}

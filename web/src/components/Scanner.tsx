@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, ShieldCheck, Loader2, Filter, Calendar, Flame, BadgeDollarSign, Fingerprint, GitBranch, ShieldAlert } from "lucide-react";
+import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { CopyMintButton } from "@/components/CopyMintButton";
 import {
   enrichTokensWithMarketIntel,
@@ -265,7 +266,10 @@ const ResultRow = ({ t, score, onSelect }: { t: JupTokenInfo; score?: TokenForen
           <div className="mt-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">CA {shortAddr(t.id, 5)}</div>
         </div>
       </button>
-      <CopyMintButton mint={t.id} className="shrink-0 border-og-cyan/45 text-og-cyan hover:bg-og-cyan hover:text-og-ink" />
+      <div className="flex shrink-0 flex-col gap-2">
+        <CoinDetailDialog token={t} onOpenScanner={() => onSelect()} actionLabel="Load" className="px-2 py-1" />
+        <CopyMintButton mint={t.id} className="border-og-cyan/45 text-og-cyan hover:bg-og-cyan hover:text-og-ink" />
+      </div>
     </article>
   );
 };

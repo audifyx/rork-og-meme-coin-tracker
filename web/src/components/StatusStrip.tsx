@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, Copy, Check, Pencil } from "lucide-react";
+import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import {
   jupGetTokens,
   heliusSlot,
@@ -80,6 +81,7 @@ export const StatusStrip = ({ mint, onChangeMint }: Props) => {
           >
             <Pencil className="h-3 w-3" /> {shortAddr(mint, 4)}
           </button>
+          {t && <CoinDetailDialog token={t} className="rounded-full border-white/10 bg-white/[0.045] px-2.5 py-1 text-[10px] text-foreground/70 hover:border-og-cyan" />}
           <button
             onClick={copy}
             className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.045] px-2.5 py-1 text-foreground/70 transition hover:border-og-gold hover:text-og-gold"

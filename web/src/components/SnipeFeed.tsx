@@ -28,6 +28,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
+import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { cn } from "@/lib/utils";
 import {
   fmtNum,
@@ -497,6 +498,43 @@ function scoreTone(score: number): string {
   return "text-og-blood";
 }
 
+function launchToToken(launch: SnipeLaunch): JupTokenInfo {
+  return {
+    id: launch.mint,
+    name: launch.name,
+    symbol: launch.symbol,
+    icon: launch.icon,
+    decimals: 0,
+    usdPrice: launch.priceUsd,
+    mcap: launch.marketCap,
+    fdv: launch.fdv,
+    liquidity: launch.liquidity,
+    holderCount: launch.holderCount,
+    organicScore: launch.organicScore,
+    isVerified: launch.verified,
+    stats24h: {
+      priceChange: launch.priceChange1h,
+      buyVolume: launch.volume1h > 0 ? launch.volume1h * (launch.buys5m / Math.max(1, launch.buys5m + launch.sells5m)) : undefined,
+      sellVolume: launch.volume1h > 0 ? launch.volume1h * (launch.sells5m / Math.max(1, launch.buys5m + launch.sells5m)) : undefined,
+      numBuys: launch.buys5m,
+      numSells: launch.sells5m,
+      numTraders: launch.txns5m,
+    },
+    stats1h: { priceChange: launch.priceChange1h },
+    stats5m: { priceChange: launch.priceChange5m },
+    audit: launch.audit,
+    firstPool: launch.migrationCreatedAt ? { createdAt: launch.migrationCreatedAt } : undefined,
+    allTimeHighUsd: launch.allTimeHighUsd,
+    allTimeHighAt: launch.allTimeHighAt,
+    migrationCreatedAt: launch.migrationCreatedAt,
+    dexPaidAmount: launch.dexPaidAmount,
+    dexBoostTotalAmount: launch.dexBoostTotalAmount,
+    dexBoostActive: launch.dexBoostActive,
+    dexUrl: launch.dexUrl,
+    pairAddress: launch.pairAddress,
+  };
+}
+
 export const SnipeFeed = ({ onSelect }: Props) => {
   const [paused, setPaused] = useState<boolean>(false);
   const [selectedMint, setSelectedMint] = useState<string | null>(null);
@@ -713,6 +751,7 @@ const LaunchRow = ({
   const RiskIcon = risk.Icon;
   const ageSeconds = Math.floor(launch.createdAtMs / 1000);
   const dexPaid = tokenDexPaidLabel(launch);
+  const detailToken: JupTokenInfo = launchToToken(launch);
   return (
     <article
       className={cn(
@@ -773,6 +812,7 @@ const LaunchRow = ({
           <button type="button" onClick={(event) => { event.stopPropagation(); onWatchMint(); }} className="inline-flex min-h-9 items-center gap-1 border border-og-grid px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-foreground/70 transition hover:border-og-lime hover:text-og-lime">
             <Bell className="h-3 w-3" /> {watchedMint ? "unwatch" : "watch"}
           </button>
+          <CoinDetailDialog token={detailToken} onOpenScanner={() => onScan()} actionLabel="Scan" className="min-h-9 px-3 py-2" />
           <button type="button" onClick={(event) => { event.stopPropagation(); onScan(); }} className="inline-flex min-h-9 items-center gap-1 border border-og-cyan/60 px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-og-cyan transition hover:bg-og-cyan hover:text-og-ink">
             <Target className="h-3 w-3" /> scan
           </button>
@@ -798,6 +838,7 @@ const LaunchAnalyzer = ({ launch, watched, onCopy, onScan, onWatchMint }: { laun
   }
   const risk = riskStyles(launch.riskLevel);
   const RiskIcon = risk.Icon;
+  const detailToken: JupTokenInfo = launchToToken(launch);
   return (
     <div className="border border-og-cyan/45 bg-og-ink/82 p-4 shadow-[inset_4px_0_0_hsl(var(--og-cyan)/0.55)]">
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -838,6 +879,7 @@ const LaunchAnalyzer = ({ launch, watched, onCopy, onScan, onWatchMint }: { laun
         <button type="button" onClick={() => onScan(launch.mint)} className="inline-flex flex-1 items-center justify-center gap-1 border border-og-cyan bg-og-cyan px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-og-ink transition hover:bg-transparent hover:text-og-cyan">
           <Target className="h-3.5 w-3.5" /> scan token
         </button>
+        <CoinDetailDialog token={detailToken} onOpenScanner={() => onScan(launch.mint)} actionLabel="Scan" className="px-3 py-2" />
         <button type="button" onClick={() => onWatchMint(launch.mint)} className="inline-flex items-center justify-center gap-1 border border-og-grid px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-foreground/70 transition hover:border-og-lime hover:text-og-lime">
           <Bell className="h-3.5 w-3.5" /> {watched ? "watching" : "watch"}
         </button>

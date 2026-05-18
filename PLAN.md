@@ -24,6 +24,7 @@
 - [x] Add deployer / wallet trust, clone confidence, liquidity authenticity, migration probability, CTO probability, manipulated relaunch probability, and artificial trend probability outputs.
 - [x] Add chronological origin timelines and token family tree relationships for TRUE OG, early clone, migration, CTO, revival, fake revival, community fork, and exploit copy labels.
 - [x] Keep price, market cap, holders, volume, trend status, and migration status out of OG selection logic.
+- [x] Add a reusable **Coin Intelligence Popup** across tools with image/banner, metadata, live chart, buys/sells, liquidity, DEX paid/boosts, audit data, links, and copy/scan actions.
 
 ## **Design**
 
@@ -44,6 +45,7 @@
 - [x] Redesign the full tool workspace with a modern glass shell, stronger page boundaries, clearer tool start/end markers, premium route headers, and improved side navigation without changing routes.
 - [x] Replace the rough nested search/input boxes with a unified premium glass search system across Scanner, OG Finder, Vitals, Pairs, Swap, Migrations, and Trending filters.
 - [x] Rebuild the app workspace around a persistent left sidebar, mobile tool dock, focused top context bar, and single clean tool canvas while preserving every existing route.
+- [x] Add premium responsive coin detail modals so every tool can inspect a token without leaving the current route or losing context.
 
 ## **Pages / Screens**
 
@@ -58,6 +60,7 @@
 - [x] **Standalone Tool Routes**: Every existing tool now has a direct canonical route plus numbered page route for mobile embedding.
 - [x] **Forensic OG Finder**: Search a token narrative and return TRUE OG probability, clone probability, migration/CTO/relaunch risk, earliest proof, family tree, and timeline reconstruction.
 - [x] **Forensic Scanner**: Every scan result now shows OG probability, clone probability, attribution label, ATH, migration date, DEX boost/paid status, and mint copy actions.
+- [x] **Coin Intelligence Popup**: Scanner, OG Finder, Vitals, Pairs, Migrations, Trending, Swap, Status Strip, and Snipe Feed now open a shared token detail popup with chart, metadata, buys/sells, links, and safety data.
 
 ## **Suggested build order**
 

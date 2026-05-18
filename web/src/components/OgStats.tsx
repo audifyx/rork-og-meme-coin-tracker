@@ -17,6 +17,7 @@ import {
   Calendar,
   BadgeDollarSign,
 } from "lucide-react";
+import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { CopyMintButton } from "@/components/CopyMintButton";
 import {
   enrichTokensWithMarketIntel,
@@ -273,7 +274,10 @@ const SearchResult = ({ token, onSelect }: { token: JupTokenInfo; onSelect: () =
       <div className="text-right font-mono">
         <div className="text-xs text-foreground">{fmtUsd(token.usdPrice)}</div>
         <div className={`text-[10px] ${up ? "text-og-lime" : "text-og-blood"}`}>{fmtPct(change)}</div>
-        <CopyMintButton mint={token.id} label="copy" copiedLabel="copied" className="mt-1 px-2 py-1" iconClassName="h-3 w-3" />
+        <div className="mt-1 flex justify-end gap-1">
+          <CoinDetailDialog token={token} onOpenScanner={() => onSelect()} actionLabel="Load" className="px-2 py-1" />
+          <CopyMintButton mint={token.id} label="copy" copiedLabel="copied" className="px-2 py-1" iconClassName="h-3 w-3" />
+        </div>
       </div>
     </article>
   );
@@ -305,6 +309,7 @@ const ActiveTarget = ({ t, mint, loading }: { t?: JupTokenInfo; mint: string; lo
           <p className="mt-1 truncate text-sm text-muted-foreground">{t?.name ?? "Search above to load a Solana token."}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-foreground/50">
             <span>CA {shortAddr(mint, 7)}</span>
+            {t && <CoinDetailDialog token={t} className="px-2 py-1" />}
             <CopyMintButton mint={mint} label="copy" copiedLabel="copied" className="px-2 py-1" iconClassName="h-3 w-3" />
           </div>
         </div>
