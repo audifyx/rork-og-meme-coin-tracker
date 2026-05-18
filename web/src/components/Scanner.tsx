@@ -18,6 +18,7 @@ import {
   type JupTokenInfo,
   type TokenForensicScores,
 } from "@/lib/og";
+import { HelpLabel, ScoreMeter, TokenTruthLegend, labelToneClass, scoreTextClass } from "@/components/TokenTruthKit";
 
 type Props = { onSelect: (mint: string) => void; initialQuery?: string };
 
@@ -150,12 +151,17 @@ export const Scanner = ({ onSelect, initialQuery = "" }: Props) => {
         </div>
 
         {report && rawResults.length > 0 && (
-          <div className="mt-4 grid gap-2 border border-og-cyan/35 bg-og-cyan/5 p-3 sm:grid-cols-4">
-            <ForensicStat icon={Fingerprint} label="Narrative ID" value={report.narrativeFingerprintId} accent="text-og-cyan" />
-            <ForensicStat icon={GitBranch} label="Cluster" value={`${report.summary.candidateCount} Solana tokens`} accent="text-og-gold" />
-            <ForensicStat icon={ShieldCheck} label="True OG" value={report.og ? `${report.og.symbol}` : "Unknown"} accent="text-og-lime" />
-            <ForensicStat icon={ShieldAlert} label="Clones" value={`${report.summary.cloneCount} flagged`} accent={report.summary.cloneCount > 0 ? "text-og-blood" : "text-og-lime"} />
-          </div>
+          <>
+            <div className="mt-4 grid gap-2 border border-og-cyan/35 bg-og-cyan/5 p-3 sm:grid-cols-4">
+              <ForensicStat icon={Fingerprint} label="Narrative ID" value={report.narrativeFingerprintId} accent="text-og-cyan" />
+              <ForensicStat icon={GitBranch} label="Cluster" value={`${report.summary.candidateCount} Solana tokens`} accent="text-og-gold" />
+              <ForensicStat icon={ShieldCheck} label="True OG" value={report.og ? `${report.og.symbol}` : "Unknown"} accent="text-og-lime" />
+              <ForensicStat icon={ShieldAlert} label="Clones" value={`${report.summary.cloneCount} flagged`} accent={report.summary.cloneCount > 0 ? "text-og-blood" : "text-og-lime"} />
+            </div>
+            <div className="mt-3">
+              <TokenTruthLegend compact />
+            </div>
+          </>
         )}
 
         {/* Results */}
@@ -234,8 +240,10 @@ const ResultRow = ({ t, score, onSelect }: { t: JupTokenInfo; score?: TokenForen
   const up = ch >= 0;
   const migrationDate: string = shortDate(tokenMigrationDateIso(t));
   const dexPaid: string = tokenDexPaidLabel(t);
-  const ogProbability: string = score ? `${score.originScore}%` : "—";
-  const cloneProbability: string = score ? `${score.cloneScore}%` : "—";
+  const originScore: number = score?.originScore ?? 0;
+  const cloneScore: number = score?.cloneScore ?? 0;
+  const ogProbability: string = score ? `${originScore}%` : "—";
+  const cloneProbability: string = score ? `${cloneScore}%` : "—";
   const label: string = score?.classification.primary_label ?? "SCANNED";
   const secondaryLabels: string[] = score?.classification.secondary_labels.slice(0, 4) ?? [];
   return (
@@ -260,9 +268,9 @@ const ResultRow = ({ t, score, onSelect }: { t: JupTokenInfo; score?: TokenForen
             <span>· LQ {fmtUsd(t.liquidity)}</span>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-1.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground sm:grid-cols-4">
-            <MiniIntel icon={Fingerprint} label="Origin" value={ogProbability} accent={label.includes("TRUE OG") ? "text-og-lime" : "text-og-gold"} />
-            <MiniIntel icon={ShieldAlert} label="Clone" value={cloneProbability} accent={(score?.cloneScore ?? 0) >= 70 ? "text-og-blood" : "text-foreground"} />
-            <MiniIntel icon={GitBranch} label="Label" value={label} accent={label.includes("TRUE OG") ? "text-og-lime" : score ? "text-og-cyan" : undefined} />
+            <MiniIntel icon={Fingerprint} label="Origin" value={ogProbability} accent={scoreTextClass("origin", originScore)} meter={score ? <ScoreMeter score={originScore} kind="origin" className="mt-1" /> : undefined} />
+            <MiniIntel icon={ShieldAlert} label="Clone" value={cloneProbability} accent={scoreTextClass("clone", cloneScore)} meter={score ? <ScoreMeter score={cloneScore} kind="clone" className="mt-1" /> : undefined} />
+            <MiniIntel icon={GitBranch} label="Label" value={label} accent={label.includes("TRUE OG") ? "text-og-lime" : score ? "text-og-cyan" : undefined} valueClassName={labelToneClass(label)} />
             <MiniIntel icon={Flame} label="ATH" value={fmtUsd(t.allTimeHighUsd)} accent="text-og-gold" />
             <MiniIntel icon={Calendar} label="ATH Date" value={shortDate(t.allTimeHighAt)} accent="text-og-gold" />
             <MiniIntel icon={ShieldAlert} label="ATL" value={fmtUsd(t.allTimeLowUsd)} accent="text-og-cyan" />
@@ -302,7 +310,7 @@ const ForensicStat = ({
 }) => (
   <div className="min-w-0 border border-og-grid/70 bg-og-ink/70 p-2 font-mono uppercase tracking-widest">
     <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
-      <Icon className="h-3 w-3" /> {label}
+      <Icon className="h-3 w-3" /> <HelpLabel label={label} />
     </div>
     <div className={`mt-1 truncate text-[11px] ${accent ?? "text-foreground"}`}>{value}</div>
   </div>
@@ -313,16 +321,21 @@ const MiniIntel = ({
   label,
   value,
   accent,
+  meter,
+  valueClassName,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: string;
   accent?: string;
+  meter?: React.ReactNode;
+  valueClassName?: string;
 }) => (
   <span className="min-w-0 border border-og-grid/60 bg-og-ink/55 px-1.5 py-1">
     <span className="flex items-center gap-1 text-foreground/40">
-      <Icon className="h-2.5 w-2.5" /> {label}
+      <Icon className="h-2.5 w-2.5" /> <HelpLabel label={label} />
     </span>
-    <span className={`block truncate ${accent ?? "text-foreground"}`}>{value}</span>
+    <span className={`block truncate ${valueClassName ?? accent ?? "text-foreground"}`}>{value}</span>
+    {meter}
   </span>
 );

@@ -29,6 +29,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { CopyMintButton } from "@/components/CopyMintButton";
+import { HelpLabel, TokenRiskAlerts, buildTokenRiskAlerts, proofTimestampText } from "@/components/TokenTruthKit";
 import { cn } from "@/lib/utils";
 import {
   dexScreenerChartUrl,
@@ -298,6 +299,8 @@ export const CoinDetailDialog = ({ token, trigger, onOpenScanner, actionLabel = 
     return raw.filter((item) => item.url && !seen.has(item.url) && seen.add(item.url)).slice(0, 8);
   }, [chartUrl, detailToken.id, pair]);
 
+  const riskAlerts = useMemo(() => buildTokenRiskAlerts(detailToken, forensicScore), [detailToken, forensicScore]);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -364,7 +367,7 @@ export const CoinDetailDialog = ({ token, trigger, onOpenScanner, actionLabel = 
           <div className="relative grid gap-4 p-4 sm:p-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(330px,0.65fr)]">
             <div className="grid gap-4">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <IntelCard icon={Radar} label="Main Label" value={primaryLabel} sub={forensicScore ? `origin ${forensicScore.originScore}% · cto ${forensicScore.ctoScore}%` : "layered classifier"} tone={primaryTone} />
+                <IntelCard icon={Radar} label="Main Label" value={primaryLabel} sub={forensicScore ? `origin ${forensicScore.originScore}% · cto ${forensicScore.ctoScore}%` : "layered classifier"} tone={primaryTone} helpLabel="MAIN LABEL" />
                 <IntelCard icon={CandlestickChart} label="Price" value={fmtUsd(detailToken.usdPrice ?? (pair?.priceUsd ? Number(pair.priceUsd) : undefined))} sub={<span className={isUp24 ? "text-og-lime" : "text-og-blood"}>24H {fmtPct(change24)}</span>} tone={isUp24 ? "lime" : "blood"} />
                 <IntelCard icon={Users} label="Market Cap" value={fmtUsd(detailToken.mcap ?? detailToken.fdv ?? pair?.marketCap ?? pair?.fdv)} sub={`holders ${fmtNum(detailToken.holderCount)}`} tone="gold" />
                 <IntelCard icon={BadgeDollarSign} label="DEX Paid" value={dexPaid} sub={`${fmtNum(detailToken.dexBoostActive ?? pair?.boosts?.active)} active · last ${shortDate(detailToken.dexLastPaidAt)}`} tone={dexPaid === "—" ? "muted" : "lime"} />
@@ -428,6 +431,8 @@ export const CoinDetailDialog = ({ token, trigger, onOpenScanner, actionLabel = 
                 <DevLaunchPanel intel={devIntel} isLoading={isFetchingDevIntel} primaryLabel={primaryLabel} />
                 <HolderBundlePanel intel={bundleIntel} isLoading={isFetchingBundleIntel} token={detailToken} />
               </div>
+
+              <TokenRiskAlerts alerts={riskAlerts} title="Watch Items" />
             </div>
 
             <aside className="grid content-start gap-4">
@@ -444,7 +449,7 @@ export const CoinDetailDialog = ({ token, trigger, onOpenScanner, actionLabel = 
                   <MetaLine label="ATH" value={`${fmtUsd(detailToken.allTimeHighUsd)} · ${shortDate(detailToken.allTimeHighAt)}`} />
                   <MetaLine label="ATL" value={`${fmtUsd(detailToken.allTimeLowUsd)} · ${shortDate(detailToken.allTimeLowAt)}`} />
                   <MetaLine label="Migration" value={shortDate(migratedAt)} />
-                  <MetaLine label="OG mint proof" value={shortDate(createdAt)} />
+                  <MetaLine label="Mint proof" value={proofTimestampText(createdAt)} />
                 </div>
               </div>
 
@@ -484,12 +489,12 @@ export const CoinDetailDialog = ({ token, trigger, onOpenScanner, actionLabel = 
   );
 };
 
-const IntelCard = ({ icon: Icon, label, value, sub, tone }: { icon: ComponentType<{ className?: string }>; label: string; value: string; sub?: ReactNode; tone: "lime" | "gold" | "cyan" | "blood" | "muted" }) => {
+const IntelCard = ({ icon: Icon, label, value, sub, tone, helpLabel }: { icon: ComponentType<{ className?: string }>; label: string; value: string; sub?: ReactNode; tone: "lime" | "gold" | "cyan" | "blood" | "muted"; helpLabel?: string }) => {
   const toneClass = tone === "lime" ? "border-og-lime/35 text-og-lime" : tone === "gold" ? "border-og-gold/35 text-og-gold" : tone === "cyan" ? "border-og-cyan/35 text-og-cyan" : tone === "blood" ? "border-og-blood/35 text-og-blood" : "border-white/10 text-muted-foreground";
   return (
     <div className={cn("rounded-3xl border bg-white/[0.035] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]", toneClass)}>
       <div className="flex items-center justify-between gap-2 font-mono text-[10px] uppercase tracking-[0.26em] text-muted-foreground">
-        {label}
+        <HelpLabel label={helpLabel ?? label} />
         <Icon className="h-4 w-4" />
       </div>
       <div className="mt-3 truncate font-display text-2xl font-black text-foreground">{value}</div>
@@ -667,14 +672,14 @@ const TapeMetric = ({ label, value, tone }: { label: string; value: string; tone
 
 const MetaLine = ({ label, value }: { label: string; value: string }) => (
   <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-2 font-mono text-[10px] uppercase tracking-widest">
-    <span className="shrink-0 text-muted-foreground">{label}</span>
+    <span className="shrink-0 text-muted-foreground"><HelpLabel label={label} /></span>
     <span className="min-w-0 truncate text-right text-foreground">{value}</span>
   </div>
 );
 
 const AuditLine = ({ label, ok, good, bad }: { label: string; ok: boolean; good: string; bad: string }) => (
   <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-2 font-mono text-[10px] uppercase tracking-widest">
-    <span className="text-muted-foreground">{label}</span>
+    <span className="text-muted-foreground"><HelpLabel label={label} /></span>
     <span className={cn("inline-flex items-center gap-1", ok ? "text-og-lime" : "text-og-blood")}>
       {ok ? <ShieldCheck className="h-3 w-3" /> : <ShieldAlert className="h-3 w-3" />}
       {ok ? good : bad}

@@ -29,7 +29,7 @@ import {
   fmtPct,
   fmtUsd,
   shortAddr,
-  shortDate,
+  timeAgo,
   tokenDexPaidLabel,
   tokenMigrationDateIso,
   tokenOgCreatedAtIso,
@@ -38,6 +38,18 @@ import {
   type JupTokenInfo,
   type TokenForensicScores,
 } from "@/lib/og";
+import {
+  HelpLabel,
+  ScoreMeter,
+  TokenRiskAlerts,
+  TokenTruthLegend,
+  buildClusterRiskAlerts,
+  buildTokenRiskAlerts,
+  copycatDangerScore,
+  labelToneClass,
+  proofTimestampText,
+  scoreTextClass,
+} from "@/components/TokenTruthKit";
 
 type Props = { onSelect: (mint: string) => void };
 
@@ -98,8 +110,9 @@ export const OgFinder = ({ onSelect }: Props) => {
   const [q, setQ] = useState<string>("");
   const [submitted, setSubmitted] = useState<string>("");
   const [filters, setFilters] = useState<FinderFilters>(DEFAULT_FILTERS);
+  const [showAllCopycats, setShowAllCopycats] = useState<boolean>(false);
 
-  const { data, isFetching, refetch } = useQuery({
+  const { data, isFetching, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["og-forensic-attribution", submitted, "v6-solana-canonical-og"],
     queryFn: (): Promise<ForensicOgReport> => forensicOgAttribution(submitted),
     enabled: submitted.length >= 1,
@@ -119,6 +132,13 @@ export const OgFinder = ({ onSelect }: Props) => {
   }, [og, cats]);
 
   const ogS = og ? ogScore(og, oldestTs) : 0;
+  const scanFreshness: string = useMemo(() => {
+    if (isFetching) return "Verifying now";
+    if (!dataUpdatedAt) return "Awaiting scan";
+    const secondsAgo: number = Math.max(0, Math.floor((Date.now() - dataUpdatedAt) / 1000));
+    if (secondsAgo < 45) return "Verified just now";
+    return `Last full scan: ${timeAgo(Math.floor(dataUpdatedAt / 1000))} ago`;
+  }, [dataUpdatedAt, isFetching]);
 
   const filteredCats = useMemo(() => {
     return cats.filter((c) => {
@@ -132,8 +152,24 @@ export const OgFinder = ({ onSelect }: Props) => {
   }, [cats, oldestTs, filters, report]);
 
   const droppedCats = cats.length - filteredCats.length;
+  const topRiskyCopycats = useMemo(() => {
+    return [...filteredCats]
+      .sort((a, b) => {
+        const scoreA = copycatDangerScore(a, report?.tokenScores[forensicKey(a)]);
+        const scoreB = copycatDangerScore(b, report?.tokenScores[forensicKey(b)]);
+        return scoreB - scoreA;
+      })
+      .slice(0, 3);
+  }, [filteredCats, report]);
+  const visibleCopycats: JupTokenInfo[] = showAllCopycats ? filteredCats : filteredCats.slice(0, 6);
+  const reportAlerts = useMemo(() => {
+    if (!report) return [];
+    const ogAlerts = report.og ? buildTokenRiskAlerts(report.og, report.tokenScores[forensicKey(report.og)]) : [];
+    return [...buildClusterRiskAlerts(report), ...ogAlerts].slice(0, 5);
+  }, [report]);
 
   const submit = (raw: string) => {
+    setShowAllCopycats(false);
     const v = raw.trim().replace(/^\$/, "");
     setQ(v);
     setSubmitted(v);
@@ -191,12 +227,17 @@ export const OgFinder = ({ onSelect }: Props) => {
             </button>
           ))}
           {submitted && (
-            <button
-              onClick={() => refetch()}
-              className="ml-auto border border-og-grid px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-og-cyan hover:border-og-cyan"
-            >
-              ↻ refresh
-            </button>
+            <>
+              <span className="ml-auto rounded-full border border-og-cyan/25 bg-og-cyan/10 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-og-cyan">
+                {scanFreshness}
+              </span>
+              <button
+                onClick={() => refetch()}
+                className="border border-og-grid px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-og-cyan hover:border-og-cyan"
+              >
+                ↻ refresh
+              </button>
+            </>
           )}
         </div>
 
@@ -226,7 +267,13 @@ export const OgFinder = ({ onSelect }: Props) => {
         )}
 
         {submitted && report && report.summary.candidateCount > 0 && (
-          <ForensicReportPanel report={report} />
+          <>
+            <ForensicReportPanel report={report} scanFreshness={scanFreshness} />
+            <div className="mt-4 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+              <TokenRiskAlerts alerts={reportAlerts} title="Watch Items" />
+              <TokenTruthLegend compact />
+            </div>
+          </>
         )}
 
         {submitted && og && (
@@ -241,9 +288,21 @@ export const OgFinder = ({ onSelect }: Props) => {
               <CoinCard t={og} highlight score={report?.tokenScores[forensicKey(og)]?.trueOgProbability ?? ogS} forensic={report?.tokenScores[forensicKey(og)]} onSelect={() => onSelect(og.id)} />
             </div>
             <div className="lg:col-span-2">
-              <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.4em] text-og-blood">
-                <Copy className="h-3 w-3" /> COPYCATS · {filteredCats.length}/{cats.length}
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[10px] uppercase tracking-[0.4em] text-og-blood">
+                <span className="flex items-center gap-2"><Copy className="h-3 w-3" /> COPYCATS · {filteredCats.length}/{cats.length}</span>
+                {filteredCats.length > 6 ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllCopycats((value) => !value)}
+                    className="border border-og-blood/40 bg-og-blood/10 px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-og-blood transition hover:bg-og-blood hover:text-og-ink"
+                  >
+                    {showAllCopycats ? "Show Top" : "View All"}
+                  </button>
+                ) : null}
               </div>
+              {topRiskyCopycats.length > 0 ? (
+                <TopRiskyCopycats tokens={topRiskyCopycats} report={report} onSelect={onSelect} />
+              ) : null}
               {cats.length === 0 ? (
                 <div className="border border-dashed border-og-grid p-6 text-center text-xs uppercase tracking-widest text-muted-foreground">
                   NO COPYCATS DETECTED
@@ -254,7 +313,7 @@ export const OgFinder = ({ onSelect }: Props) => {
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {filteredCats.map((c) => (
+                  {visibleCopycats.map((c) => (
                     <CoinCard
                       key={forensicKey(c)}
                       t={c}
@@ -329,17 +388,7 @@ const FilterToggle = ({
   </button>
 );
 
-const ScoreBar = ({ score }: { score: number }) => {
-  const color = score >= 75 ? "bg-og-lime" : score >= 50 ? "bg-og-gold" : "bg-og-blood";
-  return (
-    <span className="flex items-center gap-2">
-      <span className="h-1 w-20 overflow-hidden border border-og-grid bg-og-ink">
-        <span className={`block h-full ${color}`} style={{ width: `${score}%` }} />
-      </span>
-      <span className="font-mono text-og-gold">{score}</span>
-    </span>
-  );
-};
+const ScoreBar = ({ score }: { score: number }) => <ScoreMeter score={score} kind="origin" />;
 
 const RiskBadge = ({ t }: { t: JupTokenInfo }) => {
   const r = rugRisk(t);
@@ -389,13 +438,13 @@ const CoinCard = ({
       }}
       className={`group relative flex cursor-pointer flex-col gap-3 border p-4 text-left transition ${
         highlight
-          ? "border-og-gold bg-og-gold/5 shadow-[0_0_24px_rgba(234,196,53,0.15)] hover:bg-og-gold/10"
+          ? "border-og-lime/60 bg-og-lime/[0.055] shadow-[0_0_34px_rgba(0,229,255,0.16)] hover:border-og-cyan hover:bg-og-cyan/10"
           : "border-og-grid bg-og-ink/70 hover:border-og-blood hover:bg-og-blood/5"
       }`}
     >
       {highlight && (
-        <span className="absolute -top-2 left-3 bg-og-gold px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-og-ink">
-          ◆ EARLIEST MINT
+        <span className="absolute -top-2 left-3 bg-og-lime px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-og-ink">
+          ◆ TRUE OG · EARLIEST MINT PROOF
         </span>
       )}
       <div className="flex items-center gap-3">
@@ -430,10 +479,10 @@ const CoinCard = ({
 
       <div className="border-y border-og-gold/30 py-2">
         <div className="flex items-center justify-between gap-3">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-og-gold/80">{highlight ? "ORIGIN IDENTITY" : "CLASSIFICATION"}</span>
-          <ScoreBar score={forensic?.originScore ?? score} />
+          <HelpLabel label={highlight ? "ORIGIN IDENTITY" : "CLASSIFICATION"} term={highlight ? "originPercent" : "classification"} className="font-mono text-[10px] uppercase tracking-widest text-og-gold/80" />
+          <ScoreMeter score={forensic?.originScore ?? score} kind="origin" />
         </div>
-        <div className={`mt-2 font-display text-xl font-black uppercase tracking-tight ${primaryLabel.includes("TRUE OG") ? "text-og-lime" : primaryLabel.includes("CLONE") || primaryLabel.includes("COPY") ? "text-og-blood" : "text-og-cyan"}`}>
+        <div className={`mt-2 inline-flex w-fit border px-2 py-1 font-display text-xl font-black uppercase tracking-tight ${labelToneClass(primaryLabel)}`}>
           {primaryLabel}
         </div>
         {secondaryLabels.length > 0 && (
@@ -448,10 +497,10 @@ const CoinCard = ({
       </div>
 
       <div className="grid grid-cols-4 gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-        <Stat icon={Fingerprint} label="ORIGIN" value={forensic ? `${forensic.originScore}%` : `${score}%`} accent={primaryLabel.includes("TRUE OG") ? "text-og-lime" : "text-og-gold"} />
-        <Stat icon={ShieldAlert} label="CLONE" value={forensic ? `${forensic.cloneScore}%` : "—"} accent={(forensic?.cloneScore ?? 0) >= 70 ? "text-og-blood" : undefined} />
-        <Stat icon={GitBranch} label="CTO" value={forensic ? `${forensic.ctoScore}%` : "—"} accent={(forensic?.ctoScore ?? 0) >= 60 ? "text-og-lime" : "text-og-cyan"} />
-        <Stat icon={BrainCircuit} label="RISK" value={forensic ? `${forensic.riskScore}%` : "—"} accent={(forensic?.riskScore ?? 0) >= 65 ? "text-og-blood" : "text-og-cyan"} />
+        <Stat icon={Fingerprint} label="ORIGIN" value={forensic ? `${forensic.originScore}%` : `${score}%`} accent={scoreTextClass("origin", forensic?.originScore ?? score)} />
+        <Stat icon={ShieldAlert} label="CLONE" value={forensic ? `${forensic.cloneScore}%` : "—"} accent={scoreTextClass("clone", forensic?.cloneScore ?? 0)} />
+        <Stat icon={GitBranch} label="CTO" value={forensic ? `${forensic.ctoScore}%` : "—"} accent={scoreTextClass("cto", forensic?.ctoScore ?? 0)} />
+        <Stat icon={BrainCircuit} label="RISK" value={forensic ? `${forensic.riskScore}%` : "—"} accent={scoreTextClass("risk", forensic?.riskScore ?? 0)} />
         <Stat icon={Flame} label="ATH" value={fmtUsd(t.allTimeHighUsd)} accent="text-og-gold" />
         <Stat icon={Calendar} label="ATH DATE" value={shortDate(t.allTimeHighAt)} accent="text-og-gold" />
         <Stat icon={ShieldAlert} label="ATL" value={fmtUsd(t.allTimeLowUsd)} accent="text-og-cyan" />
@@ -486,10 +535,10 @@ const CoinCard = ({
           BadIcon={Snowflake}
         />
         <span className="text-muted-foreground">
-          MINTED <span className="text-foreground">{shortDate(onChainCreatedAt)}</span>
+          <HelpLabel label="MINT PROOF" /> <span className="text-foreground">{proofTimestampText(onChainCreatedAt)}</span>
         </span>
         <span className="hidden text-muted-foreground sm:inline">
-          POOL <span className="text-foreground">{shortDate(poolCreatedAt)}</span>
+          FIRST LP <span className="text-foreground">{shortDate(poolCreatedAt)}</span>
         </span>
         <span className="hidden text-muted-foreground sm:inline">
           MINT AGE <span className="text-foreground">{mintAgeDays != null ? `${mintAgeDays}d` : "—"}</span>
@@ -504,7 +553,61 @@ const CoinCard = ({
   );
 };
 
-const ForensicReportPanel = ({ report }: { report: ForensicOgReport }) => {
+const TopRiskyCopycats = ({ tokens, report, onSelect }: { tokens: JupTokenInfo[]; report: ForensicOgReport; onSelect: (mint: string) => void }) => {
+  const hasAuthorityRisk: boolean = tokens.some((token) => token.audit?.mintAuthorityDisabled !== true || token.audit?.freezeAuthorityDisabled !== true);
+  return (
+    <div className="mb-3 border border-og-blood/35 bg-og-blood/[0.045] p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-og-blood">
+          <ShieldAlert className="h-3.5 w-3.5" /> top risky copycats
+        </div>
+        <span className="rounded-full border border-og-blood/35 bg-og-ink/70 px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-og-blood">
+          ranked by risk + liquidity
+        </span>
+      </div>
+      {hasAuthorityRisk ? (
+        <div className="mb-2 border border-og-blood/45 bg-og-blood/10 px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-og-blood">
+          warning: one or more copycats has mint/freeze authority open or unknown
+        </div>
+      ) : null}
+      <div className="grid gap-2">
+        {tokens.map((token) => {
+          const forensic: TokenForensicScores | undefined = report.tokenScores[forensicKey(token)];
+          const mintSafe: boolean = token.audit?.mintAuthorityDisabled === true;
+          const freezeSafe: boolean = token.audit?.freezeAuthorityDisabled === true;
+          return (
+            <button
+              key={forensicKey(token)}
+              type="button"
+              onClick={() => onSelect(token.id)}
+              className="grid gap-2 border border-og-grid bg-og-ink/75 p-2 text-left transition hover:border-og-blood hover:bg-og-blood/10 sm:grid-cols-[1fr_auto]"
+            >
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="truncate font-display text-sm font-black text-foreground">${token.symbol}</span>
+                  <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">CA {shortAddr(token.id, 5)}</span>
+                </div>
+                <div className="mt-1 grid grid-cols-2 gap-1.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground md:grid-cols-5">
+                  <span><HelpLabel label="ORIGIN" /> <span className={scoreTextClass("origin", forensic?.originScore ?? 0)}>{forensic ? `${forensic.originScore}%` : "—"}</span></span>
+                  <span><HelpLabel label="RISK" /> <span className={scoreTextClass("risk", forensic?.riskScore ?? 0)}>{forensic ? `${forensic.riskScore}%` : "—"}</span></span>
+                  <span>LP <span className="text-foreground">{shortDate(token.firstPool?.createdAt)}</span></span>
+                  <span><HelpLabel label="MINT" /> <span className={mintSafe ? "text-og-lime" : "text-og-blood"}>{mintSafe ? "OFF" : "ON/UNK"}</span></span>
+                  <span><HelpLabel label="FREEZE" /> <span className={freezeSafe ? "text-og-lime" : "text-og-blood"}>{freezeSafe ? "OFF" : "ON/UNK"}</span></span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between gap-2 sm:flex-col sm:items-end">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-og-gold">LQ {fmtUsd(token.liquidity)}</span>
+                <span className="font-mono text-[9px] uppercase tracking-widest text-og-blood">danger {copycatDangerScore(token, forensic)}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const ForensicReportPanel = ({ report, scanFreshness }: { report: ForensicOgReport; scanFreshness: string }) => {
   const ogScore: TokenForensicScores | undefined = report.og ? report.tokenScores[forensicKey(report.og)] : undefined;
   return (
     <div className="mt-5 border border-og-gold/40 bg-og-gold/5 p-3 sm:p-4">
@@ -518,15 +621,18 @@ const ForensicReportPanel = ({ report }: { report: ForensicOgReport }) => {
         <span className="border border-og-grid bg-og-ink/80 px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
           normalized: {report.normalizedQuery}
         </span>
+        <span className="ml-auto border border-og-lime/35 bg-og-lime/10 px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-og-lime">
+          {scanFreshness}
+        </span>
       </div>
 
       <div className="grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="grid gap-2 sm:grid-cols-3">
-          <ForensicMetric icon={Crown} label="MAIN LABEL" value={ogScore?.classification.primary_label ?? (report.og ? "TRUE OG" : "UNKNOWN")} accent="text-og-lime" />
-          <ForensicMetric icon={BrainCircuit} label="ORIGIN SCORE" value={ogScore ? `${ogScore.originScore}%` : "—"} accent="text-og-gold" />
+          <ForensicMetric icon={Crown} label="MAIN LABEL" value={ogScore?.classification.primary_label ?? (report.og ? "TRUE OG" : "UNKNOWN")} accent={ogScore?.classification.primary_label.includes("TRUE OG") ? "text-og-lime" : "text-orange-200"} />
+          <ForensicMetric icon={BrainCircuit} label="ORIGIN SCORE" value={ogScore ? `${ogScore.originScore}%` : "—"} accent={scoreTextClass("origin", ogScore?.originScore ?? 0)} />
           <ForensicMetric icon={ShieldAlert} label="CLONES" value={`${report.summary.cloneCount}/${report.summary.candidateCount}`} accent={report.summary.cloneCount > 0 ? "text-og-blood" : "text-og-lime"} />
           <ForensicMetric icon={Network} label="CHAIN" value="Solana only" accent="text-og-cyan" />
-          <ForensicMetric icon={Calendar} label="FIRST PROOF" value={shortDate(report.summary.earliestProof)} accent="text-og-lime" />
+          <ForensicMetric icon={Calendar} label="MINT PROOF" value={proofTimestampText(report.summary.earliestProof)} accent="text-og-lime" />
           <ForensicMetric icon={Droplets} label="FIRST LP" value={shortDate(report.summary.earliestLiquidity)} accent="text-og-cyan" />
         </div>
 
@@ -566,9 +672,9 @@ const ForensicReportPanel = ({ report }: { report: ForensicOgReport }) => {
             <AlertTriangle className="h-3 w-3" /> attribution warnings
           </div>
           <div className="space-y-1.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-            <div>Control status: <span className="text-og-cyan">{ogScore?.classification.layers.control_status ?? "—"}</span></div>
+            <div><HelpLabel label="Control status" term="communitySupportShift" />: <span className="text-og-cyan">{ogScore?.classification.layers.control_status ?? "—"}</span></div>
             <div>Lifecycle status: <span className="text-og-cyan">{ogScore?.classification.layers.lifecycle_status ?? "—"}</span></div>
-            <div>CTO score: <span className="text-og-cyan">{ogScore ? `${ogScore.ctoScore}%` : "—"}</span> · Migration score: <span className="text-og-cyan">{ogScore ? `${ogScore.migrationScore}%` : "—"}</span></div>
+            <div><HelpLabel label="CTO" /> score: <span className={scoreTextClass("cto", ogScore?.ctoScore ?? 0)}>{ogScore ? `${ogScore.ctoScore}%` : "—"}</span> · <HelpLabel label="Migration" /> score: <span className={scoreTextClass("migration", ogScore?.migrationScore ?? 0)}>{ogScore ? `${ogScore.migrationScore}%` : "—"}</span></div>
             <div>Priority labels: <span className="text-og-gold">TRUE OG CTO · TRUE OG · MIGRATED OG · CTO · MIGRATION · REVIVAL · CLONE</span></div>
           </div>
         </div>
@@ -590,7 +696,7 @@ const ForensicMetric = ({
 }) => (
   <div className="border border-og-grid bg-og-ink/80 p-3 font-mono uppercase tracking-widest">
     <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground">
-      <Icon className="h-3 w-3" /> {label}
+      <Icon className="h-3 w-3" /> <HelpLabel label={label} />
     </div>
     <div className={`mt-1 truncate text-sm ${accent ?? "text-foreground"}`}>{value}</div>
   </div>
@@ -609,7 +715,7 @@ const Stat = ({
 }) => (
   <div>
     <div className="flex items-center gap-1 text-foreground/40">
-      <Icon className="h-2.5 w-2.5" /> {label}
+      <Icon className="h-2.5 w-2.5" /> <HelpLabel label={label} />
     </div>
     <div className={accent ?? "text-foreground"}>{value}</div>
   </div>
@@ -633,7 +739,7 @@ const AuditChip = ({
         ok ? "border-og-lime/40 text-og-lime" : "border-og-blood/40 text-og-blood"
       }`}
     >
-      <Icon className="h-2.5 w-2.5" /> {label} {ok ? "OFF" : "ON"}
+      <Icon className="h-2.5 w-2.5" /> <HelpLabel label={label} /> {ok ? "OFF" : "ON"}
     </span>
   );
 };
