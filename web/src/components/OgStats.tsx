@@ -20,10 +20,11 @@ import {
 import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { CopyMintButton } from "@/components/CopyMintButton";
 import {
+  dexScreenerChartUrl,
+  dexScreenerEmbedUrl,
   enrichTokensWithMarketIntel,
   jupGetTokens,
   jupSearchToken,
-  birdeyeOhlcv,
   fmtUsd,
   fmtNum,
   fmtPct,
@@ -99,13 +100,6 @@ export const OgStats = ({ mint, onSelect }: Props) => {
     setDebouncedQuery("");
   }, [onSelect]);
 
-  const { data: candles } = useQuery({
-    queryKey: ["og-ohlcv", mint],
-    queryFn: () => birdeyeOhlcv(mint, "15m"),
-    refetchInterval: 60_000,
-    enabled: !!mint,
-  });
-
   return (
     <section id="og-stats" className="relative">
       <div className="overflow-hidden border border-og-grid bg-og-ink/45 shadow-[0_0_70px_rgba(188,255,0,0.07)]">
@@ -123,11 +117,11 @@ export const OgStats = ({ mint, onSelect }: Props) => {
                 <span className="text-og-gold text-glow-gold">SOLANA PAIR</span>
               </h2>
               <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                Vitals no longer locks to a preset quote coin. Type a ticker, token name, or mint address and the panel retargets the live Jupiter + Birdeye + Helius feed.
+                Vitals no longer locks to a preset quote coin. Type a ticker, token name, or mint address and the panel retargets the live Jupiter + DexScreener + Helius feed.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <PipelineChip Icon={DatabaseZap} label="Jupiter metadata" />
-                <PipelineChip Icon={CandlestickChart} label="Birdeye candles" accent="gold" />
+                <PipelineChip Icon={CandlestickChart} label="DexScreener charts" accent="gold" />
                 <PipelineChip Icon={RadioTower} label="Helius holders" accent="cyan" />
               </div>
             </div>
@@ -196,7 +190,7 @@ export const OgStats = ({ mint, onSelect }: Props) => {
         </div>
 
         <div className="grid grid-cols-1 gap-4 p-4 pt-0 sm:p-6 sm:pt-0 lg:grid-cols-3">
-          <PriceBlock t={t} candles={candles} loading={isLoading} />
+          <PriceBlock t={t} loading={isLoading} />
           <Stat label="MARKET CAP" value={fmtUsd(t?.mcap)} accent="gold" />
           <Stat label="LIQUIDITY" value={fmtUsd(t?.liquidity)} accent="cyan" />
           <Stat label="ALL TIME HIGH" value={fmtUsd(t?.allTimeHighUsd)} sub={<span className="text-[10px] uppercase tracking-widest">{shortDate(t?.allTimeHighAt)}</span>} icon={<Flame className="h-4 w-4" />} accent="gold" />
@@ -360,56 +354,52 @@ const MiniMetric = ({ label, value, tone }: { label: string; value: string; tone
   );
 };
 
-const PriceBlock = ({ t, candles, loading }: { t?: JupTokenInfo; candles?: { c: number; h: number; l: number }[]; loading: boolean }) => {
+const PriceBlock = ({ t, loading }: { t?: JupTokenInfo; loading: boolean }) => {
   const change = t?.stats24h?.priceChange ?? 0;
   const up = change >= 0;
-  const path = useMemo(() => {
-    if (!candles || candles.length < 2) return "";
-    const w = 300, h = 80;
-    const ys = candles.map((c) => c.c);
-    const min = Math.min(...ys), max = Math.max(...ys);
-    const range = max - min || 1;
-    return candles
-      .map((c, i) => {
-        const x = (i / (candles.length - 1)) * w;
-        const y = h - ((c.c - min) / range) * h;
-        return `${i === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
-      })
-      .join(" ");
-  }, [candles]);
+  const chartUrl: string | undefined = t
+    ? dexScreenerChartUrl({ id: t.id, chainId: t.chainId ?? "solana", dexUrl: t.dexUrl, pairAddress: t.pairAddress })
+    : undefined;
+  const embedUrl: string | undefined = chartUrl ? dexScreenerEmbedUrl(chartUrl) : undefined;
 
   return (
     <div className="relative col-span-1 overflow-hidden border border-og-lime/40 bg-og-ink shadow-og lg:col-span-3">
       <div className="absolute inset-0 grid-bg opacity-30" />
-      <div className="relative flex flex-col gap-6 p-6 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="text-[10px] uppercase tracking-[0.4em] text-og-lime">PRICE/USD</div>
-          <div className="mt-2 font-display text-5xl font-bold text-foreground text-glow sm:text-6xl">
-            {loading ? <span className="opacity-50">…</span> : fmtUsd(t?.usdPrice)}
+      <div className="relative grid gap-4 p-4 sm:p-6 lg:grid-cols-[minmax(260px,0.48fr)_minmax(0,1fr)] lg:items-stretch">
+        <div className="flex flex-col justify-between gap-4">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.4em] text-og-lime">PRICE/USD · DEXSCREENER</div>
+            <div className="mt-2 font-display text-5xl font-bold text-foreground text-glow sm:text-6xl">
+              {loading ? <span className="opacity-50">…</span> : fmtUsd(t?.usdPrice)}
+            </div>
+            <div className={`mt-3 inline-flex items-center gap-2 px-2 py-1 text-xs uppercase tracking-widest ${up ? "bg-og-lime/15 text-og-lime" : "bg-og-blood/15 text-og-blood"}`}>
+              {up ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+              24H {fmtPct(change)}
+            </div>
+            <div className="mt-3 flex gap-4 text-[10px] uppercase tracking-widest text-muted-foreground">
+              <span>5M <span className={(t?.stats5m?.priceChange ?? 0) >= 0 ? "text-og-lime" : "text-og-blood"}>{fmtPct(t?.stats5m?.priceChange)}</span></span>
+              <span>1H <span className={(t?.stats1h?.priceChange ?? 0) >= 0 ? "text-og-lime" : "text-og-blood"}>{fmtPct(t?.stats1h?.priceChange)}</span></span>
+            </div>
           </div>
-          <div className={`mt-3 inline-flex items-center gap-2 px-2 py-1 text-xs uppercase tracking-widest ${up ? "bg-og-lime/15 text-og-lime" : "bg-og-blood/15 text-og-blood"}`}>
-            {up ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-            24H {fmtPct(change)}
-          </div>
-          <div className="mt-3 flex gap-4 text-[10px] uppercase tracking-widest text-muted-foreground">
-            <span>5M <span className={(t?.stats5m?.priceChange ?? 0) >= 0 ? "text-og-lime" : "text-og-blood"}>{fmtPct(t?.stats5m?.priceChange)}</span></span>
-            <span>1H <span className={(t?.stats1h?.priceChange ?? 0) >= 0 ? "text-og-lime" : "text-og-blood"}>{fmtPct(t?.stats1h?.priceChange)}</span></span>
-          </div>
+          {chartUrl ? (
+            <a href={chartUrl} target="_blank" rel="noreferrer" className="inline-flex w-fit items-center gap-2 border border-og-lime/55 bg-og-lime/10 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-og-lime transition hover:bg-og-lime hover:text-og-ink">
+              Open DexScreener <ArrowUpRight className="h-3.5 w-3.5" />
+            </a>
+          ) : null}
         </div>
-        <div className="relative h-[80px] w-full max-w-md">
-          {path ? (
-            <svg viewBox="0 0 300 80" preserveAspectRatio="none" className="h-full w-full">
-              <defs>
-                <linearGradient id="lg" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor={up ? "hsl(var(--og-lime) / 0.5)" : "hsl(var(--og-blood) / 0.5)"} />
-                  <stop offset="100%" stopColor="transparent" />
-                </linearGradient>
-              </defs>
-              <path d={`${path} L300,80 L0,80 Z`} fill="url(#lg)" />
-              <path d={path} fill="none" stroke={up ? "hsl(var(--og-lime))" : "hsl(var(--og-blood))"} strokeWidth="1.5" />
-            </svg>
+        <div className="relative min-h-[330px] overflow-hidden border border-og-grid bg-[#030b18]">
+          {embedUrl ? (
+            <iframe
+              src={embedUrl}
+              title={`${t?.symbol ?? "Token"} DexScreener chart`}
+              className="h-full min-h-[330px] w-full border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
           ) : (
-            <div className="grid h-full place-items-center text-[10px] uppercase tracking-widest text-muted-foreground">CANDLES OFFLINE</div>
+            <div className="grid h-full min-h-[330px] place-items-center p-6 text-center font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Load a token to show the DexScreener chart.
+            </div>
           )}
         </div>
       </div>

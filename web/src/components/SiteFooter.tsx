@@ -1,6 +1,7 @@
 import { AtSign, Coins, ExternalLink, Globe2, Newspaper } from "lucide-react";
 import {
   OGSCAN_BRAND_IMAGE,
+  OGSCAN_DEXSCREENER_URL,
   OGSCAN_SITE_URL,
   OGSCAN_TECH_POST_URL,
   OGSCAN_TOKEN_MINT,
@@ -52,7 +53,7 @@ export const SiteFooter = () => {
             </div>
             <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-[10px] uppercase tracking-[0.3em] text-muted-foreground lg:text-right">
               <a href="https://jup.ag" target="_blank" rel="noreferrer" className="hover:text-og-lime">Jupiter</a>
-              <a href="https://birdeye.so" target="_blank" rel="noreferrer" className="hover:text-og-lime">Birdeye</a>
+              <a href={OGSCAN_DEXSCREENER_URL} target="_blank" rel="noreferrer" className="hover:text-og-lime">DexScreener</a>
             </div>
           </div>
         </div>

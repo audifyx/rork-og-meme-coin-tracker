@@ -17,7 +17,7 @@ import {
 import {
   JUPITER_BASE,
   HELIUS_RPC,
-  BIRDEYE_BASE,
+  DEXSCREENER_WEB_BASE,
   ALCHEMY_API_KEY,
   QUICKNODE_WSS,
   OGSCAN_SITE_URL,
@@ -70,23 +70,16 @@ const PROBES: Probe[] = [
     },
   },
   {
-    id: "birdeye",
-    name: "BIRDEYE",
-    role: "OHLCV · CHARTS",
-    desc: "Historical candles, price points, and market depth used to render the live sparkline and volatility envelope.",
-    endpoint: `${BIRDEYE_BASE}/defi/ohlcv`,
+    id: "dexscreener",
+    name: "DEXSCREENER",
+    role: "CHARTS · PAIRS · BOOSTS",
+    desc: "Primary chart surface for every token view, plus live pair liquidity, transactions, paid orders, and boost intelligence.",
+    endpoint: `${DEXSCREENER_WEB_BASE}/solana`,
     Icon: Eye,
     color: "gold",
     check: async () => {
-      // Birdeye blocks unauth probes — treat reachable origin as OK.
-      try {
-        await fetch(`${BIRDEYE_BASE}/defi/ohlcv?address=So11111111111111111111111111111111111111112&type=15m`, {
-          mode: "no-cors",
-        });
-        return true;
-      } catch {
-        return false;
-      }
+      const r = await fetch("https://api.dexscreener.com/latest/dex/search?q=SOL");
+      return r.ok;
     },
   },
   {
@@ -248,7 +241,7 @@ export const TechStack = () => {
           <Arrow />
           <PipeBlock
             title="ATTRIBUTION"
-            lines={["Jupiter · DexScreener", "Helius · Birdeye"]}
+            lines={["Jupiter · DexScreener", "Helius · pair graph"]}
             color="lime"
           />
           <Arrow />
@@ -309,7 +302,7 @@ export const TechStack = () => {
             { label: "CLONE PROBABILITY", src: "ORIGIN GRAPH" },
             { label: "PARSED TX", src: "HELIUS" },
             { label: "FIRST LIQUIDITY", src: "DEXSCREENER" },
-            { label: "ATH / CANDLES", src: "BIRDEYE" },
+            { label: "CHARTS", src: "DEXSCREENER" },
             { label: "DEPLOYER TRUST", src: "AUDIT + GRAPH" },
             { label: "MIGRATION RISK", src: "TIMELINE DELTA" },
             { label: "CTO RISK", src: "BEHAVIORAL MODEL" },

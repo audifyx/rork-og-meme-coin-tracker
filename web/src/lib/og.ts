@@ -14,7 +14,8 @@ export const OGSCAN_BRAND_IMAGE = "/og-brand.jpg";
 
 export const OGSCAN_DEV_WALLET = "CicbPxARTDrwQ4XcxWsn6SYeG4FMJHirS633cZUJeQDh";
 export const OGSCAN_TOKEN_MINT = "EfnZmcFKMXofKA5V5ujvjqtSorvuQD2MzJPz3dxXpump";
-export const OGSCAN_DEXSCREENER_URL = `https://dexscreener.com/solana/${OGSCAN_TOKEN_MINT}`;
+export const DEXSCREENER_WEB_BASE = "https://dexscreener.com";
+export const OGSCAN_DEXSCREENER_URL = `${DEXSCREENER_WEB_BASE}/solana/${OGSCAN_TOKEN_MINT}`;
 export const OGSCAN_PUMPFUN_URL = `https://pump.fun/coin/${OGSCAN_TOKEN_MINT}`;
 
 export const JUPITER_BASE = "https://lite-api.jup.ag";
@@ -106,6 +107,34 @@ export type DexSearchPair = {
 };
 
 type DexSearchResponse = { pairs?: DexSearchPair[] | null };
+
+export type DexScreenerChartTarget = {
+  id: string;
+  chainId?: string;
+  dexUrl?: string;
+  pairAddress?: string;
+};
+
+export function dexScreenerChartUrl(target: DexScreenerChartTarget): string {
+  if (target.dexUrl?.includes("dexscreener.com")) return target.dexUrl;
+  const chainId: string = (target.chainId ?? "solana").toLowerCase();
+  const address: string = target.pairAddress ?? target.id;
+  return `${DEXSCREENER_WEB_BASE}/${encodeURIComponent(chainId)}/${encodeURIComponent(address)}`;
+}
+
+export function dexScreenerEmbedUrl(chartUrl: string): string {
+  try {
+    const url = new URL(chartUrl);
+    url.searchParams.set("embed", "1");
+    url.searchParams.set("theme", "dark");
+    url.searchParams.set("trades", "0");
+    url.searchParams.set("info", "0");
+    return url.toString();
+  } catch {
+    const separator: string = chartUrl.includes("?") ? "&" : "?";
+    return `${chartUrl}${separator}embed=1&theme=dark&trades=0&info=0`;
+  }
+}
 
 export type DexBoostInfo = {
   chainId?: string;

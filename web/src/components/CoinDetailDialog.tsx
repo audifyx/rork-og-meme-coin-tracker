@@ -30,7 +30,8 @@ import {
 import { CopyMintButton } from "@/components/CopyMintButton";
 import { cn } from "@/lib/utils";
 import {
-  birdeyeOhlcv,
+  dexScreenerChartUrl,
+  dexScreenerEmbedUrl,
   enrichTokensWithMarketIntel,
   forensicOgAttribution,
   fmtNum,
@@ -44,7 +45,6 @@ import {
   tokenDexPaidLabel,
   tokenMigrationDateIso,
   tokenOgCreatedAtIso,
-  type BirdeyeOhlcv,
   type JupTokenInfo,
   type TokenDevLaunchIntel,
 } from "@/lib/og";
@@ -189,24 +189,6 @@ function pairFallbackToken(pair: DetailDexPair, token: JupTokenInfo): JupTokenIn
   );
 }
 
-function chartPath(candles: BirdeyeOhlcv["data"]["items"] | undefined): string {
-  if (!candles || candles.length < 2) return "";
-  const width = 640;
-  const height = 170;
-  const prices = candles.map((candle) => candle.c).filter((value) => Number.isFinite(value));
-  if (prices.length < 2) return "";
-  const min = Math.min(...prices);
-  const max = Math.max(...prices);
-  const range = max - min || 1;
-  return candles
-    .map((candle, index) => {
-      const x = (index / Math.max(1, candles.length - 1)) * width;
-      const y = height - ((candle.c - min) / range) * height;
-      return `${index === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)}`;
-    })
-    .join(" ");
-}
-
 function getPairTxns(pair: DetailDexPair | undefined, window: "m5" | "h1" | "h24"): { buys: number; sells: number } {
   const bucket = pair?.txns?.[window];
   return { buys: bucket?.buys ?? 0, sells: bucket?.sells ?? 0 };
@@ -248,18 +230,13 @@ export const CoinDetailDialog = ({ token, trigger, onOpenScanner, actionLabel = 
 
   const detailToken = enrichedTokens?.[0] ?? (pair ? pairFallbackToken(pair, token) : token);
 
-  const { data: candles, isFetching: isFetchingCandles } = useQuery({
-    queryKey: ["coin-detail-candles", token.id],
-    queryFn: () => birdeyeOhlcv(token.id, "15m"),
-    enabled: open && chainId === "solana" && Boolean(token.id),
-    staleTime: 60_000,
+  const chartUrl = dexScreenerChartUrl({
+    id: detailToken.id,
+    chainId: detailToken.chainId ?? pair?.chainId ?? "solana",
+    dexUrl: pair?.url ?? detailToken.dexUrl,
+    pairAddress: pair?.pairAddress ?? detailToken.pairAddress,
   });
-
-  const path = useMemo(() => chartPath(candles), [candles]);
-  const firstClose = candles?.[0]?.c;
-  const lastClose = candles?.[candles.length - 1]?.c;
-  const chartUp = (lastClose ?? detailToken.usdPrice ?? 0) >= (firstClose ?? detailToken.usdPrice ?? 0);
-  const gradientId = `coin-detail-gradient-${token.id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12)}`;
+  const chartEmbedUrl = dexScreenerEmbedUrl(chartUrl);
   const banner = pair?.info?.header ?? pair?.info?.openGraph;
   const image = pair?.info?.imageUrl ?? detailToken.icon;
   const change24 = pair?.priceChange?.h24 ?? detailToken.stats24h?.priceChange ?? 0;
@@ -300,14 +277,14 @@ export const CoinDetailDialog = ({ token, trigger, onOpenScanner, actionLabel = 
 
   const links = useMemo(() => {
     const raw: { label: string; url: string }[] = [];
-    if (pair?.url ?? detailToken.dexUrl) raw.push({ label: "DexScreener", url: pair?.url ?? detailToken.dexUrl ?? "" });
+    raw.push({ label: "DexScreener Chart", url: chartUrl });
     raw.push({ label: "Solscan", url: `https://solscan.io/token/${detailToken.id}` });
     raw.push({ label: "Jupiter", url: `https://jup.ag/swap/SOL-${detailToken.id}` });
     for (const website of pair?.info?.websites ?? []) if (website.url) raw.push({ label: website.label ?? linkHost(website.url), url: website.url });
     for (const social of pair?.info?.socials ?? []) if (social.url) raw.push({ label: social.type ?? linkHost(social.url), url: social.url });
     const seen = new Set<string>();
     return raw.filter((item) => item.url && !seen.has(item.url) && seen.add(item.url)).slice(0, 8);
-  }, [detailToken.dexUrl, detailToken.id, pair]);
+  }, [chartUrl, detailToken.id, pair]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -407,31 +384,20 @@ export const CoinDetailDialog = ({ token, trigger, onOpenScanner, actionLabel = 
               <div className="overflow-hidden rounded-3xl border border-og-cyan/25 bg-white/[0.035] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-og-cyan">
-                    <BarChart3 className="h-3.5 w-3.5" /> price chart · 15m candles
+                    <BarChart3 className="h-3.5 w-3.5" /> DexScreener chart · live pair
                   </div>
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    {isFetchingCandles ? "loading candles" : candles?.length ? `${candles.length} points` : "chart fallback"}
-                  </div>
+                  <a href={chartUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full border border-og-cyan/35 bg-og-cyan/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-og-cyan transition hover:bg-og-cyan hover:text-og-ink">
+                    open full chart <ExternalLink className="h-3 w-3" />
+                  </a>
                 </div>
-                <div className="relative h-56 overflow-hidden rounded-2xl border border-white/10 bg-[#030b18] sm:h-72">
-                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:44px_44px]" />
-                  {path ? (
-                    <svg viewBox="0 0 640 210" preserveAspectRatio="none" className="relative h-full w-full">
-                      <defs>
-                        <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-                          <stop offset="0%" stopColor={chartUp ? "hsl(var(--og-lime) / 0.42)" : "hsl(var(--og-blood) / 0.38)"} />
-                          <stop offset="100%" stopColor="transparent" />
-                        </linearGradient>
-                      </defs>
-                      <path d={`${path} L640,210 L0,210 Z`} fill={`url(#${gradientId})`} />
-                      <path d={path} fill="none" stroke={chartUp ? "hsl(var(--og-lime))" : "hsl(var(--og-blood))"} strokeWidth="3" vectorEffect="non-scaling-stroke" />
-                    </svg>
-                  ) : (
-                    <div className="relative grid h-full place-items-center p-6 text-center font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
-                      {isFetchingCandles ? <Loader2 className="mb-3 h-6 w-6 animate-spin text-og-cyan" /> : <CandlestickChart className="mb-3 h-7 w-7 text-og-cyan" />}
-                      Live candle chart is loading from Birdeye. Use DexScreener below if the public API is rate-limited.
-                    </div>
-                  )}
+                <div className="relative h-[360px] overflow-hidden rounded-2xl border border-white/10 bg-[#030b18] sm:h-[430px]">
+                  <iframe
+                    src={chartEmbedUrl}
+                    title={`${detailToken.symbol} DexScreener chart`}
+                    className="h-full w-full border-0"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
                 </div>
               </div>
 
