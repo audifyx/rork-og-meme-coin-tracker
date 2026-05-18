@@ -17,6 +17,7 @@ import {
   Pause,
   Play,
 } from "lucide-react";
+import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { CopyMintButton } from "@/components/CopyMintButton";
 import {
   jupSearchToken,
@@ -942,8 +943,8 @@ const PairCard = ({
       <div className="flex items-center justify-between gap-2 border-t border-og-grid/60 pt-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
         <span>CA {shortAddr(t.id, 5)} · age {ageLabel} · hldr {fmtNum(t.holderCount)}</span>
         <span className="inline-flex items-center gap-2">
+          <CoinDetailDialog token={t} onOpenScanner={() => onSelect()} actionLabel="Load" className="px-2 py-1" />
           <CopyMintButton mint={t.id} label="copy" copiedLabel="copied" className="px-2 py-1" iconClassName="h-3 w-3" />
-          <span className="text-og-gold">OPEN →</span>
         </span>
       </div>
     </article>

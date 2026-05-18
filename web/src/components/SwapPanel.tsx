@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, Loader2, Search, ShieldCheck, Zap } from "lucide-react";
+import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { CopyMintButton } from "@/components/CopyMintButton";
 import {
   jupQuote,
@@ -189,15 +190,18 @@ export const SwapPanel = ({ ogMint, onSelectMint }: Props) => {
                 </div>
               </div>
 
-              <a
-                href={`https://jup.ag/swap/SOL-${ogMint}`}
-                target="_blank"
-                rel="noreferrer"
-                className="group flex items-center justify-center gap-2 border border-og-lime bg-og-lime py-4 text-sm font-bold uppercase tracking-[0.3em] text-og-ink transition hover:bg-og-lime/90 pulse-glow"
-              >
-                <Zap className="h-4 w-4" />
-                EXECUTE ON JUPITER
-              </a>
+              <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                <a
+                  href={`https://jup.ag/swap/SOL-${ogMint}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group flex items-center justify-center gap-2 border border-og-lime bg-og-lime py-4 text-sm font-bold uppercase tracking-[0.3em] text-og-ink transition hover:bg-og-lime/90 pulse-glow"
+                >
+                  <Zap className="h-4 w-4" />
+                  EXECUTE ON JUPITER
+                </a>
+                {og && <CoinDetailDialog token={og} onOpenScanner={() => onSelectMint(og.id)} actionLabel="Load" className="min-h-12 px-4" />}
+              </div>
               {error && <div className="text-center text-[10px] uppercase tracking-widest text-og-blood">{(error as Error).message}</div>}
             </div>
             )}
@@ -310,6 +314,7 @@ const SwapSearchRow = ({
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-foreground/40">
           <span>CA {shortAddr(token.id, 5)}</span>
+          <CoinDetailDialog token={token} onOpenScanner={() => onSelect()} actionLabel="Select" className="px-2 py-1" />
           <CopyMintButton mint={token.id} label="copy" copiedLabel="copied" className="px-2 py-1" iconClassName="h-3 w-3" />
         </div>
       </div>

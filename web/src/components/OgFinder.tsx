@@ -22,6 +22,7 @@ import {
   BrainCircuit,
   AlertTriangle,
 } from "lucide-react";
+import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { CopyMintButton } from "@/components/CopyMintButton";
 import {
   forensicOgAttribution,
@@ -478,6 +479,7 @@ const CoinCard = ({
         </span>
         <span className="ml-auto flex items-center gap-2">
           <span className="text-muted-foreground">{shortAddr(t.id, 5)}</span>
+          <CoinDetailDialog token={t} onOpenScanner={() => onSelect()} actionLabel="Load" className="px-2 py-1" />
           <CopyMintButton mint={t.id} label="copy" copiedLabel="copied" className="px-1.5 py-0.5" iconClassName="h-3 w-3" />
         </span>
       </div>
