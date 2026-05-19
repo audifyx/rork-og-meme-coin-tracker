@@ -346,6 +346,68 @@ function isCanonicalSolanaOriginForQuery(token: Pick<JupTokenInfo, "id" | "chain
   return Boolean(canonicalMint && token.id === canonicalMint && isSolanaChainId(token.chainId));
 }
 
+function isExactNameMatch(token: JupTokenInfo, searchName: string): boolean {
+  const target = normalizeNarrativeText(searchName.replace(/^\$/, ""));
+  const normalizedName = normalizeNarrativeText(token.name);
+  const normalizedSymbol = normalizeNarrativeText(token.symbol);
+  return normalizedName === target || normalizedSymbol === target;
+}
+
+function isScamOrDeadPool(token: JupTokenInfo): boolean {
+  if (!token.id) return true;
+  const liq = tokenEffectiveLiquidityUsd(token);
+  if (liq < 5000) return true;
+  if (liq <= 0) return true;
+  const vol24 = (token.stats24h?.buyVolume ?? 0) + (token.stats24h?.sellVolume ?? 0);
+  if (vol24 <= 0) return true;
+  if ((token.holderCount ?? 0) < 10) return true;
+  if (token.audit?.freezeAuthorityDisabled === false) return true;
+  return false;
+}
+
+export function findOriginalOgToken(searchName: string, candidates: JupTokenInfo[]): JupTokenInfo | null {
+  const cleanCandidates = candidates
+    .filter((token) => isExactNameMatch(token, searchName))
+    .filter((token) => !isScamOrDeadPool(token));
+
+  const byMint = new Map<string, JupTokenInfo>();
+  for (const token of cleanCandidates) {
+    const existing = byMint.get(token.id);
+    if (!existing) {
+      byMint.set(token.id, token);
+      continue;
+    }
+    if (tokenEffectiveLiquidityUsd(token) > tokenEffectiveLiquidityUsd(existing)) {
+      byMint.set(token.id, token);
+    }
+  }
+
+  const validTokens = Array.from(byMint.values());
+  validTokens.sort((a, b) => {
+    const aPool = tokenPoolCreatedAtMs(a);
+    const bPool = tokenPoolCreatedAtMs(b);
+    if (Number.isFinite(aPool) && Number.isFinite(bPool)) {
+      if (aPool !== bPool) return aPool - bPool;
+    } else if (Number.isFinite(aPool)) {
+      return -1;
+    } else if (Number.isFinite(bPool)) {
+      return 1;
+    }
+    const aMint = tokenCreatedAtMs(a);
+    const bMint = tokenCreatedAtMs(b);
+    if (Number.isFinite(aMint) && Number.isFinite(bMint)) {
+      if (aMint !== bMint) return aMint - bMint;
+    } else if (Number.isFinite(aMint)) {
+      return -1;
+    } else if (Number.isFinite(bMint)) {
+      return 1;
+    }
+    return tokenEffectiveLiquidityUsd(b) - tokenEffectiveLiquidityUsd(a);
+  });
+
+  return validTokens[0] ?? null;
+}
+
 function isoToMs(rawCreatedAt: string | undefined): number {
   if (!rawCreatedAt) return Number.POSITIVE_INFINITY;
   const createdAtMs: number = new Date(rawCreatedAt).getTime();
@@ -410,13 +472,13 @@ export function tokenEffectiveLiquidityUsd(token: Pick<JupTokenInfo, "liquidity"
 }
 
 function reliableHolderCount(value: number | undefined): number | undefined {
-  if (value == null || !Number.isFinite(value) || value <= 1) return undefined;
+  if (value == null || !Number.isFinite(value)) return undefined;
   return value;
 }
 
 function whaleWalletCountFromHolderIntel(holderIntel: TokenHolderBundleIntel | undefined): number | undefined {
   if (!holderIntel) return undefined;
-  return holderIntel.topHolders.filter((holder, index) => index > 0 && holder.percent >= 5).length;
+  return holderIntel.topHolders.filter((holder) => holder.percent >= 5).length;
 }
 
 function tokenReportedLiquidityUsd(token: Pick<JupTokenInfo, "liquidity" | "reportedLiquidity">): number {
@@ -2444,7 +2506,7 @@ export async function forensicOgAttribution(ticker: string): Promise<ForensicOgR
   const exactMatches: JupTokenInfo[] = similar.filter((token) => normalizeTickerSymbol(token.symbol) === normalizedQuery);
   const pool: JupTokenInfo[] = exactMatches.length > 0 ? exactMatches : similar.length > 0 ? similar : merged.slice(0, 32);
   const chainDatedPool: JupTokenInfo[] = await withOnChainCreationDates(pool);
-  const enriched: JupTokenInfo[] = await enrichTokensWithMarketIntel(chainDatedPool, { includeAth: true, maxAth: 14, includeOnChainIntel: true, maxOnChain: 14, maxBirdeye: 24 });
+  const enriched: JupTokenInfo[] = await enrichTokensWithMarketIntel(chainDatedPool, { includeAth: false, includeOnChainIntel: true, maxOnChain: 14, maxBirdeye: 24 });
 
   const liquidCandidates: JupTokenInfo[] = enriched.filter(hasMinimumOgScanLiquidity);
   const originPool: JupTokenInfo[] = liquidCandidates.filter((token) => !hasPulledOrDeadLiquidity(token) && (isCanonicalSolanaOriginForQuery(token, clean) || !hasUnsafeTokenAuthority(token)));
@@ -2461,7 +2523,8 @@ export async function forensicOgAttribution(ticker: string): Promise<ForensicOgR
   const eventSorted: JupTokenInfo[] = canonicalCandidate
     ? [canonicalCandidate, ...eventSortedBase.filter((token) => tokenKey(token) !== tokenKey(canonicalCandidate))]
     : eventSortedBase;
-  const firstMintToken: JupTokenInfo | null = canonicalCandidate ?? eventSorted[0] ?? chainSorted[0] ?? null;
+  const exactMatchOg: JupTokenInfo | null = findOriginalOgToken(clean, candidates);
+  const firstMintToken: JupTokenInfo | null = exactMatchOg ?? canonicalCandidate ?? eventSorted[0] ?? chainSorted[0] ?? null;
   const canonicalChainMs: number = canonicalCandidate ? tokenCreatedAtMs(canonicalCandidate) : Number.POSITIVE_INFINITY;
   const canonicalLiquidityMs: number = canonicalCandidate ? tokenPoolCreatedAtMs(canonicalCandidate) : Number.POSITIVE_INFINITY;
   const canonicalEventMs: number = canonicalCandidate ? earliestCandidateEventMs(canonicalCandidate) : Number.POSITIVE_INFINITY;
@@ -3197,13 +3260,12 @@ export function fmtNum(n: number | undefined | null): string {
 }
 
 export function fmtHolderCount(n: number | undefined | null): string {
-  if (n == null || !isFinite(n) || n <= 1) return "—";
+  if (n == null || !isFinite(n)) return "—";
   return fmtNum(n);
 }
 
 export function fmtWhaleCount(n: number | undefined | null): string {
   if (n == null || !isFinite(n)) return "—";
-  if (n <= 1) return "0";
   return fmtNum(n);
 }
 

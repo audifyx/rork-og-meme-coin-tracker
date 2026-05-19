@@ -478,8 +478,8 @@ const ResultRow = ({ t, score, onSelect }: { t: JupTokenInfo; score?: TokenForen
       : "collector-token-card--copy";
 
   return (
-    <article className={`collector-token-card ${cardTone} group flex flex-col gap-3 p-3 text-left transition duration-200`}>
-      <div className="flex items-center justify-between gap-2 font-mono text-[9px] uppercase tracking-widest">
+    <article className={`collector-token-card ${cardTone} group relative flex flex-col overflow-hidden text-left transition duration-200`}>
+      <div className="flex items-center justify-between gap-2 p-3 pb-0 font-mono text-[9px] uppercase tracking-widest">
         <span className={`collector-rarity-chip ${lpPulled || riskScore >= 70 ? "text-og-blood" : score?.isPrimaryToken ? "text-og-lime" : "text-og-cyan"}`}>
           {score?.isPrimaryToken ? <Crown className="h-3 w-3" /> : lpPulled || riskScore >= 70 ? <ShieldAlert className="h-3 w-3" /> : <BadgeDollarSign className="h-3 w-3" />}
           {rarityLabel}
@@ -487,8 +487,16 @@ const ResultRow = ({ t, score, onSelect }: { t: JupTokenInfo; score?: TokenForen
         <span className="collector-rarity-chip text-muted-foreground">#{score?.dominanceRank ?? "--"} / {fmtNum(t.poolCount ?? t.allPools?.length)} pools</span>
       </div>
 
-      <button type="button" onClick={onSelect} className="grid min-h-0 gap-3 text-left sm:grid-cols-[10.5rem_1fr]">
-        <div className="collector-token-art h-40 sm:h-full">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onSelect}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") onSelect();
+        }}
+        className="relative mt-2 cursor-pointer px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-og-cyan/50"
+      >
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
           {t.icon ? (
             <img src={t.icon} alt={t.symbol} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" loading="lazy" />
           ) : (
@@ -496,59 +504,59 @@ const ResultRow = ({ t, score, onSelect }: { t: JupTokenInfo; score?: TokenForen
               {t.symbol?.slice(0, 1) ?? "?"}
             </div>
           )}
-          <div className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] rounded-full bg-black/55 px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-og-cyan backdrop-blur">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+          <div className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] rounded-full bg-black/60 px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-og-cyan backdrop-blur">
             LP {fmtUsd(tokenEffectiveLiquidityUsd(t))}
           </div>
-          <div className="absolute bottom-3 left-3 right-3 grid gap-1 font-mono text-[10px] uppercase tracking-widest">
-            <div className="flex items-center justify-between gap-2">
-              <span className="rounded-full bg-black/60 px-2 py-1 text-og-gold backdrop-blur">${t.symbol}</span>
-              {t.isVerified ? <span className="rounded-full bg-og-lime px-2 py-1 text-og-ink">verified</span> : null}
-            </div>
-            <div className="flex items-center justify-between gap-2 text-[9px] text-foreground/80">
-              <span className="rounded-full bg-black/55 px-2 py-1 backdrop-blur">H {fmtHolderCount(t.holderCount)}</span>
-              <span className="truncate rounded-full bg-black/55 px-2 py-1 text-og-cyan backdrop-blur">DEX {dexDisplay}</span>
-            </div>
-          </div>
-        </div>
 
-        <div className="flex min-w-0 flex-col gap-3">
-          <div>
-            <div className="flex items-start gap-2">
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-display text-2xl font-black tracking-tight text-foreground">${t.symbol}</div>
-                <div className="truncate text-[10px] uppercase tracking-[0.24em] text-muted-foreground">{t.name}</div>
+          <div className="absolute bottom-3 left-3 right-3">
+            <div className="flex items-end justify-between gap-2">
+              <div className="min-w-0">
+                <div className="truncate font-display text-3xl font-black tracking-tight text-white drop-shadow-md">${t.symbol}</div>
+                <div className="truncate text-[10px] uppercase tracking-[0.24em] text-white/80">{t.name}</div>
               </div>
               <div className="text-right font-mono">
-                <div className="text-sm text-foreground">{fmtUsd(t.usdPrice)}</div>
-                <div className={`text-[10px] ${up ? "text-og-lime" : "text-og-blood"}`}>{fmtPct(ch)} 24H</div>
+                <div className="text-sm font-bold text-white drop-shadow-md">{fmtUsd(t.usdPrice)}</div>
+                <div className={`text-[10px] ${up ? "text-og-lime" : "text-og-blood"} drop-shadow-md`}>{fmtPct(ch)} 24H</div>
               </div>
             </div>
-            <div className={`mt-2 inline-flex max-w-full border px-2.5 py-1 font-display text-sm font-black uppercase tracking-tight ${labelToneClass(label)}`}>
-              <span className="truncate">{label}</span>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 font-mono text-[9px] uppercase tracking-widest">
+              {t.isVerified ? <span className="rounded-full bg-og-lime px-1.5 py-0.5 text-[8px] text-og-ink">verified</span> : null}
+              <span className="rounded-full bg-black/60 px-1.5 py-0.5 text-white/90 backdrop-blur">H {fmtHolderCount(t.holderCount)}</span>
+              <span className="truncate rounded-full bg-black/60 px-1.5 py-0.5 text-og-cyan backdrop-blur">DEX {dexDisplay}</span>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-3 gap-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-            <MiniIntel icon={Gauge} label="Dominance" value={score ? `#${score.dominanceRank} · ${dominanceScore}%` : "—"} accent={dominanceScore >= 70 ? "text-og-lime" : dominanceScore >= 45 ? "text-og-cyan" : "text-muted-foreground"} meter={score ? <ScoreMeter score={dominanceScore} kind="cto" className="mt-1" /> : undefined} />
-            <MiniIntel icon={Fingerprint} label="Origin" value={score ? `${originScore}%` : "—"} accent={scoreTextClass("origin", originScore)} meter={score ? <ScoreMeter score={originScore} kind="origin" className="mt-1" /> : undefined} />
-            <MiniIntel icon={ShieldAlert} label="Risk" value={score || lpPulled ? `${riskScore}%` : "—"} accent={scoreTextClass("risk", riskScore)} meter={score || lpPulled ? <ScoreMeter score={riskScore} kind="risk" className="mt-1" /> : undefined} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-1.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground xl:grid-cols-3">
-            <MiniIntel icon={Target} label="Clone" value={score ? `${cloneScore}%` : "—"} accent={scoreTextClass("clone", cloneScore)} />
-            <MiniIntel icon={ShieldCheck} label="Authority" value={tokenAuthorityLabel(t)} accent={tokenAuthoritySafe(t) ? "text-og-lime" : "text-og-gold"} />
-            <MiniIntel icon={Users} label="Holders" value={fmtHolderCount(t.holderCount)} accent={(t.holderCount ?? 0) >= 1000 ? "text-og-lime" : "text-muted-foreground"} />
-            <MiniIntel icon={Wallet} label="Top 10" value={holderConcentrationLabel} accent={(holderConcentration ?? 0) > 45 ? "text-og-blood" : holderConcentration != null ? "text-og-lime" : undefined} />
-            <MiniIntel icon={Coins} label="Liquidity" value={fmtUsd(tokenEffectiveLiquidityUsd(t))} accent="text-og-cyan" />
-            <MiniIntel icon={RadioTower} label="First Mint" value={firstMintDate} accent={score?.isFirstMintToken ? "text-og-lime" : "text-og-gold"} />
-            <MiniIntel icon={Calendar} label="Migrated" value={migrationDate} accent="text-og-cyan" />
-            <MiniIntel icon={BadgeDollarSign} label="DEX" value={dexDisplay} accent={dexPaid === "—" ? "text-muted-foreground" : "text-og-lime"} />
+      <div className="grid gap-2 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className={`inline-flex max-w-full border px-2.5 py-1 font-display text-sm font-black uppercase tracking-tight ${labelToneClass(label)}`}>
+            <span className="truncate">{label}</span>
           </div>
         </div>
-      </button>
+
+        <div className="grid grid-cols-3 gap-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+          <MiniIntel icon={Gauge} label="Dominance" value={score ? `#${score.dominanceRank} · ${dominanceScore}%` : "—"} accent={dominanceScore >= 70 ? "text-og-lime" : dominanceScore >= 45 ? "text-og-cyan" : "text-muted-foreground"} meter={score ? <ScoreMeter score={dominanceScore} kind="cto" className="mt-1" /> : undefined} />
+          <MiniIntel icon={Fingerprint} label="Origin" value={score ? `${originScore}%` : "—"} accent={scoreTextClass("origin", originScore)} meter={score ? <ScoreMeter score={originScore} kind="origin" className="mt-1" /> : undefined} />
+          <MiniIntel icon={ShieldAlert} label="Risk" value={score || lpPulled ? `${riskScore}%` : "—"} accent={scoreTextClass("risk", riskScore)} meter={score || lpPulled ? <ScoreMeter score={riskScore} kind="risk" className="mt-1" /> : undefined} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-1.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground xl:grid-cols-3">
+          <MiniIntel icon={Target} label="Clone" value={score ? `${cloneScore}%` : "—"} accent={scoreTextClass("clone", cloneScore)} />
+          <MiniIntel icon={ShieldCheck} label="Authority" value={tokenAuthorityLabel(t)} accent={tokenAuthoritySafe(t) ? "text-og-lime" : "text-og-gold"} />
+          <MiniIntel icon={Users} label="Holders" value={fmtHolderCount(t.holderCount)} accent={(t.holderCount ?? 0) >= 1000 ? "text-og-lime" : "text-muted-foreground"} />
+          <MiniIntel icon={Wallet} label="Top 10" value={holderConcentrationLabel} accent={(holderConcentration ?? 0) > 45 ? "text-og-blood" : holderConcentration != null ? "text-og-lime" : undefined} />
+          <MiniIntel icon={Coins} label="Liquidity" value={fmtUsd(tokenEffectiveLiquidityUsd(t))} accent="text-og-cyan" />
+          <MiniIntel icon={RadioTower} label="First Mint" value={firstMintDate} accent={score?.isFirstMintToken ? "text-og-lime" : "text-og-gold"} />
+          <MiniIntel icon={Calendar} label="Migrated" value={migrationDate} accent="text-og-cyan" />
+          <MiniIntel icon={BadgeDollarSign} label="DEX" value={dexDisplay} accent={dexPaid === "—" ? "text-muted-foreground" : "text-og-lime"} />
+        </div>
+      </div>
 
       {secondaryLabels.length > 0 && (
-        <div className="flex flex-wrap gap-1 font-mono text-[8px] uppercase tracking-widest">
+        <div className="flex flex-wrap gap-1 px-3 pb-1 font-mono text-[8px] uppercase tracking-widest">
           {secondaryLabels.map((secondary) => (
             <span key={secondary} className="collector-rarity-chip min-h-0 border-og-cyan/30 bg-og-cyan/10 px-1.5 py-0.5 text-og-cyan">
               {secondary}
@@ -557,7 +565,7 @@ const ResultRow = ({ t, score, onSelect }: { t: JupTokenInfo; score?: TokenForen
         </div>
       )}
 
-      <div className="border-t border-white/10 pt-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+      <div className="border-t border-white/10 p-3 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
         <div className="mb-2 truncate">CA {shortAddr(t.id, 5)} · {score?.primaryStatusNote ?? "Open detail panel for full token truth."}</div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           <QuickTool href={chartUrl} icon={<BarChart3 className="h-3 w-3" />} label="Chart" />
@@ -570,6 +578,7 @@ const ResultRow = ({ t, score, onSelect }: { t: JupTokenInfo; score?: TokenForen
     </article>
   );
 };
+
 
 const QuickTool = ({ href, icon, label }: { href: string; icon: ReactNode; label: string }) => (
   <a

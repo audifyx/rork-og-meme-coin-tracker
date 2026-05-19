@@ -300,7 +300,7 @@ export const CoinDetailDialog = ({ token, trigger, onOpenScanner, actionLabel = 
       const jupTokens = await jupGetTokens([token.id]);
       const base = jupTokens[0] ? mergeToken(jupTokens[0], token) : token;
       const withPair = pair ? pairFallbackToken(pair, base) : base;
-      return enrichTokensWithMarketIntel([withPair], { includeAth: true, maxAth: 1, includeOnChainIntel: true, maxOnChain: 1, maxBirdeye: 1 });
+      return enrichTokensWithMarketIntel([withPair], { includeAth: false, includeOnChainIntel: true, maxOnChain: 1, maxBirdeye: 1 });
     },
     enabled: open && Boolean(token.id),
     staleTime: 30_000,
@@ -453,13 +453,10 @@ export const CoinDetailDialog = ({ token, trigger, onOpenScanner, actionLabel = 
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <IntelCard icon={Flame} label="All-Time High" value={fmtUsd(detailToken.allTimeHighUsd)} sub={marketExtremeSub(detailToken.allTimeHighAt, detailToken.allTimeHighSource)} tone="gold" />
-                <IntelCard icon={Activity} label="All-Time Low" value={fmtUsd(detailToken.allTimeLowUsd)} sub={marketExtremeSub(detailToken.allTimeLowAt, detailToken.allTimeLowSource)} tone="cyan" />
-                <IntelCard icon={BadgeDollarSign} label="ATH Market Cap" value={fmtUsd(detailToken.allTimeHighMarketCap)} sub={detailToken.allTimeHighMarketCap ? `estimated ${shortDate(detailToken.allTimeHighMarketCapAt)}` : "needs price history + MC"} tone="gold" />
                 <IntelCard icon={Users} label="Holders" value={fmtHolderCount(detailToken.holderCount)} sub={`top 10 ${detailToken.topHoldersPercent != null ? `${detailToken.topHoldersPercent.toFixed(1)}%` : "scanning"}`} tone="lime" />
+                <IntelCard icon={BadgeDollarSign} label="Quote-Backed LP" value={fmtUsd(quoteBackedLiquidity)} sub={lpPulled ? "LP pulled/dead" : `reported ${fmtUsd(detailToken.reportedLiquidity ?? pair?.liquidity?.usd ?? quoteBackedLiquidity)}`} tone={lpPulled ? "blood" : "gold"} />
               </div>
 
-              <MarketExtremesPanel token={detailToken} />
 
               <div className="rounded-3xl border border-og-cyan/25 bg-white/[0.035] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                 <div className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-og-cyan">
@@ -669,9 +666,7 @@ const MetadataPanel = ({ token, pair, createdAt, migratedAt, pairCreated }: { to
       <MetaLine label="On-chain mint" value={createdAt ? `${shortDate(createdAt)} · ${timeAgo(Math.floor(new Date(createdAt).getTime() / 1000))} old` : "unknown"} />
       <MetaLine label="Pair created" value={pairCreated ? `${shortDate(pairCreated)} · ${timeAgo(Math.floor(new Date(pairCreated).getTime() / 1000))} old` : "—"} />
       <MetaLine label="Migration day" value={shortDate(migratedAt)} />
-      <MetaLine label="ATH" value={marketExtremeLine(token.allTimeHighUsd, token.allTimeHighAt)} />
-      <MetaLine label="ATL" value={marketExtremeLine(token.allTimeLowUsd, token.allTimeLowAt)} />
-      <MetaLine label="History source" value={token.allTimeHighSource ?? token.allTimeLowSource ?? "provider limited"} />
+      <MetaLine label="Pool quote" value={pair?.quoteToken?.symbol ? `${pair.quoteToken.symbol} · ${pair.dexId ?? "DEX"}` : "—"} />
       <MetaLine label="Labels" value={(pair?.labels ?? []).join(", ") || "—"} />
       <MetaLine label="Pair quote" value={pair?.quoteToken?.symbol ? `${pair.quoteToken.symbol} · ${pair.dexId ?? "DEX"}` : "—"} />
     </div>
