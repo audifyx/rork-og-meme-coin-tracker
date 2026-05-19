@@ -524,7 +524,7 @@ const CoinCard = ({
           <ScoreMeter score={dominanceScore} kind="origin" />
         </div>
 
-        <div className="grid grid-cols-3 gap-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
           <Stat icon={Crown} label="DOM" value={forensic ? `${forensic.dominanceScore}%` : `${score}%`} accent={scoreTextClass("origin", dominanceScore)} />
           <Stat icon={Fingerprint} label="ORIGIN" value={forensic ? `${forensic.originScore}%` : `${score}%`} accent={scoreTextClass("origin", forensic?.originScore ?? score)} />
           <Stat icon={BrainCircuit} label="RISK" value={forensic ? `${riskScore}%` : "—"} accent={scoreTextClass("risk", riskScore)} />
@@ -614,7 +614,7 @@ const TopRiskyCopycats = ({ tokens, report, onSelect }: { tokens: JupTokenInfo[]
                   <span className="truncate font-display text-sm font-black text-foreground">${token.symbol}</span>
                   <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground">CA {shortAddr(token.id, 5)}</span>
                 </div>
-                <div className="mt-1 grid grid-cols-2 gap-1.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground md:grid-cols-5">
+                <div className="mt-1 grid grid-cols-1 gap-1.5 sm:grid-cols-2 md:grid-cols-5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
                   <span><HelpLabel label="ORIGIN" /> <span className={scoreTextClass("origin", forensic?.originScore ?? 0)}>{forensic ? `${forensic.originScore}%` : "—"}</span></span>
                   <span><HelpLabel label="RISK" /> <span className={scoreTextClass("risk", forensic?.riskScore ?? 0)}>{forensic ? `${forensic.riskScore}%` : "—"}</span></span>
                   <span>LP <span className="text-foreground">{shortDate(token.firstPool?.createdAt)}</span></span>

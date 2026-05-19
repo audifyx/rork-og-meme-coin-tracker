@@ -732,3 +732,23 @@
   border-color: hsl(var(--og-cyan) / 0.72) !important;
   color: hsl(var(--og-cyan));
 }
+
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* Mobile touch targets */
+@media (max-width: 640px) {
+  .og-tool-shell button,
+  .og-tool-shell a {
+    min-height: 2.75rem;
+  }
+  .og-search-box,
+  .og-tool-shell .og-search-box {
+    min-height: 3.25rem;
+  }
+  .og-search-input,
+  .og-tool-shell .og-search-input {
+    min-height: 3.15rem !important;
+  }
+}

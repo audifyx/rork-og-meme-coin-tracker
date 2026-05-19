@@ -409,7 +409,7 @@ const Index = () => {
           <MobileToolDock activeId={tab} onNavigate={switchTab} />
           <WorkspaceTopBar tab={activeTab} mint={mint} onChangeMint={promptMint} />
 
-          <main className="px-3 pb-20 pt-3 sm:px-5 lg:px-7 lg:pb-10">
+          <main className="px-3 pb-24 pt-3 sm:px-5 lg:px-7 lg:pb-10">
             {tab === "overview" ? (
               <OverviewPage mint={mint} onSwitchTab={(nextTab: TabId) => switchTab(nextTab)} onScanClick={() => switchTab("scanner")} onChangeMint={promptMint} />
             ) : (
@@ -533,40 +533,38 @@ const SidebarButton = ({
   );
 };
 
-const MobileToolDock = ({ activeId, onNavigate }: { activeId: TabId; onNavigate: (nextTab: string) => void }) => (
-  <div className="sticky top-0 z-40 border-b border-white/10 bg-[#03101f]/92 p-2 backdrop-blur-2xl lg:hidden">
-    <div className="mb-2 flex items-center justify-between gap-3 px-1">
-      <button type="button" onClick={() => onNavigate("overview")} className="flex items-center gap-2 text-left">
-        <img src="/icon.png" alt="OG Scan" className="h-9 w-9 rounded-xl border border-og-lime/60" />
-        <span>
-          <span className="block font-display text-sm font-black uppercase leading-none text-white">OGSCAN</span>
-          <span className="block font-mono text-[8px] uppercase tracking-[0.22em] text-og-cyan">Tool sidebar</span>
-        </span>
-      </button>
-      <button type="button" onClick={() => onNavigate("scanner")} className="rounded-full border border-og-lime bg-og-lime px-3 py-2 font-mono text-[9px] font-black uppercase tracking-[0.18em] text-og-ink">
-        Truth Scan
-      </button>
+const MobileToolDock = ({ activeId, onNavigate }: { activeId: TabId; onNavigate: (nextTab: string) => void }) => {
+  const bottomTabs = [
+    { id: "overview" as TabId, label: "Home", Icon: Gauge },
+    { id: "scanner" as TabId, label: "Scan", Icon: Search },
+    { id: "snipe-feed" as TabId, label: "Radar", Icon: Target },
+    { id: "feed" as TabId, label: "Feed", Icon: Rss },
+    { id: "swap" as TabId, label: "Swap", Icon: Zap },
+  ];
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-[#03101f]/92 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl lg:hidden">
+      <nav className="flex items-center justify-around gap-1 px-2 pb-3 pt-2" aria-label="Mobile bottom navigation">
+        {bottomTabs.map((item) => {
+          const isActive = activeId === item.id || TAB_BY_ID[activeId]?.mergedInto === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onNavigate(item.id)}
+              className={cn(
+                "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-1 py-2 transition active:scale-95",
+                isActive ? "text-og-lime" : "text-white/50 hover:text-white/80",
+              )}
+            >
+              <item.Icon className={cn("h-6 w-6", isActive && "text-og-lime")} strokeWidth={isActive ? 2.5 : 1.5} />
+              <span className="truncate font-mono text-[9px] font-black uppercase tracking-wider">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
-    <nav className="ios-scroll flex gap-2 overflow-x-auto" aria-label="Mobile tool navigation">
-      {NAV_TABS.map((item: TabConfig) => {
-        const isActive: boolean = activeId === item.id || TAB_BY_ID[activeId]?.mergedInto === item.id;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onNavigate(item.id)}
-            className={cn(
-              "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-2 font-mono text-[9px] font-black uppercase tracking-[0.15em] transition",
-              isActive ? "border-og-lime bg-og-lime text-og-ink" : "border-white/10 bg-white/[0.055] text-white/62 hover:text-og-cyan",
-            )}
-          >
-            <item.Icon className="h-3.5 w-3.5" /> {item.label}
-          </button>
-        );
-      })}
-    </nav>
-  </div>
-);
+  );
+};
 
 const WorkspaceTopBar = ({ tab, mint, onChangeMint }: { tab: TabConfig; mint: string; onChangeMint: () => void }) => {
   const accentTextClass: string = getAccentClass(tab.accent, "text");
@@ -584,11 +582,11 @@ const WorkspaceTopBar = ({ tab, mint, onChangeMint }: { tab: TabConfig; mint: st
         </div>
 
         <div className="flex flex-wrap items-center gap-2 font-mono text-[9px] font-black uppercase tracking-[0.18em]">
-          <span className={cn("og-pill px-3 py-2", accentTextClass)}>
+          <span className={cn("hidden sm:inline-flex og-pill px-3 py-2", accentTextClass)}>
             <tab.Icon className="h-3.5 w-3.5" /> /{tab.slug}
           </span>
-          <span className="og-pill px-3 py-2 text-og-cyan">/page/{tab.pageNumber}</span>
-          <button type="button" onClick={onChangeMint} className="og-pill px-3 py-2 text-white/72 transition hover:border-og-lime hover:text-og-lime">
+          <span className="hidden sm:inline-flex og-pill px-3 py-2 text-og-cyan">/page/{tab.pageNumber}</span>
+          <button type="button" onClick={onChangeMint} className="og-pill px-3 py-2.5 text-white/72 transition hover:border-og-lime hover:text-og-lime min-h-[44px]">
             Mint {shortAddr(mint, 4)}
           </button>
         </div>
