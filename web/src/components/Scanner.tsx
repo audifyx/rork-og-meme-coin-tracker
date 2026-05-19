@@ -45,6 +45,7 @@ import {
   type JupTokenInfo,
   type TokenForensicScores,
 } from "@/lib/og";
+import { cn } from "@/lib/utils";
 import { HelpLabel, ScoreMeter, TokenTruthLegend, labelToneClass, scoreTextClass } from "@/components/TokenTruthKit";
 
 const PUMPFUN_BASE_URL = "https://pump.fun/coin";
@@ -202,6 +203,7 @@ export const Scanner = ({ onSelect, initialQuery = "" }: Props) => {
   const [q, setQ] = useState<string>(initialQuery);
   const [debounced, setDebounced] = useState<string>(initialQuery.trim());
   const [filters, setFilters] = useState<ScanFilters>(DEFAULT_FILTERS);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
 
   useEffect(() => {
     const cleanQuery: string = initialQuery.trim();
@@ -281,7 +283,14 @@ export const Scanner = ({ onSelect, initialQuery = "" }: Props) => {
 
         <div className="mt-3 border border-og-grid bg-og-ink/70 p-3 shadow-[0_24px_80px_-60px_hsl(var(--og-cyan))]">
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-og-cyan">
+            <button
+              type="button"
+              onClick={() => setShowFilters((v) => !v)}
+              className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-og-cyan lg:hidden"
+            >
+              <Filter className="h-3 w-3" /> {showFilters ? "Hide" : "Filters"}
+            </button>
+            <div className="hidden items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.3em] text-og-cyan lg:flex">
               <Filter className="h-3 w-3" /> scanner filters
             </div>
             <div className="ml-auto flex flex-wrap gap-1.5">
@@ -304,7 +313,7 @@ export const Scanner = ({ onSelect, initialQuery = "" }: Props) => {
               </button>
             </div>
           </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <div className={cn("grid gap-2 sm:grid-cols-2 lg:grid-cols-4", !showFilters && "hidden lg:grid")}>
             <FilterNum label="MIN LIQ" value={filters.minLiq} step={1000} min={0} onChange={(v) => setFilters({ ...filters, minLiq: Math.max(0, v) })} />
             <FilterNum label="MIN MCAP" value={filters.minMcap} step={10_000} min={0} onChange={(v) => setFilters({ ...filters, minMcap: v })} />
             <FilterNum label="MIN HOLDERS" value={filters.minHolders} step={100} min={0} onChange={(v) => setFilters({ ...filters, minHolders: v })} />
@@ -322,7 +331,7 @@ export const Scanner = ({ onSelect, initialQuery = "" }: Props) => {
             <FilterToggle label="GREEN 24H" value={filters.greenOnly} onChange={(v) => setFilters({ ...filters, greenOnly: v })} />
             <FilterToggle label="DEX PAID" value={filters.dexPaidOnly} onChange={(v) => setFilters({ ...filters, dexPaidOnly: v })} />
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+          <div className={cn("mt-3 flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground", !showFilters && "hidden lg:flex")}>
             <span><span className="text-og-lime">{filteredResults.length}</span> shown</span>
             <span>·</span>
             <span><span className="text-og-blood">{dropped}</span> filtered</span>
@@ -537,13 +546,13 @@ const ResultRow = ({ t, score, onSelect }: { t: JupTokenInfo; score?: TokenForen
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
           <MiniIntel icon={Gauge} label="Dominance" value={score ? `#${score.dominanceRank} · ${dominanceScore}%` : "—"} accent={dominanceScore >= 70 ? "text-og-lime" : dominanceScore >= 45 ? "text-og-cyan" : "text-muted-foreground"} meter={score ? <ScoreMeter score={dominanceScore} kind="cto" className="mt-1" /> : undefined} />
           <MiniIntel icon={Fingerprint} label="Origin" value={score ? `${originScore}%` : "—"} accent={scoreTextClass("origin", originScore)} meter={score ? <ScoreMeter score={originScore} kind="origin" className="mt-1" /> : undefined} />
           <MiniIntel icon={ShieldAlert} label="Risk" value={score || lpPulled ? `${riskScore}%` : "—"} accent={scoreTextClass("risk", riskScore)} meter={score || lpPulled ? <ScoreMeter score={riskScore} kind="risk" className="mt-1" /> : undefined} />
         </div>
 
-        <div className="grid grid-cols-2 gap-1.5 font-mono text-[9px] uppercase tracking-widest text-muted-foreground xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-3 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
           <MiniIntel icon={Target} label="Clone" value={score ? `${cloneScore}%` : "—"} accent={scoreTextClass("clone", cloneScore)} />
           <MiniIntel icon={ShieldCheck} label="Authority" value={tokenAuthorityLabel(t)} accent={tokenAuthoritySafe(t) ? "text-og-lime" : "text-og-gold"} />
           <MiniIntel icon={Users} label="Holders" value={fmtHolderCount(t.holderCount)} accent={(t.holderCount ?? 0) >= 1000 ? "text-og-lime" : "text-muted-foreground"} />

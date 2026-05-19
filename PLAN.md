@@ -109,6 +109,7 @@
 - [x] **Advanced Scan Any Mint**: Scanner now behaves like a full forensic triage board with preset filters, dominance/origin/risk sorting, authority/holder/liquidity controls, and quick actions to DexScreener, Solscan, Pump.fun, deep scan, copy mint, and the coin intelligence popup.
 - [x] **Collector Token Cards**: OG Finder and Scan Any Mint now present each token like a premium collectible card with large artwork, holo glow, rarity labels, dominance/origin/risk stat blocks, and bottom-row investigation tools.
 - [x] **Origin-Correct OG Cards**: Direct OG now leads with the first credible Solana mint, shows the current Primary separately, removes ATH/ATL from scanner cards, and avoids unreliable holder/whale `1` fallbacks.
+- [x] **Mobile-First UI Redesign**: Bottom tab navigation on mobile, collapsible scanner filters, larger touch targets, simplified card stat grids, hidden route chips on small screens, and native-feeling iOS-style tab bar with Home, Scan, Radar, Feed, and Swap shortcuts.
 
 ## **Suggested build order**
 

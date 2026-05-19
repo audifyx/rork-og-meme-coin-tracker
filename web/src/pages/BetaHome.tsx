@@ -209,7 +209,7 @@ const BetaHome = memo(() => {
                     <span className="mb-2 grid h-7 w-7 place-items-center rounded-full border border-og-cyan/50 bg-og-cyan/10 font-mono text-[10px] font-black text-og-cyan">
                       {index + 1}
                     </span>
-                    <p className="text-xs font-bold leading-relaxed text-white/82">{step}</p>
+                    <p className="text-sm font-bold leading-relaxed text-white/82">{step}</p>
                   </div>
                 ))}
               </div>
@@ -336,7 +336,7 @@ const SplashToolCard = memo(({ tool }: { tool: SplashToolLink }) => {
             <h3 className="font-display text-lg font-black uppercase leading-none text-white">{tool.title}</h3>
             <ArrowRight className="h-4 w-4 shrink-0 text-og-lime opacity-0 transition group-hover:translate-x-1 group-hover:opacity-100" />
           </div>
-          <p className="mt-2 text-xs leading-5 text-white/58">{tool.description}</p>
+          <p className="mt-2 text-sm leading-5 text-white/58">{tool.description}</p>
         </div>
       </div>
     </Link>
