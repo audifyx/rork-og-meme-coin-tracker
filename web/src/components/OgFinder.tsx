@@ -464,16 +464,8 @@ const CoinCard = ({
       : "collector-token-card--copy";
 
   return (
-    <article
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") onSelect();
-      }}
-      className={`collector-token-card ${cardTone} group flex cursor-pointer flex-col gap-3 p-3 text-left transition duration-200`}
-    >
-      <div className="flex items-center justify-between gap-2 font-mono text-[9px] uppercase tracking-widest">
+    <article className={`collector-token-card ${cardTone} group relative flex flex-col overflow-hidden text-left transition duration-200`}>
+      <div className="flex items-center justify-between gap-2 p-3 pb-0 font-mono text-[9px] uppercase tracking-widest">
         <span className={`collector-rarity-chip ${t.lpPulled || riskScore >= 70 ? "text-og-blood" : forensic?.isFirstMintToken ? "text-og-gold" : highlight || forensic?.isPrimaryToken ? "text-og-lime" : "text-og-cyan"}`}>
           {forensic?.isPrimaryToken ? <Crown className="h-3 w-3" /> : t.lpPulled || riskScore >= 70 ? <ShieldAlert className="h-3 w-3" /> : <Fingerprint className="h-3 w-3" />}
           {rarityLabel}
@@ -481,8 +473,16 @@ const CoinCard = ({
         <span className="collector-rarity-chip text-muted-foreground">DOM #{forensic?.dominanceRank ?? "--"}</span>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-[9.5rem_1fr]">
-        <div className="collector-token-art h-40 sm:h-auto">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onSelect}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") onSelect();
+        }}
+        className="relative mt-2 cursor-pointer px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-og-cyan/50"
+      >
+        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl">
           {t.icon ? (
             <img src={t.icon} alt={t.symbol} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" loading="lazy" />
           ) : (
@@ -490,57 +490,54 @@ const CoinCard = ({
               {t.symbol?.slice(0, 1) ?? "?"}
             </div>
           )}
-          <div className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] rounded-full bg-black/55 px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-og-cyan backdrop-blur">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+          <div className="absolute left-3 top-3 max-w-[calc(100%-1.5rem)] rounded-full bg-black/60 px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-og-cyan backdrop-blur">
             LP {fmtUsd(tokenEffectiveLiquidityUsd(t))}
           </div>
-          <div className="absolute bottom-3 left-3 right-3 grid gap-1 font-mono text-[10px] uppercase tracking-widest">
-            <div className="flex items-center justify-between gap-2">
-              <span className="rounded-full bg-black/60 px-2 py-1 text-og-gold backdrop-blur">${t.symbol}</span>
-              {t.isVerified ? <span className="rounded-full bg-og-lime px-2 py-1 text-og-ink">verified</span> : <RiskBadge t={t} />}
-            </div>
-            <div className="flex items-center justify-between gap-2 text-[9px] text-foreground/80">
-              <span className="rounded-full bg-black/55 px-2 py-1 backdrop-blur">H {fmtHolderCount(t.holderCount)}</span>
-              <span className="truncate rounded-full bg-black/55 px-2 py-1 text-og-cyan backdrop-blur">DEX {dexDisplay}</span>
-            </div>
-          </div>
-        </div>
 
-        <div className="flex min-w-0 flex-col gap-3">
-          <div>
-            <div className="flex items-start gap-2">
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-display text-2xl font-black tracking-tight text-foreground">${t.symbol}</div>
-                <div className="truncate text-[10px] uppercase tracking-[0.24em] text-muted-foreground">{t.name}</div>
+          <div className="absolute bottom-3 left-3 right-3">
+            <div className="flex items-end justify-between gap-2">
+              <div className="min-w-0">
+                <div className="truncate font-display text-3xl font-black tracking-tight text-white drop-shadow-md">${t.symbol}</div>
+                <div className="truncate text-[10px] uppercase tracking-[0.24em] text-white/80">{t.name}</div>
               </div>
               <div className="text-right font-mono">
-                <div className="text-sm text-foreground">{fmtUsd(t.usdPrice)}</div>
-                <div className={`text-[10px] ${up ? "text-og-lime" : "text-og-blood"}`}>{fmtPct(ch)} 24H</div>
+                <div className="text-sm font-bold text-white drop-shadow-md">{fmtUsd(t.usdPrice)}</div>
+                <div className={`text-[10px] ${up ? "text-og-lime" : "text-og-blood"} drop-shadow-md`}>{fmtPct(ch)} 24H</div>
               </div>
             </div>
-            <div className="mt-2 flex items-center justify-between gap-3 border-y border-white/10 py-2">
-              <HelpLabel label={forensic?.isFirstMintToken ? "FIRST MINT STATUS" : "CLASSIFICATION"} term="classification" className="font-mono text-[10px] uppercase tracking-widest text-og-gold/80" />
-              <ScoreMeter score={dominanceScore} kind="origin" />
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 font-mono text-[9px] uppercase tracking-widest">
+              {t.isVerified ? <span className="rounded-full bg-og-lime px-1.5 py-0.5 text-[8px] text-og-ink">verified</span> : <span className="rounded-full bg-black/60 px-1.5 py-0.5 text-white/90 backdrop-blur"><ShieldAlert className="inline h-2.5 w-2.5" /> risk</span>}
+              <span className="rounded-full bg-black/60 px-1.5 py-0.5 text-white/90 backdrop-blur">H {fmtHolderCount(t.holderCount)}</span>
+              <span className="truncate rounded-full bg-black/60 px-1.5 py-0.5 text-og-cyan backdrop-blur">DEX {dexDisplay}</span>
             </div>
-            <div className={`mt-2 inline-flex max-w-full border px-2.5 py-1 font-display text-base font-black uppercase tracking-tight ${labelToneClass(primaryLabel)}`}>
-              <span className="truncate">{primaryLabel}</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-            <Stat icon={Crown} label="DOM" value={forensic ? `${forensic.dominanceScore}%` : `${score}%`} accent={scoreTextClass("origin", dominanceScore)} />
-            <Stat icon={Fingerprint} label="ORIGIN" value={forensic ? `${forensic.originScore}%` : `${score}%`} accent={scoreTextClass("origin", forensic?.originScore ?? score)} />
-            <Stat icon={BrainCircuit} label="RISK" value={forensic ? `${riskScore}%` : "—"} accent={scoreTextClass("risk", riskScore)} />
-            <Stat icon={ShieldAlert} label="CLONE" value={forensic ? `${cloneScore}%` : "—"} accent={scoreTextClass("clone", cloneScore)} />
-            <Stat icon={Calendar} label="FIRST MINT" value={shortDate(onChainCreatedAt)} accent={forensic?.isFirstMintToken ? "text-og-lime" : "text-og-gold"} />
-            <Stat icon={Droplets} label="QUOTE LP" value={fmtUsd(tokenEffectiveLiquidityUsd(t))} accent="text-og-cyan" />
-            <Stat icon={Users} label="HOLDERS" value={fmtHolderCount(t.holderCount)} accent="text-og-lime" />
-            <Stat icon={Network} label="POOLS" value={fmtNum(t.poolCount ?? t.allPools?.length)} accent={(t.poolCount ?? t.allPools?.length ?? 0) > 0 ? "text-og-cyan" : undefined} />
           </div>
         </div>
       </div>
 
+      <div className="grid gap-2 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className={`inline-flex max-w-full border px-2.5 py-1 font-display text-base font-black uppercase tracking-tight ${labelToneClass(primaryLabel)}`}>
+            <span className="truncate">{primaryLabel}</span>
+          </div>
+          <ScoreMeter score={dominanceScore} kind="origin" />
+        </div>
+
+        <div className="grid grid-cols-3 gap-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+          <Stat icon={Crown} label="DOM" value={forensic ? `${forensic.dominanceScore}%` : `${score}%`} accent={scoreTextClass("origin", dominanceScore)} />
+          <Stat icon={Fingerprint} label="ORIGIN" value={forensic ? `${forensic.originScore}%` : `${score}%`} accent={scoreTextClass("origin", forensic?.originScore ?? score)} />
+          <Stat icon={BrainCircuit} label="RISK" value={forensic ? `${riskScore}%` : "—"} accent={scoreTextClass("risk", riskScore)} />
+          <Stat icon={ShieldAlert} label="CLONE" value={forensic ? `${cloneScore}%` : "—"} accent={scoreTextClass("clone", cloneScore)} />
+          <Stat icon={Calendar} label="FIRST MINT" value={shortDate(onChainCreatedAt)} accent={forensic?.isFirstMintToken ? "text-og-lime" : "text-og-gold"} />
+          <Stat icon={Droplets} label="QUOTE LP" value={fmtUsd(tokenEffectiveLiquidityUsd(t))} accent="text-og-cyan" />
+          <Stat icon={Users} label="HOLDERS" value={fmtHolderCount(t.holderCount)} accent="text-og-lime" />
+          <Stat icon={Network} label="POOLS" value={fmtNum(t.poolCount ?? t.allPools?.length)} accent={(t.poolCount ?? t.allPools?.length ?? 0) > 0 ? "text-og-cyan" : undefined} />
+        </div>
+      </div>
+
       {secondaryLabels.length > 0 && (
-        <div className="flex flex-wrap gap-1 font-mono text-[8px] uppercase tracking-widest">
+        <div className="flex flex-wrap gap-1 px-3 pb-1 font-mono text-[8px] uppercase tracking-widest">
           {secondaryLabels.map((secondary) => (
             <span key={secondary} className="collector-rarity-chip min-h-0 border-og-cyan/30 bg-og-cyan/10 px-1.5 py-0.5 text-og-cyan">
               {secondary}
@@ -550,7 +547,7 @@ const CoinCard = ({
       )}
 
       {forensic && (forensic.reasons.length > 0 || forensic.warnings.length > 0) && (
-        <div className="border-t border-white/10 pt-2 font-mono text-[9px] uppercase tracking-widest">
+        <div className="border-t border-white/10 px-3 py-2 font-mono text-[9px] uppercase tracking-widest">
           <div className="text-og-lime">WHY: {forensic.classification.reasoning_summary}</div>
           <div className="mt-1 text-og-cyan">STATUS: {forensic.primaryStatusNote}</div>
           {t.lpPulled ? <div className="mt-1 text-og-blood">LP BLOCK: {t.lpPullReason ?? "pulled/dead liquidity"}</div> : null}
@@ -558,7 +555,7 @@ const CoinCard = ({
         </div>
       )}
 
-      <div className="border-t border-white/10 pt-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+      <div className="border-t border-white/10 p-3 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
         <div className="mb-2 grid gap-1 sm:grid-cols-3">
           <span><HelpLabel label="MINT PROOF" /> <span className="text-foreground">{proofTimestampText(onChainCreatedAt)}</span></span>
           <span>FIRST LP <span className="text-foreground">{shortDate(poolCreatedAt)}</span></span>
@@ -581,6 +578,7 @@ const CoinCard = ({
     </article>
   );
 };
+
 
 const TopRiskyCopycats = ({ tokens, report, onSelect }: { tokens: JupTokenInfo[]; report: ForensicOgReport; onSelect: (mint: string) => void }) => {
   const hasAuthorityRisk: boolean = tokens.some((token) => token.audit?.mintAuthorityDisabled !== true || token.audit?.freezeAuthorityDisabled !== true);
