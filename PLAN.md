@@ -44,6 +44,7 @@
 - [x] Add new classification tiers: `REVIVED OFFICIAL`, `LEGACY OG`, and `CONTESTED`, while keeping LP-pulled/scam tokens excluded before any Primary/Legacy scoring.
 - [x] Upgrade **Scan Any Mint** with advanced forensic filters for dominance, origin, risk, liquidity, market cap, holders, clone status, LP safety, authority safety, ATH availability, DEX-paid signals, and sort modes.
 - [x] Add expanded scanner score cards showing Dominance, Origin, Risk, Clone, Authority, Holders, Top 10 concentration, Activity, Pools, First Mint, ATH, migration, and DEX paid/boost status.
+- [x] Redesign scanner token results into collectible forensic cards with holo rarity treatments, token art panels, Primary/Legacy/Clone/Danger badges, stat tiles, and quick action tools.
 
 ## **Design**
 
@@ -74,6 +75,7 @@
 - [x] Refresh the root landing page around OGScan’s actual tool stack: mint forensics, first-origin proof, dominance scoring, LP/holder risk, migrations, dev wallets, boosts, and live market catalysts.
 - [x] Keep the landing-page messaging focused on scanner, launch, market, swap, and token-intel capabilities instead of describing the UI layout changes.
 - [x] Add scanner preset filter packs, richer result-card density, visible risk counters, and primary/first-mint summary stats for faster token triage.
+- [x] Give OG Finder and Scan Any Mint Pokémon-style collector-card visuals with animated holo sweeps, rarity chips, safer mobile spacing, and clearer token status hierarchy.
 
 ## **Pages / Screens**
 
@@ -100,6 +102,7 @@
 - [x] **Dominance Engine Output**: Forensic searches now return `primaryToken`, `firstMintToken`, `contestedTokens`, dominance score/rank, first mint authority wallet, and Primary/Legacy/Contested labels for fast memecoin provenance decisions.
 - [x] **Tool-Focused Landing Page**: The root page now explains what each OGScan tool does: Truth Scan for mint forensics, Launch Radar for migrations/dev-wallet risk, Market Feed for runners/catalysts/whales, and Command Deck for the full intelligence suite.
 - [x] **Advanced Scan Any Mint**: Scanner now behaves like a full forensic triage board with preset filters, dominance/origin/risk sorting, authority/holder/liquidity controls, and quick actions to DexScreener, Solscan, Pump.fun, deep scan, copy mint, and the coin intelligence popup.
+- [x] **Collector Token Cards**: OG Finder and Scan Any Mint now present each token like a premium collectible card with large artwork, holo glow, rarity labels, dominance/origin/risk stat blocks, and bottom-row investigation tools.
 
 ## **Suggested build order**
 
