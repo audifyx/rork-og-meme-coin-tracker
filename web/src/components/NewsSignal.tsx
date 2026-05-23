@@ -322,11 +322,15 @@ async function fetchRssViaProxy(url: string): Promise<string | null> {
     `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
     `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(url)}`,
   ];
   for (const proxy of proxies) {
     try {
-      const res = await fetch(proxy, { signal: AbortSignal.timeout(12_000) });
-      if (res.ok) return res.text();
+      const res = await fetch(proxy, { signal: AbortSignal.timeout(10_000) });
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.length > 50) return text;
+      }
     } catch { /* try next */ }
   }
   return null;
@@ -441,6 +445,7 @@ async function dexSearchByKeyword(query: string): Promise<DexSearchPair[]> {
 // ── Main fetch function ────────────────────────────────────────────────────
 
 async function fetchSignalPayload(): Promise<SignalPayload> {
+  try {
   const [signalResults, coinsResult] = await Promise.allSettled([
     Promise.allSettled(INFLUENCERS.map((inf) => fetchInfluencerSignals(inf))),
     Promise.allSettled([jupTrending("5m", 30), jupTrending("1h", 30)]),
@@ -519,6 +524,16 @@ async function fetchSignalPayload(): Promise<SignalPayload> {
     topCoins: buildTopCoins(signals),
     updatedAt: new Date().toISOString(),
   };
+  } catch {
+    // Proxy/network failures — return fallback signals so the UI never hard-errors
+    const fallbackSignals = INFLUENCERS.flatMap((inf) => buildFallbackSignals(inf));
+    fallbackSignals.sort((a, b) => b.catalystScore - a.catalystScore);
+    return {
+      signals: fallbackSignals,
+      topCoins: buildTopCoins(fallbackSignals),
+      updatedAt: new Date().toISOString(),
+    };
+  }
 }
 
 // ── UI Components ──────────────────────────────────────────────────────────
