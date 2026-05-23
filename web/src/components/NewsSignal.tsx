@@ -374,7 +374,7 @@ async function fetchRssViaProxy(url: string): Promise<string | null> {
   const proxies = [
     `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    `https://corsproxy.net/?url=${encodeURIComponent(url)}`,
     `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(url)}`,
   ];
   for (const proxy of proxies) {
