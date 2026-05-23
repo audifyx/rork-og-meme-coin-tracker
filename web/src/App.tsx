@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import BetaHome from "./pages/BetaHome";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -43,84 +44,88 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Home & App */}
+            {/* ── Public routes (no auth required) ── */}
             <Route path="/" element={<BetaHome />} />
-            <Route path="/app" element={<Index />} />
-            <Route path="/command" element={<Index />} />
-            <Route path="/home" element={<Index />} />
-            <Route path="/our-coin" element={<Index />} />
-            <Route path="/roadmap" element={<Index />} />
-            <Route path="/market-pulse" element={<Index />} />
-            <Route path="/market" element={<Index />} />
-            <Route path="/feed" element={<Index />} />
-            <Route path="/live-feed" element={<Index />} />
-            <Route path="/snipe-feed" element={<Index />} />
-            <Route path="/dev-wallet-radar" element={<Index />} />
-            <Route path="/dev-wallet" element={<Index />} />
-            <Route path="/scanner" element={<Index />} />
-            <Route path="/og-finder" element={<Index />} />
-            <Route path="/og-scanner" element={<Index />} />
-            <Route path="/ogscan-scanner" element={<Index />} />
-            <Route path="/pairs" element={<Index />} />
-            <Route path="/migrations" element={<Index />} />
-            <Route path="/migration-tool" element={<Index />} />
-            <Route path="/migration-tracker" element={<Index />} />
-            <Route path="/trending" element={<Index />} />
-            <Route path="/whales" element={<Index />} />
-            <Route path="/tx-feed" element={<Index />} />
-            <Route path="/tape" element={<Index />} />
-            <Route path="/transactions" element={<Index />} />
-            <Route path="/transaction-feed" element={<Index />} />
-            <Route path="/swap" element={<Index />} />
-            <Route path="/tech" element={<Index />} />
-            <Route path="/page/:pageNumber" element={<Index />} />
-            <Route path="/page-:pageNumber" element={<Index />} />
-            <Route path="/app/:toolSlug" element={<Index />} />
-            <Route path="/tool/:toolSlug" element={<Index />} />
-            <Route path="/tools/:toolSlug" element={<Index />} />
-
-            {/* Auth */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/setup" element={<Setup />} />
-
-            {/* User pages */}
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/wallets" element={<Wallets />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/credits" element={<Credits />} />
-
-            {/* Tools & Features */}
-            <Route path="/advanced-tools" element={<AdvancedTools />} />
-            <Route path="/ai-chat" element={<AlphaChat />} />
-            <Route path="/alpha-chat" element={<AlphaChat />} />
-            <Route path="/webhooks" element={<Webhooks />} />
-            <Route path="/callouts" element={<Callouts />} />
-
-            {/* Community */}
-            <Route path="/communities" element={<Communities />} />
-            <Route path="/trading-lobbies" element={<TradingLobbies />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/discover" element={<Discover />} />
-
-            {/* Premium */}
-            <Route path="/premium" element={<Premium />} />
-
-            {/* Market */}
-            <Route path="/live-trading" element={<LiveTrading />} />
-            <Route path="/charts" element={<Charts />} />
-            <Route path="/live-feed-page" element={<LiveFeed />} />
-            <Route path="/pumpv5" element={<PumpV5 />} />
-
-            {/* Project */}
-            <Route path="/official-token" element={<OfficialToken />} />
-            <Route path="/support" element={<SupportCenter />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
-            <Route path="/admin" element={<Admin />} />
 
-            {/* Catch-all slug handler (must be last) */}
-            <Route path="/:toolSlug" element={<Index />} />
+            {/* ── Protected: App shell ── */}
+            <Route path="/app" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/command" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/our-coin" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/roadmap" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/market-pulse" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/market" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/feed" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/live-feed" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/snipe-feed" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/dev-wallet-radar" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/dev-wallet" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/scanner" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/og-finder" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/og-scanner" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/ogscan-scanner" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/pairs" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/migrations" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/migration-tool" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/migration-tracker" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/trending" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/communities" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/discover" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/whales" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/tx-feed" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/tape" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/transactions" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/transaction-feed" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/swap" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/tech" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/page/:pageNumber" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/page-:pageNumber" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/app/:toolSlug" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/tool/:toolSlug" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/tools/:toolSlug" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+
+            {/* ── Protected: User pages ── */}
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/wallets" element={<ProtectedRoute><Wallets /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+            <Route path="/credits" element={<ProtectedRoute><Credits /></ProtectedRoute>} />
+
+            {/* ── Protected: Tools & Features ── */}
+            <Route path="/advanced-tools" element={<ProtectedRoute><AdvancedTools /></ProtectedRoute>} />
+            <Route path="/ai-chat" element={<ProtectedRoute><AlphaChat /></ProtectedRoute>} />
+            <Route path="/alpha-chat" element={<ProtectedRoute><AlphaChat /></ProtectedRoute>} />
+            <Route path="/webhooks" element={<ProtectedRoute><Webhooks /></ProtectedRoute>} />
+            <Route path="/callouts" element={<ProtectedRoute><Callouts /></ProtectedRoute>} />
+
+            {/* ── Protected: Community ── */}
+            <Route path="/communities" element={<ProtectedRoute><Communities /></ProtectedRoute>} />
+            <Route path="/trading-lobbies" element={<ProtectedRoute><TradingLobbies /></ProtectedRoute>} />
+            <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+            <Route path="/discover" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
+
+            {/* ── Protected: Premium ── */}
+            <Route path="/premium" element={<ProtectedRoute><Premium /></ProtectedRoute>} />
+
+            {/* ── Protected: Market ── */}
+            <Route path="/live-trading" element={<ProtectedRoute><LiveTrading /></ProtectedRoute>} />
+            <Route path="/charts" element={<ProtectedRoute><Charts /></ProtectedRoute>} />
+            <Route path="/live-feed-page" element={<ProtectedRoute><LiveFeed /></ProtectedRoute>} />
+            <Route path="/pumpv5" element={<ProtectedRoute><PumpV5 /></ProtectedRoute>} />
+
+            {/* ── Protected: Admin ── */}
+            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+
+            {/* ── Public: Project/legal ── */}
+            <Route path="/official-token" element={<OfficialToken />} />
+            <Route path="/support" element={<SupportCenter />} />
+
+            {/* ── Catch-all slug handler (must be last) ── */}
+            <Route path="/:toolSlug" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
