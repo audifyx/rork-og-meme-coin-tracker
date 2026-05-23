@@ -147,11 +147,16 @@ async function fetchRssViaProxy(url: string): Promise<string | null> {
   const proxies = [
     `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    `https://thingproxy.freeboard.io/fetch/${encodeURIComponent(url)}`,
   ];
   for (const proxy of proxies) {
     try {
-      const res = await fetch(proxy, { signal: AbortSignal.timeout(12_000) });
-      if (res.ok) return res.text();
+      const res = await fetch(proxy, { signal: AbortSignal.timeout(10_000) });
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.length > 50) return text;
+      }
     } catch {
       /* try next proxy */
     }
@@ -342,6 +347,7 @@ function attachTrendCoinMatches(trends: ViralTrend[], coins: JupTokenInfo[], pai
 }
 
 async function fetchFeedPayload(): Promise<FeedPayload> {
+  try {
   const sources = [
     {
       label: "CryptoPanic",
@@ -419,6 +425,15 @@ async function fetchFeedPayload(): Promise<FeedPayload> {
     trends,
     updatedAt: new Date().toISOString(),
   };
+  } catch {
+    // Network/proxy failures should never hard-crash the feed — return fallback data
+    const fallback = buildFallbackFeedItems();
+    return {
+      items: fallback,
+      trends: [],
+      updatedAt: new Date().toISOString(),
+    };
+  }
 }
 
 function buildFallbackFeedItems(): FeedItem[] {
@@ -605,7 +620,7 @@ export const Feed = ({ onSelect }: Props) => {
           <FeedMetric Icon={TrendingUp} label="Matched coins" value={fmtNum(new Set(items.flatMap((i) => i.matchedCoins.map((c) => c.mint))).size)} detail="linked to stories" tone="cyan" />
         </div>
 
-        {error ? (
+        {error && items.length === 0 ? (
           <div className="rounded-3xl border border-og-blood/50 bg-og-blood/10 p-4 text-sm text-og-blood">
             Feed sources are temporarily unavailable. RSS proxies may be rate-limited — tap refresh in a moment.
           </div>
