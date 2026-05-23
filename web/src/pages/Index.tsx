@@ -40,6 +40,8 @@ import {
   Wrench,
   X,
   Zap,
+  Palette,
+  Image as ImageIcon,
 } from "lucide-react";
 import { OgStats } from "@/components/OgStats";
 import { Scanner } from "@/components/Scanner";
@@ -58,6 +60,7 @@ import { NewsSignal } from "@/components/NewsSignal";
 import { SolToolsRoadmap } from "@/components/SolToolsRoadmap";
 import CommunitiesPage from "./Communities";
 import DiscoverPage from "./Discover";
+import ArtFeed from "./ArtFeed";
 import { cn } from "@/lib/utils";
 import { DEFAULT_OG_MINT, OGSCAN_DEV_WALLET, OGSCAN_TOKEN_MINT, SOL_MINT, STORAGE_OG_MINT, shortAddr } from "@/lib/og";
 import { AuthButton } from "@/components/AuthButton";
@@ -83,7 +86,8 @@ type TabId =
   | "tech"
   | "news-signal"
   | "communities"
-  | "discover";
+  | "discover"
+  | "memes";
 
 type TabAccent = "blue" | "white" | "cyan" | "gold" | "lime";
 type TabGroup = "Main" | "Forensics" | "Market" | "Project";
@@ -315,6 +319,18 @@ const TABS: TabConfig[] = [
     accent: "gold",
     group: "Main",
   },
+  {
+    id: "memes",
+    label: "Memes",
+    slug: "memes",
+    pageNumber: 19,
+    eyebrow: "Art & Vibes",
+    description: "Live meme feed from the OG Memes Room — fresh degens art, memes, and vibes.",
+    Icon: Palette,
+    accent: "lime",
+    group: "Main",
+    showInNav: false,
+  },
 ];
 
 const NAV_TABS: TabConfig[] = TABS.filter((t: TabConfig) => t.showInNav !== false);
@@ -351,6 +367,9 @@ const ROUTE_ALIASES: Record<string, TabId> = TABS.reduce(
     "dev-wallet-radar": "snipe-feed",
     "migration-tool": "migrations",
     "migration-tracker": "migrations",
+    art: "memes",
+    memes: "memes",
+    "art-feed": "memes",
   },
 );
 
@@ -386,6 +405,7 @@ const renderTool = (tab: TabId, mint: string, updateMint: (m: string) => void): 
   if (tab === "news-signal") return <NewsSignal onSelect={updateMint} />;
   if (tab === "communities") return <CommunitiesInline />;
   if (tab === "discover") return <DiscoverInline />;
+  if (tab === "memes") return <ArtFeed />;
   return null;
 };
 
@@ -562,19 +582,20 @@ const AppSidebar = ({
   ];
 
   const solToolsItems: ExternalNavItem[] = [
-    { to: "/wallets",        icon: Wallet,       label: "Wallets",         eyebrow: "Tracked wallets" },
-    { to: "/tokens",         icon: Coins,        label: "Tokens",          eyebrow: "Token tracker" },
-    { to: "/charts",         icon: LineChart,    label: "Charts",          eyebrow: "Live charts" },
-    { to: "/alpha-chat",     icon: Bot,          label: "Alpha Chat",      eyebrow: "AI assistant" },
-    { to: "/live-trading",   icon: TrendingUp,   label: "Live Trading",    eyebrow: "P&L · Signals" },
-    { to: "/callouts",       icon: Bell,         label: "Callouts",        eyebrow: "Trade alerts" },
-    { to: "/trading-lobbies",icon: MessageSquare,label: "Trading Lobbies", eyebrow: "Voice + charts" },
-    { to: "/leaderboard",    icon: Trophy,       label: "Leaderboard",     eyebrow: "Top traders" },
-    { to: "/advanced-tools", icon: Wrench,       label: "Advanced Tools",  eyebrow: "30+ pro tools" },
-    { to: "/pumpv5",         icon: Rocket,       label: "Launch Pad",      eyebrow: "Token listings" },
-    { to: "/webhooks",       icon: Webhook,      label: "Webhooks",        eyebrow: "Push alerts" },
-    { to: "/notifications",  icon: Bell,         label: "Notifications",   eyebrow: "Your alerts" },
-    { to: "/premium",        icon: Crown,        label: "Premium",         eyebrow: "Pro · AI · P&L" },
+    { to: "/wallets",         icon: Wallet,       label: "Wallets",         eyebrow: "Tracked wallets" },
+    { to: "/tokens",          icon: Coins,        label: "Tokens",          eyebrow: "Token tracker" },
+    { to: "/charts",          icon: LineChart,    label: "Charts",          eyebrow: "Live charts" },
+    { to: "/live-feed-page",  icon: Radio,        label: "Live Feed",       eyebrow: "Tape stream" },
+    { to: "/alpha-chat",      icon: Bot,          label: "Alpha Chat",      eyebrow: "AI assistant" },
+    { to: "/live-trading",    icon: TrendingUp,   label: "Live Trading",    eyebrow: "P&L · Signals" },
+    { to: "/callouts",        icon: Bell,         label: "Callouts",        eyebrow: "Trade alerts" },
+    { to: "/trading-lobbies", icon: MessageSquare,label: "Trading Lobbies", eyebrow: "Voice + charts" },
+    { to: "/leaderboard",     icon: Trophy,       label: "Leaderboard",     eyebrow: "Top traders" },
+    { to: "/advanced-tools",  icon: Wrench,       label: "Advanced Tools",  eyebrow: "30+ pro tools" },
+    { to: "/pumpv5",          icon: Rocket,       label: "Launch Pad",      eyebrow: "Token listings" },
+    { to: "/webhooks",        icon: Webhook,      label: "Webhooks",        eyebrow: "Push alerts" },
+    { to: "/notifications",   icon: Bell,         label: "Notifications",   eyebrow: "Your alerts" },
+    { to: "/premium",         icon: Crown,        label: "Premium",         eyebrow: "Pro · AI · P&L" },
   ];
 
   const accountItems: ExternalNavItem[] = [
@@ -619,6 +640,7 @@ const AppSidebar = ({
           <NavItem item={TAB_BY_ID.overview} activeId={activeId} onNavigate={onNavigate} />
           <NavItem item={TAB_BY_ID.communities} activeId={activeId} onNavigate={onNavigate} />
           <NavItem item={TAB_BY_ID.discover} activeId={activeId} onNavigate={onNavigate} />
+          <NavItem item={TAB_BY_ID.memes} activeId={activeId} onNavigate={onNavigate} />
         </div>
 
         {groups.map(({ key, label }) => {
@@ -801,7 +823,7 @@ const MobileNav = ({ activeId, onNavigate }: { activeId: TabId; onNavigate: (t: 
     { id: "scanner" as TabId, label: "Scan", Icon: Search },
     { id: "snipe-feed" as TabId, label: "Radar", Icon: Target },
     { id: "communities" as TabId, label: "Social", Icon: Users },
-    { id: "discover" as TabId, label: "Discover", Icon: Compass },
+    { id: "memes" as TabId, label: "Memes", Icon: Palette },
   ];
   return (
     <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-white/[0.07] bg-[#060c13]/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-xl lg:hidden">

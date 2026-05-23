@@ -350,7 +350,7 @@ const Callouts = () => {
                             </div>
 
                             {/* Callout Card */}
-                            <Card className={`${callout.type === 'token' ? 'border-primary/30 bg-primary/5' : 'border-secondary/30 bg-secondary/5'} overflow-hidden`}>
+                            <Card className={`og-glass-card ${callout.type === 'token' ? 'border-primary/30' : 'border-secondary/30'} overflow-hidden`}>
                               <CardContent className="p-4">
                                 <div className="flex items-start justify-between gap-4">
                                   <div className="flex items-center gap-3">
@@ -451,7 +451,7 @@ const Callouts = () => {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 lg:px-6 border-t border-white/[0.07] bg-card/50 backdrop-blur-xl">
+        <div className="p-4 lg:px-6 border-t border-white/[0.07] bg-[#070d14]/80 backdrop-blur-xl">
           <div className="flex gap-3 max-w-4xl mx-auto">
             <div className="flex-1 relative">
               <Zap className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />

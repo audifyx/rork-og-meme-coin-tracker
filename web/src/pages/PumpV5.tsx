@@ -1141,7 +1141,7 @@ const PumpV5 = () => {
                       className={`group overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl border-2 ${
                         token.is_featured 
                           ? "border-yellow-500/50 bg-gradient-to-br from-yellow-500/5 via-card to-orange-500/5 shadow-lg shadow-yellow-500/10" 
-                          : "border-white/[0.07] bg-card hover:border-primary/50 hover:shadow-primary/20"
+                          : "border-white/[0.07] bg-[#0a1220] hover:border-primary/50 hover:shadow-primary/20"
                       }`}
                       onClick={() => openTokenDetail(token)}
                     >
@@ -1175,7 +1175,7 @@ const PumpV5 = () => {
                             <div>
                               <h3 className="font-bold text-base truncate max-w-[120px]">{token.token_name}</h3>
                               <div className="flex items-center gap-1.5 mt-0.5">
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-background/80">
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-[#070d14]/80">
                                   ${token.symbol}
                                 </Badge>
                                 {token.is_featured && (

@@ -772,61 +772,63 @@ const CommunityCard = ({ c, onClick, isMember }: { c: Community; onClick: () => 
   const pOpt = privacyOpt(c.privacy);
   const PrivIcon = pOpt.icon;
   const grad = bannerGradient(c.name);
+  const avatarGrad = avatarGradient(c.id);
+  const hasBanner = !!safeAvatar(c.banner_url);
+  const hasAvatar = !!safeAvatar(c.avatar_url);
 
   return (
     <button
       onClick={onClick}
-      className="w-full text-left rounded-xl border border-white/[0.07] bg-white/[0.02] active:bg-white/[0.05] hover:bg-white/[0.04] hover:border-primary/25 transition-all group overflow-hidden flex items-center gap-3 px-3 py-3"
+      className="w-full text-left rounded-2xl border border-white/[0.07] bg-[#0a1220] active:scale-[0.99] hover:border-white/[0.14] hover:bg-[#0d1628] transition-all group overflow-hidden"
     >
-      {/* Icon — avatar image > emoji icon > gradient initial */}
-      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${grad} flex items-center justify-center text-2xl shrink-0 overflow-hidden relative border border-white/[0.08]`}>
-        {safeAvatar(c.avatar_url) ? (
-          <img src={safeAvatar(c.avatar_url)!} alt={c.name} className="absolute inset-0 w-full h-full object-cover" onError={e => (e.target as HTMLImageElement).remove()} />
-        ) : safeAvatar(c.banner_url) ? (
-          <img src={safeAvatar(c.banner_url)!} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" onError={e => (e.target as HTMLImageElement).remove()} />
-        ) : null}
-        {!safeAvatar(c.avatar_url) && (
-          <span className="relative z-10">
-            {safeIcon(c.icon) ? (
-              safeIcon(c.icon)
-            ) : (
-              <span className={`flex items-center justify-center bg-gradient-to-br ${avatarGradient(c.id)} font-black text-white text-base w-full h-full`}>
-                {c.name[0]?.toUpperCase() ?? "C"}
-              </span>
-            )}
-          </span>
+      {/* Banner strip */}
+      <div className={`relative h-16 bg-gradient-to-br ${grad} overflow-hidden`}>
+        {hasBanner && (
+          <img
+            src={safeAvatar(c.banner_url)!}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={e => (e.target as HTMLImageElement).remove()}
+          />
         )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1220] via-[#0a1220]/30 to-transparent" />
+        {/* Privacy badge top-right */}
+        <span className={`absolute top-2 right-2 flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full border ${pOpt.bg} ${pOpt.color} backdrop-blur-sm`}>
+          <PrivIcon className="h-2.5 w-2.5" />{pOpt.label}
+        </span>
       </div>
 
-      {/* Text content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 mb-0.5">
-          <h3 className="font-bold text-[13px] text-white group-hover:text-primary transition-colors truncate leading-tight">{c.name}</h3>
-          {isMember && (
-            <span className="text-[8px] font-black px-1.5 py-0 rounded-full bg-primary/15 text-primary border border-primary/20 shrink-0 leading-4">✓</span>
-          )}
-        </div>
-        {c.description && (
-          <p className="text-[11px] text-white/40 line-clamp-1 leading-tight mb-1">{c.description}</p>
-        )}
-        <div className="flex items-center gap-2.5">
-          <span className="text-[10px] text-white/30 flex items-center gap-0.5">
-            <Users className="h-2.5 w-2.5" />{(c.member_count || 0).toLocaleString()}
-          </span>
-          {c.category && (
-            <span className="text-[10px] text-white/30 flex items-center gap-0.5">
-              <Hash className="h-2.5 w-2.5" />{c.category}
+      {/* Avatar + content row */}
+      <div className="px-3 pb-3 -mt-5 flex items-end gap-3">
+        {/* Avatar */}
+        <div className={`w-10 h-10 rounded-xl shrink-0 overflow-hidden border-2 border-[#0a1220] relative ${!hasAvatar ? `bg-gradient-to-br ${avatarGrad}` : ""}`}>
+          {hasAvatar ? (
+            <img src={safeAvatar(c.avatar_url)!} alt={c.name} className="w-full h-full object-cover" onError={e => (e.target as HTMLImageElement).style.display = "none"} />
+          ) : safeIcon(c.icon) ? (
+            <span className="absolute inset-0 flex items-center justify-center text-lg">{safeIcon(c.icon)}</span>
+          ) : (
+            <span className="absolute inset-0 flex items-center justify-center font-black text-white text-sm">
+              {c.name[0]?.toUpperCase() ?? "C"}
             </span>
           )}
         </div>
-      </div>
 
-      {/* Right: privacy + chevron */}
-      <div className="flex flex-col items-end gap-2 shrink-0">
-        <span className={`flex items-center gap-0.5 text-[9px] font-semibold px-1.5 py-0.5 rounded-full border ${pOpt.bg} ${pOpt.color}`}>
-          <PrivIcon className="h-2.5 w-2.5" />
-        </span>
-        <ChevronRight className="h-3.5 w-3.5 text-white/20 group-hover:text-primary/50 transition-colors" />
+        {/* Text */}
+        <div className="flex-1 min-w-0 pt-5">
+          <div className="flex items-center gap-1.5">
+            <h3 className="font-bold text-[13px] text-white group-hover:text-[#22d3ee] transition-colors truncate leading-tight">{c.name}</h3>
+            {isMember && <span className="text-[8px] font-black px-1.5 rounded-full bg-[#22d3ee]/15 text-[#22d3ee] border border-[#22d3ee]/20 shrink-0 leading-4">✓</span>}
+          </div>
+          {c.description && <p className="text-[10px] text-white/35 line-clamp-1 mt-0.5">{c.description}</p>}
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[10px] text-white/25 flex items-center gap-0.5">
+              <Users className="h-2.5 w-2.5" />{(c.member_count || 0).toLocaleString()} members
+            </span>
+            {c.category && <span className="text-[10px] text-white/25 flex items-center gap-0.5"><Hash className="h-2.5 w-2.5" />{c.category}</span>}
+          </div>
+        </div>
+
+        <ChevronRight className="h-4 w-4 text-white/15 group-hover:text-[#22d3ee]/50 transition-colors shrink-0 mb-1" />
       </div>
     </button>
   );
@@ -1076,47 +1078,111 @@ const Communities = () => {
       <div className="flex flex-col" style={{ minHeight: "calc(100vh - 200px)" }}>
         {/* Sticky header */}
         <div className="sticky top-0 z-30 bg-[#070d14]">
-          {/* Banner */}
-          <div className={`relative h-28 bg-gradient-to-br ${grad} overflow-hidden`}>
+
+          {/* ── Banner ── */}
+          <div className={`relative w-full bg-gradient-to-br ${grad}`} style={{ height: "140px" }}>
             {safeAvatar(selected.banner_url) && (
-              <img src={safeAvatar(selected.banner_url)!} alt="" className="absolute inset-0 w-full h-full object-cover" onError={e => (e.target as HTMLImageElement).remove()} />
+              <img
+                src={safeAvatar(selected.banner_url)!}
+                alt=""
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+                onError={e => (e.target as HTMLImageElement).remove()}
+              />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#070d14] via-transparent to-transparent" />
-            <button onClick={() => setSelected(null)} className="absolute top-3 left-3 p-2 rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 transition-colors z-10">
+            {/* Bottom fade */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#070d14] via-[#070d14]/20 to-transparent" />
+            {/* Back button */}
+            <button
+              onClick={() => setSelected(null)}
+              className="absolute top-3 left-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white hover:bg-black/80 transition-colors"
+            >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            <div className="absolute top-3 right-3 flex gap-2 z-10">
-              {isMember && <button onClick={() => setShowVoice(!showVoice)} className={`p-2 rounded-full backdrop-blur-sm transition-colors ${showVoice ? "bg-green-500/30 text-green-400" : "bg-black/50 text-white/60 hover:text-white"}`}><Volume2 className="h-4 w-4" /></button>}
-              {isMember && selected.privacy === "invite_only" && <button onClick={() => setShowInviteModal(true)} className="p-2 rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70"><UserPlus className="h-4 w-4" /></button>}
+            {/* Action buttons top-right */}
+            <div className="absolute top-3 right-3 flex gap-1.5 z-10">
+              {isMember && (
+                <button
+                  onClick={() => setShowVoice(!showVoice)}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md border transition-colors ${
+                    showVoice ? "bg-green-500/30 border-green-500/40 text-green-400" : "bg-black/60 border-white/10 text-white/60 hover:text-white"
+                  }`}
+                >
+                  <Volume2 className="h-4 w-4" />
+                </button>
+              )}
+              {isMember && selected.privacy === "invite_only" && (
+                <button
+                  onClick={() => setShowInviteModal(true)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white/60 hover:text-white transition-colors"
+                >
+                  <UserPlus className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Identity row */}
-          <div className="px-4 -mt-7 pb-3 flex items-end justify-between gap-3">
-            <div className="flex items-end gap-3">
-              <div className="w-16 h-16 rounded-2xl bg-[#070d14] border-4 border-[#070d14] flex items-center justify-center text-4xl shadow-xl shrink-0 overflow-hidden">
+          {/* ── Identity row ── */}
+          <div className="px-4 pb-3 -mt-8 relative z-10">
+            <div className="flex items-end justify-between gap-3">
+              {/* Avatar */}
+              <div
+                className={`w-16 h-16 rounded-2xl border-[3px] border-[#070d14] shadow-2xl shrink-0 overflow-hidden relative ${
+                  !safeAvatar(selected.avatar_url) ? `bg-gradient-to-br ${avatarGradient(selected.id)}` : "bg-[#0d1627]"
+                }`}
+              >
                 {safeAvatar(selected.avatar_url) ? (
-                  <img src={safeAvatar(selected.avatar_url)!} alt={selected.name} className="w-full h-full object-cover" onError={e => (e.target as HTMLImageElement).style.display = "none"} />
+                  <img
+                    src={safeAvatar(selected.avatar_url)!}
+                    alt={selected.name}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={e => (e.target as HTMLImageElement).style.display = "none"}
+                  />
                 ) : safeIcon(selected.icon) ? (
-                  safeIcon(selected.icon)
+                  <span className="absolute inset-0 flex items-center justify-center text-3xl">{safeIcon(selected.icon)}</span>
                 ) : (
-                  <span className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${avatarGradient(selected.id)} font-black text-white text-2xl`}>
+                  <span className="absolute inset-0 flex items-center justify-center font-black text-white text-2xl">
                     {selected.name[0]?.toUpperCase() ?? "C"}
                   </span>
                 )}
               </div>
-              <div className="pb-1">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-base font-black">{selected.name}</h1>
-                  {selected.privacy !== "public" && <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${pOpt.bg} ${pOpt.color}`}><PrivIcon className="h-2.5 w-2.5 inline mr-0.5" />{pOpt.label}</span>}
-                </div>
-                <p className="text-[10px] text-white/40">{members.length} members · {posts.length} posts</p>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 pb-1 shrink-0">
+                {!isMember && user && (
+                  <Button size="sm" onClick={joinCommunity} className="btn-3d rounded-full text-xs h-8 px-5">
+                    {selected.privacy === "private" ? "Request" : "Join"}
+                  </Button>
+                )}
+                {isMember && !isCreator && (
+                  <Button size="sm" variant="outline" onClick={leaveCommunity} className="rounded-full text-xs h-8 px-4 border-white/10 text-white/60">
+                    Leave
+                  </Button>
+                )}
+                {isCreator && (
+                  <button onClick={deleteCommunity} className="h-8 w-8 flex items-center justify-center rounded-full bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
             </div>
-            <div className="flex items-center gap-1.5 pb-1 shrink-0">
-              {!isMember && user && <Button size="sm" onClick={joinCommunity} className="rounded-full btn-3d text-xs h-8 px-4">{selected.privacy === "private" ? "Request" : "Join"}</Button>}
-              {isMember && !isCreator && <Button size="sm" variant="outline" onClick={leaveCommunity} className="rounded-full text-xs h-8 px-3 border-white/10">Leave</Button>}
-              {isCreator && <button onClick={deleteCommunity} className="p-2 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20"><Trash2 className="h-4 w-4" /></button>}
+
+            {/* Name + meta below avatar */}
+            <div className="mt-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-base font-black text-white">{selected.name}</h1>
+                {selected.privacy !== "public" && (
+                  <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${pOpt.bg} ${pOpt.color}`}>
+                    <PrivIcon className="h-2.5 w-2.5" />{pOpt.label}
+                  </span>
+                )}
+              </div>
+              {selected.description && (
+                <p className="text-[12px] text-white/40 mt-0.5 line-clamp-2">{selected.description}</p>
+              )}
+              <p className="text-[10px] text-white/25 mt-1">
+                {members.length.toLocaleString()} members · {posts.length} posts
+                {selected.category && <> · <span className="text-[#22d3ee]/50">#{selected.category}</span></>}
+              </p>
             </div>
           </div>
 
@@ -1135,16 +1201,22 @@ const Communities = () => {
           )}
 
           {/* Tabs */}
-          <div className="flex border-t border-white/[0.07]">
+          <div className="flex border-t border-white/[0.07] mt-1">
             {[
-              { key:"feed", label:"Posts", icon:Hash },
-              { key:"chat", label:"Chat", icon:MessageSquare },
-              { key:"members", label:"Members", icon:Users },
-              { key:"about", label:"About", icon:Eye },
+              { key: "feed",    label: "Posts",   icon: Hash },
+              { key: "chat",    label: "Chat",    icon: MessageSquare },
+              { key: "members", label: "Members", icon: Users },
+              { key: "about",   label: "About",   icon: Eye },
             ].map(({ key, label, icon: Icon }) => (
-              <button key={key} onClick={() => setTab(key)} className={`flex-1 py-3 flex items-center justify-center gap-1.5 text-xs font-bold transition-colors relative ${tab === key ? "text-white" : "text-white/40 hover:text-white/70"}`}>
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`flex-1 py-2.5 flex items-center justify-center gap-1.5 text-[11px] font-bold transition-colors relative ${
+                  tab === key ? "text-white" : "text-white/35 hover:text-white/60"
+                }`}
+              >
                 <Icon className="h-3.5 w-3.5" />{label}
-                {tab === key && <div className="absolute bottom-0 left-1/4 right-1/4 h-[3px] bg-primary rounded-full" />}
+                {tab === key && <div className="absolute bottom-0 left-[20%] right-[20%] h-[2px] rounded-full bg-[#22d3ee]" />}
               </button>
             ))}
           </div>
