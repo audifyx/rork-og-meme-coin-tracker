@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { CopyMintButton } from "@/components/CopyMintButton";
+import { ScanProgress } from "@/components/ScanProgress";
 import {
   dexScreenerChartUrl,
   enrichTokensWithMarketIntel,
@@ -274,14 +275,16 @@ export const Scanner = ({ onSelect, initialQuery = "" }: Props) => {
             </span>
           </div>
 
-          {isFetching && (
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-px overflow-hidden">
-              <div className="scan-line h-full w-full bg-gradient-to-r from-transparent via-og-lime to-transparent" />
-            </div>
-          )}
+          {/* Scan-line shimmer on the search box itself */}
+          <div className={`pointer-events-none absolute inset-x-0 top-0 h-px overflow-hidden transition-opacity duration-300 ${isFetching ? "opacity-100" : "opacity-0"}`}>
+            <div className="scan-line h-full w-full bg-gradient-to-r from-transparent via-og-gold to-transparent" />
+          </div>
         </div>
 
-        <div className="mt-3 border border-og-grid bg-og-ink/70 p-3 shadow-[0_24px_80px_-60px_hsl(var(--og-cyan))]">
+        {/* Animated scan progress — shown while fetching, hidden once results load */}
+        <ScanProgress active={isFetching} query={debounced} className="mt-4" />
+
+        <div className={`mt-3 border border-og-grid bg-og-ink/70 p-3 shadow-[0_24px_80px_-60px_hsl(var(--og-cyan))] transition-opacity duration-300 ${isFetching ? "pointer-events-none opacity-40" : "opacity-100"}`}>
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -356,7 +359,7 @@ export const Scanner = ({ onSelect, initialQuery = "" }: Props) => {
           </>
         )}
 
-        <div className="mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2">
+        <div className={`mt-4 grid grid-cols-1 gap-3 xl:grid-cols-2 transition-opacity duration-500 ${isFetching ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
           {filteredResults.slice(0, 18).map((t) => (
             <ResultRow key={forensicKey(t)} t={t} score={tokenScore(report, t)} onSelect={() => onSelect(t.id)} />
           ))}
