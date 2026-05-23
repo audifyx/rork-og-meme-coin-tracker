@@ -23,13 +23,14 @@ const scannerItems: NavItem[] = [
   { to: "/swap",         icon: Zap,           label: "Swap",            eyebrow: "Jupiter route" },
   { to: "/communities",  icon: Globe2,        label: "Communities",     eyebrow: "Social hub" },
   { to: "/discover",     icon: Compass,       label: "Discover",        eyebrow: "Top traders" },
-  { to: "/art",          icon: Palette,       label: "Art",             eyebrow: "Memes & vibes" },
+  { to: "/art",          icon: Palette,       label: "Memes",           eyebrow: "Art & vibes" },
 ];
 
 const solToolsItems: NavItem[] = [
   { to: "/wallets",         icon: Wallet,        label: "Wallets",         eyebrow: "Tracked wallets" },
   { to: "/tokens",          icon: Coins,         label: "Tokens",          eyebrow: "Token tracker" },
   { to: "/charts",          icon: LineChart,     label: "Charts",          eyebrow: "Live charts" },
+  { to: "/live-feed-page",  icon: Radio,         label: "Live Feed",       eyebrow: "Tape stream" },
   { to: "/alpha-chat",      icon: Bot,           label: "Alpha Chat",      eyebrow: "AI assistant" },
   { to: "/live-trading",    icon: TrendingUp,    label: "Live Trading",    eyebrow: "P&L · Signals" },
   { to: "/callouts",        icon: Bell,          label: "Callouts",        eyebrow: "Trade alerts" },
@@ -40,7 +41,6 @@ const solToolsItems: NavItem[] = [
 ];
 
 const communityItems: NavItem[] = [
-  { to: "/live-feed-page",  icon: Radio,         label: "Live Feed",       eyebrow: "Tape stream" },
   { to: "/notifications",   icon: Bell,          label: "Notifications",   eyebrow: "Your alerts" },
 ];
 

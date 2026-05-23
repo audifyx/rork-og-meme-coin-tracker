@@ -236,7 +236,7 @@ export const WebhookDashboard = () => {
       {/* Main Dashboard Grid */}
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Tracked Wallets */}
-        <Card className="lg:col-span-2">
+        <Card className="og-glass-card lg:col-span-2">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center justify-between">
               <span className="flex items-center gap-2">
@@ -318,7 +318,7 @@ export const WebhookDashboard = () => {
         {/* Quick Actions & Activity */}
         <div className="space-y-4">
           {/* Quick Actions */}
-          <Card>
+          <Card className="og-glass-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Zap className="h-4 w-4 text-yellow-500" />
@@ -362,7 +362,7 @@ export const WebhookDashboard = () => {
           </Card>
 
           {/* Recent Activity */}
-          <Card>
+          <Card className="og-glass-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Radio className="h-4 w-4 text-primary animate-pulse" />
@@ -403,7 +403,7 @@ export const WebhookDashboard = () => {
       </div>
 
       {/* Performance Chart Placeholder */}
-      <Card>
+      <Card className="og-glass-card">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />

@@ -351,7 +351,7 @@ const Webhooks = () => {
 
           <TabsContent value="send" className="mt-6 space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
-              <Card>
+              <Card className="og-glass-card">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Zap className="h-4 w-4 text-yellow-500" />
@@ -371,7 +371,7 @@ const Webhooks = () => {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="og-glass-card">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Wallet className="h-4 w-4 text-[#22d3ee]" />
@@ -391,7 +391,7 @@ const Webhooks = () => {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="og-glass-card">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Coins className="h-4 w-4 text-secondary" />
@@ -411,7 +411,7 @@ const Webhooks = () => {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="og-glass-card">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-orange-500" />
@@ -456,7 +456,7 @@ const Webhooks = () => {
 
           <TabsContent value="track" className="mt-6 space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
-              <Card>
+              <Card className="og-glass-card">
                 <CardHeader>
                   <CardTitle className="text-base">Track Wallet</CardTitle>
                 </CardHeader>
@@ -473,7 +473,7 @@ const Webhooks = () => {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="og-glass-card">
                 <CardHeader>
                   <CardTitle className="text-base">Track Token</CardTitle>
                 </CardHeader>
@@ -491,7 +491,7 @@ const Webhooks = () => {
               </Card>
             </div>
 
-            <Card>
+            <Card className="og-glass-card">
               <CardHeader>
                 <CardTitle className="text-base flex items-center justify-between">
                   <span>Active Tracking Alerts</span>
@@ -537,7 +537,7 @@ const Webhooks = () => {
           </TabsContent>
 
           <TabsContent value="settings" className="mt-6">
-            <Card>
+            <Card className="og-glass-card">
               <CardHeader>
                 <CardTitle className="text-base">Alert Settings</CardTitle>
               </CardHeader>
@@ -575,7 +575,7 @@ const Webhooks = () => {
           </TabsContent>
 
           <TabsContent value="logs" className="mt-6">
-            <Card>
+            <Card className="og-glass-card">
               <CardHeader>
                 <CardTitle className="text-base flex items-center justify-between">
                   <span>Webhook History</span>

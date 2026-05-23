@@ -106,7 +106,7 @@ const Leaderboard = () => {
               return (
                 <Card
                   key={t.user_id}
-                  className={`bg-[hsl(var(--og-ink))/90] border-border/40 hover:border-primary/40 transition-all cursor-pointer hover:-translate-y-0.5 active:scale-95 ${idx === 0 ? "ring-1 ring-[#eab308]/30" : ""}`}
+                  className={`og-glass-card hover:border-primary/40 transition-all cursor-pointer hover:-translate-y-0.5 active:scale-95 ${idx === 0 ? "ring-1 ring-[#eab308]/30" : ""}`}
                   onClick={() => goToProfile(t)}
                 >
                   <CardContent className="flex flex-col items-center text-center p-4 pt-5">
@@ -151,7 +151,7 @@ const Leaderboard = () => {
             : sorted.slice(3).map((t, i) => (
                 <Card
                   key={t.user_id}
-                  className="bg-[hsl(var(--og-ink))/90] border-border/40 hover:border-primary/30 transition-all cursor-pointer hover:bg-white/[0.03] active:scale-[0.99]"
+                  className="og-glass-card hover:border-primary/30 transition-all cursor-pointer active:scale-[0.99]"
                   onClick={() => goToProfile(t)}
                 >
                   <CardContent className="flex items-center gap-3 p-3">

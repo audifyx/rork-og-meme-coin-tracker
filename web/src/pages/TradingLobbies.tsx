@@ -222,7 +222,7 @@ const TradingLobbies = () => {
       <AppLayout>
         <div className="flex flex-col h-[calc(100vh-60px)] lg:h-screen">
           {/* Header */}
-          <div className="shrink-0 border-b border-primary/10 bg-card/50 backdrop-blur-xl p-3 flex items-center gap-3">
+          <div className="shrink-0 border-b border-primary/10 bg-[#070d14]/80 backdrop-blur-xl p-3 flex items-center gap-3">
             <button onClick={() => { leaveLobby(); }} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -270,7 +270,7 @@ const TradingLobbies = () => {
                 className="w-full bg-muted/20 border border-border/30 rounded-lg px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
               />
               {chartResults.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/40 rounded-lg shadow-2xl z-50 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#0d1627] border border-white/10 rounded-lg shadow-2xl z-50 max-h-48 overflow-y-auto">
                   {chartResults.map((pair: any, i: number) => (
                     <button key={i} onClick={() => updateChart(pair)} className="w-full text-left p-2 hover:bg-primary/10 flex justify-between text-xs transition-colors">
                       <span className="font-semibold">{pair.baseToken.symbol}/{pair.quoteToken.symbol}</span>
@@ -303,7 +303,7 @@ const TradingLobbies = () => {
           </div>
 
           {/* Mobile tabs */}
-          <div className="flex lg:hidden border-b border-border/20 bg-card/30 shrink-0">
+          <div className="flex lg:hidden border-b border-border/20 bg-[#070d14]/60 shrink-0">
             {[
               { key: "chart", icon: LineChart, label: "Chart" },
               { key: "watchlist", icon: Coins, label: "Watchlist" },
@@ -362,7 +362,7 @@ const TradingLobbies = () => {
                       className="w-full bg-muted/20 border border-border/30 rounded-xl px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/30"
                     />
                     {chartResults.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border/40 rounded-lg shadow-2xl z-50 max-h-48 overflow-y-auto">
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-[#0d1627] border border-white/10 rounded-lg shadow-2xl z-50 max-h-48 overflow-y-auto">
                         {chartResults.map((pair: any, i: number) => (
                           <button key={i} onClick={() => updateChart(pair)} className="w-full text-left p-2 hover:bg-primary/10 flex justify-between text-xs">
                             <span className="font-semibold">{pair.baseToken.symbol}/{pair.quoteToken.symbol}</span>
