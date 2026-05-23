@@ -33,8 +33,11 @@ const Auth = () => {
   const [errors, setErrors] = useState<{ email?: string; username?: string; password?: string; confirm?: string }>({});
 
   useEffect(() => {
-    if (!loading && user && mode !== "signup") navigate("/wallets");
-  }, [user, loading, navigate, mode]);
+    if (!loading && user && mode !== "signup") {
+      const next = searchParams.get("next") || "/app";
+      navigate(next);
+    }
+  }, [user, loading, navigate, mode, searchParams]);
 
   const validate = () => {
     const newErrors: typeof errors = {};
@@ -59,7 +62,7 @@ const Auth = () => {
       if (mode === "signin") {
         const { error } = await signIn(email, password);
         if (error) toast.error(error.message.includes("Invalid login") ? "Invalid email or password" : error.message);
-        else { toast.success("Welcome back!"); navigate("/wallets"); }
+        else { toast.success("Welcome back!"); navigate(searchParams.get("next") || "/app"); }
       } else if (mode === "signup") {
         const clean = username.replace(/^@/, "");
         const { error } = await signUp(email, password, clean);

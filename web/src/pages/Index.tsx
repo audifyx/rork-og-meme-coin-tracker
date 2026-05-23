@@ -5,10 +5,12 @@ import {
   ArrowUpRight,
   ChevronRight,
   Coins,
+  Compass,
   Cpu,
   Crosshair,
   Flame,
   Gauge,
+  Globe,
   Home,
   Layers3,
   LayoutGrid,
@@ -24,6 +26,7 @@ import {
   Star,
   Target,
   TrendingUp,
+  Users,
   Wallet,
   X,
   Zap,
@@ -43,6 +46,8 @@ import { SnipeFeed } from "@/components/SnipeFeed";
 import { Feed } from "@/components/Feed";
 import { NewsSignal } from "@/components/NewsSignal";
 import { SolToolsRoadmap } from "@/components/SolToolsRoadmap";
+import CommunitiesPage from "./Communities";
+import DiscoverPage from "./Discover";
 import { cn } from "@/lib/utils";
 import { DEFAULT_OG_MINT, OGSCAN_DEV_WALLET, OGSCAN_TOKEN_MINT, SOL_MINT, STORAGE_OG_MINT, shortAddr } from "@/lib/og";
 import { AuthButton } from "@/components/AuthButton";
@@ -66,7 +71,9 @@ type TabId =
   | "tx-feed"
   | "swap"
   | "tech"
-  | "news-signal";
+  | "news-signal"
+  | "communities"
+  | "discover";
 
 type TabAccent = "blue" | "white" | "cyan" | "gold" | "lime";
 type TabGroup = "Main" | "Forensics" | "Market" | "Project";
@@ -276,6 +283,28 @@ const TABS: TabConfig[] = [
     accent: "lime",
     group: "Market",
   },
+  {
+    id: "communities",
+    label: "Communities",
+    slug: "communities",
+    pageNumber: 17,
+    eyebrow: "Social Hub",
+    description: "Join crypto communities, share alpha, post calls, and chat with fellow traders.",
+    Icon: Users,
+    accent: "cyan",
+    group: "Main",
+  },
+  {
+    id: "discover",
+    label: "Discover",
+    slug: "discover",
+    pageNumber: 18,
+    eyebrow: "Trending & Traders",
+    description: "Trending tokens, top trader leaderboard, whale watch, and live social activity.",
+    Icon: Compass,
+    accent: "gold",
+    group: "Main",
+  },
 ];
 
 const NAV_TABS: TabConfig[] = TABS.filter((t: TabConfig) => t.showInNav !== false);
@@ -345,6 +374,8 @@ const renderTool = (tab: TabId, mint: string, updateMint: (m: string) => void): 
   if (tab === "swap") return <SwapPanel ogMint={mint} onSelectMint={updateMint} />;
   if (tab === "tech") return <TechStack />;
   if (tab === "news-signal") return <NewsSignal onSelect={updateMint} />;
+  if (tab === "communities") return <CommunitiesInline />;
+  if (tab === "discover") return <DiscoverInline />;
   return null;
 };
 
@@ -519,6 +550,8 @@ const AppSidebar = ({
         <div className="mb-1">
           <p className="mb-1 px-3 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">Main</p>
           <NavItem item={TAB_BY_ID.overview} activeId={activeId} onNavigate={onNavigate} />
+          <NavItem item={TAB_BY_ID.communities} activeId={activeId} onNavigate={onNavigate} />
+          <NavItem item={TAB_BY_ID.discover} activeId={activeId} onNavigate={onNavigate} />
         </div>
 
         {groups.map(({ key, label }) => {
@@ -676,8 +709,8 @@ const MobileNav = ({ activeId, onNavigate }: { activeId: TabId; onNavigate: (t: 
     { id: "overview" as TabId, label: "Home", Icon: Home },
     { id: "scanner" as TabId, label: "Scan", Icon: Search },
     { id: "snipe-feed" as TabId, label: "Radar", Icon: Target },
-    { id: "feed" as TabId, label: "Feed", Icon: Rss },
-    { id: "swap" as TabId, label: "Swap", Icon: Zap },
+    { id: "communities" as TabId, label: "Social", Icon: Users },
+    { id: "discover" as TabId, label: "Discover", Icon: Compass },
   ];
   return (
     <nav className="fixed bottom-0 inset-x-0 z-50 border-t border-white/[0.07] bg-[#060c13]/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-xl lg:hidden">
@@ -1009,5 +1042,45 @@ const MarketFeedSuite = ({ mint, onSelect }: { mint: string; onSelect: (m: strin
     </section>
   );
 };
+
+/* ─── Inline wrappers: render Communities / Discover without their own AppLayout ─── */
+
+/**
+ * CommunitiesInline — mounts the Communities page in a sandboxed container.
+ * AppLayout renders a sidebar + flex wrapper; we use CSS to collapse the sidebar
+ * and unwrap the layout padding so the content fits cleanly inside the OGScan tool shell.
+ */
+const CommunitiesInline = () => (
+  <div
+    className="og-inline-page"
+    style={{ minHeight: "70vh" }}
+  >
+    <style>{`
+      .og-inline-page > div.min-h-screen {
+        min-height: unset !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+      }
+      .og-inline-page > div.min-h-screen > div.hidden {
+        display: none !important;
+      }
+      .og-inline-page > div.min-h-screen > main {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        overflow: visible !important;
+      }
+    `}</style>
+    <CommunitiesPage />
+  </div>
+);
+
+const DiscoverInline = () => (
+  <div
+    className="og-inline-page"
+    style={{ minHeight: "70vh" }}
+  >
+    <DiscoverPage />
+  </div>
+);
 
 export default Index;
