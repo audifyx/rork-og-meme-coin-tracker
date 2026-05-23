@@ -68,6 +68,32 @@ const KNOWN_LP_PULLED_OR_SCAM_MINTS = new Set<string>([
   "5sNU6g1qVji5dEBnb6SWSX2Gu2rtDvvk7khKyujj6cuU",
 ]);
 
+// ── Reverse canonical lookup ──────────────────────────────────────────────
+// All known canonical mints as a flat Set — allows O(1) check "is this token
+// one of the verified OG mints?" regardless of the search query / ticker.
+// Every value in CANONICAL_SOLANA_ORIGINS must appear here.
+const ALL_CANONICAL_MINTS = new Set<string>([
+  FARTCOIN_CANONICAL_MINT,
+  BONK_MINT,
+  WIF_MINT,
+  POPCAT_MINT,
+  TRUMP_MINT,
+]);
+
+/** Returns true if token.id is one of the hardcoded canonical OG mints — query-independent. */
+function isKnownCanonicalMint(tokenId: string | undefined): boolean {
+  return Boolean(tokenId && ALL_CANONICAL_MINTS.has(tokenId));
+}
+
+/** ATH market cap in USD for a token, or 0 if unknown. */
+function tokenAthMarketCapUsd(token: Pick<JupTokenInfo, "allTimeHighMarketCap" | "mcap" | "fdv">): number {
+  if (token.allTimeHighMarketCap != null && Number.isFinite(token.allTimeHighMarketCap) && token.allTimeHighMarketCap > 0) {
+    return token.allTimeHighMarketCap;
+  }
+  // Fall back to current mcap/fdv as a lower bound
+  return Math.max(token.mcap ?? 0, token.fdv ?? 0);
+}
+
 export const STORAGE_OG_MINT = "og_scanner.mint";
 
 export type TokenCreationSource = "chain" | "pool" | "unknown";
@@ -403,18 +429,38 @@ function isScamOrDeadPool(token: JupTokenInfo): boolean {
 }
 
 export function findOriginalOgToken(searchName: string, candidates: JupTokenInfo[]): JupTokenInfo | null {
-  const canonicalMint: string | undefined = canonicalSolanaOriginMintForQuery(searchName);
+  // ── 1. Reverse canonical check (query-independent) ─────────────────────
+  // If any candidate is a known canonical mint (hardcoded in ALL_CANONICAL_MINTS),
+  // it wins immediately — no scam gate, no date comparison, no composite score.
+  const knownCanonical = candidates.find((token) => isKnownCanonicalMint(token.id));
+  if (knownCanonical) return knownCanonical;
 
-  // Canonical mints are ALWAYS returned as the OG — we never let scam-checks
-  // or liquidity gates override a hardcoded authoritative mint.  For example,
-  // the real Fartcoin (9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump, launched
-  // 2024) must win over any 2025 pump.fun token that happens to be liquid.
+  // ── 2. Query-matched canonical (ticker/name lookup) ─────────────────────
+  const canonicalMint: string | undefined = canonicalSolanaOriginMintForQuery(searchName);
   if (canonicalMint) {
     const canonical = candidates.find((token) => token.id === canonicalMint);
-    if (canonical) return canonical; // canonical always wins — no scam gate
+    if (canonical) return canonical;
   }
 
-  // Otherwise find the true OG by on-chain age among exact-name matches.
+  // ── 3. Composite OG score (if pre-computed scores are attached) ──────────
+  // When forensicOgAttribution has already run rankCandidatesByOgScore, tokens
+  // will carry _ogScore. Use that — highest score = true OG.
+  const withScores = candidates.filter((t) => (t as JupTokenInfo & { _ogScore?: number })._ogScore != null);
+  if (withScores.length > 0) {
+    // Among exact-name matches with scores, pick the highest
+    const exactScored = withScores.filter((token) => isExactNameMatch(token, searchName) && !isScamOrDeadPool(token));
+    if (exactScored.length > 0) {
+      exactScored.sort((a, b) => {
+        const aS = (a as JupTokenInfo & { _ogScore?: number })._ogScore ?? 0;
+        const bS = (b as JupTokenInfo & { _ogScore?: number })._ogScore ?? 0;
+        return bS - aS;
+      });
+      return exactScored[0];
+    }
+  }
+
+  // ── 4. Multi-signal sort (sync fallback) ────────────────────────────────
+  // Used when scores aren't available: date + ATH + liquidity.
   const cleanCandidates = candidates
     .filter((token) => isExactNameMatch(token, searchName))
     .filter((token) => !isScamOrDeadPool(token));
@@ -433,26 +479,34 @@ export function findOriginalOgToken(searchName: string, candidates: JupTokenInfo
 
   const validTokens = Array.from(byMint.values());
   validTokens.sort((a, b) => {
-    // Safe tokens rank above unsafe ones
     const aUnsafe = hasUnsafeTokenAuthority(a);
     const bUnsafe = hasUnsafeTokenAuthority(b);
     if (aUnsafe !== bUnsafe) return aUnsafe ? 1 : -1;
 
-    // Primary sort: on-chain mint date (oldest = true OG)
+    // Primary: on-chain mint date (oldest wins)
     const aMint = tokenCreatedAtMs(a);
     const bMint = tokenCreatedAtMs(b);
     if (Number.isFinite(aMint) && Number.isFinite(bMint) && aMint !== bMint) return aMint - bMint;
     if (Number.isFinite(aMint) && !Number.isFinite(bMint)) return -1;
     if (!Number.isFinite(aMint) && Number.isFinite(bMint)) return 1;
 
-    // Secondary sort: first pool date (oldest pool = first to trade)
+    // Secondary: first pool date
     const aPool = tokenPoolCreatedAtMs(a);
     const bPool = tokenPoolCreatedAtMs(b);
     if (Number.isFinite(aPool) && Number.isFinite(bPool) && aPool !== bPool) return aPool - bPool;
     if (Number.isFinite(aPool)) return -1;
     if (Number.isFinite(bPool)) return 1;
 
-    // Tiebreak: liquidity depth (deeper pool = more credible)
+    // Tertiary: ATH market cap — real OGs with 200M+ ATH rank above pump clones
+    const aAth = tokenAthMarketCapUsd(a);
+    const bAth = tokenAthMarketCapUsd(b);
+    const ATH_OG_THRESHOLD = 10_000_000;
+    const aIsOgByAth = aAth >= ATH_OG_THRESHOLD;
+    const bIsOgByAth = bAth >= ATH_OG_THRESHOLD;
+    if (aIsOgByAth !== bIsOgByAth) return aIsOgByAth ? -1 : 1;
+    if (aAth !== bAth) return bAth - aAth;
+
+    // Final tiebreak: liquidity depth
     return tokenEffectiveLiquidityUsd(b) - tokenEffectiveLiquidityUsd(a);
   });
 
@@ -1556,6 +1610,281 @@ async function mintCreatedAt(mint: string): Promise<string | undefined> {
   return task;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ── COMPOSITE OG SCORING ENGINE ────────────────────────────────────────────
+// A 5-signal, multi-source scoring system that identifies the TRUE original
+// token across a pool of same-ticker candidates. Each signal is independently
+// sourced so no single bad data point can flip the result.
+//
+// Signals (weights):
+//   1. Age score        (35%) — min(Birdeye, Helius DAS, sig walk). Oldest wins.
+//   2. ATH market cap   (30%) — the real OG hit $10M+, $100M+, $1B+ ATH.
+//                               A 2025 pump.fun clone will have near-zero ATH.
+//   3. Holder profile   (20%) — holder count + distribution spread.
+//   4. Deploy pattern   (10%) — pump.fun bonding curve = clone signal.
+//   5. Pool age         (5%)  — oldest credible LP pool.
+//
+// The result is a 0–100 composite. The highest-scoring candidate wins.
+// Canonical mints (ALL_CANONICAL_MINTS) short-circuit to score=100.
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type OgCompositeScore = {
+  /** 0–100 composite OG confidence score */
+  total: number;
+  /** Individual signal contributions */
+  signals: {
+    age: number;          // 0–100 — how old the mint is vs pool max
+    athMcap: number;      // 0–100 — how large the ATH market cap was
+    holderProfile: number; // 0–100 — holder count + distribution
+    deployPattern: number; // 0–100 — deployment authenticity
+    poolAge: number;       // 0–100 — age of first credible LP pool
+  };
+  /** ISO creation date from earliest of all 3 sources */
+  tripleSourceCreatedAt?: string;
+  /** Whether this token was detected as a pump.fun bonding curve mint */
+  isPumpFunClone: boolean;
+};
+
+/**
+ * Detect pump.fun bonding curve token.
+ * pump.fun mints always have the suffix "pump" in their base58 address,
+ * launched through the bonding curve program, and have pumpFun metadata.
+ * Returns true = likely pump.fun origin (clone signal).
+ */
+function isPumpFunToken(token: JupTokenInfo): boolean {
+  if (token.pumpFun?.isPumpFun) return true;
+  // Most pump.fun mints end in "pump" in their base58 address
+  if (token.id && token.id.toLowerCase().endsWith("pump")) return true;
+  // If the token migrated FROM pump.fun (migrationAt exists), it could still
+  // be an OG — so we only flag as clone if it's still on the bonding curve
+  // (not yet migrated) or was created in 2025
+  if (token.pumpFun?.migrationAt) return false; // migrated = could be legit OG
+  return false;
+}
+
+/**
+ * Score a token's ATH market cap on a 0–100 scale.
+ *   $0       → 0
+ *   $100k    → 18
+ *   $1M      → 35
+ *   $10M     → 55
+ *   $50M     → 72
+ *   $200M    → 88
+ *   $1B+     → 100
+ */
+function scoreAthMarketCap(athUsd: number): number {
+  if (!Number.isFinite(athUsd) || athUsd <= 0) return 0;
+  if (athUsd >= 1_000_000_000) return 100;
+  if (athUsd >= 200_000_000) return 88;
+  if (athUsd >= 50_000_000)  return 72;
+  if (athUsd >= 10_000_000)  return 55;
+  if (athUsd >= 1_000_000)   return 35;
+  if (athUsd >= 100_000)     return 18;
+  return 5;
+}
+
+/**
+ * Score a token's age relative to the earliest mint in the candidate pool.
+ * Same-day as oldest  → 100
+ * 1 day later         → 92
+ * 7 days later        → 72
+ * 30 days later       → 50
+ * 180 days later      → 28
+ * 365+ days later     → 10
+ * No date available   → 20 (penalized but not zero)
+ */
+function scoreAgeRelative(mintMs: number, oldestMs: number): number {
+  if (!Number.isFinite(mintMs)) return 20;
+  if (!Number.isFinite(oldestMs) || mintMs <= oldestMs) return 100;
+  const delayDays = Math.max(0, (mintMs - oldestMs) / 86_400_000);
+  if (delayDays <= 0.5) return 100;
+  if (delayDays <= 1)   return 92;
+  if (delayDays <= 7)   return 72;
+  if (delayDays <= 30)  return 50;
+  if (delayDays <= 90)  return 35;
+  if (delayDays <= 180) return 28;
+  if (delayDays <= 365) return 18;
+  return 10;
+}
+
+/**
+ * Score holder profile — holder count + concentration.
+ * More holders + lower concentration = more likely the cultural OG.
+ * pump.fun clones typically have <100 holders and high concentration.
+ */
+function scoreHolderProfile(token: JupTokenInfo): number {
+  const count = token.holderCount ?? 0;
+  const topPct = token.audit?.topHoldersPercentage ?? token.topHoldersPercent ?? null;
+
+  // Holder count sub-score (0–60)
+  let countScore = 0;
+  if (count >= 100_000) countScore = 60;
+  else if (count >= 50_000) countScore = 52;
+  else if (count >= 10_000) countScore = 44;
+  else if (count >= 5_000)  countScore = 36;
+  else if (count >= 1_000)  countScore = 28;
+  else if (count >= 500)    countScore = 20;
+  else if (count >= 100)    countScore = 12;
+  else if (count > 0)       countScore = 5;
+
+  // Distribution sub-score (0–40)
+  let distScore = 20; // neutral when no data
+  if (topPct != null) {
+    if (topPct <= 15) distScore = 40;
+    else if (topPct <= 25) distScore = 32;
+    else if (topPct <= 40) distScore = 22;
+    else if (topPct <= 55) distScore = 12;
+    else distScore = 4;
+  }
+
+  return Math.min(100, countScore + distScore);
+}
+
+/**
+ * Score deployment pattern authenticity.
+ * - Known canonical mint       → 100
+ * - Verified token             → +20
+ * - Mint/freeze authority off  → +15 each (shows post-launch token hygiene)
+ * - pump.fun bonding curve     → 30 (significant clone signal)
+ * - pump.fun but migrated      → 60 (could still be an OG like WIF/BONK)
+ */
+function scoreDeployPattern(token: JupTokenInfo): number {
+  if (isKnownCanonicalMint(token.id)) return 100;
+
+  // If it's pump.fun and NOT migrated — strong clone signal
+  if (token.pumpFun?.isPumpFun && !token.pumpFun.migrationAt) return 30;
+  // pump.fun address suffix (bonding curve) without known migration
+  if (token.id?.toLowerCase().endsWith("pump") && !token.pumpFun?.migrationAt) return 35;
+
+  let score = 50; // neutral baseline
+  if (token.isVerified) score += 20;
+  if (token.audit?.mintAuthorityDisabled === true) score += 15;
+  if (token.audit?.freezeAuthorityDisabled === true) score += 15;
+  // pump.fun migrated — could be a legit OG (e.g. BONK was once pump.fun)
+  if (token.pumpFun?.migrationAt) score -= 10;
+  return Math.min(100, score);
+}
+
+/**
+ * Build composite OG score for a token.
+ * All inputs should already be enriched (ATH, holder count, on-chain date).
+ * @param token       The candidate token (enriched)
+ * @param oldestMintMs The oldest confirmed mint timestamp across all candidates (for relative age scoring)
+ */
+export function computeOgCompositeScore(token: JupTokenInfo, oldestMintMs: number): OgCompositeScore {
+  // Canonical mints always win — return perfect score immediately
+  if (isKnownCanonicalMint(token.id)) {
+    return {
+      total: 100,
+      signals: { age: 100, athMcap: 100, holderProfile: 100, deployPattern: 100, poolAge: 100 },
+      tripleSourceCreatedAt: token.firstMintAt ?? token.onChainCreatedAt,
+      isPumpFunClone: false,
+    };
+  }
+
+  const mintMs     = tokenCreatedAtMs(token);
+  const poolMs     = tokenPoolCreatedAtMs(token);
+  const athUsd     = tokenAthMarketCapUsd(token);
+  const pumpClone  = isPumpFunToken(token);
+
+  // Use the earliest known creation date (triple-source result already stored in firstMintAt)
+  const tripleSourceCreatedAt = token.firstMintAt ?? token.onChainCreatedAt;
+
+  // ── Signal 1: Age (35%) ──────────────────────────────────────────────────
+  const ageScore = scoreAgeRelative(mintMs, oldestMintMs);
+
+  // ── Signal 2: ATH market cap (30%) ──────────────────────────────────────
+  const athScore = scoreAthMarketCap(athUsd);
+
+  // ── Signal 3: Holder profile (20%) ──────────────────────────────────────
+  const holderScore = scoreHolderProfile(token);
+
+  // ── Signal 4: Deployment pattern (10%) ──────────────────────────────────
+  const deployScore = scoreDeployPattern(token);
+
+  // ── Signal 5: Pool age (5%) ──────────────────────────────────────────────
+  let poolAgeScore = 20; // neutral
+  if (Number.isFinite(poolMs)) {
+    const poolAgeDays = Math.max(0, (Date.now() - poolMs) / 86_400_000);
+    if (poolAgeDays >= 365) poolAgeScore = 100;
+    else if (poolAgeDays >= 180) poolAgeScore = 85;
+    else if (poolAgeDays >= 90)  poolAgeScore = 68;
+    else if (poolAgeDays >= 30)  poolAgeScore = 50;
+    else if (poolAgeDays >= 7)   poolAgeScore = 35;
+    else poolAgeScore = 18;
+  }
+
+  // ── Weighted composite ───────────────────────────────────────────────────
+  const raw =
+    ageScore    * 0.35 +
+    athScore    * 0.30 +
+    holderScore * 0.20 +
+    deployScore * 0.10 +
+    poolAgeScore * 0.05;
+
+  // Penalty: if pump.fun clone AND very new (< 90 days), apply a hard deduction
+  const clonePenalty = pumpClone && (Date.now() - mintMs) / 86_400_000 < 90 ? 25 : 0;
+
+  return {
+    total: Math.max(0, Math.min(100, Math.round(raw - clonePenalty))),
+    signals: {
+      age:           Math.round(ageScore),
+      athMcap:       Math.round(athScore),
+      holderProfile: Math.round(holderScore),
+      deployPattern: Math.round(deployScore),
+      poolAge:       Math.round(poolAgeScore),
+    },
+    tripleSourceCreatedAt,
+    isPumpFunClone: pumpClone,
+  };
+}
+
+/**
+ * Enrich a pool of candidates with OG composite scores and triple-source
+ * creation dates in parallel, capped at 10 concurrent requests.
+ *
+ * This replaces the old serial withOnChainCreationDates + enrichment approach
+ * for the OG selection step. After this call, every token has:
+ *   - token.firstMintAt    = min(Birdeye, Helius DAS, sig walk)
+ *   - token._ogScore       — not stored, returned separately
+ *
+ * Returns tokens sorted by composite score descending (best OG candidate first).
+ */
+export async function rankCandidatesByOgScore(
+  candidates: JupTokenInfo[],
+): Promise<Array<{ token: JupTokenInfo; score: OgCompositeScore }>> {
+  if (candidates.length === 0) return [];
+
+  // Step 1: Fetch creation dates for tokens that don't have one yet (parallel, cap 10)
+  const enriched = await mapWithConcurrency(candidates, 10, async (token) => {
+    // Already have a date — skip the network call
+    if (Number.isFinite(tokenCreatedAtMs(token))) return token;
+    try {
+      const createdAt = await mintCreatedAt(token.id);
+      return { ...token, onChainCreatedAt: createdAt, firstMintAt: token.firstMintAt ?? createdAt };
+    } catch {
+      return token;
+    }
+  });
+
+  // Step 2: Find the oldest confirmed mint timestamp across all candidates
+  const oldestMintMs = enriched.reduce((oldest, token) => {
+    const ms = tokenCreatedAtMs(token);
+    return Number.isFinite(ms) && ms < oldest ? ms : oldest;
+  }, Number.POSITIVE_INFINITY);
+
+  // Step 3: Score every candidate
+  const scored = enriched.map((token) => ({
+    token,
+    score: computeOgCompositeScore(token, oldestMintMs),
+  }));
+
+  // Step 4: Sort by composite score descending
+  scored.sort((a, b) => b.score.total - a.score.total);
+
+  return scored;
+}
+
 async function mapWithConcurrency<T, R>(items: T[], concurrency: number, mapper: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = new Array(items.length);
   let cursor = 0;
@@ -1869,6 +2198,11 @@ function isoFromCandidateEvent(token: JupTokenInfo): string | undefined {
 }
 
 function compareByOriginProofAndSafety(a: JupTokenInfo, b: JupTokenInfo): number {
+  // 0. Canonical mints (hardcoded in ALL_CANONICAL_MINTS) always rank first
+  const aCanon = isKnownCanonicalMint(a.id) ? 0 : 1;
+  const bCanon = isKnownCanonicalMint(b.id) ? 0 : 1;
+  if (aCanon !== bCanon) return aCanon - bCanon;
+
   const aUnsafe: boolean = hasUnsafeTokenAuthority(a);
   const bUnsafe: boolean = hasUnsafeTokenAuthority(b);
   if (aUnsafe !== bUnsafe) return aUnsafe ? 1 : -1;
@@ -1878,6 +2212,15 @@ function compareByOriginProofAndSafety(a: JupTokenInfo, b: JupTokenInfo): number
   if (Number.isFinite(aOriginMs) && Number.isFinite(bOriginMs) && aOriginMs !== bOriginMs) return aOriginMs - bOriginMs;
   if (Number.isFinite(aOriginMs)) return -1;
   if (Number.isFinite(bOriginMs)) return 1;
+
+  // ATH market cap: cultural OGs with massive historical reach rank above clones
+  const aAth = tokenAthMarketCapUsd(a);
+  const bAth = tokenAthMarketCapUsd(b);
+  const ATH_SIGNAL_THRESHOLD = 10_000_000;
+  const aHasAth = aAth >= ATH_SIGNAL_THRESHOLD;
+  const bHasAth = bAth >= ATH_SIGNAL_THRESHOLD;
+  if (aHasAth !== bHasAth) return aHasAth ? -1 : 1;
+  if (aAth !== bAth) return bAth - aAth;
 
   const aVerified: boolean = a.isVerified === true;
   const bVerified: boolean = b.isVerified === true;
@@ -2639,42 +2982,65 @@ export async function forensicOgAttribution(ticker: string): Promise<ForensicOgR
     return aExact - bExact;
   });
   const chainDatedPool: JupTokenInfo[] = await withOnChainCreationDates(pool);
-  const enriched: JupTokenInfo[] = await enrichTokensWithMarketIntel(chainDatedPool, { includeAth: false, includeOnChainIntel: true, maxOnChain: 8, maxBirdeye: 16 });
+  const enriched: JupTokenInfo[] = await enrichTokensWithMarketIntel(chainDatedPool, { includeAth: true, includeOnChainIntel: true, maxOnChain: 8, maxBirdeye: 16 });
 
   // ── Safety filtering ────────────────────────────────────────────────────
-  // A token must have real liquidity to be shown.  LP-rug/scam tokens are
-  // rejected unless they are the pinned canonical mint (in which case we keep
-  // them for informational display but mark them clearly).
   const liquidCandidates: JupTokenInfo[] = enriched.filter((token) => {
-    // Canonical mint always passes the liquidity gate — we never hide it
     if (isCanonicalSolanaOriginForQuery(token, clean)) return true;
+    if (isKnownCanonicalMint(token.id)) return true;
     return hasMinimumOgScanLiquidity(token);
   });
 
   const originPool: JupTokenInfo[] = liquidCandidates.filter((token) => {
-    // Canonical mint always passes the authority gate
     if (isCanonicalSolanaOriginForQuery(token, clean)) return true;
-    // Skip tokens with LP pulled (scam/rug) unless canonical
+    if (isKnownCanonicalMint(token.id)) return true;
     if (hasPulledOrDeadLiquidity(token)) return false;
-    // Skip tokens with active mint/freeze authority (rug risk)
     if (hasUnsafeTokenAuthority(token)) return false;
     return true;
   });
 
-  const candidates: JupTokenInfo[] = originPool
-    .filter((token) => isCanonicalSolanaOriginForQuery(token, clean) || Number.isFinite(tokenCreatedAtMs(token)) || Number.isFinite(tokenPoolCreatedAtMs(token)))
+  const rawCandidates: JupTokenInfo[] = originPool
+    .filter((token) => isCanonicalSolanaOriginForQuery(token, clean) || isKnownCanonicalMint(token.id) || Number.isFinite(tokenCreatedAtMs(token)) || Number.isFinite(tokenPoolCreatedAtMs(token)))
     .sort(compareByOriginProofAndSafety)
     .slice(0, 40);
 
-  const canonicalCandidate: JupTokenInfo | undefined = candidates.find((token) => isCanonicalSolanaOriginForQuery(token, clean));
+  // ── Composite OG scoring ─────────────────────────────────────────────────
+  // Run the 5-signal composite scorer in parallel (max 10 concurrent).
+  // This fetches missing creation dates + uses ATH mcap + holder profile to
+  // produce a 0-100 OG confidence score for every candidate.
+  // The winner is the highest-scoring candidate, not just the oldest on-chain date.
+  const scoredCandidates = await rankCandidatesByOgScore(rawCandidates);
+
+  // Attach composite scores to tokens as _ogScore for use in findOriginalOgToken
+  const candidates: JupTokenInfo[] = scoredCandidates.map(({ token, score }) =>
+    Object.assign(token, { _ogScore: score.total }),
+  );
+
+  // Canonical candidate: query-matched OR reverse-lookup (any known canonical mint in the pool)
+  const canonicalCandidate: JupTokenInfo | undefined =
+    candidates.find((token) => isCanonicalSolanaOriginForQuery(token, clean)) ??
+    candidates.find((token) => isKnownCanonicalMint(token.id));
   const chainCandidates: JupTokenInfo[] = candidates.filter((token) => Number.isFinite(tokenCreatedAtMs(token)));
   const chainSorted: JupTokenInfo[] = [...chainCandidates].sort(compareByOnChainAgeOnly);
   const eventSortedBase: JupTokenInfo[] = [...candidates].sort(compareByOriginProofAndSafety);
   const eventSorted: JupTokenInfo[] = canonicalCandidate
     ? [canonicalCandidate, ...eventSortedBase.filter((token) => tokenKey(token) !== tokenKey(canonicalCandidate))]
     : eventSortedBase;
+
+  // exactMatchOg uses composite scores (attached above) when available
   const exactMatchOg: JupTokenInfo | null = findOriginalOgToken(clean, candidates);
-  const firstMintToken: JupTokenInfo | null = exactMatchOg ?? canonicalCandidate ?? eventSorted[0] ?? chainSorted[0] ?? null;
+
+  // compositeWinner: top-scoring candidate from rankCandidatesByOgScore
+  const compositeWinner: JupTokenInfo | null = scoredCandidates[0]?.token ?? null;
+
+  // firstMintToken priority: canonical > composite score winner > exact-match > event-sorted
+  const firstMintToken: JupTokenInfo | null =
+    canonicalCandidate ??
+    exactMatchOg ??
+    compositeWinner ??
+    eventSorted[0] ??
+    chainSorted[0] ??
+    null;
   const canonicalChainMs: number = canonicalCandidate ? tokenCreatedAtMs(canonicalCandidate) : Number.POSITIVE_INFINITY;
   const canonicalLiquidityMs: number = canonicalCandidate ? tokenPoolCreatedAtMs(canonicalCandidate) : Number.POSITIVE_INFINITY;
   const canonicalEventMs: number = canonicalCandidate ? earliestCandidateEventMs(canonicalCandidate) : Number.POSITIVE_INFINITY;
