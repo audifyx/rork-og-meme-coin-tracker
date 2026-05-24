@@ -311,12 +311,10 @@ const SocialHub = () => {
             />
           </div>
         ) : (
-          <div className="relative min-h-0 flex-1">
-            <div className="absolute inset-0 flex flex-col">
-              {activeChannel === "general-chat" && <GeneralChat />}
-              {activeChannel === "voice-rooms" && <VoiceRooms members={sortedMembers} />}
-              {activeChannel === "live-stream" && <LiveStream />}
-            </div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {activeChannel === "general-chat" && <GeneralChat />}
+            {activeChannel === "voice-rooms" && <VoiceRooms members={sortedMembers} />}
+            {activeChannel === "live-stream" && <LiveStream />}
           </div>
         )}
       </div>
@@ -623,7 +621,7 @@ const GeneralChat = () => {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
         <div className="flex items-center gap-2.5">
@@ -938,7 +936,7 @@ const VoiceRooms = ({ members }: { members: CommunityMember[] }) => {
   ];
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Header */}
       <div className="border-b border-white/[0.07] px-4 py-3">
         <div className="mb-3 flex items-center justify-between">
@@ -1235,7 +1233,7 @@ const VoiceRooms = ({ members }: { members: CommunityMember[] }) => {
    ═══════════════════════════════════════════════════════════════ */
 
 const LiveStream = () => (
-  <div className="flex h-full flex-col">
+  <div className="flex min-h-0 flex-1 flex-col">
     {/* Header */}
     <div className="border-b border-white/[0.07] px-4 py-3">
       <div className="flex items-center justify-between">
