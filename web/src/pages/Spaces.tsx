@@ -1,7 +1,9 @@
 /**
  * Spaces — Premium Twitter-Spaces-style live audio rooms.
  * Features: live chat, reactions, speaker management, polls, mini player,
- * trending banner, co-hosts, RSVP, replay summaries, glassmorphism design.
+ * trending banner, co-hosts, RSVP, replay summaries, glassmorphism design,
+ * token-gated spaces, live token ticker, pinned tokens/tweets, Q&A mode,
+ * speaker timer, floating reactions overlay.
  * Rendered inline inside Index.tsx — do NOT wrap in AppLayout.
  */
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
@@ -16,6 +18,7 @@ import {
   TrendingUp, Heart, ThumbsUp, Eye, BarChart3, Copy, Zap,
   Shield, Play, Pause, Minimize2, Maximize2, ChevronRight,
   AlertCircle, CheckCircle2, Repeat2, ExternalLink, UserPlus,
+  Timer, MessageCircleQuestion, Twitter,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +27,13 @@ import { VoicePanel, VoicePanelHandle, VoiceParticipant, VoiceRole } from "@/com
 import { formatDistanceToNow, format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { safeAvatarUrl } from "@/lib/utils";
+import TokenGate from "@/components/spaces/TokenGate";
+import TokenTicker from "@/components/spaces/TokenTicker";
+import LivePolls from "@/components/spaces/LivePolls";
+import ReactionOverlayNew from "@/components/spaces/ReactionOverlay";
+import QAQueue from "@/components/spaces/QAQueue";
+import SpeakerTimerWidget from "@/components/spaces/SpeakerTimer";
+import PinnedContent from "@/components/spaces/PinnedContent";
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    TYPES
@@ -51,6 +61,12 @@ interface Space {
   co_hosts: string[] | null;
   recording_url: string | null;
   duration_seconds: number | null;
+  token_gate_ca: string | null;
+  token_gate_name: string | null;
+  pinned_token_ca: string | null;
+  pinned_tweet_url: string | null;
+  max_speaker_time_minutes: number | null;
+  category: string | null;
 }
 
 interface SpaceChatMessage {
@@ -430,6 +446,10 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
   const [creating, setCreating] = useState(false);
+  const [tokenGateCA, setTokenGateCA] = useState("");
+  const [tokenGateName, setTokenGateName] = useState("");
+  const [isTokenGated, setIsTokenGated] = useState(false);
+  const [speakerTimerMin, setSpeakerTimerMin] = useState(0);
 
   const addTag = () => {
     const t = tagInput.trim().replace(/^#/, "");
@@ -448,6 +468,9 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
         topic, is_live: !isScheduled, is_private: isPrivate, is_recording: isRecording,
         listener_count: isScheduled ? 0 : 1, speaker_count: isScheduled ? 0 : 1,
         peak_listeners: isScheduled ? 0 : 1, scheduled_for: sf, tags: tags.length > 0 ? tags : null,
+        token_gate_ca: isTokenGated && tokenGateCA.trim() ? tokenGateCA.trim() : null,
+        token_gate_name: isTokenGated && tokenGateName.trim() ? tokenGateName.trim() : null,
+        max_speaker_time_minutes: speakerTimerMin > 0 ? speakerTimerMin : null,
       };
       const { data, error } = await supabase.from("spaces").insert(d).select().single();
       if (error) throw error;
@@ -584,6 +607,43 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
               </div>
               <Toggle on={isRecording} onChange={() => setIsRecording(v => !v)} activeColor="bg-red-500" />
             </div>
+
+            {/* Token Gate */}
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
+              <div className="flex items-center justify-between p-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 rounded-lg bg-amber-500/10"><Shield className="h-3.5 w-3.5 text-amber-400" /></div>
+                  <div><p className="text-[13px] font-bold text-white">Token Gate</p><p className="text-[10px] text-white/25">Require token to join</p></div>
+                </div>
+                <Toggle on={isTokenGated} onChange={() => setIsTokenGated(v => !v)} activeColor="bg-amber-500" />
+              </div>
+              {isTokenGated && (
+                <div className="px-3 pb-3 space-y-2 border-t border-white/[0.04] pt-2">
+                  <input value={tokenGateCA} onChange={e => setTokenGateCA(e.target.value)} placeholder="Token contract address (CA)..."
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] text-white placeholder:text-white/15 focus:outline-none focus:border-amber-500/20 font-mono" />
+                  <input value={tokenGateName} onChange={e => setTokenGateName(e.target.value)} placeholder="Token name (e.g. $BONK)..."
+                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] text-white placeholder:text-white/15 focus:outline-none focus:border-amber-500/20" />
+                  <p className="text-[9px] text-white/15">Users must paste their wallet to verify they hold this token</p>
+                </div>
+              )}
+            </div>
+
+            {/* Speaker Timer */}
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-1.5 rounded-lg bg-blue-500/10"><Timer className="h-3.5 w-3.5 text-blue-400" /></div>
+                <div><p className="text-[13px] font-bold text-white">Speaker Timer</p><p className="text-[10px] text-white/25">Auto-remove after time limit</p></div>
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                {[0, 2, 5, 10, 15, 30, 60].map(m => (
+                  <button key={m} type="button" onClick={() => setSpeakerTimerMin(m)}
+                    className={cn("px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                      speakerTimerMin === m ? "bg-blue-500/15 text-blue-400 border border-blue-500/25" : "bg-white/[0.04] text-white/20 border border-white/[0.06]")}>
+                    {m === 0 ? "Off" : `${m}m`}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -706,6 +766,7 @@ const SpaceCard = ({ space, onJoin, variant = "default" }: { space: Space; onJoi
             )}
             {space.is_recording && <span className="inline-flex items-center gap-0.5 text-[8px] font-bold text-red-400/50"><div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />REC</span>}
             {space.is_private && <Lock className="h-2.5 w-2.5 text-white/15" />}
+            {space.token_gate_ca && <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[8px] font-bold text-amber-400"><Shield className="h-2 w-2" />GATED</span>}
             {isPast && space.ended_at && (
               <span className="text-[9px] text-white/20">{formatDistanceToNow(new Date(space.ended_at), { addSuffix: true })}</span>
             )}
@@ -869,7 +930,7 @@ const SpaceChat = ({ spaceId, isHost }: { spaceId: string; isHost: boolean }) =>
                 <span className="text-[10px] font-bold text-white/50 truncate">{m.username || "Anon"}</span>
                 <span className="text-[8px] text-white/10">{formatDistanceToNow(new Date(m.created_at), { addSuffix: true })}</span>
               </div>
-              <p className="text-[12px] text-white/60 break-words leading-relaxed">{m.content}</p>
+              <p className="text-[13px] text-white/80 break-words leading-relaxed">{m.content}</p>
             </div>
             {isHost && (
               <button onClick={() => pinMsg(m)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/10 transition" title="Pin"><Pin className="h-3 w-3 text-white/20" /></button>
@@ -973,6 +1034,11 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
   const [showHostPanel, setShowHostPanel] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [slowMode, setSlowMode] = useState(false);
+  const [pinnedTokenCA, setPinnedTokenCA] = useState(space.pinned_token_ca);
+  const [pinnedTweetUrl, setPinnedTweetUrl] = useState(space.pinned_tweet_url);
+  const [showTokenTicker, setShowTokenTicker] = useState(false);
+  const [tickerCA, setTickerCA] = useState("");
+  const [showQA, setShowQA] = useState(false);
   const voicePanelRef = useRef<VoicePanelHandle>(null);
   const isHost = user?.id === space.host_id;
   const tm = topicOf(cur.topic);
@@ -1039,6 +1105,21 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
 
   const share = () => { navigator.clipboard.writeText(`${window.location.origin}/listen/${space.id}`); toast.success("Share link copied! 🔗"); };
 
+  const handlePinToken = (ca: string | null) => {
+    setPinnedTokenCA(ca);
+    supabase.from("spaces").update({ pinned_token_ca: ca }).eq("id", space.id);
+  };
+  const handlePinTweet = (url: string | null) => {
+    setPinnedTweetUrl(url);
+    supabase.from("spaces").update({ pinned_tweet_url: url }).eq("id", space.id);
+  };
+  const handleSpeakerTimeUp = (speakerId: string) => {
+    if (isHost && voicePanelRef.current) {
+      voicePanelRef.current.demoteToListener(speakerId);
+      toast("Speaker time's up — auto-removed ⏱️");
+    }
+  };
+
   const votePoll = (idx: number) => {
     if (!poll || poll.votedIndex !== null) return;
     setPoll({ ...poll, votedIndex: idx, options: poll.options.map((o, i) => i === idx ? { ...o, votes: o.votes + 1 } : o) });
@@ -1081,6 +1162,8 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
                   <div className="absolute right-0 top-full mt-1 w-52 bg-[#0c1219] border border-white/[0.08] rounded-xl shadow-2xl z-30 overflow-hidden sp-slide-up">
                     <button onClick={() => { setShowHostPanel(!showHostPanel); setShowMore(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-primary hover:bg-primary/5 transition"><Shield className="h-4 w-4" /> Host Controls</button>
                     <button onClick={() => { setShowPollCreate(true); setShowMore(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/60 hover:bg-white/5 transition"><BarChart3 className="h-4 w-4" /> Create Poll</button>
+                    <button onClick={() => { setShowQA(!showQA); setShowMore(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-purple-400/80 hover:bg-purple-500/5 transition"><MessageCircleQuestion className="h-4 w-4" /> Q&A Mode</button>
+                    <button onClick={() => { setShowTokenTicker(!showTokenTicker); setShowMore(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-white/60 hover:bg-white/5 transition"><TrendingUp className="h-4 w-4" /> Token Chart</button>
                     <div className="border-t border-white/[0.06]" />
                     <button onClick={() => { endSpace(); setShowMore(false); }} className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition"><StopCircle className="h-4 w-4" /> End Room</button>
                   </div>
@@ -1100,9 +1183,38 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
         </div>
       )}
 
-      {/* ── Poll ── */}
+      {/* ── Legacy Poll (kept for backward compat) ── */}
       {poll && <LivePollWidget poll={poll} onVote={votePoll} onClose={() => setPoll({ ...poll, closed: true })} isHost={isHost} />}
       {showPollCreate && <CreatePollInline onCreate={p => { setPoll(p); setShowPollCreate(false); }} onCancel={() => setShowPollCreate(false)} />}
+
+      {/* ── Pinned Token & Tweet ── */}
+      <div className="mx-4 mt-2">
+        <PinnedContent
+          pinnedTokenCA={pinnedTokenCA}
+          pinnedTweetUrl={pinnedTweetUrl}
+          isHost={isHost}
+          onPinToken={handlePinToken}
+          onPinTweet={handlePinTweet}
+        />
+      </div>
+
+      {/* ── Token Ticker (DexScreener chart) ── */}
+      {showTokenTicker && (
+        <div className="mx-4 mt-2">
+          {tickerCA ? (
+            <TokenTicker ca={tickerCA} onClose={() => { setShowTokenTicker(false); setTickerCA(""); }} />
+          ) : (
+            <div className="p-3 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+              <p className="text-[10px] text-white/30 font-bold mb-2">Paste a token CA to show live chart</p>
+              <div className="flex gap-2">
+                <input placeholder="Token contract address..." onChange={e => setTickerCA(e.target.value)}
+                  className="flex-1 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] text-white placeholder:text-white/15 focus:outline-none font-mono" />
+                <button onClick={() => setShowTokenTicker(false)} className="px-2 py-1 rounded-lg bg-white/[0.04] text-white/20 text-[10px]">Close</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Host Controls Panel ── */}
       {isHost && showHostPanel && (
@@ -1247,6 +1359,33 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
             <SpeakerQueue spaceId={space.id} isHost={isHost} onRaiseHand={raiseHand} hasRaised={hasRaised} onPromote={(userId) => voicePanelRef.current?.promoteToSpeaker(userId)} />
           </div>
 
+          {/* ── Live Polls (DB-backed, real-time) ── */}
+          <div className="mt-4">
+            <LivePolls spaceId={space.id} userId={user?.id || ""} isHost={isHost} />
+          </div>
+
+          {/* ── Speaker Timer ── */}
+          <div className="mt-4">
+            <SpeakerTimerWidget
+              isHost={isHost}
+              speakers={voiceParticipants.filter(p => p.role === "speaker").map(p => ({ id: p.user_id, name: p.username || "User" }))}
+              onTimeUp={handleSpeakerTimeUp}
+            />
+          </div>
+
+          {/* ── Q&A Mode ── */}
+          {showQA && user && (
+            <div className="mt-4">
+              <QAQueue
+                spaceId={space.id}
+                userId={user.id}
+                username={profile?.username || null}
+                avatarUrl={safAvatar(profile?.avatar_url) ?? null}
+                isHost={isHost}
+              />
+            </div>
+          )}
+
           {/* About section */}
           {cur.description && (
             <div className="mt-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
@@ -1278,14 +1417,15 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
           <div className="mb-3"><MicVisualizer active={true} /></div>
         )}
 
-        {/* Reactions row */}
+        {/* Reactions row + floating overlay */}
         <div className="flex items-center gap-1.5 mb-3 overflow-x-auto justify-center" style={{ scrollbarWidth: "none" }}>
-          {REACTION_EMOJIS.slice(0, 6).map(e => (
+          {REACTION_EMOJIS.slice(0, 5).map(e => (
             <button key={e} onClick={() => react(e)}
               className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.08] hover:scale-110 active:scale-90 transition-all text-lg shrink-0">
               {e}
             </button>
           ))}
+          <ReactionOverlayNew spaceId={space.id} userId={user?.id || ""} />
         </div>
 
         {/* Main controls — centered rounded squares */}
@@ -1325,7 +1465,18 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
             <MessageSquare className="h-5 w-5" />
           </button>
 
-          {/* Host controls / Sparkle effects */}
+          {/* Q&A toggle */}
+          <button onClick={() => setShowQA(!showQA)}
+            className={cn(
+              "w-14 h-14 rounded-2xl flex items-center justify-center transition-all",
+              showQA
+                ? "bg-purple-500/15 border border-purple-500/30 text-purple-400"
+                : "bg-white/[0.06] border border-white/[0.08] text-white/40 hover:bg-white/[0.1]"
+            )}>
+            <MessageCircleQuestion className="h-5 w-5" />
+          </button>
+
+          {/* Host controls / Share */}
           {isHost ? (
             <button onClick={() => setShowHostPanel(!showHostPanel)}
               className={cn(
@@ -1778,7 +1929,17 @@ const Spaces = () => {
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [replaySpace, setReplaySpace] = useState<Space | null>(null);
+  const [tokenGateSpace, setTokenGateSpace] = useState<Space | null>(null);
   const topicScrollRef = useRef<HTMLDivElement>(null);
+
+  // Handle join with token gate check
+  const handleJoinSpace = (s: Space) => {
+    if (s.token_gate_ca && s.host_id !== user?.id) {
+      setTokenGateSpace(s);
+    } else {
+      setActiveSpace(s);
+    }
+  };
 
   const fetchSpaces = useCallback(async () => {
     try {
@@ -1841,6 +2002,18 @@ const Spaces = () => {
 
   // ── Replay player ──
   if (replaySpace) return <ReplayPlayer space={replaySpace} onClose={() => setReplaySpace(null)} />;
+
+  // ── Token gate verification ──
+  if (tokenGateSpace) return (
+    <>
+      <TokenGate
+        tokenCA={tokenGateSpace.token_gate_ca!}
+        tokenName={tokenGateSpace.token_gate_name}
+        onVerified={() => { setActiveSpace(tokenGateSpace); setTokenGateSpace(null); }}
+        onCancel={() => setTokenGateSpace(null)}
+      />
+    </>
+  );
 
   // ── Active room (joined) ──
   if (activeSpace) return (
@@ -2012,7 +2185,7 @@ const Spaces = () => {
                 ) : (
                   <div className="space-y-3">
                     {filteredLive.map(s => (
-                      <SpaceCard key={s.id} space={s} onJoin={setActiveSpace} />
+                      <SpaceCard key={s.id} space={s} onJoin={handleJoinSpace} />
                     ))}
                   </div>
                 )
