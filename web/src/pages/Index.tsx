@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState, useRef, useCallback, type ComponentType, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { OGBannerHero, OGBannerPromo, OGBannerCTA, OGBannerStats, Tilt3D } from "@/components/banners/OGBanner3D";
+import { OGBannerPromo, OGBannerCTA, OGBannerStats } from "@/components/banners/OGBanner3D";
 import {
   Activity,
   ArrowUpRight,
