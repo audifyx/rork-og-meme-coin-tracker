@@ -41,6 +41,8 @@ import SpaceHighlights from "@/components/spaces/SpaceHighlights";
 import SpaceAnalytics from "@/components/spaces/SpaceAnalytics";
 import SpaceLeaderboard from "@/components/spaces/SpaceLeaderboard";
 import SpaceBadges from "@/components/spaces/SpaceBadges";
+import InviteLink from "@/components/spaces/InviteLink";
+import SpaceNotifications from "@/components/spaces/SpaceNotifications";
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    TYPES
@@ -1432,6 +1434,13 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
             />
           </div>
 
+          {/* ── Invite Link ── */}
+          {cur.is_live && (
+            <div className="mt-4">
+              <InviteLink spaceId={space.id} spaceName={cur.title} isHost={isHost} />
+            </div>
+          )}
+
           {/* ── Analytics (host only, shows after space ends) ── */}
           {!cur.is_live && (
             <div className="mt-4">
@@ -2123,7 +2132,7 @@ const Spaces = () => {
             </p>
             <div className="flex items-center gap-2 mt-3">
               <span className="text-[11px] text-white/25 font-mono px-2.5 py-1 rounded-full border border-white/[0.08] bg-white/[0.02]">/spaces</span>
-              <span className="text-[11px] text-blue-400/60 font-mono px-2.5 py-1 rounded-full border border-blue-400/20 bg-blue-400/[0.05]">pg 20</span>
+              <SpaceNotifications onNavigateToSpace={(id) => { const s = spaces.find(sp => sp.id === id); if (s) setSelectedSpace(s); }} />
             </div>
           </div>
         </div>
