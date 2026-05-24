@@ -2,7 +2,7 @@ import {
   Activity, Bell, Bot, Coins, Compass, Crown, Home, LineChart, LogOut,
   MessageSquare, Rocket, Search, Settings, Sparkles, Target, Trophy,
   TrendingUp, User, Users, Wallet, Webhook, Wrench, X, Zap,
-  Globe2, Radio, Shield, Palette, Menu, Mic,
+  Globe2, Radio, Shield, Palette, Menu,
 } from "lucide-react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
