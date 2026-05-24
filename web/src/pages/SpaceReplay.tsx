@@ -18,7 +18,7 @@ interface Space {
   title: string;
   description: string | null;
   host_id: string;
-  host_name: string | null;
+  host_username: string | null;
   host_avatar: string | null;
   topic: string | null;
   is_live: boolean;
@@ -260,11 +260,11 @@ const SpaceReplay = () => {
                 {space.host_avatar ? (
                   <img src={space.host_avatar} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-xs font-bold text-white/30">{(space.host_name?.[0] || "H").toUpperCase()}</span>
+                  <span className="text-xs font-bold text-white/30">{(space.host_username?.[0] || "H").toUpperCase()}</span>
                 )}
               </div>
               <div>
-                <p className="text-sm font-bold text-white/70">{space.host_name || "Host"}</p>
+                <p className="text-sm font-bold text-white/70">@{space.host_username || "Host"}</p>
                 <p className="text-[10px] text-white/30">{formatDate(space.created_at)}</p>
               </div>
             </div>
