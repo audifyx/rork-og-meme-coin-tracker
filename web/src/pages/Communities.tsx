@@ -218,7 +218,7 @@ const UserProfileModal = ({ userId, onClose }: { userId: string; onClose: () => 
     });
     // Check if current user follows this user
     if (user && user.id !== userId) {
-      supabase.from("user_follows").select("id").eq("follower_id", user.id).eq("following_id", userId).maybeSingle().then(({ data }) => {
+      supabase.from("followers").select("id").eq("follower_id", user.id).eq("followee_id", userId).maybeSingle().then(({ data }) => {
         setIsFollowing(!!data);
       });
     }
@@ -233,12 +233,12 @@ const UserProfileModal = ({ userId, onClose }: { userId: string; onClose: () => 
     setFollowLoading(true);
     try {
       if (isFollowing) {
-        await supabase.from("user_follows").delete().eq("follower_id", user.id).eq("following_id", userId);
+        await supabase.from("followers").delete().eq("follower_id", user.id).eq("followee_id", userId);
         setIsFollowing(false);
         setStats(s => ({ ...s, followers: Math.max(0, s.followers - 1) }));
         toast("Unfollowed");
       } else {
-        await supabase.from("user_follows").insert({ follower_id: user.id, following_id: userId });
+        await supabase.from("followers").insert({ follower_id: user.id, followee_id: userId });
         setIsFollowing(true);
         setStats(s => ({ ...s, followers: s.followers + 1 }));
         toast(`Following @${profile?.username ?? "user"} 🎉`);

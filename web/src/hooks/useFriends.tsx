@@ -26,17 +26,17 @@ export const useFriends = () => {
     const { data: followerRows } = await supabase
       .from("followers")
       .select("follower_id")
-      .eq("following_id", user.id);
+      .eq("followee_id", user.id);
 
     const followerIds = followerRows?.map(r => r.follower_id) || [];
 
     // People I follow
     const { data: followingRows } = await supabase
       .from("followers")
-      .select("following_id")
+      .select("followee_id")
       .eq("follower_id", user.id);
 
-    const followingIds = followingRows?.map(r => r.following_id) || [];
+    const followingIds = followingRows?.map(r => r.followee_id) || [];
 
     // Fetch profiles for both sets
     const allIds = [...new Set([...followerIds, ...followingIds])];
@@ -81,11 +81,11 @@ export const useFriends = () => {
     setMutuals(mutualList);
     setLoading(false);
 
-    // Update profile follower/following counts
-    await supabase.from("profiles").update({
+    // Update profile follower/following counts (fire-and-forget)
+    supabase.from("profiles").update({
       followers_count: followerIds.length,
       following_count: followingIds.length,
-    }).eq("user_id", user.id);
+    }).eq("user_id", user.id).then(() => {});
   }, [user]);
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export const useFriends = () => {
     if (!user) return;
     await supabase.from("followers").insert({
       follower_id: user.id,
-      following_id: targetUserId,
+      followee_id: targetUserId,
     });
     fetchFollowers();
   };
@@ -105,7 +105,7 @@ export const useFriends = () => {
     if (!user) return;
     await supabase.from("followers").delete()
       .eq("follower_id", user.id)
-      .eq("following_id", targetUserId);
+      .eq("followee_id", targetUserId);
     fetchFollowers();
   };
 
