@@ -8,7 +8,7 @@ export const ALCHEMY_API_KEY = "PAq_PkRjwniLgnpJdLUtc";
 export const QUICKNODE_WSS = "wss://floral-few-frog.solana-mainnet.quiknode.pro/12dfccc83b82aad957cffaa9e22d37033c6ef947/";
 
 export const OGSCAN_SITE_URL = "https://ogscan.fun";
-export const OGSCAN_X_URL = "https://x.com/ogscanfun";
+export const OGSCAN_X_URL = "https://x.com/ogscanbackup";
 export const OGSCAN_TECH_POST_URL = "https://x.com/i/status/2052413018563084370";
 export const OGSCAN_BRAND_IMAGE = "/og-brand.jpg";
 
