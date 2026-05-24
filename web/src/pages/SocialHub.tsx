@@ -272,9 +272,10 @@ const SocialHub = () => {
         </div>
       </div>
 
-      {/* Mobile channel bar */}
-      <div className="flex w-full flex-col md:hidden">
-        <div className="flex gap-1 overflow-x-auto border-b border-white/[0.07] bg-[#0c1320] px-3 py-2 scrollbar-none">
+      {/* CENTER — Main Content (includes mobile channel bar) */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* Mobile channel bar */}
+        <div className="flex gap-1 overflow-x-auto border-b border-white/[0.07] bg-[#0c1320] px-3 py-2 scrollbar-none md:hidden">
           {CHANNELS.map((ch) => {
             const isActive = activeChannel === ch.id;
             const Icon = ch.icon;
@@ -295,23 +296,22 @@ const SocialHub = () => {
             );
           })}
         </div>
-      </div>
-
-      {/* CENTER — Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto">
-          {activeChannel === "activity-feed" && (
+        {activeChannel === "activity-feed" ? (
+          <div className="flex-1 overflow-y-auto">
             <ActivityFeed
               members={sortedMembers}
               activeMembersList={activeMembersList}
               onlineCount={onlineCount}
               onSwitchChannel={setActiveChannel}
             />
-          )}
-          {activeChannel === "general-chat" && <GeneralChat />}
-          {activeChannel === "voice-rooms" && <VoiceRooms members={sortedMembers} />}
-          {activeChannel === "live-stream" && <LiveStream />}
-        </div>
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col">
+            {activeChannel === "general-chat" && <GeneralChat />}
+            {activeChannel === "voice-rooms" && <VoiceRooms members={sortedMembers} />}
+            {activeChannel === "live-stream" && <LiveStream />}
+          </div>
+        )}
       </div>
 
       {/* RIGHT — Active Members (desktop) */}
