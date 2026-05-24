@@ -1654,6 +1654,104 @@ const StatsBar = ({ liveCount, listenerCount, activeNow, trending }: {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════════
+   ONLINE USERS BANNER — shows who's currently browsing Spaces
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+interface OnlineUser {
+  user_id: string;
+  username: string;
+  avatar_url: string | null;
+  last_seen: string;
+  online: boolean;
+}
+
+const OnlineUsersBanner = () => {
+  const { user, profile } = useAuth();
+  const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const ch = supabase.channel("spaces-online", {
+      config: { presence: { key: user.id } },
+    });
+
+    ch.on("presence", { event: "sync" }, () => {
+      const state = ch.presenceState();
+      const users: OnlineUser[] = Object.entries(state).map(([key, value]: [string, any]) => {
+        const p = value[0];
+        return {
+          user_id: p.user_id || key,
+          username: p.username || "User",
+          avatar_url: p.avatar_url || null,
+          last_seen: p.last_seen || new Date().toISOString(),
+          online: true,
+        };
+      });
+      setOnlineUsers(users);
+    });
+
+    ch.subscribe(async (status) => {
+      if (status === "SUBSCRIBED") {
+        await ch.track({
+          user_id: user.id,
+          username: profile?.username || "User",
+          avatar_url: profile?.avatar_url || null,
+          last_seen: new Date().toISOString(),
+        });
+      }
+    });
+
+    channelRef.current = ch;
+    return () => {
+      ch.untrack();
+      supabase.removeChannel(ch);
+    };
+  }, [user, profile?.username, profile?.avatar_url]);
+
+  if (onlineUsers.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-[11px] font-black text-white/40 uppercase tracking-wider">
+            Online · {onlineUsers.length}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-1 overflow-x-auto scrollbar-none" style={{ scrollbarWidth: "none" }}>
+          {onlineUsers.map(u => (
+            <div key={u.user_id} className="relative group shrink-0">
+              <div className={cn(
+                "w-9 h-9 rounded-full flex items-center justify-center overflow-hidden border-2 transition-all",
+                "border-emerald-500/30 bg-white/[0.04]"
+              )}>
+                {safAvatar(u.avatar_url) ? (
+                  <img src={safAvatar(u.avatar_url)} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-[11px] font-bold text-white/30">{(u.username?.[0] || "?").toUpperCase()}</span>
+                )}
+              </div>
+              {/* Green online dot */}
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#0a0f18]" />
+
+              {/* Tooltip on hover */}
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg bg-black/90 border border-white/10 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                <p className="text-[10px] font-bold text-white">{u.username}</p>
+                <p className="text-[9px] text-white/40">Online now</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════════
    MAIN SPACES PAGE
    ═══════════════════════════════════════════════════════════════════════════════ */
 
@@ -1793,6 +1891,9 @@ const Spaces = () => {
           </div>
         </div>
       </div>
+
+      {/* ═══ ONLINE USERS BANNER ═══ */}
+      <OnlineUsersBanner />
 
       {/* ═══ TAB BAR + ACTIONS ═══ */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3 space-y-3">
