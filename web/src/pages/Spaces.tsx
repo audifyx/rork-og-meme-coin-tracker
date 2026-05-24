@@ -813,8 +813,15 @@ const SpaceRoom = ({ space, onLeave, onMinimize }: { space: Space; onLeave: () =
 
   useEffect(() => {
     if (!user) return;
-    supabase.rpc("increment_listener", { space_id: space.id }).catch(() => {});
-    return () => { supabase.rpc("decrement_listener", { space_id: space.id }).catch(() => {}); };
+    // Try RPC first, fall back to direct update
+    supabase.rpc("increment_listener", { space_id: space.id }).catch(() => {
+      supabase.from("spaces").update({ listener_count: (cur.listener_count || 0) + 1 }).eq("id", space.id).then(() => {});
+    });
+    return () => {
+      supabase.rpc("decrement_listener", { space_id: space.id }).catch(() => {
+        supabase.from("spaces").update({ listener_count: Math.max((cur.listener_count || 1) - 1, 0) }).eq("id", space.id).then(() => {});
+      });
+    };
   }, [space.id, user?.id]);
 
   const react = (emoji: string) => {
@@ -1151,6 +1158,7 @@ const Spaces = () => {
         supabase.from("spaces").select("*").or("is_live.eq.true,and(is_live.eq.false,ended_at.is.null)").order("is_live", { ascending: false }).order("listener_count", { ascending: false }).limit(50),
         supabase.from("spaces").select("*").eq("is_live", false).not("ended_at", "is", null).order("ended_at", { ascending: false }).limit(20),
       ]);
+      if (lr.error) { console.warn("Spaces table not found or error:", lr.error.message); setSpaces([]); setPastSpaces([]); setLoading(false); return; }
       setSpaces((lr.data as Space[]) || []);
       setPastSpaces((pr.data as Space[]) || []);
     } catch { setSpaces([]); setPastSpaces([]); }
