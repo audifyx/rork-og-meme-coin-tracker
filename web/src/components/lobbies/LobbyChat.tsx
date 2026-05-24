@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { MessageSquare, Send } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   id: string;
@@ -14,6 +15,7 @@ interface Message {
 
 export const LobbyChat = ({ lobbyId }: { lobbyId: string }) => {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -77,25 +79,42 @@ export const LobbyChat = ({ lobbyId }: { lobbyId: string }) => {
         {messages.length === 0 && (
           <p className="text-xs text-muted-foreground/50 text-center py-8">No messages yet. Say something!</p>
         )}
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex gap-2 ${msg.user_id === user?.id ? "flex-row-reverse" : ""}`}>
-            <img
-              src={msg.avatar_url || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${msg.username}`}
-              className="w-6 h-6 rounded-full border border-primary/20 shrink-0"
-              alt=""
-            />
-            <div className={`max-w-[75%] ${msg.user_id === user?.id ? "text-right" : ""}`}>
-              <p className="text-[9px] text-muted-foreground/60 mb-0.5">{msg.username}</p>
-              <div className={`px-2.5 py-1.5 rounded-xl text-xs ${
-                msg.user_id === user?.id 
-                  ? "bg-primary/15 text-primary-foreground border border-primary/20" 
-                  : "bg-white/[0.04] border border-border/30"
-              }`}>
-                {msg.content}
+        {messages.map((msg) => {
+          const isSelf = msg.user_id === user?.id;
+          const goToProfile = () => {
+            if (!isSelf) navigate(`/profile/${msg.user_id}`);
+          };
+          return (
+            <div key={msg.id} className={`flex gap-2 ${isSelf ? "flex-row-reverse" : ""}`}>
+              <button
+                onClick={goToProfile}
+                className={`shrink-0 ${!isSelf ? "cursor-pointer hover:opacity-80 transition-opacity" : "cursor-default"}`}
+                title={!isSelf ? `View @${msg.username}'s profile` : undefined}
+              >
+                <img
+                  src={msg.avatar_url || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${msg.username}`}
+                  className="w-6 h-6 rounded-full border border-primary/20"
+                  alt=""
+                />
+              </button>
+              <div className={`max-w-[75%] ${isSelf ? "text-right" : ""}`}>
+                <button
+                  onClick={goToProfile}
+                  className={`text-[9px] text-muted-foreground/60 mb-0.5 ${!isSelf ? "hover:text-primary/70 transition-colors cursor-pointer" : "cursor-default"}`}
+                >
+                  {msg.username}
+                </button>
+                <div className={`px-2.5 py-1.5 rounded-xl text-xs ${
+                  isSelf
+                    ? "bg-primary/15 text-primary-foreground border border-primary/20"
+                    : "bg-white/[0.04] border border-border/30"
+                }`}>
+                  {msg.content}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <form onSubmit={handleSend} className="p-2 border-t border-primary/10 flex gap-2">

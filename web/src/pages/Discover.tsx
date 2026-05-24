@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Search, Trophy, TrendingUp, Users, Star, Crown, Zap, Filter, Flame, Eye, BarChart3, AlertTriangle, ArrowUpRight, ArrowDownRight, RefreshCw, Sparkles, Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -62,6 +62,9 @@ const Discover = ({ inline = false }: { inline?: boolean }) => {
   const [sortBy, setSortBy] = useState<string>("total_pnl");
   const [loading, setLoading] = useState(true);
   const [loadingTrending, setLoadingTrending] = useState(true);
+  // followState: map of userId -> boolean (true = currently following)
+  const [followState, setFollowState] = useState<Record<string, boolean>>({});
+  const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchLeaderboard();
@@ -69,6 +72,20 @@ const Discover = ({ inline = false }: { inline?: boolean }) => {
     fetchTrendingTokens();
     subscribeToActivity();
   }, [sortBy]);
+
+  // Load which users the current user already follows
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("followers")
+      .select("followee_id")
+      .eq("follower_id", user.id)
+      .then(({ data }) => {
+        const state: Record<string, boolean> = {};
+        data?.forEach((r: any) => { state[r.followee_id] = true; });
+        setFollowState(state);
+      });
+  }, [user]);
 
   const fetchTrendingTokens = async () => {
     setLoadingTrending(true);
@@ -180,10 +197,22 @@ const Discover = ({ inline = false }: { inline?: boolean }) => {
 
   const handleFollow = async (userId: string) => {
     if (!user) { navigate("/auth"); return; }
+    if (userId === user.id) return;
+    setFollowLoading(prev => ({ ...prev, [userId]: true }));
     try {
-      await supabase.from("followers").insert({ follower_id: user.id, following_id: userId });
-      toast.success("Following!");
-    } catch { toast.error("Failed to follow"); }
+      const already = followState[userId];
+      if (already) {
+        await supabase.from("followers").delete()
+          .eq("follower_id", user.id).eq("followee_id", userId);
+        setFollowState(prev => ({ ...prev, [userId]: false }));
+        toast.success("Unfollowed");
+      } else {
+        await supabase.from("followers").insert({ follower_id: user.id, followee_id: userId });
+        setFollowState(prev => ({ ...prev, [userId]: true }));
+        toast.success("Following! 🎉");
+      }
+    } catch { toast.error("Failed to update follow status"); }
+    finally { setFollowLoading(prev => ({ ...prev, [userId]: false })); }
   };
 
   const formatNum = (n: number) => {
@@ -348,9 +377,17 @@ const Discover = ({ inline = false }: { inline?: boolean }) => {
                                   <span>{trader.trades_count || 0} trades</span>
                                 </div>
                               </div>
-                              <Button variant="outline" size="sm" className="h-7 text-xs rounded-lg shrink-0" onClick={(e) => { e.stopPropagation(); handleFollow(trader.user_id); }}>
-                                Follow
-                              </Button>
+                              {trader.user_id !== user?.id && (
+                                <Button
+                                  variant={followState[trader.user_id] ? "outline" : "default"}
+                                  size="sm"
+                                  disabled={followLoading[trader.user_id]}
+                                  className={`h-7 text-xs rounded-lg shrink-0 transition-all ${followState[trader.user_id] ? "border-white/20 text-white/60 hover:border-red-500/40 hover:text-red-400" : ""}`}
+                                  onClick={(e) => { e.stopPropagation(); handleFollow(trader.user_id); }}
+                                >
+                                  {followLoading[trader.user_id] ? "..." : followState[trader.user_id] ? "Following" : "Follow"}
+                                </Button>
+                              )}
                             </div>
                           </div>
                         ))}
