@@ -599,8 +599,9 @@ const Index = () => {
 
         {/* Page content */}
         {tab === "social" ? (
-          /* SocialHub needs full height — skip ToolShell wrapper and padding */
-          <main className="min-h-0 flex-1 overflow-hidden">
+          /* SocialHub needs full height — skip ToolShell wrapper and padding.
+             pb-[4.5rem] on mobile accounts for fixed MobileNav (lg:pb-0 on desktop). */
+          <main className="min-h-0 flex-1 overflow-hidden pb-[4.5rem] lg:pb-0">
             <SocialHub />
           </main>
         ) : (
