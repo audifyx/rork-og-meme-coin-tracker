@@ -51,6 +51,17 @@ interface NewToken {
   launchPlatform?: string;
 }
 
+const DEMO_ACTIVITIES: WalletActivity[] = [
+  { signature: "d1", type: "BUY", timestamp: new Date(Date.now() - 30000).toISOString(), description: "Bought 5,200 SOL at $174.89", tokenSymbol: "SOL", amount: 5200, usdValue: 909428, walletAddress: "7xKX...3mPq", walletLabel: "whale_01" },
+  { signature: "d2", type: "SELL", timestamp: new Date(Date.now() - 120000).toISOString(), description: "Sold 12M BONK for 4.2 SOL", tokenSymbol: "BONK", amount: 12000000, usdValue: 734, walletAddress: "Gh8K...rR2v", walletLabel: "degen_king" },
+  { signature: "d3", type: "SWAP", timestamp: new Date(Date.now() - 240000).toISOString(), description: "Swapped 100 JUP → 58.3 SOL via Jupiter", tokenSymbol: "JUP", amount: 100, usdValue: 10189, walletAddress: "3fYp...kL9m", walletLabel: "jup_sniper" },
+  { signature: "d4", type: "BUY", timestamp: new Date(Date.now() - 360000).toISOString(), description: "Bought 8,500 POPCAT at $1.15", tokenSymbol: "POPCAT", amount: 8500, usdValue: 9775, walletAddress: "Qw2T...nN4x", walletLabel: "meme_hunter" },
+  { signature: "d5", type: "TRANSFER", timestamp: new Date(Date.now() - 480000).toISOString(), description: "Transferred 250 SOL to exchange", tokenSymbol: "SOL", amount: 250, usdValue: 43722, walletAddress: "Kp7R...eV1b", walletLabel: "smart_money" },
+  { signature: "d6", type: "BUY", timestamp: new Date(Date.now() - 600000).toISOString(), description: "Bought 50K WIF at $2.89", tokenSymbol: "WIF", amount: 50000, usdValue: 144500, walletAddress: "7xKX...3mPq", walletLabel: "whale_01" },
+  { signature: "d7", type: "SELL", timestamp: new Date(Date.now() - 720000).toISOString(), description: "Sold 5,000 ORCA for 18.4 SOL", tokenSymbol: "ORCA", amount: 5000, usdValue: 3216, walletAddress: "Mz9P...aD3k", walletLabel: "flipper_99" },
+  { signature: "d8", type: "SWAP", timestamp: new Date(Date.now() - 900000).toISOString(), description: "Swapped 2 SOL → 340K SOLTOOLS", tokenSymbol: "SOLTOOLS", amount: 340000, usdValue: 350, walletAddress: "Gh8K...rR2v", walletLabel: "degen_king" },
+];
+
 const LAUNCH_PLATFORMS = [
   { id: "all", name: "All Platforms", icon: Globe },
   { id: "pump.fun", name: "Pump.fun", icon: Rocket },
@@ -386,6 +397,34 @@ const LiveFeed = () => {
                   {loading ? (
                     <div className="flex items-center justify-center py-16">
                       <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent" />
+                    </div>
+                  ) : (activities.length === 0 && trackedWallets.length === 0) ? (
+                    <div>
+                      <div className="px-4 pt-4 pb-2">
+                        <Badge variant="outline" className="text-[10px] border-[#eab308]/30 text-[#eab308]/60">DEMO DATA — Track wallets to see live activity</Badge>
+                      </div>
+                      <div className="divide-y divide-border/50">
+                        {DEMO_ACTIVITIES.map((activity, index) => (
+                          <div key={activity.signature} className="p-4 hover:bg-white/[0.03] transition-all opacity-70" style={{ animationDelay: `${index * 30}ms` }}>
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div className={`p-2.5 rounded-xl ${getActivityColor(activity.type)}`}>
+                                  {getActivityIcon(activity.type)}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <Badge className="text-[10px]">{activity.type}</Badge>
+                                    {activity.tokenSymbol && <span className="text-xs font-bold text-[#22d3ee]">{activity.tokenSymbol}</span>}
+                                    {activity.walletLabel && <span className="text-[10px] text-white/30">by {activity.walletLabel}</span>}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground truncate mt-1">{activity.description}</p>
+                                </div>
+                              </div>
+                              {activity.usdValue && <span className="text-sm font-bold font-mono text-white/60">${activity.usdValue.toLocaleString()}</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ) : activities.length === 0 ? (
                     <div className="text-center py-16">

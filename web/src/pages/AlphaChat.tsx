@@ -46,6 +46,16 @@ interface OnlineUser {
   avatar_url: string | null;
 }
 
+const DEMO_MESSAGES: Message[] = [
+  { id: "dm1", user_id: null, username: "phantom_whale", avatar_url: null, content: "Just spotted a massive accumulation on BONK — wallet 7xKX has been buying every dip for the past 6 hours 👀", message_type: "text", wallet_address: null, metadata: null, created_at: new Date(Date.now() - 60000).toISOString() },
+  { id: "dm2", user_id: null, username: "solana_degen", avatar_url: null, content: "That new pump.fun launch $OGDOG is getting insane volume. Already 3x from launch. DYOR tho", message_type: "text", wallet_address: null, metadata: null, created_at: new Date(Date.now() - 180000).toISOString() },
+  { id: "dm3", user_id: null, username: "jup_sniper", avatar_url: null, content: "🚨 ALPHA: Jupiter v2 governance vote going live tomorrow. JUP holders who stake get boosted airdrops", message_type: "text", wallet_address: null, metadata: null, created_at: new Date(Date.now() - 300000).toISOString() },
+  { id: "dm4", user_id: null, username: "mev_hunter", avatar_url: null, content: "Heads up — seeing a lot of sandwich attacks on Raydium SOL/USDC pool right now. Use Jupiter with MEV protection enabled", message_type: "text", wallet_address: null, metadata: null, created_at: new Date(Date.now() - 420000).toISOString() },
+  { id: "dm5", user_id: null, username: "bonk_maxi", avatar_url: null, content: "BONK staking rewards just got announced — 15% APY for 30-day lock. This is gonna send it 🚀", message_type: "text", wallet_address: null, metadata: null, created_at: new Date(Date.now() - 600000).toISOString() },
+  { id: "dm6", user_id: null, username: "chain_explorer", avatar_url: null, content: "Found an insider wallet that bought $WIF 2 hours before the Coinbase listing announcement. Address: Mz9P...aD3k", message_type: "text", wallet_address: "Mz9PaD3k", metadata: null, created_at: new Date(Date.now() - 900000).toISOString() },
+  { id: "dm7", user_id: null, username: "og_scanner", avatar_url: null, content: "OG Scan just detected 47 new token launches in the last hour. Only 3 passed the rug score check ⚠️", message_type: "text", wallet_address: null, metadata: null, created_at: new Date(Date.now() - 1200000).toISOString() },
+];
+
 const AlphaChat = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
@@ -383,16 +393,11 @@ const AlphaChat = () => {
               <ScrollArea className="h-full" ref={scrollRef}>
                 <div className="p-4 lg:p-5 space-y-4">
                   {messages.length === 0 && (
-                    <div className="text-center py-16 text-muted-foreground">
-                      <div className="relative inline-block">
-                        <div className="absolute inset-0 bg-primary/10 blur-2xl rounded-full" />
-                        <Bot className="relative h-14 w-14 mx-auto mb-4 opacity-50" />
-                      </div>
-                      <p className="font-medium">No messages yet</p>
-                      <p className="text-sm mt-1">Be the first to drop some alpha!</p>
+                    <div className="px-2 pb-2">
+                      <Badge variant="outline" className="text-[10px] border-[#eab308]/30 text-[#eab308]/60">LIVE PREVIEW — Sign in to join the conversation</Badge>
                     </div>
                   )}
-                  {messages.map((msg) => (
+                  {(messages.length > 0 ? messages : DEMO_MESSAGES).map((msg) => (
                     <div key={msg.id} className="animate-fade-in">
                       <div className={`flex items-start gap-3 ${msg.user_id === user?.id ? "flex-row-reverse" : ""}`}>
                         <Avatar className="w-9 h-9 border-2 border-white/[0.07] shadow-sm shrink-0">

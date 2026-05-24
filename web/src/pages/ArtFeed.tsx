@@ -17,7 +17,7 @@ import {
   Download, Maximize2, X, Play, Pause, Volume2, VolumeX,
   Flame, Trophy, Sparkles, Film, Grid3X3, LayoutList,
   Shuffle, Search, Eye, MessageSquare, Zap, Clapperboard,
-  Star, ThumbsUp, Laugh, Skull, Rocket, Crown
+  Star, ThumbsUp, Laugh, Skull, Rocket, Crown, Clock
 } from "lucide-react";
 
 // ─── Meme data ────────────────────────────────────────────────────────────────
@@ -99,6 +99,7 @@ interface Trailer {
   videoUrl: string;
   badge: string;
   views: string;
+  comingSoon?: boolean;
 }
 
 const TRAILERS: Trailer[] = [
@@ -107,8 +108,8 @@ const TRAILERS: Trailer[] = [
     title: "OG SCAN: Origins",
     subtitle: "The story of how on-chain forensics changed Solana forever.",
     thumbnail: "/memes/og-forensic-matrix.jpg",
-    duration: "2:34",
-    videoUrl: "#",
+    duration: "0:15",
+    videoUrl: "/trailers/origins.mp4",
     badge: "PREMIERE",
     views: "24K",
   },
@@ -117,8 +118,8 @@ const TRAILERS: Trailer[] = [
     title: "The Rug Pull Chronicles",
     subtitle: "True stories of rugs detected and degens saved by OG Scan.",
     thumbnail: "/memes/og-truth-scanner.jpg",
-    duration: "3:12",
-    videoUrl: "#",
+    duration: "0:15",
+    videoUrl: "/trailers/rugpull.mp4",
     badge: "NEW",
     views: "18K",
   },
@@ -127,8 +128,8 @@ const TRAILERS: Trailer[] = [
     title: "Built Different: Dev Diaries",
     subtitle: "Behind the scenes of building the ultimate chain forensics tool.",
     thumbnail: "/memes/og-built-different.jpg",
-    duration: "1:58",
-    videoUrl: "#",
+    duration: "0:15",
+    videoUrl: "/trailers/built.mp4",
     badge: "EXCLUSIVE",
     views: "31K",
   },
@@ -136,11 +137,55 @@ const TRAILERS: Trailer[] = [
     id: "tr-4",
     title: "Clone Wars: The OG Battle",
     subtitle: "How OG Scan's detection matrix separates real from fake.",
-    thumbnail: "/memes/og-detection-matrix.jpg",
-    duration: "2:45",
+    thumbnail: "/memes/og-chain-detective.jpg",
+    duration: "0:15",
+    videoUrl: "/trailers/clone.mp4",
+    badge: "HOT",
+    views: "12K",
+  },
+  {
+    id: "tr-5",
+    title: "Whale Watchers",
+    subtitle: "Following the biggest wallets across the Solana ocean.",
+    thumbnail: "/memes/og-whale-watcher.jpg",
+    duration: "—",
     videoUrl: "#",
     badge: "COMING SOON",
-    views: "12K",
+    views: "—",
+    comingSoon: true,
+  },
+  {
+    id: "tr-6",
+    title: "Degen Academy",
+    subtitle: "Lessons from the trenches — how OGs really trade.",
+    thumbnail: "/memes/og-degen-hours.jpg",
+    duration: "—",
+    videoUrl: "#",
+    badge: "COMING SOON",
+    views: "—",
+    comingSoon: true,
+  },
+  {
+    id: "tr-7",
+    title: "The Diamond Hands Saga",
+    subtitle: "When conviction meets chaos — stories of unbreakable holders.",
+    thumbnail: "/memes/og-diamond-hands.jpg",
+    duration: "—",
+    videoUrl: "#",
+    badge: "COMING SOON",
+    views: "—",
+    comingSoon: true,
+  },
+  {
+    id: "tr-8",
+    title: "Airdrop Hunters",
+    subtitle: "The underground world of Solana airdrop farming exposed.",
+    thumbnail: "/memes/og-airdrop-farmer.jpg",
+    duration: "—",
+    videoUrl: "#",
+    badge: "COMING SOON",
+    views: "—",
+    comingSoon: true,
   },
 ];
 
@@ -523,30 +568,74 @@ const MemeSlider = ({ memes, onOpen, reactions }: { memes: Meme[]; onOpen: (idx:
 
 const TrailerCard = ({ trailer }: { trailer: Trailer }) => {
   const [hovered, setHovered] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handlePlay = () => {
+    if (trailer.comingSoon) return;
+    if (playing) {
+      videoRef.current?.pause();
+      setPlaying(false);
+    } else {
+      videoRef.current?.play();
+      setPlaying(true);
+    }
+  };
+
+  const badgeColor = trailer.comingSoon
+    ? "bg-white/10 text-white/40 border-white/15"
+    : trailer.badge === "PREMIERE"
+    ? "bg-[#eab308]/20 text-[#eab308] border-[#eab308]/30"
+    : trailer.badge === "HOT"
+    ? "bg-red-500/20 text-red-400 border-red-500/30"
+    : "bg-[#22d3ee]/20 text-[#22d3ee] border-[#22d3ee]/30";
 
   return (
     <Tilt3D intensity={6} className="flex-shrink-0 w-72 sm:w-80">
       <div
-        className="relative rounded-2xl border border-white/[0.08] overflow-hidden bg-[#070d14]/90 cursor-pointer group"
+        className={`relative rounded-2xl border overflow-hidden bg-[#070d14]/90 group ${
+          trailer.comingSoon ? "border-white/[0.05] opacity-70" : "border-white/[0.08] cursor-pointer"
+        }`}
         onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onMouseLeave={() => { setHovered(false); if (playing) { videoRef.current?.pause(); setPlaying(false); } }}
+        onClick={handlePlay}
       >
-        {/* Thumbnail */}
+        {/* Thumbnail / Video */}
         <div className="relative aspect-video overflow-hidden">
+          {!trailer.comingSoon && trailer.videoUrl !== "#" && (
+            <video
+              ref={videoRef}
+              src={trailer.videoUrl}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${playing ? "opacity-100 z-10" : "opacity-0"}`}
+              loop
+              playsInline
+              muted
+              onEnded={() => setPlaying(false)}
+            />
+          )}
           <img
             src={trailer.thumbnail}
             alt={trailer.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${trailer.comingSoon ? "grayscale" : ""}`}
             loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-          {/* Play button */}
-          <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${hovered ? "opacity-100" : "opacity-70"}`}>
-            <div className={`h-14 w-14 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center transition-transform duration-300 ${hovered ? "scale-110" : ""}`}>
-              <Play className="h-6 w-6 text-white ml-0.5" fill="white" />
+          {/* Play button / Coming Soon overlay */}
+          {trailer.comingSoon ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+              <div className="text-center">
+                <Clock className="h-8 w-8 text-white/30 mx-auto mb-2" />
+                <p className="text-xs font-bold text-white/40 uppercase tracking-wider">Coming Soon</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${playing ? "opacity-0" : hovered ? "opacity-100" : "opacity-70"}`}>
+              <div className={`h-14 w-14 rounded-full bg-white/15 backdrop-blur-sm border border-white/25 flex items-center justify-center transition-transform duration-300 ${hovered ? "scale-110" : ""}`}>
+                <Play className="h-6 w-6 text-white ml-0.5" fill="white" />
+              </div>
+            </div>
+          )}
 
           {/* Duration */}
           <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-bold text-white/80">
@@ -555,20 +644,28 @@ const TrailerCard = ({ trailer }: { trailer: Trailer }) => {
 
           {/* Badge */}
           <div className="absolute top-2 left-2">
-            <Badge className="bg-[#22d3ee]/20 text-[#22d3ee] border-[#22d3ee]/30 text-[9px] font-bold">
+            <Badge className={`${badgeColor} text-[9px] font-bold`}>
               {trailer.badge}
             </Badge>
           </div>
+
+          {/* Playing indicator */}
+          {playing && (
+            <div className="absolute top-2 right-2 flex items-center gap-1 bg-red-500/80 backdrop-blur-sm px-2 py-0.5 rounded text-[9px] font-bold text-white">
+              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              PLAYING
+            </div>
+          )}
         </div>
 
         {/* Info */}
         <div className="p-4">
-          <h3 className="font-bold text-sm text-white mb-1">{trailer.title}</h3>
+          <h3 className={`font-bold text-sm mb-1 ${trailer.comingSoon ? "text-white/40" : "text-white"}`}>{trailer.title}</h3>
           <p className="text-[11px] text-white/40 leading-relaxed line-clamp-2">{trailer.subtitle}</p>
           <div className="flex items-center gap-3 mt-3">
             <div className="flex items-center gap-1 text-[10px] text-white/30">
               <Eye className="h-3 w-3" />
-              {trailer.views} views
+              {trailer.views}{!trailer.comingSoon && " views"}
             </div>
             <div className="flex items-center gap-1 text-[10px] text-white/30">
               <Clapperboard className="h-3 w-3" />

@@ -45,6 +45,14 @@ const CRYPTO_AVATARS = [
   "bonk", "jup", "ray", "orca", "mango", "serum", "step", "atlas",
 ];
 
+const DEMO_LOBBIES: Lobby[] = [
+  { id: "dl1", name: "SOL Alpha Hunters", description: "Daily alpha drops and live trading calls for Solana degens", created_by: "demo", creator_name: "phantom_whale", creator_avatar: null, privacy: "public", chart_pair: null, member_count: 24, is_active: true, created_at: new Date(Date.now() - 86400000).toISOString() },
+  { id: "dl2", name: "Meme Coin Snipers", description: "First to find the next 100x meme coin. Pump.fun watchers unite", created_by: "demo", creator_name: "bonk_maxi", creator_avatar: null, privacy: "public", chart_pair: null, member_count: 47, is_active: true, created_at: new Date(Date.now() - 172800000).toISOString() },
+  { id: "dl3", name: "Whale Watch Room", description: "Tracking whale wallets and big moves in real-time", created_by: "demo", creator_name: "chain_explorer", creator_avatar: null, privacy: "public", chart_pair: null, member_count: 18, is_active: true, created_at: new Date(Date.now() - 259200000).toISOString() },
+  { id: "dl4", name: "DeFi Yield Farmers", description: "Best yield strategies across Solana DeFi protocols", created_by: "demo", creator_name: "solana_degen", creator_avatar: null, privacy: "public", chart_pair: null, member_count: 31, is_active: true, created_at: new Date(Date.now() - 345600000).toISOString() },
+  { id: "dl5", name: "OG Inner Circle", description: "Private room for verified OG Scan power users", created_by: "demo", creator_name: "og_scanner", creator_avatar: null, privacy: "private", chart_pair: null, member_count: 12, is_active: true, created_at: new Date(Date.now() - 604800000).toISOString() },
+];
+
 const TradingLobbies = () => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
@@ -206,7 +214,8 @@ const TradingLobbies = () => {
     toast.success("Chart synced for all users!");
   };
 
-  const filteredLobbies = lobbies.filter((l) =>
+  const sourceLobbies = lobbies.length > 0 ? lobbies : DEMO_LOBBIES;
+  const filteredLobbies = sourceLobbies.filter((l) =>
     !searchFilter || l.name.toLowerCase().includes(searchFilter.toLowerCase())
   );
 
