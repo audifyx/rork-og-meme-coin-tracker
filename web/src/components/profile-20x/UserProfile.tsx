@@ -210,25 +210,27 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
       {/* ═══ Banner ═══ */}
       <div className="relative">
         <div className={cn(
-          "h-32 sm:h-44 w-full rounded-t-xl overflow-hidden",
+          "h-40 sm:h-52 w-full rounded-t-xl overflow-hidden",
           !profileData?.banner_url && "bg-gradient-to-br from-og-lime/15 via-og-cyan/10 to-og-gold/15",
         )}>
           {profileData?.banner_url && (
             <img src={profileData.banner_url} alt="" className="h-full w-full object-cover" />
           )}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a1018] via-[#0a1018]/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
         </div>
 
         {/* Avatar — overlapping banner */}
-        <div className="absolute -bottom-[42px] left-4 sm:left-5">
+        <div className="absolute -bottom-[48px] left-4 sm:left-5">
           <div className="relative">
             <img
               src={avatarUrl}
               alt=""
-              className="h-20 w-20 sm:h-[84px] sm:w-[84px] rounded-full border-4 border-[#0a1018] object-cover bg-[#0f1520]"
+              className="h-24 w-24 sm:h-28 sm:w-28 rounded-full border-4 border-[#0a1018] object-cover bg-[#0f1520] shadow-[0_0_20px_rgba(0,0,0,0.5)]"
               onError={e => { (e.target as HTMLImageElement).src = dicebear("og"); }}
             />
             {profileData?.is_online && (
-              <div className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full border-3 border-[#0a1018] bg-og-lime" />
+              <div className="absolute bottom-1.5 right-1.5 h-4 w-4 rounded-full border-[3px] border-[#0a1018] bg-og-lime shadow-[0_0_8px_hsl(var(--og-lime)/0.6)]" />
             )}
           </div>
         </div>
@@ -253,7 +255,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
                   "rounded-full px-5 py-1.5 text-[12px] font-bold transition",
                   friends.isFollowing(profileData?.user_id || "")
                     ? "border border-white/20 bg-transparent text-white/80 hover:border-red-500/40 hover:text-red-400"
-                    : "bg-white text-black hover:bg-white/90",
+                    : "bg-white text-black hover:bg-white/90 shadow-[0_0_16px_rgba(255,255,255,0.15)]",
                 )}
               >
                 {friends.isFollowing(profileData?.user_id || "") ? "Following" : "Follow"}
@@ -264,7 +266,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
       </div>
 
       {/* ═══ Profile Info ═══ */}
-      <div className="mt-14 px-4 sm:px-5">
+      <div className="mt-16 px-4 sm:px-5">
         {/* Name + verification */}
         <div className="flex items-center gap-1.5">
           <h1 className="text-xl font-black text-white truncate">{displayName}</h1>
@@ -328,8 +330,8 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
         {(profileData?.current_level || profileData?.xp || profileData?.trades_count) && (
           <div className="mt-3 flex flex-wrap gap-2">
             {profileData?.current_level != null && profileData.current_level > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-og-lime/20 bg-og-lime/[0.06] px-2.5 py-1 text-[10px] font-bold text-og-lime">
-                <Star className="h-3 w-3" /> Lvl {profileData.current_level}
+              <span className="inline-flex items-center gap-1 rounded-full border border-og-lime/25 bg-og-lime/[0.08] px-3 py-1.5 text-[11px] font-bold text-og-lime shadow-[0_0_12px_hsl(var(--og-lime)/0.15)]">
+                <Star className="h-3.5 w-3.5" /> Lvl {profileData.current_level}
               </span>
             )}
             {profileData?.xp != null && profileData.xp > 0 && (
@@ -357,7 +359,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
       </div>
 
       {/* ═══ Tab Bar — X-style underline tabs ═══ */}
-      <div className="mt-4 flex border-b border-white/[0.07]">
+      <div className="mt-5 flex border-b border-white/[0.07] bg-white/[0.01]">
         {TABS.map(tab => (
           <button
             key={tab.id}
@@ -370,7 +372,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
             {tab.label}
             {tab.count !== undefined && <span className="ml-1 text-[11px] text-white/25">{tab.count}</span>}
             {activeTab === tab.id && (
-              <div className="absolute bottom-0 left-1/2 h-[3px] w-14 -translate-x-1/2 rounded-full bg-og-lime" />
+              <div className="absolute bottom-0 left-1/2 h-[3px] w-14 -translate-x-1/2 rounded-full bg-og-lime shadow-[0_0_8px_hsl(var(--og-lime)/0.4)]" />
             )}
           </button>
         ))}
@@ -382,9 +384,9 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
         {activeTab === "overview" && (
           <div className="space-y-4">
             {/* Achievements / badges placeholder */}
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-              <h3 className="text-[12px] font-bold text-white/60 mb-3 flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5 text-og-gold" /> Achievements
+            <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.03] to-white/[0.01] p-5">
+              <h3 className="text-[13px] font-black text-white/70 mb-4 flex items-center gap-2 uppercase tracking-wider">
+                <Shield className="h-4 w-4 text-og-gold" /> Achievements
               </h3>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {[
@@ -400,22 +402,23 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
                   <div
                     key={a.label}
                     className={cn(
-                      "flex flex-col items-center gap-1 rounded-lg border p-2.5 text-center transition",
+                      "group relative flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all duration-300",
                       a.active
-                        ? "border-og-gold/20 bg-og-gold/[0.04]"
-                        : "border-white/[0.04] bg-white/[0.01] opacity-30",
+                        ? "border-og-gold/25 bg-gradient-to-b from-og-gold/[0.08] to-og-gold/[0.02] shadow-[0_0_16px_hsl(var(--og-gold)/0.1)] hover:shadow-[0_0_24px_hsl(var(--og-gold)/0.2)] hover:border-og-gold/40"
+                        : "border-white/[0.05] bg-white/[0.01] opacity-25 grayscale",
                     )}
                   >
-                    <span className="text-lg">{a.emoji}</span>
-                    <span className="text-[9px] font-bold text-white/50">{a.label}</span>
+                    {a.active && <div className="absolute -top-px -right-px h-2 w-2 rounded-full bg-og-lime shadow-[0_0_6px_hsl(var(--og-lime)/0.8)]" />}
+                    <span className="text-2xl drop-shadow-lg">{a.emoji}</span>
+                    <span className={cn("text-[9px] font-bold", a.active ? "text-og-gold/80" : "text-white/40")}>{a.label}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* User ID card */}
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
-              <h3 className="text-[12px] font-bold text-white/60 mb-2">Account</h3>
+            <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.03] to-white/[0.01] p-5">
+              <h3 className="text-[13px] font-black text-white/70 mb-3 uppercase tracking-wider">Account</h3>
               <button onClick={copyId} className="flex w-full items-center justify-between rounded-lg bg-white/[0.03] px-3 py-2 transition hover:bg-white/[0.06]">
                 <span className="font-mono text-[11px] text-white/40 truncate">{profileData?.user_id}</span>
                 {copied ? <Check className="h-3.5 w-3.5 text-og-lime shrink-0" /> : <Copy className="h-3.5 w-3.5 text-white/25 shrink-0" />}
