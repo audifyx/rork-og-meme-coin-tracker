@@ -1096,6 +1096,40 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
     return () => { if (ch) supabase.removeChannel(ch); };
   }, [space.id]);
 
+  // Load co-hosts + granular permissions from DB on mount
+  useEffect(() => {
+    const loadCoHosts = async () => {
+      const { data } = await supabase.from("spaces").select("co_hosts, co_host_permissions").eq("id", space.id).single();
+      if (!data) return;
+      const ids: string[] = data.co_hosts || [];
+      const permsMap: Record<string, CoHostPermissions> = (data.co_host_permissions && typeof data.co_host_permissions === "object" && !Array.isArray(data.co_host_permissions))
+        ? data.co_host_permissions as Record<string, CoHostPermissions>
+        : {};
+      if (ids.length === 0) return;
+      // Resolve usernames from voice participants or fetch profiles
+      const defaultPerms: CoHostPermissions = { canMuteSpeakers: true, canPromoteSpeakers: true, canRemoveUsers: false, canPinMessages: true, canCreatePolls: true, canEndSpace: false };
+      setCoHosts(ids.map(id => ({
+        userId: id,
+        username: "Co-Host",
+        avatarUrl: null,
+        permissions: permsMap[id] || defaultPerms,
+      })));
+    };
+    loadCoHosts();
+  }, [space.id]);
+
+  // Keep co-host display names in sync with voice participants
+  useEffect(() => {
+    if (coHosts.length === 0 || voiceParticipants.length === 0) return;
+    setCoHosts(prev => prev.map(ch => {
+      const vp = voiceParticipants.find(p => p.user_id === ch.userId);
+      if (vp && (ch.username === "Co-Host" || ch.username !== (vp.username || "User"))) {
+        return { ...ch, username: vp.username || "User", avatarUrl: vp.avatar_url ?? null };
+      }
+      return ch;
+    }));
+  }, [voiceParticipants]);
+
   useEffect(() => {
     if (!user) return;
     // Try RPC first, fall back to direct update
@@ -1198,8 +1232,10 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
   if (inGreenRoom) {
     return (
       <GreenRoom
+        spaceId={space.id}
         spaceName={cur.title}
         isHost={isHost}
+        userId={user?.id || ""}
         username={profile?.username || null}
         onGoLive={() => setInGreenRoom(false)}
         onLeave={onLeave}
@@ -1483,14 +1519,33 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
               participants={voiceParticipants.map(p => ({ userId: p.user_id, username: p.username || "User", avatarUrl: p.avatar_url }))}
               onAddCoHost={(userId, perms) => {
                 const p = voiceParticipants.find(pp => pp.user_id === userId);
-                setCoHosts(prev => [...prev, { userId, username: p?.username || "User", avatarUrl: p?.avatar_url ?? null, permissions: perms }]);
-                supabase.from("spaces").update({ co_host_permissions: JSON.stringify([...coHosts.map(c => c.userId), userId]) }).eq("id", space.id);
+                const updated = [...coHosts, { userId, username: p?.username || "User", avatarUrl: p?.avatar_url ?? null, permissions: perms }];
+                setCoHosts(updated);
+                const permsMap: Record<string, CoHostPermissions> = {};
+                updated.forEach(c => { permsMap[c.userId] = c.permissions; });
+                supabase.from("spaces").update({
+                  co_hosts: updated.map(c => c.userId),
+                  co_host_permissions: permsMap,
+                }).eq("id", space.id);
               }}
               onRemoveCoHost={(userId) => {
-                setCoHosts(prev => prev.filter(c => c.userId !== userId));
+                const updated = coHosts.filter(c => c.userId !== userId);
+                setCoHosts(updated);
+                const permsMap: Record<string, CoHostPermissions> = {};
+                updated.forEach(c => { permsMap[c.userId] = c.permissions; });
+                supabase.from("spaces").update({
+                  co_hosts: updated.map(c => c.userId),
+                  co_host_permissions: permsMap,
+                }).eq("id", space.id);
               }}
               onUpdatePermissions={(userId, perms) => {
-                setCoHosts(prev => prev.map(c => c.userId === userId ? { ...c, permissions: perms } : c));
+                const updated = coHosts.map(c => c.userId === userId ? { ...c, permissions: perms } : c);
+                setCoHosts(updated);
+                const permsMap: Record<string, CoHostPermissions> = {};
+                updated.forEach(c => { permsMap[c.userId] = c.permissions; });
+                supabase.from("spaces").update({
+                  co_host_permissions: permsMap,
+                }).eq("id", space.id);
               }}
             />
           </div>
