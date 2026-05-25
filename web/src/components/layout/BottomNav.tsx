@@ -75,6 +75,7 @@ const routeToNav: Record<string, string> = {
   "/ai-chat": "/tools",
 
   "/callouts": "/tools",
+  "/messages": "/community",
 
   "/pumpv5": "/tools",
 
