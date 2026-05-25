@@ -66,13 +66,14 @@ interface LiveKitVoicePanelProps {
   onRecordingSaved?: (url: string, durationSec: number) => void;
   onParticipantsChange?: (participants: VoiceParticipant[]) => void;
   onRoleChange?: (role: VoiceRole) => void;
+  onMuteChange?: (muted: boolean) => void;
   compact?: boolean;
 }
 
 export const LiveKitVoicePanel = forwardRef<VoicePanelHandle, LiveKitVoicePanelProps>(({
   lobbyId, lobbyName, autoJoin = true, isRecording = false, spaceId, hostId,
   initialRole = "speaker", maxSpeakers = 10,
-  onRecordingSaved, onParticipantsChange, onRoleChange, compact = false,
+  onRecordingSaved, onParticipantsChange, onRoleChange, onMuteChange, compact = false,
 }, ref) => {
   const { user, profile } = useAuth();
   const [connected, setConnected] = useState(false);
@@ -96,7 +97,7 @@ export const LiveKitVoicePanel = forwardRef<VoicePanelHandle, LiveKitVoicePanelP
 
   // Keep refs in sync
   useEffect(() => { connectedRef.current = connected; }, [connected]);
-  useEffect(() => { mutedRef.current = muted; }, [muted]);
+  useEffect(() => { mutedRef.current = muted; onMuteChange?.(muted); }, [muted]);
   useEffect(() => { userIdRef.current = user?.id ?? ""; }, [user?.id]);
   useEffect(() => { roleRef.current = role; onRoleChange?.(role); }, [role]);
   useEffect(() => { participantsRef.current = participants; onParticipantsChange?.(participants); }, [participants]);
@@ -340,6 +341,7 @@ export const LiveKitVoicePanel = forwardRef<VoicePanelHandle, LiveKitVoicePanelP
         setRole("speaker");
         roleRef.current = "speaker";
         await room.localParticipant.setMicrophoneEnabled(true);
+        setMuted(false);
         // Update presence
         presenceChannelRef.current?.track({
           user_id: user!.id,
