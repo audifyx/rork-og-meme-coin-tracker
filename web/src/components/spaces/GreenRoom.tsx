@@ -1,29 +1,66 @@
 /**
  * GreenRoom — Pre-show staging area for speakers/hosts before going live.
- * Speakers can test mic, chat privately, and host can start when ready.
+ * Speakers can test mic, chat privately (synced via Supabase broadcast), and host can start when ready.
  */
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Mic, MicOff, Users, Clock, Play, MessageSquare, Send, Volume2, CheckCircle, Radio } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
+interface GreenRoomMessage {
+  id: string;
+  user: string;
+  userId: string;
+  text: string;
+  ts: number;
+}
+
 interface GreenRoomProps {
+  spaceId: string;
   spaceName: string;
   isHost: boolean;
+  userId: string;
   username: string | null;
   onGoLive: () => void;
   onLeave: () => void;
 }
 
-const GreenRoom: React.FC<GreenRoomProps> = ({ spaceName, isHost, username, onGoLive, onLeave }) => {
+const GreenRoom: React.FC<GreenRoomProps> = ({ spaceId, spaceName, isHost, userId, username, onGoLive, onLeave }) => {
   const [micTesting, setMicTesting] = useState(false);
   const [micLevel, setMicLevel] = useState(0);
   const [micOk, setMicOk] = useState(false);
-  const [messages, setMessages] = useState<{ id: number; user: string; text: string }[]>([]);
+  const [messages, setMessages] = useState<GreenRoomMessage[]>([]);
   const [msgInput, setMsgInput] = useState("");
   const [countdown, setCountdown] = useState<number | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animRef = useRef<number>(0);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Subscribe to broadcast channel for backstage chat
+  useEffect(() => {
+    const channel = supabase.channel(`greenroom-${spaceId}`)
+      .on("broadcast", { event: "chat" }, ({ payload }) => {
+        if (payload && payload.id && payload.userId !== userId) {
+          setMessages(prev => {
+            // Dedup by id
+            if (prev.some(m => m.id === payload.id)) return prev;
+            return [...prev, payload as GreenRoomMessage].slice(-200);
+          });
+        }
+      })
+      .subscribe();
+    channelRef.current = channel;
+    return () => { supabase.removeChannel(channel); };
+  }, [spaceId, userId]);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   // Mic test
   const startMicTest = async () => {
@@ -75,7 +112,21 @@ const GreenRoom: React.FC<GreenRoomProps> = ({ spaceName, isHost, username, onGo
 
   const sendMsg = () => {
     if (!msgInput.trim()) return;
-    setMessages(prev => [...prev, { id: Date.now(), user: username || "You", text: msgInput.trim() }]);
+    const msg: GreenRoomMessage = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      user: username || "You",
+      userId,
+      text: msgInput.trim(),
+      ts: Date.now(),
+    };
+    // Add locally
+    setMessages(prev => [...prev, msg].slice(-200));
+    // Broadcast to all green room users
+    channelRef.current?.send({
+      type: "broadcast",
+      event: "chat",
+      payload: msg,
+    });
     setMsgInput("");
   };
 
@@ -135,21 +186,21 @@ const GreenRoom: React.FC<GreenRoomProps> = ({ spaceName, isHost, username, onGo
           </button>
         </div>
 
-        {/* Private backstage chat */}
+        {/* Backstage chat — synced via Supabase broadcast */}
         <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] overflow-hidden">
           <div className="px-4 py-3 border-b border-white/[0.06]">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <MessageSquare className="h-4 w-4 text-purple-400" /> Backstage Chat
             </h3>
-            <p className="text-[9px] text-white/20 mt-0.5">Only speakers can see this</p>
+            <p className="text-[9px] text-white/20 mt-0.5">Only speakers in the green room can see this</p>
           </div>
-          <div className="h-36 overflow-y-auto px-4 py-2 space-y-1.5" style={{ scrollbarWidth: "none" }}>
+          <div ref={scrollRef} className="h-36 overflow-y-auto px-4 py-2 space-y-1.5" style={{ scrollbarWidth: "none" }}>
             {messages.length === 0 && (
               <p className="text-[10px] text-white/15 text-center py-8">Say hi to other speakers 👋</p>
             )}
             {messages.map(m => (
               <div key={m.id} className="flex items-start gap-2 py-1">
-                <span className="text-[10px] font-bold text-white/40 shrink-0">{m.user}:</span>
+                <span className={cn("text-[10px] font-bold shrink-0", m.userId === userId ? "text-purple-400/60" : "text-white/40")}>{m.user}:</span>
                 <span className="text-[11px] text-white/60">{m.text}</span>
               </div>
             ))}
@@ -159,7 +210,7 @@ const GreenRoom: React.FC<GreenRoomProps> = ({ spaceName, isHost, username, onGo
               onKeyDown={e => e.key === "Enter" && sendMsg()}
               placeholder="Message speakers..."
               className="flex-1 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] text-white placeholder:text-white/15 focus:outline-none" />
-            <button onClick={sendMsg} className="px-3 py-2 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-all">
+            <button onClick={sendMsg} disabled={!msgInput.trim()} className="px-3 py-2 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 disabled:opacity-30 transition-all">
               <Send className="h-3.5 w-3.5" />
             </button>
           </div>
