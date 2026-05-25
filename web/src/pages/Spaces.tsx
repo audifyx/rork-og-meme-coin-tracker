@@ -1336,7 +1336,7 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
                   username={p.username}
                   avatarUrl={p.avatar_url}
                   isYou={p.user_id === user?.id}
-                  isSpeaking={!p.is_muted}
+                  isSpeaking={p.is_speaking}
                   isHost={p.user_id === space.host_id}
                 />
               ))}
@@ -1400,7 +1400,8 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
               maxSpeakers={MAX_SPEAKERS}
               onRecordingSaved={(url, dur) => { setCur(prev => ({ ...prev, recording_url: url, duration_seconds: dur })); supabase.from("spaces").update({ recording_url: url, duration_seconds: dur }).eq("id", space.id); }}
               onParticipantsChange={setVoiceParticipants}
-              onRoleChange={setMyRole}
+              onRoleChange={(r) => { setMyRole(r); if (r === "speaker") setMuted(false); if (r === "listener") setMuted(true); }}
+              onMuteChange={setMuted}
             />
           </div>
 

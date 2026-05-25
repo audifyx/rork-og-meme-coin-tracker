@@ -2,7 +2,7 @@
  * PinnedContent — Pin tokens (with live DexScreener data) and X/Twitter posts inside a Space.
  * Host can add/remove pinned items. All participants see them in real-time.
  */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Pin, X, Plus, Link2, ExternalLink, TrendingUp, TrendingDown, Loader2, Twitter } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,17 +15,106 @@ interface PinnedToken {
   imageUrl?: string;
 }
 
-interface PinnedTweet {
-  url: string;
-  tweetId: string;
-}
-
 interface PinnedContentProps {
   pinnedTokenCA: string | null;
   pinnedTweetUrl: string | null;
   isHost: boolean;
   onPinToken: (ca: string | null) => void;
   onPinTweet: (url: string | null) => void;
+}
+
+/* ─── Tweet embed using Twitter widgets.js ─── */
+const TweetEmbed: React.FC<{ url: string }> = ({ url }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  const tweetId = extractTweetId(url);
+
+  useEffect(() => {
+    if (!tweetId || !containerRef.current) return;
+    setLoading(true);
+    setError(false);
+
+    // Clear any previous embed
+    if (containerRef.current) containerRef.current.innerHTML = "";
+
+    // Load Twitter widgets.js if not already loaded
+    const loadAndRender = async () => {
+      try {
+        if (!(window as any).twttr) {
+          await new Promise<void>((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = "https://platform.twitter.com/widgets.js";
+            script.async = true;
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error("Failed to load Twitter widgets"));
+            document.head.appendChild(script);
+          });
+        }
+
+        // Wait for twttr to be ready
+        const twttr = (window as any).twttr;
+        if (twttr?.widgets?.createTweet) {
+          const el = await twttr.widgets.createTweet(tweetId, containerRef.current, {
+            theme: "dark",
+            conversation: "none",
+            width: 350,
+            dnt: true,
+          });
+          if (!el) setError(true);
+        } else {
+          setError(true);
+        }
+      } catch {
+        setError(true);
+      }
+      setLoading(false);
+    };
+
+    loadAndRender();
+  }, [tweetId]);
+
+  if (!tweetId) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer"
+        className="flex items-center gap-2 group text-[11px] text-sky-400/60 hover:text-sky-400 transition-colors mt-1">
+        <Link2 className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate">{url}</span>
+        <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+      </a>
+    );
+  }
+
+  return (
+    <div>
+      <a href={url} target="_blank" rel="noopener noreferrer"
+        className="flex items-center gap-2 group text-[11px] text-sky-400/60 hover:text-sky-400 transition-colors">
+        <Link2 className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate">{url}</span>
+        <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+      </a>
+      <div ref={containerRef} className="mt-2 rounded-lg overflow-hidden max-w-full [&>div]:!max-w-full [&_iframe]:!max-w-full" />
+      {loading && (
+        <div className="mt-2 flex items-center gap-2 text-white/30 text-[11px]">
+          <Loader2 className="h-3 w-3 animate-spin" /> Loading post...
+        </div>
+      )}
+      {error && !loading && (
+        <a href={url} target="_blank" rel="noopener noreferrer"
+          className="mt-2 flex items-center gap-2 p-3 rounded-xl border border-sky-500/10 bg-sky-500/[0.03] text-sky-400/60 hover:text-sky-400 transition-colors text-[11px]">
+          <Twitter className="h-4 w-4 shrink-0" />
+          <span>Open post on X ↗</span>
+        </a>
+      )}
+    </div>
+  );
+};
+
+// Extract tweet ID from URL
+function extractTweetId(url: string): string | null {
+  const m = url.match(/(?:twitter\.com|x\.com)\/\w+\/status\/(\d+)/);
+  return m?.[1] || null;
 }
 
 const PinnedContent: React.FC<PinnedContentProps> = ({
@@ -65,12 +154,6 @@ const PinnedContent: React.FC<PinnedContentProps> = ({
     return () => clearInterval(iv);
   }, [pinnedTokenCA]);
 
-  // Extract tweet ID from URL
-  const extractTweetId = (url: string): string | null => {
-    const m = url.match(/(?:twitter\.com|x\.com)\/\w+\/status\/(\d+)/);
-    return m?.[1] || null;
-  };
-
   const handlePinToken = () => {
     const ca = caInput.trim();
     if (ca.length >= 32) { onPinToken(ca); setShowAddToken(false); setCaInput(""); }
@@ -78,10 +161,11 @@ const PinnedContent: React.FC<PinnedContentProps> = ({
 
   const handlePinTweet = () => {
     const url = tweetInput.trim();
-    if (extractTweetId(url)) { onPinTweet(url); setShowAddTweet(false); setTweetInput(""); }
+    // Accept any x.com or twitter.com URL
+    if (url.match(/(?:twitter\.com|x\.com)\//)) {
+      onPinTweet(url); setShowAddTweet(false); setTweetInput("");
+    }
   };
-
-  const hasPinned = pinnedTokenCA || pinnedTweetUrl;
 
   return (
     <div className="space-y-2">
@@ -132,7 +216,7 @@ const PinnedContent: React.FC<PinnedContentProps> = ({
       {/* Pinned Tweet */}
       {pinnedTweetUrl && (
         <div className="rounded-xl border border-sky-500/15 bg-sky-500/[0.03] p-3">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-1.5">
               <Twitter className="h-3 w-3 text-sky-400" />
               <span className="text-[9px] font-bold text-sky-400/60 uppercase tracking-wider">Pinned Post</span>
@@ -143,24 +227,7 @@ const PinnedContent: React.FC<PinnedContentProps> = ({
               </button>
             )}
           </div>
-          <a href={pinnedTweetUrl} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2 group text-[11px] text-sky-400/60 hover:text-sky-400 transition-colors">
-            <Link2 className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{pinnedTweetUrl}</span>
-            <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </a>
-          {/* Tweet embed iframe */}
-          {extractTweetId(pinnedTweetUrl) && (
-            <div className="mt-2 rounded-lg overflow-hidden border border-white/[0.06]">
-              <iframe
-                src={`https://platform.twitter.com/embed/Tweet.html?id=${extractTweetId(pinnedTweetUrl)}&theme=dark`}
-                className="w-full h-[300px] border-0"
-                sandbox="allow-scripts allow-same-origin allow-popups"
-                loading="lazy"
-                title="Pinned tweet"
-              />
-            </div>
-          )}
+          <TweetEmbed url={pinnedTweetUrl} />
         </div>
       )}
 
