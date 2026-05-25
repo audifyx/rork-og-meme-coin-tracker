@@ -1087,7 +1087,7 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
     try {
       ch = supabase.channel(`sp-room-${space.id}`)
         .on("postgres_changes", { event: "UPDATE", schema: "public", table: "spaces", filter: `id=eq.${space.id}` },
-          p => { const u = p.new as Space; setCur(u); if (u.pinned_message !== pinnedMsg) setPinnedMsg(u.pinned_message); if (u.ended_at) { toast("Space ended"); onLeave(); } })
+          p => { const u = p.new as Space; setCur(u); setPinnedMsg(u.pinned_message); setPinnedTokenCA(u.pinned_token_ca); setPinnedTweetUrl(u.pinned_tweet_url); if (u.ended_at) { toast("Space ended"); onLeave(); } })
         .subscribe();
     } catch { /* */ }
     return () => { if (ch) supabase.removeChannel(ch); };
