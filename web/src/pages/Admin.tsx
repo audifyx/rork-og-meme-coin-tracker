@@ -1780,33 +1780,156 @@ const Admin = ({ inline = false }: { inline?: boolean }) => {
     const [grantUserId, setGrantUserId] = useState("");
     const [grantXp, setGrantXp] = useState(0);
 
+    // Badge management state
+    const [dbBadges, setDbBadges] = useState<any[]>([]);
+    const [badgesLoaded, setBadgesLoaded] = useState(false);
+    const [badgeTab, setBadgeTab] = useState<"manage" | "assign" | "verify">("manage");
+    const [newBadgeName, setNewBadgeName] = useState("");
+    const [newBadgeIcon, setNewBadgeIcon] = useState("");
+    const [newBadgeRarity, setNewBadgeRarity] = useState("common");
+    const [assignUserId, setAssignUserId] = useState("");
+    const [assignBadgeId, setAssignBadgeId] = useState("");
+    const [verifyUserId, setVerifyUserId] = useState("");
+    const [userBadges, setUserBadges] = useState<any[]>([]);
+    const [seeding, setSeeding] = useState(false);
+
+    const PRESET_BADGES = [
+      { name: "OG Team", icon: "🏴‍☠️", rarity: "legendary" },
+      { name: "Beta Tester", icon: "🧪", rarity: "epic" },
+      { name: "Supporter", icon: "💎", rarity: "rare" },
+      { name: "Diamond Hands", icon: "🤲", rarity: "epic" },
+      { name: "Whale", icon: "🐋", rarity: "legendary" },
+      { name: "Alpha Hunter", icon: "🎯", rarity: "rare" },
+      { name: "Trade Master", icon: "📈", rarity: "epic" },
+      { name: "Community King", icon: "👑", rarity: "legendary" },
+      { name: "Voice OG", icon: "🎙️", rarity: "rare" },
+      { name: "Early Bird", icon: "🐣", rarity: "common" },
+    ];
+
+    // Load leaderboard from profiles (not the view)
     useEffect(() => {
       if (loaded) return;
       (async () => {
-        const { data } = await supabase.from("leaderboard").select("*").order("total_score", { ascending: false }).limit(50);
+        const { data } = await supabase.from("profiles").select("user_id, username, avatar_url, xp, total_xp, current_level").order("total_xp", { ascending: false, nullsFirst: false }).limit(50);
         setLeaderboard(data ?? []);
         setLoaded(true);
       })();
     }, [loaded]);
 
+    // Load badges from DB
+    useEffect(() => {
+      if (badgesLoaded) return;
+      (async () => {
+        const { data } = await supabase.from("badges").select("*").order("created_at", { ascending: true });
+        setDbBadges(data ?? []);
+        setBadgesLoaded(true);
+      })();
+    }, [badgesLoaded]);
+
+    // Grant XP — update profiles table directly (not the view)
     const manualGrantXp = async () => {
       if (!grantUserId || !grantXp) { toast.error("User ID and XP required"); return; }
-      // Try to update existing leaderboard entry
-      const { data: existing } = await supabase.from("leaderboard").select("*").eq("user_id", grantUserId).single();
-      if (existing) {
-        await supabase.from("leaderboard").update({ total_score: (existing.total_score ?? 0) + grantXp }).eq("user_id", grantUserId);
-      } else {
-        await supabase.from("leaderboard").insert({ user_id: grantUserId, total_score: grantXp });
-      }
-      await supabase.from("admin_audit_log").insert({ admin_user_id: user!.id, action: "grant_xp", target_type: "user", target_id: grantUserId, new_values: { xp: grantXp } });
-      toast.success(`Granted ${grantXp} XP`);
+      const { data: prof } = await supabase.from("profiles").select("xp, total_xp, current_level").eq("user_id", grantUserId).single();
+      if (!prof) { toast.error("User not found"); return; }
+      const newXp = (prof.xp ?? 0) + grantXp;
+      const newTotalXp = (prof.total_xp ?? 0) + grantXp;
+      const newLevel = Math.max(1, Math.floor(Math.sqrt(newXp / 100)));
+      await supabase.from("profiles").update({ xp: newXp, total_xp: newTotalXp, current_level: newLevel }).eq("user_id", grantUserId);
+      await supabase.from("admin_audit_log").insert({ admin_user_id: user!.id, action: "grant_xp", target_type: "user", target_id: grantUserId, new_values: { xp: grantXp } }).then(() => {});
+      toast.success(`Granted ${grantXp} XP → Level ${newLevel} (${newXp} total XP)`);
       setGrantUserId(""); setGrantXp(0);
       setLoaded(false);
     };
 
+    // Seed preset badges into DB
+    const seedPresets = async () => {
+      setSeeding(true);
+      const existing = new Set(dbBadges.map(b => b.name));
+      const toInsert = PRESET_BADGES.filter(b => !existing.has(b.name));
+      if (toInsert.length === 0) { toast.info("All preset badges already exist"); setSeeding(false); return; }
+      const { error } = await supabase.from("badges").insert(toInsert);
+      if (error) { toast.error("Failed to seed: " + error.message); } else { toast.success(`Added ${toInsert.length} preset badges`); }
+      setBadgesLoaded(false);
+      setSeeding(false);
+    };
+
+    // Create custom badge
+    const createBadge = async () => {
+      if (!newBadgeName || !newBadgeIcon) { toast.error("Name and icon required"); return; }
+      const { error } = await supabase.from("badges").insert({ name: newBadgeName, icon: newBadgeIcon, rarity: newBadgeRarity });
+      if (error) { toast.error(error.message); return; }
+      toast.success(`Badge "${newBadgeName}" created`);
+      setNewBadgeName(""); setNewBadgeIcon(""); setNewBadgeRarity("common");
+      setBadgesLoaded(false);
+    };
+
+    // Delete badge
+    const deleteBadge = async (id: string) => {
+      await supabase.from("user_badges").delete().eq("badge_id", id);
+      await supabase.from("badges").delete().eq("id", id);
+      toast.success("Badge deleted");
+      setBadgesLoaded(false);
+    };
+
+    // Assign badge to user
+    const assignBadge = async () => {
+      if (!assignUserId || !assignBadgeId) { toast.error("Select user and badge"); return; }
+      const badge = dbBadges.find(b => b.id === assignBadgeId);
+      // Insert into user_badges
+      const { error: e1 } = await supabase.from("user_badges").insert({ user_id: assignUserId, badge_id: assignBadgeId });
+      if (e1 && e1.code !== "23505") { toast.error(e1.message); return; }
+      // Also insert into profile_badges for display
+      if (badge) {
+        await supabase.from("profile_badges").insert({
+          user_id: assignUserId,
+          badge_id: badge.id,
+          label: badge.name,
+          icon: badge.icon,
+          color: badge.rarity === "legendary" ? "#eab308" : badge.rarity === "epic" ? "#a855f7" : badge.rarity === "rare" ? "#3b82f6" : "#6b7280",
+          glow: badge.rarity === "legendary" || badge.rarity === "epic",
+        }).then(() => {});
+      }
+      toast.success(`Badge assigned to user`);
+      setAssignUserId(""); setAssignBadgeId("");
+      // Refresh user badges list if viewing
+      if (assignUserId) loadUserBadges(assignUserId);
+    };
+
+    // Remove badge from user
+    const removeBadge = async (userId: string, badgeId: string) => {
+      await supabase.from("user_badges").delete().eq("user_id", userId).eq("badge_id", badgeId);
+      await supabase.from("profile_badges").delete().eq("user_id", userId).eq("badge_id", badgeId);
+      toast.success("Badge removed");
+      loadUserBadges(userId);
+    };
+
+    // Load user's badges
+    const loadUserBadges = async (userId: string) => {
+      const { data } = await supabase.from("user_badges").select("*, badges(*)").eq("user_id", userId);
+      setUserBadges(data ?? []);
+    };
+
+    // Toggle verified
+    const toggleVerified = async () => {
+      if (!verifyUserId) { toast.error("User ID required"); return; }
+      const { data: prof } = await supabase.from("profiles").select("verified, username").eq("user_id", verifyUserId).single();
+      if (!prof) { toast.error("User not found"); return; }
+      const newVal = !prof.verified;
+      await supabase.from("profiles").update({ verified: newVal }).eq("user_id", verifyUserId);
+      toast.success(`${prof.username || verifyUserId} is now ${newVal ? "✅ VERIFIED" : "❌ UNVERIFIED"}`);
+      setVerifyUserId("");
+    };
+
+    const RARITY_COLORS: Record<string, string> = {
+      common: "from-gray-500/20 to-slate-500/20 border-gray-500/20",
+      rare: "from-blue-500/20 to-cyan-500/20 border-blue-500/20",
+      epic: "from-purple-500/20 to-pink-500/20 border-purple-500/20",
+      legendary: "from-amber-500/20 to-orange-500/20 border-amber-500/20",
+    };
+
     return (
       <div className="space-y-4">
-        <SectionHeader title="Gamification" description="XP, leaderboards, and badges" action={<ActionButton icon={RefreshCw} label="Reload" onClick={() => setLoaded(false)} />} />
+        <SectionHeader title="Gamification" description="XP, leaderboards, and badges" action={<ActionButton icon={RefreshCw} label="Reload" onClick={() => { setLoaded(false); setBadgesLoaded(false); }} />} />
 
         <div className="flex gap-2">
           <Pill label="Leaderboard" active={gamTab === "leaderboard"} onClick={() => setGamTab("leaderboard")} />
@@ -1817,20 +1940,21 @@ const Admin = ({ inline = false }: { inline?: boolean }) => {
         {gamTab === "leaderboard" && (
           <div className="space-y-1 max-h-[500px] overflow-y-auto" style={{ scrollbarWidth: "none" }}>
             {leaderboard.map((entry, i) => {
-              const prof = profiles.find(p => p.user_id === entry.user_id);
+              const level = entry.current_level ?? Math.max(1, Math.floor(Math.sqrt((entry.xp || 0) / 100)));
               return (
-                <div key={entry.id} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/[0.03] transition">
+                <div key={entry.user_id} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/[0.03] transition">
                   <span className={cn("text-[14px] font-black w-8 text-right", i < 3 ? "text-amber-400" : "text-white/20")}>
                     {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
                   </span>
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 text-[12px] font-black text-amber-400">
-                    {prof?.username?.charAt(0).toUpperCase() || "?"}
+                    {entry.username?.charAt(0).toUpperCase() || "?"}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-bold text-white">{prof?.username || entry.user_id.slice(0, 12)}</p>
+                    <p className="text-[13px] font-bold text-white">{entry.username || entry.user_id.slice(0, 12)}</p>
+                    <p className="text-[10px] text-white/30">Level {level}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[14px] font-black text-amber-400">{(entry.total_score ?? 0).toLocaleString()}</p>
+                    <p className="text-[14px] font-black text-amber-400">{(entry.total_xp ?? entry.xp ?? 0).toLocaleString()}</p>
                     <p className="text-[9px] text-white/25">XP</p>
                   </div>
                 </div>
@@ -1854,6 +1978,7 @@ const Admin = ({ inline = false }: { inline?: boolean }) => {
                   <Input type="number" value={grantXp} onChange={e => setGrantXp(Number(e.target.value))} className="h-9 bg-white/[0.03] border-white/[0.08] text-[12px]" />
                 </div>
               </div>
+              <p className="text-[10px] text-white/25">Auto level-up: Level = √(XP/100). Granting XP recalculates level automatically.</p>
               <ActionButton icon={Gift} label="Grant XP" onClick={manualGrantXp} variant="success" />
             </div>
 
@@ -1872,26 +1997,180 @@ const Admin = ({ inline = false }: { inline?: boolean }) => {
         )}
 
         {gamTab === "badges" && (
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {[
-                { name: "OG Pioneer", icon: "🏴‍☠️", desc: "Early adopter", color: "from-purple-500/20 to-pink-500/20" },
-                { name: "Whale Watcher", icon: "🐋", desc: "Track 10+ wallets", color: "from-blue-500/20 to-cyan-500/20" },
-                { name: "Community King", icon: "👑", desc: "Create 5+ communities", color: "from-amber-500/20 to-orange-500/20" },
-                { name: "Trade Master", icon: "📈", desc: "100+ trades", color: "from-emerald-500/20 to-green-500/20" },
-                { name: "Social Butterfly", icon: "🦋", desc: "100+ posts", color: "from-pink-500/20 to-rose-500/20" },
-                { name: "Diamond Hands", icon: "💎", desc: "Hold through 50%+ dip", color: "from-sky-500/20 to-blue-500/20" },
-                { name: "Alpha Hunter", icon: "🎯", desc: "5 successful callouts", color: "from-red-500/20 to-orange-500/20" },
-                { name: "Voice OG", icon: "🎙️", desc: "Host 10+ spaces", color: "from-violet-500/20 to-purple-500/20" },
-                { name: "Night Owl", icon: "🦉", desc: "Active at 3 AM", color: "from-indigo-500/20 to-blue-500/20" },
-              ].map(b => (
-                <div key={b.name} className={cn("rounded-xl border border-white/[0.06] bg-gradient-to-br p-4 text-center", b.color)}>
-                  <div className="text-3xl mb-2">{b.icon}</div>
-                  <p className="text-[12px] font-bold text-white">{b.name}</p>
-                  <p className="text-[10px] text-white/40 mt-0.5">{b.desc}</p>
-                </div>
-              ))}
+          <div className="space-y-4">
+            {/* Badge sub-tabs */}
+            <div className="flex gap-2">
+              <Pill label="Manage Badges" active={badgeTab === "manage"} onClick={() => setBadgeTab("manage")} />
+              <Pill label="Assign to Users" active={badgeTab === "assign"} onClick={() => setBadgeTab("assign")} />
+              <Pill label="Verify Badge" active={badgeTab === "verify"} onClick={() => setBadgeTab("verify")} />
             </div>
+
+            {badgeTab === "manage" && (
+              <div className="space-y-4">
+                {/* Seed preset badges */}
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[12px] font-bold text-white">Preset Badges ({PRESET_BADGES.length})</p>
+                    <ActionButton icon={Zap} label={seeding ? "Seeding..." : "Seed All to DB"} onClick={seedPresets} variant="success" />
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {PRESET_BADGES.map(b => (
+                      <div key={b.name} className={cn("rounded-lg border bg-gradient-to-br p-3 text-center", RARITY_COLORS[b.rarity] || RARITY_COLORS.common)}>
+                        <div className="text-2xl mb-1">{b.icon}</div>
+                        <p className="text-[10px] font-bold text-white truncate">{b.name}</p>
+                        <p className="text-[8px] text-white/30 uppercase">{b.rarity}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* DB badges */}
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <p className="text-[12px] font-bold text-white mb-3">Badges in Database ({dbBadges.length})</p>
+                  {dbBadges.length === 0 ? (
+                    <p className="text-[11px] text-white/30 text-center py-4">No badges yet — click "Seed All to DB" above</p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {dbBadges.map(b => (
+                        <div key={b.id} className={cn("rounded-lg border bg-gradient-to-br p-3 text-center relative group", RARITY_COLORS[b.rarity] || RARITY_COLORS.common)}>
+                          <button onClick={() => deleteBadge(b.id)} className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded bg-red-500/20 hover:bg-red-500/40">
+                            <Trash2 className="h-3 w-3 text-red-400" />
+                          </button>
+                          <div className="text-2xl mb-1">{b.icon || "🏷️"}</div>
+                          <p className="text-[10px] font-bold text-white truncate">{b.name}</p>
+                          <p className="text-[8px] text-white/30 uppercase">{b.rarity}</p>
+                          <p className="text-[7px] text-white/15 font-mono mt-1 truncate">{b.id.slice(0, 8)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Create custom badge */}
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
+                  <p className="text-[12px] font-bold text-white">Create Custom Badge</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-[10px] text-white/30">Name</Label>
+                      <Input value={newBadgeName} onChange={e => setNewBadgeName(e.target.value)} placeholder="e.g. Whale Hunter" className="h-9 bg-white/[0.03] border-white/[0.08] text-[12px]" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-white/30">Icon (emoji)</Label>
+                      <Input value={newBadgeIcon} onChange={e => setNewBadgeIcon(e.target.value)} placeholder="🔥" className="h-9 bg-white/[0.03] border-white/[0.08] text-[12px]" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-white/30">Rarity</Label>
+                      <Select value={newBadgeRarity} onValueChange={setNewBadgeRarity}>
+                        <SelectTrigger className="h-9 bg-white/[0.03] border-white/[0.08] text-[12px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="common">Common</SelectItem>
+                          <SelectItem value="rare">Rare</SelectItem>
+                          <SelectItem value="epic">Epic</SelectItem>
+                          <SelectItem value="legendary">Legendary</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <ActionButton icon={Star} label="Create Badge" onClick={createBadge} variant="success" />
+                </div>
+              </div>
+            )}
+
+            {badgeTab === "assign" && (
+              <div className="space-y-4">
+                {/* Assign badge */}
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
+                  <p className="text-[12px] font-bold text-white">Assign Badge to User</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-[10px] text-white/30">User ID</Label>
+                      <Input value={assignUserId} onChange={e => { setAssignUserId(e.target.value); if (e.target.value.length > 30) loadUserBadges(e.target.value); }} placeholder="Paste user_id..." className="h-9 bg-white/[0.03] border-white/[0.08] text-[12px]" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] text-white/30">Badge</Label>
+                      <Select value={assignBadgeId} onValueChange={setAssignBadgeId}>
+                        <SelectTrigger className="h-9 bg-white/[0.03] border-white/[0.08] text-[12px]"><SelectValue placeholder="Select badge..." /></SelectTrigger>
+                        <SelectContent>
+                          {dbBadges.map(b => (
+                            <SelectItem key={b.id} value={b.id}>{b.icon} {b.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <ActionButton icon={Award} label="Assign Badge" onClick={assignBadge} variant="success" />
+                </div>
+
+                {/* User's current badges */}
+                {userBadges.length > 0 && (
+                  <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                    <p className="text-[12px] font-bold text-white mb-3">User's Current Badges</p>
+                    <div className="flex flex-wrap gap-2">
+                      {userBadges.map(ub => (
+                        <div key={ub.id} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.08] group">
+                          <span className="text-lg">{ub.badges?.icon || "🏷️"}</span>
+                          <span className="text-[11px] font-bold text-white">{ub.badges?.name || "Unknown"}</span>
+                          <button onClick={() => removeBadge(ub.user_id, ub.badge_id)} className="opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+                            <X className="h-3 w-3 text-red-400 hover:text-red-300" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Quick assign from profiles list */}
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <p className="text-[12px] font-bold text-white mb-3">Quick Assign — Click a user</p>
+                  <div className="max-h-[300px] overflow-y-auto space-y-1" style={{ scrollbarWidth: "none" }}>
+                    {profiles.slice(0, 30).map(p => (
+                      <div key={p.user_id} onClick={() => { setAssignUserId(p.user_id); loadUserBadges(p.user_id); }}
+                        className={cn("flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.04] cursor-pointer transition", assignUserId === p.user_id && "bg-white/[0.06] border border-primary/30")}>
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 text-[10px] font-black text-primary">
+                          {p.username?.charAt(0).toUpperCase() || "?"}
+                        </div>
+                        <span className="text-[12px] text-white font-medium">{p.username || p.user_id.slice(0, 12)}</span>
+                        <span className="text-[9px] text-white/20 font-mono ml-auto">{p.user_id.slice(0, 8)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {badgeTab === "verify" && (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Shield className="h-4 w-4 text-blue-400" />
+                    <p className="text-[12px] font-bold text-white">Verified Badge</p>
+                  </div>
+                  <p className="text-[10px] text-white/40">Toggle the blue verified checkmark on a user's profile. This is separate from custom badges.</p>
+                  <div>
+                    <Label className="text-[10px] text-white/30">User ID</Label>
+                    <Input value={verifyUserId} onChange={e => setVerifyUserId(e.target.value)} placeholder="Paste user_id..." className="h-9 bg-white/[0.03] border-white/[0.08] text-[12px]" />
+                  </div>
+                  <ActionButton icon={Shield} label="Toggle Verified" onClick={toggleVerified} variant="success" />
+                </div>
+
+                {/* Quick verify from profiles */}
+                <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+                  <p className="text-[12px] font-bold text-white mb-3">Quick Verify — Click a user</p>
+                  <div className="max-h-[300px] overflow-y-auto space-y-1" style={{ scrollbarWidth: "none" }}>
+                    {profiles.slice(0, 30).map(p => (
+                      <div key={p.user_id} onClick={() => setVerifyUserId(p.user_id)}
+                        className={cn("flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.04] cursor-pointer transition", verifyUserId === p.user_id && "bg-white/[0.06] border border-primary/30")}>
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 text-[10px] font-black text-primary">
+                          {p.username?.charAt(0).toUpperCase() || "?"}
+                        </div>
+                        <span className="text-[12px] text-white font-medium">{p.username || p.user_id.slice(0, 12)}</span>
+                        {(p as any).verified && <Shield className="h-3.5 w-3.5 text-blue-400 ml-auto" />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
