@@ -6,8 +6,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Users, Plus, Search, MessageSquare, Heart, Trash2, ArrowLeft,
-  Repeat2, Bookmark, Share, Eye, ChevronRight,
-  X as XIcon, Loader2, Newspaper, Home, PenSquare, Pin
+  Repeat2, Bookmark, Share, Eye, ChevronRight, MoreHorizontal,
+  X as XIcon, Loader2, Newspaper, Home, PenSquare, Pin,
+  Edit, Shield, LogOut, Crown, ImagePlus, Upload
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,59 @@ interface Community {
   category?: string | null;
   is_active?: boolean;
   invite_code?: string | null;
+}
+
+interface CommunityMember {
+  id: string;
+  community_id: string;
+  user_id: string;
+  role: "creator" | "moderator" | "member";
+  joined_at: string;
+  username?: string | null;
+  avatar_url?: string | null;
+}
+
+/* ── Upload helper — uploads file to Supabase storage, returns public URL ── */
+const UPLOAD_BUCKET = "profile-media";
+async function uploadImage(file: File, folder: string): Promise<string> {
+  const ext = file.name.split(".").pop() ?? "jpg";
+  const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from(UPLOAD_BUCKET).upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw error;
+  const { data } = supabase.storage.from(UPLOAD_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+/* ── Image upload button component ── */
+function ImageUploadBtn({ onUploaded, label = "Upload image", className = "" }: {
+  onUploaded: (url: string) => void; label?: string; className?: string;
+}) {
+  const ref = React.useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = React.useState(false);
+  const handle = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Max 5MB"); return; }
+    setUploading(true);
+    try {
+      const url = await uploadImage(file, "community");
+      onUploaded(url);
+    } catch (err: any) {
+      toast.error(err.message?.includes("Bucket not found") ? "Storage not configured" : "Upload failed");
+    }
+    setUploading(false);
+    if (ref.current) ref.current.value = "";
+  };
+  return (
+    <>
+      <input ref={ref} type="file" accept="image/*" onChange={handle} className="hidden" />
+      <button type="button" onClick={() => ref.current?.click()} disabled={uploading}
+        className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-xs text-white/40 hover:text-white/60 hover:border-white/[0.15] transition-colors disabled:opacity-50", className)}>
+        {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImagePlus className="h-3.5 w-3.5" />}
+        {uploading ? "Uploading..." : label}
+      </button>
+    </>
+  );
 }
 
 interface Post {
@@ -110,12 +164,59 @@ async function enrichPostProfiles(posts: Post[]): Promise<Post[]> {
 }
 
 const Communities = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [mainView, setMainView] = useState<MainView>("home");
   const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [showCompose, setShowCompose] = useState(false);
   const [showCreateCommunity, setShowCreateCommunity] = useState(false);
+  const [myMemberships, setMyMemberships] = useState<Map<string, CommunityMember>>(new Map());
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase.from("community_members").select("*").eq("user_id", user.id);
+      if (data) {
+        const map = new Map<string, CommunityMember>();
+        data.forEach((m: any) => map.set(m.community_id, m as CommunityMember));
+        setMyMemberships(map);
+      }
+    })();
+  }, [user]);
+
+  const myRoleIn = (cid: string): CommunityMember["role"] | null => myMemberships.get(cid)?.role || null;
+
+  const joinCommunity = async (cid: string) => {
+    if (!user) { toast.error("Sign in first"); return; }
+    try {
+      await supabase.from("community_members").insert({ community_id: cid, user_id: user.id, role: "member" });
+      // increment member_count
+      const { data: c } = await supabase.from("communities").select("member_count").eq("id", cid).single();
+      await supabase.from("communities").update({ member_count: (c?.member_count || 0) + 1 }).eq("id", cid);
+      const newMap = new Map(myMemberships);
+      newMap.set(cid, { id: "", community_id: cid, user_id: user.id, role: "member", joined_at: new Date().toISOString() });
+      setMyMemberships(newMap);
+      toast.success("Joined! 🎉");
+    } catch (e: any) {
+      if (e.message?.includes("duplicate") || e.code === "23505") toast.error("Already a member");
+      else toast.error("Failed to join");
+    }
+  };
+
+  const leaveCommunity = async (cid: string) => {
+    if (!user) return;
+    if (myRoleIn(cid) === "creator") { toast.error("Creators can't leave their own community"); return; }
+    try {
+      await supabase.from("community_members").delete().eq("community_id", cid).eq("user_id", user.id);
+      const { data: c } = await supabase.from("communities").select("member_count").eq("id", cid).single();
+      await supabase.from("communities").update({ member_count: Math.max(0, (c?.member_count || 1) - 1) }).eq("id", cid);
+      const newMap = new Map(myMemberships);
+      newMap.delete(cid);
+      setMyMemberships(newMap);
+      if (selectedCommunity?.id === cid) { setSelectedCommunity(null); setMainView("home"); }
+      toast.success("Left community");
+    } catch { toast.error("Failed to leave"); }
+  };
 
   // When selecting a community, go to its feed
   const openCommunity = (c: Community) => {
@@ -161,8 +262,12 @@ const Communities = () => {
         <CommunityFeed
           community={selectedCommunity}
           user={user}
+          myRole={myRoleIn(selectedCommunity.id)}
+          isMember={myMemberships.has(selectedCommunity.id)}
           onSelectPost={openPost}
           onCompose={() => setShowCompose(true)}
+          onJoin={() => joinCommunity(selectedCommunity.id)}
+          onLeave={() => leaveCommunity(selectedCommunity.id)}
         />
       ) : mainView === "news" ? (
         <NewsFeed user={user} onSelectPost={openPost} />
@@ -303,7 +408,7 @@ function HomeFeed({
   const fetchHomeFeed = useCallback(async () => {
     setLoading(true);
     try {
-      let q = supabase.from("community_posts").select("*").limit(50);
+      let q = supabase.from("community_posts").select("*").is("thread_id", null).limit(50);
       if (sort === "latest") q = q.order("created_at", { ascending: false });
       else if (sort === "top") q = q.order("likes_count", { ascending: false });
       else q = q.order("views_count", { ascending: false });
@@ -702,16 +807,59 @@ function NewsFeed({ user, onSelectPost }: { user: any; onSelectPost: (p: Post) =
    ═══════════════════════════════════════════════════════════════ */
 
 function CommunityFeed({
-  community, user, onSelectPost, onCompose
+  community, user, myRole, isMember, onSelectPost, onCompose, onJoin, onLeave
 }: {
   community: Community;
   user: any;
+  myRole: CommunityMember["role"] | null;
+  isMember: boolean;
   onSelectPost: (p: Post) => void;
   onCompose: () => void;
+  onJoin: () => void;
+  onLeave: () => void;
 }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "posts" | "articles" | "threads">("all");
+  const [filter, setFilter] = useState<"all" | "posts" | "articles" | "threads" | "members">("all");
+  const [members, setMembers] = useState<CommunityMember[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const canModerate = myRole === "creator" || myRole === "moderator";
+
+  useEffect(() => {
+    if (filter !== "members") return;
+    (async () => {
+      setMembersLoading(true);
+      const { data } = await supabase.from("community_members")
+        .select("*").eq("community_id", community.id).order("joined_at", { ascending: true });
+      let items = (data || []) as CommunityMember[];
+      if (items.length > 0) {
+        const uids = items.map(m => m.user_id);
+        const { data: profiles } = await supabase.from("profiles")
+          .select("user_id, username, avatar_url").in("user_id", uids);
+        const pMap = new Map((profiles || []).map(p => [p.user_id, p]));
+        items = items.map(m => ({ ...m, username: pMap.get(m.user_id)?.username || null, avatar_url: pMap.get(m.user_id)?.avatar_url || null }));
+      }
+      setMembers(items);
+      setMembersLoading(false);
+    })();
+  }, [filter, community.id]);
+
+  const toggleMod = async (member: CommunityMember) => {
+    if (myRole !== "creator") return;
+    const newRole = member.role === "moderator" ? "member" : "moderator";
+    await supabase.from("community_members").update({ role: newRole }).eq("id", member.id);
+    setMembers(members.map(m => m.id === member.id ? { ...m, role: newRole as any } : m));
+    toast.success(newRole === "moderator" ? "Promoted to mod! 🛡️" : "Removed mod role");
+  };
+
+  const kickMember = async (member: CommunityMember) => {
+    if (!canModerate || member.role === "creator") return;
+    await supabase.from("community_members").delete().eq("id", member.id);
+    const { data: c } = await supabase.from("communities").select("member_count").eq("id", community.id).single();
+    await supabase.from("communities").update({ member_count: Math.max(0, (c?.member_count || 1) - 1) }).eq("id", community.id);
+    setMembers(members.filter(m => m.id !== member.id));
+    toast.success("Member removed");
+  };
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -725,6 +873,7 @@ function CommunityFeed({
     if (filter === "articles") q = q.eq("is_article", true);
     else if (filter === "threads") q = q.eq("post_type", "thread").is("thread_id", null);
     else if (filter === "posts") q = q.eq("post_type", "post");
+    else q = q.is("thread_id", null);
 
     const { data } = await q;
     let items = await enrichPostProfiles((data || []) as Post[]);
@@ -792,12 +941,27 @@ function CommunityFeed({
                     <p className="text-[11px] text-white/30 mt-1 leading-relaxed">{community.description}</p>
                   )}
                 </div>
-                <button
-                  onClick={onCompose}
-                  className="shrink-0 ml-3 px-4 py-1.5 rounded-xl bg-og-cyan text-[#070d14] text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all shadow-[0_0_15px_rgba(34,211,238,0.2)]"
-                >
-                  Post
-                </button>
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  {isMember ? (
+                    <>
+                      <button onClick={onCompose}
+                        className="px-4 py-1.5 rounded-xl bg-og-cyan text-[#070d14] text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all shadow-[0_0_15px_rgba(34,211,238,0.2)]">
+                        Post
+                      </button>
+                      {myRole !== "creator" && (
+                        <button onClick={onLeave} title="Leave community"
+                          className="p-1.5 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-colors">
+                          <LogOut className="h-4 w-4" />
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <button onClick={onJoin}
+                      className="px-4 py-1.5 rounded-xl bg-og-cyan text-[#070d14] text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all">
+                      Join
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-4 mt-3">
                 <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest flex items-center gap-1.5">
@@ -814,7 +978,7 @@ function CommunityFeed({
 
       {/* Filter tabs */}
       <div className="flex border-b border-white/[0.04]">
-        {(["all", "posts", "threads", "articles"] as const).map(f => (
+        {(["all", "posts", "threads", "articles", "members"] as const).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -822,7 +986,7 @@ function CommunityFeed({
               filter === f ? "text-white" : "text-white/25"
             )}
           >
-            {f}
+            {f === "members" ? <Users className="h-3.5 w-3.5 mx-auto" /> : f}
             {filter === f && (
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-[2px] rounded-full bg-og-cyan" />
             )}
@@ -830,7 +994,53 @@ function CommunityFeed({
         ))}
       </div>
 
-      {loading ? (
+      {filter === "members" ? (
+        membersLoading ? (
+          <div className="flex items-center justify-center py-16"><Loader2 className="h-6 w-6 text-white/10 animate-spin" /></div>
+        ) : members.length === 0 ? (
+          <EmptyState icon={<Users className="h-8 w-8" />} title="No members yet" subtitle="Be the first to join!" />
+        ) : (
+          <div className="divide-y divide-white/[0.03]">
+            {members.map(m => (
+              <div key={m.id} className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02]">
+                <Avatar url={m.avatar_url} name={m.username} size="md" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-bold text-white truncate">{m.username || "User"}</span>
+                    {m.role === "creator" && (
+                      <span className="flex items-center gap-0.5 text-[8px] font-black text-og-gold bg-og-gold/10 px-1.5 py-0.5 rounded-full border border-og-gold/20">
+                        <Crown className="h-2.5 w-2.5" /> OWNER
+                      </span>
+                    )}
+                    {m.role === "moderator" && (
+                      <span className="flex items-center gap-0.5 text-[8px] font-black text-og-cyan bg-og-cyan/10 px-1.5 py-0.5 rounded-full border border-og-cyan/20">
+                        <Shield className="h-2.5 w-2.5" /> MOD
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-white/20">Joined {formatDistanceToNow(new Date(m.joined_at), { addSuffix: true })}</p>
+                </div>
+                {myRole === "creator" && m.role !== "creator" && (
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => toggleMod(m)} title={m.role === "moderator" ? "Remove mod" : "Make mod"}
+                      className={cn("p-1.5 rounded-lg transition-colors", m.role === "moderator" ? "text-og-cyan hover:bg-og-cyan/10" : "text-white/15 hover:text-og-cyan hover:bg-og-cyan/10")}>
+                      <Shield className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => kickMember(m)} className="p-1.5 rounded-lg text-white/15 hover:text-red-400 hover:bg-red-400/10 transition-colors">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+                {myRole === "moderator" && m.role === "member" && (
+                  <button onClick={() => kickMember(m)} className="p-1.5 rounded-lg text-white/15 hover:text-red-400 hover:bg-red-400/10 transition-colors">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )
+      ) : loading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-6 w-6 text-white/10 animate-spin" />
         </div>
@@ -849,6 +1059,8 @@ function CommunityFeed({
               user={user}
               onClick={() => onSelectPost(post)}
               onUpdate={fetchPosts}
+              canModerate={canModerate}
+              communityOwnerId={community.created_by}
             />
           ))}
         </div>
@@ -862,98 +1074,124 @@ function CommunityFeed({
    ═══════════════════════════════════════════════════════════════ */
 
 function PostCard({
-  post, user, onClick, onUpdate, compact = false
+  post, user, onClick, onUpdate, compact = false, canModerate = false, communityOwnerId
 }: {
   post: Post;
   user: any;
   onClick?: () => void;
   onUpdate?: () => void;
   compact?: boolean;
+  canModerate?: boolean;
+  communityOwnerId?: string;
 }) {
   const isArticle = post.is_article || post.post_type === "article";
   const isThread = post.post_type === "thread" && !post.thread_id;
+  const isOwner = user && post.user_id === user.id;
+  const canDelete = isOwner || canModerate || (communityOwnerId && user && user.id === communityOwnerId);
+  const [showMenu, setShowMenu] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.content);
+  const [saving, setSaving] = useState(false);
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Delete this post?")) return;
+    try {
+      if (isThread) await supabase.from("community_posts").delete().eq("thread_id", post.id);
+      await supabase.from("community_posts").delete().eq("id", post.id);
+      toast.success("Post deleted");
+      onUpdate?.();
+    } catch { toast.error("Failed to delete"); }
+    setShowMenu(false);
+  };
+
+  const handleSaveEdit = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!editContent.trim()) return;
+    setSaving(true);
+    try {
+      await supabase.from("community_posts").update({ content: editContent.trim() }).eq("id", post.id);
+      toast.success("Post updated");
+      setEditing(false);
+      onUpdate?.();
+    } catch { toast.error("Failed to update"); }
+    setSaving(false);
+  };
 
   return (
-    <article
-      className={cn(
-        "px-4 py-3 hover:bg-white/[0.015] transition-colors",
-        post.is_pinned && "bg-og-cyan/[0.03]"
-      )}
-    >
-      {/* Pinned label */}
+    <article className={cn("px-4 py-3 hover:bg-white/[0.015] transition-colors relative", post.is_pinned && "bg-og-cyan/[0.03]")}>
       {post.is_pinned && (
-        <div className="flex items-center gap-1 ml-12 mb-1 text-[10px] text-white/20">
-          <Pin className="h-3 w-3" /> Pinned
-        </div>
+        <div className="flex items-center gap-1 ml-12 mb-1 text-[10px] text-white/20"><Pin className="h-3 w-3" /> Pinned</div>
       )}
-
       <div className="flex gap-3">
-        {/* Avatar */}
         <Avatar url={post.avatar_url} name={post.username} size="md" />
-
         <div className="flex-1 min-w-0">
-          {/* Header */}
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-bold text-white truncate">
-              {post.username || "Anonymous"}
-            </span>
+            <span className="text-sm font-bold text-white truncate">{post.username || "Anonymous"}</span>
             <span className="text-xs text-white/15">·</span>
-            <span className="text-xs text-white/15 shrink-0">
-              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-            </span>
-            {isThread && (
-              <Badge className="text-[7px] bg-blue-500/10 text-blue-400 border-blue-500/20 ml-1">Thread</Badge>
-            )}
-            {isArticle && (
-              <Badge className="text-[7px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20 ml-1">Article</Badge>
+            <span className="text-xs text-white/15 shrink-0">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</span>
+            {isThread && <Badge className="text-[7px] bg-blue-500/10 text-blue-400 border-blue-500/20 ml-1">Thread</Badge>}
+            {isArticle && <Badge className="text-[7px] bg-emerald-500/10 text-emerald-400 border-emerald-500/20 ml-1">Article</Badge>}
+            {canDelete && (
+              <div className="ml-auto relative">
+                <button onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+                  className="p-1 rounded-full text-white/15 hover:text-white/40 hover:bg-white/[0.04] transition-colors">
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+                {showMenu && (
+                  <div className="absolute right-0 top-7 z-50 bg-[#111] border border-white/[0.1] rounded-xl shadow-2xl py-1 min-w-[140px]"
+                    onClick={e => e.stopPropagation()}>
+                    {isOwner && (
+                      <button onClick={(e) => { e.stopPropagation(); setEditing(true); setEditContent(post.content); setShowMenu(false); }}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/60 hover:bg-white/[0.04] hover:text-white transition-colors">
+                        <Edit className="h-3.5 w-3.5" /> Edit
+                      </button>
+                    )}
+                    <button onClick={handleDelete}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400/70 hover:bg-red-400/10 hover:text-red-400 transition-colors">
+                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
-
-          {/* Article title */}
-          {isArticle && post.article_title && (
-            <p className="text-base font-bold text-white mt-1 leading-tight">{post.article_title}</p>
+          {isArticle && post.article_title && <p className="text-base font-bold text-white mt-1 leading-tight">{post.article_title}</p>}
+          {editing ? (
+            <div className="mt-2" onClick={e => e.stopPropagation()}>
+              <textarea value={editContent} onChange={e => setEditContent(e.target.value)}
+                className="w-full bg-white/[0.04] border border-og-cyan/30 rounded-xl px-3 py-2 text-sm text-white resize-none outline-none min-h-[80px]" />
+              <div className="flex items-center gap-2 mt-1.5">
+                <button onClick={handleSaveEdit} disabled={saving}
+                  className="px-3 py-1 rounded-lg bg-og-cyan text-[#070d14] text-[10px] font-black uppercase disabled:opacity-50">
+                  {saving ? "Saving..." : "Save"}
+                </button>
+                <button onClick={() => setEditing(false)} className="px-3 py-1 rounded-lg text-white/30 text-[10px] font-black uppercase hover:text-white/60">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div className={cn("mt-1 text-sm text-white/70 leading-relaxed whitespace-pre-wrap break-words", compact ? "line-clamp-3" : "line-clamp-6")}>
+              {post.content}
+            </div>
           )}
-
-          {/* Content */}
-          <div className={cn("mt-1 text-sm text-white/70 leading-relaxed whitespace-pre-wrap break-words",
-            compact ? "line-clamp-3" : "line-clamp-6"
-          )}>
-            {post.content}
-          </div>
-
-          {/* Article cover image */}
           {isArticle && post.article_cover_url && (
             <div className="mt-2 rounded-xl overflow-hidden border border-white/[0.06]">
-              <img src={post.article_cover_url} className="w-full aspect-[2/1] object-cover" alt=""
-                onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <img src={post.article_cover_url} className="w-full aspect-[2/1] object-cover" alt="" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
             </div>
           )}
-
-          {/* Post image */}
           {!isArticle && post.image_url && (
             <div className="mt-2 rounded-xl overflow-hidden border border-white/[0.06]">
-              <img src={post.image_url} className="w-full max-h-96 object-cover" alt=""
-                onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <img src={post.image_url} className="w-full max-h-96 object-cover" alt="" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
             </div>
           )}
-
-          {/* Tags */}
           {post.tags && post.tags.length > 0 && (
-            <div className="flex gap-1 mt-2">
-              {post.tags.slice(0, 3).map((t, i) => (
-                <span key={i} className="text-[9px] text-og-cyan/60">#{t}</span>
-              ))}
-            </div>
+            <div className="flex gap-1 mt-2">{post.tags.slice(0, 3).map((t, i) => <span key={i} className="text-[9px] text-og-cyan/60">#{t}</span>)}</div>
           )}
-
-          {/* Thread indicator */}
           {isThread && (
-            <p className="text-xs text-og-cyan mt-2 flex items-center gap-1">
+            <button onClick={onClick} className="text-xs text-og-cyan mt-2 flex items-center gap-1 hover:underline">
               Show thread <ChevronRight className="h-3 w-3" />
-            </p>
+            </button>
           )}
-
-          {/* Action bar */}
           <PostActions post={post} user={user} onUpdate={onUpdate} onComment={onClick} />
         </div>
       </div>
@@ -1106,6 +1344,8 @@ function PostDetail({ post, user, onBack }: { post: Post; user: any; onBack: () 
   const [sending, setSending] = useState(false);
   const [threadPosts, setThreadPosts] = useState<Post[]>([]);
   const replyRef = useRef<HTMLTextAreaElement>(null);
+  const [editingMain, setEditingMain] = useState(false);
+  const [editMainContent, setEditMainContent] = useState(post.content);
 
   const isThread = post.post_type === "thread" && !post.thread_id;
 
@@ -1210,21 +1450,43 @@ function PostDetail({ post, user, onBack }: { post: Post; user: any; onBack: () 
       <div className="px-4 pt-3 pb-3 border-b border-white/[0.06]">
         <div className="flex items-center gap-3 mb-3">
           <Avatar url={post.avatar_url} name={post.username} size="lg" />
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-bold text-white">{post.username || "Anonymous"}</p>
-            <p className="text-xs text-white/20">
-              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-            </p>
+            <p className="text-xs text-white/20">{formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}</p>
           </div>
+          {user && post.user_id === user.id && (
+            <div className="flex items-center gap-1">
+              <button onClick={() => { setEditingMain(true); setEditMainContent(post.content); }}
+                className="p-1.5 rounded-lg text-white/15 hover:text-white/40 hover:bg-white/[0.04]"><Edit className="h-4 w-4" /></button>
+              <button onClick={async () => {
+                if (!confirm("Delete this post?")) return;
+                if (isThread) await supabase.from("community_posts").delete().eq("thread_id", post.id);
+                await supabase.from("community_posts").delete().eq("id", post.id);
+                toast.success("Post deleted"); onBack();
+              }} className="p-1.5 rounded-lg text-white/15 hover:text-red-400 hover:bg-red-400/10"><Trash2 className="h-4 w-4" /></button>
+            </div>
+          )}
         </div>
 
         {post.is_article && post.article_title && (
           <h2 className="text-xl font-bold text-white mb-2">{post.article_title}</h2>
         )}
 
-        <div className="text-[15px] text-white/80 leading-relaxed whitespace-pre-wrap break-words">
-          {post.content}
-        </div>
+        {editingMain ? (
+          <div>
+            <textarea value={editMainContent} onChange={e => setEditMainContent(e.target.value)}
+              className="w-full bg-white/[0.04] border border-og-cyan/30 rounded-xl px-3 py-2 text-[15px] text-white resize-none outline-none min-h-[100px]" />
+            <div className="flex items-center gap-2 mt-2">
+              <button onClick={async () => {
+                await supabase.from("community_posts").update({ content: editMainContent.trim() }).eq("id", post.id);
+                post.content = editMainContent.trim(); setEditingMain(false); toast.success("Updated!");
+              }} className="px-3 py-1 rounded-lg bg-og-cyan text-[#070d14] text-[10px] font-black uppercase">Save</button>
+              <button onClick={() => setEditingMain(false)} className="px-3 py-1 rounded-lg text-white/30 text-[10px] font-black uppercase">Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-[15px] text-white/80 leading-relaxed whitespace-pre-wrap break-words">{post.content}</div>
+        )}
 
         {post.image_url && (
           <div className="mt-3 rounded-xl overflow-hidden border border-white/[0.06]">
@@ -1369,6 +1631,7 @@ function ComposeModal({
   const [threadParts, setThreadParts] = useState<string[]>([""]);
   const [articleTitle, setArticleTitle] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [bannerUrl, setBannerUrl] = useState("");
   const [tags, setTags] = useState("");
   const [selectedCommunityId, setSelectedCommunityId] = useState(community?.id || "");
   const [communities, setCommunities] = useState<Community[]>([]);
@@ -1378,19 +1641,15 @@ function ComposeModal({
     (async () => {
       const { data } = await supabase.from("communities").select("id, name, icon").eq("is_active", true);
       setCommunities((data || []) as Community[]);
-      if (!selectedCommunityId && data && data.length > 0) {
-        setSelectedCommunityId(data[0].id);
-      }
+      if (!selectedCommunityId && data && data.length > 0) setSelectedCommunityId(data[0].id);
     })();
   }, []);
 
   const handlePost = async () => {
     if (!user) { toast.error("Sign in first"); return; }
     if (!selectedCommunityId) { toast.error("Select a community"); return; }
-
     const mainContent = postType === "thread" ? threadParts[0] : content;
     if (!mainContent.trim()) { toast.error("Write something!"); return; }
-
     setPosting(true);
     try {
       const { data: profile } = await supabase.from("profiles")
@@ -1400,84 +1659,50 @@ function ComposeModal({
       const tagArr = tags.split(",").map(t => t.trim()).filter(Boolean);
 
       if (postType === "thread") {
-        // Create parent post
         const { data: parent } = await supabase.from("community_posts").insert({
-          community_id: selectedCommunityId,
-          user_id: user.id,
-          username,
-          avatar_url: avatar,
-          content: threadParts[0].trim(),
-          post_type: "thread",
-          tags: tagArr,
+          community_id: selectedCommunityId, user_id: user.id, username, avatar_url: avatar,
+          content: threadParts[0].trim(), post_type: "thread", tags: tagArr,
+          image_url: imageUrl || null,
         }).select().single();
-
-        // Create thread children
         if (parent) {
           for (let i = 1; i < threadParts.length; i++) {
             if (threadParts[i].trim()) {
               await supabase.from("community_posts").insert({
-                community_id: selectedCommunityId,
-                user_id: user.id,
-                username,
-                avatar_url: avatar,
-                content: threadParts[i].trim(),
-                post_type: "thread",
-                thread_id: parent.id,
-                thread_order: i,
+                community_id: selectedCommunityId, user_id: user.id, username, avatar_url: avatar,
+                content: threadParts[i].trim(), post_type: "thread", thread_id: parent.id, thread_order: i,
               });
             }
           }
         }
       } else {
         await supabase.from("community_posts").insert({
-          community_id: selectedCommunityId,
-          user_id: user.id,
-          username,
-          avatar_url: avatar,
-          content: content.trim(),
-          image_url: imageUrl || null,
-          post_type: postType,
+          community_id: selectedCommunityId, user_id: user.id, username, avatar_url: avatar,
+          content: content.trim(), image_url: imageUrl || null, post_type: postType,
           is_article: postType === "article",
           article_title: postType === "article" ? articleTitle : null,
-          article_cover_url: postType === "article" ? imageUrl : null,
+          article_cover_url: postType === "article" ? (bannerUrl || imageUrl || null) : null,
           tags: tagArr,
         });
       }
-
       toast.success(postType === "article" ? "Article published! 📝" : postType === "thread" ? "Thread posted! 🧵" : "Posted! ✨");
       onClose();
     } catch (e: any) {
-      toast.error("Failed to post: " + (e.message || "Unknown error"));
-    } finally {
-      setPosting(false);
-    }
+      toast.error("Failed: " + (e.message || "Unknown error"));
+    } finally { setPosting(false); }
   };
 
-  const addThreadPart = () => {
-    if (threadParts.length < 20) {
-      setThreadParts([...threadParts, ""]);
-    }
-  };
-
+  const addThreadPart = () => { if (threadParts.length < 20) setThreadParts([...threadParts, ""]); };
   const maxChars = postType === "article" ? 15000 : postType === "thread" ? 2000 : 5000;
-  const currentLen = postType === "thread"
-    ? threadParts.reduce((s, p) => s + p.length, 0)
-    : content.length;
+  const currentLen = postType === "thread" ? threadParts.reduce((s, p) => s + p.length, 0) : content.length;
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-start justify-center pt-12 px-4">
       <div className="bg-[#0a0a0f] border border-white/[0.08] rounded-2xl w-full max-w-lg max-h-[80vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="flex items-center gap-3 p-4 border-b border-white/[0.06]">
-          <button onClick={onClose} className="text-white/40 hover:text-white">
-            <XIcon className="h-5 w-5" />
-          </button>
+          <button onClick={onClose} className="text-white/40 hover:text-white"><XIcon className="h-5 w-5" /></button>
           <div className="flex-1" />
-          <Button
-            onClick={handlePost}
-            disabled={posting || currentLen === 0}
-            className="px-4 h-8 rounded-full text-xs font-bold"
-          >
+          <Button onClick={handlePost} disabled={posting || currentLen === 0} className="px-4 h-8 rounded-full text-xs font-bold">
             {posting ? <Loader2 className="h-3 w-3 animate-spin" /> : postType === "article" ? "Publish" : "Post"}
           </Button>
         </div>
@@ -1485,13 +1710,10 @@ function ComposeModal({
         {/* Post type selector */}
         <div className="flex gap-1 px-4 pt-3">
           {(["post", "thread", "article"] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setPostType(t)}
+            <button key={t} onClick={() => setPostType(t)}
               className={cn("px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize",
                 postType === t ? "bg-og-cyan/10 text-og-cyan" : "text-white/20"
-              )}
-            >
+              )}>
               {t === "post" ? "📝 Post" : t === "thread" ? "🧵 Thread" : "📰 Article"}
             </button>
           ))}
@@ -1499,30 +1721,40 @@ function ComposeModal({
 
         {/* Community selector */}
         <div className="px-4 pt-3">
-          <select
-            value={selectedCommunityId}
-            onChange={e => setSelectedCommunityId(e.target.value)}
-            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white appearance-none"
-          >
+          <select value={selectedCommunityId} onChange={e => setSelectedCommunityId(e.target.value)}
+            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white appearance-none">
             <option value="">Select community...</option>
-            {communities.map(c => (
-              <option key={c.id} value={c.id}>{c.icon || ""} {c.name}</option>
-            ))}
+            {communities.map(c => <option key={c.id} value={c.id}>{c.icon || ""} {c.name}</option>)}
           </select>
         </div>
 
         {/* Compose area */}
         <div className="p-4 space-y-3">
+          {/* Article: Banner upload + title */}
           {postType === "article" && (
-            <input
-              type="text"
-              placeholder="Article title..."
-              value={articleTitle}
-              onChange={e => setArticleTitle(e.target.value)}
-              className="w-full bg-transparent text-xl font-bold text-white placeholder-white/20 outline-none"
-            />
+            <>
+              {/* Banner */}
+              <div>
+                <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1.5 block">Article Banner</label>
+                {bannerUrl ? (
+                  <div className="relative rounded-xl overflow-hidden border border-white/[0.08] mb-2">
+                    <img src={bannerUrl} alt="" className="w-full aspect-[2.5/1] object-cover" />
+                    <button onClick={() => setBannerUrl("")}
+                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white/70 hover:text-white">
+                      <XIcon className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <ImageUploadBtn onUploaded={setBannerUrl} label="Upload banner" className="w-full justify-center py-6 border-dashed" />
+                )}
+              </div>
+              {/* Title */}
+              <input type="text" placeholder="Article title..." value={articleTitle} onChange={e => setArticleTitle(e.target.value)}
+                className="w-full bg-transparent text-xl font-bold text-white placeholder-white/20 outline-none" />
+            </>
           )}
 
+          {/* Thread compose */}
           {postType === "thread" ? (
             <div className="space-y-2">
               {threadParts.map((part, i) => (
@@ -1531,17 +1763,9 @@ function ComposeModal({
                     <div className="w-1.5 h-1.5 rounded-full bg-og-cyan" />
                     {i < threadParts.length - 1 && <div className="w-0.5 flex-1 bg-white/[0.06] mt-1" />}
                   </div>
-                  <textarea
-                    value={part}
-                    onChange={e => {
-                      const next = [...threadParts];
-                      next[i] = e.target.value;
-                      setThreadParts(next);
-                    }}
-                    placeholder={i === 0 ? "Start your thread..." : `Part ${i + 1}...`}
-                    maxLength={2000}
-                    className="flex-1 bg-white/[0.02] border border-white/[0.06] rounded-xl px-3 py-2 text-sm text-white placeholder-white/20 resize-none outline-none min-h-[80px] focus:border-og-cyan/30"
-                  />
+                  <textarea value={part} onChange={e => { const next = [...threadParts]; next[i] = e.target.value; setThreadParts(next); }}
+                    placeholder={i === 0 ? "Start your thread..." : `Part ${i + 1}...`} maxLength={2000}
+                    className="flex-1 bg-white/[0.02] border border-white/[0.06] rounded-xl px-3 py-2 text-sm text-white placeholder-white/20 resize-none outline-none min-h-[80px] focus:border-og-cyan/30" />
                 </div>
               ))}
               <button onClick={addThreadPart} className="ml-5 text-xs text-og-cyan/60 hover:text-og-cyan flex items-center gap-1">
@@ -1549,52 +1773,35 @@ function ComposeModal({
               </button>
             </div>
           ) : (
-            <textarea
-              value={content}
-              onChange={e => setContent(e.target.value)}
-              placeholder={postType === "article"
-                ? "Write your article... (up to 15,000 characters)"
-                : "What's happening?"}
+            <textarea value={content} onChange={e => setContent(e.target.value)}
+              placeholder={postType === "article" ? "Write your article... (up to 15,000 characters)" : "What's happening?"}
               maxLength={maxChars}
-              className="w-full bg-transparent text-sm text-white placeholder-white/20 resize-none outline-none min-h-[120px]"
-            />
+              className="w-full bg-transparent text-sm text-white placeholder-white/20 resize-none outline-none min-h-[120px]" />
           )}
 
-          {/* Image URL + preview */}
-          <input
-            type="text"
-            placeholder="Image URL (paste link to image)..."
-            value={imageUrl}
-            onChange={e => setImageUrl(e.target.value)}
-            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2 text-xs text-white/50 placeholder-white/15 outline-none"
-          />
-          {imageUrl && (
-            <div className="relative rounded-xl overflow-hidden border border-white/[0.08]">
-              <img
-                src={imageUrl}
-                alt="Preview"
-                className="w-full max-h-48 object-cover"
-                onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-              />
-              <button
-                onClick={() => setImageUrl("")}
-                className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white/70 hover:text-white"
-              >
-                <XIcon className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )}
+          {/* Image upload */}
+          <div>
+            <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1.5 block">
+              {postType === "article" ? "Article Icon / Image" : "Attach Image"}
+            </label>
+            {imageUrl ? (
+              <div className="relative rounded-xl overflow-hidden border border-white/[0.08]">
+                <img src={imageUrl} alt="Preview" className="w-full max-h-48 object-cover"
+                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                <button onClick={() => setImageUrl("")}
+                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white/70 hover:text-white">
+                  <XIcon className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <ImageUploadBtn onUploaded={setImageUrl} label="Upload image" />
+            )}
+          </div>
 
           {/* Tags */}
-          <input
-            type="text"
-            placeholder="Tags (comma-separated)..."
-            value={tags}
-            onChange={e => setTags(e.target.value)}
-            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2 text-xs text-white/50 placeholder-white/15 outline-none"
-          />
+          <input type="text" placeholder="Tags (comma-separated)..." value={tags} onChange={e => setTags(e.target.value)}
+            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl px-3 py-2 text-xs text-white/50 placeholder-white/15 outline-none" />
 
-          {/* Footer */}
           <div className="flex items-center justify-between text-[10px] text-white/15">
             <span>{currentLen.toLocaleString()} / {maxChars.toLocaleString()}</span>
             {postType === "thread" && <span>{threadParts.length} parts</span>}
@@ -1621,6 +1828,8 @@ function CreateCommunityModal({
   const [icon, setIcon] = useState("🚀");
   const [privacy, setPrivacy] = useState<"public" | "private">("public");
   const [creating, setCreating] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [bannerUrl, setBannerUrl] = useState("");
 
   const ICONS = ["🚀", "💎", "🔥", "📈", "🐸", "🤖", "⚡", "🎯", "🏆", "🌙", "💰", "🎮"];
 
@@ -1632,83 +1841,86 @@ function CreateCommunityModal({
       const code = Math.random().toString(36).substring(2, 8).toUpperCase();
       const { data: profile } = await supabase.from("profiles")
         .select("username, avatar_url").eq("user_id", user.id).maybeSingle();
-
       const { data, error } = await supabase.from("communities").insert({
-        name: name.trim(),
-        description: description.trim() || null,
-        icon,
-        privacy,
-        created_by: user.id,
-        creator_name: profile?.username || user.email?.split("@")[0],
-        creator_avatar: profile?.avatar_url,
-        invite_code: code,
-        is_active: true,
-        member_count: 1,
+        name: name.trim(), description: description.trim() || null, icon, privacy,
+        created_by: user.id, creator_name: profile?.username || user.email?.split("@")[0],
+        creator_avatar: profile?.avatar_url, invite_code: code, is_active: true, member_count: 1,
+        avatar_url: avatarUrl || null, banner_url: bannerUrl || null,
       }).select().single();
-
       if (error) throw error;
-
-      // Add creator as member
-      await supabase.from("community_members").insert({
-        community_id: data.id,
-        user_id: user.id,
-        role: "creator",
-      });
-
+      await supabase.from("community_members").insert({ community_id: data.id, user_id: user.id, role: "creator" });
       toast.success("Community created! 🎉");
       onCreated(data as Community);
-    } catch (e: any) {
-      toast.error("Failed: " + (e.message || "Unknown error"));
-    } finally {
-      setCreating(false);
-    }
+    } catch (e: any) { toast.error("Failed: " + (e.message || "Unknown error")); }
+    finally { setCreating(false); }
   };
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4">
-      <div className="bg-[#0a0a0f] border border-white/[0.08] rounded-2xl w-full max-w-md shadow-2xl">
+      <div className="bg-[#0a0a0f] border border-white/[0.08] rounded-2xl w-full max-w-md shadow-2xl max-h-[85vh] overflow-y-auto">
         <div className="flex items-center gap-3 p-4 border-b border-white/[0.06]">
-          <button onClick={onClose} className="text-white/40 hover:text-white">
-            <XIcon className="h-5 w-5" />
-          </button>
+          <button onClick={onClose} className="text-white/40 hover:text-white"><XIcon className="h-5 w-5" /></button>
           <h3 className="text-sm font-bold text-white flex-1">Create Community</h3>
           <Button onClick={handleCreate} disabled={creating || !name.trim()} className="h-8 px-4 rounded-full text-xs font-bold">
             {creating ? <Loader2 className="h-3 w-3 animate-spin" /> : "Create"}
           </Button>
         </div>
         <div className="p-4 space-y-4">
+          {/* Banner upload */}
+          <div>
+            <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1.5 block">Banner</label>
+            {bannerUrl ? (
+              <div className="relative rounded-xl overflow-hidden border border-white/[0.08]">
+                <img src={bannerUrl} className="w-full aspect-[3/1] object-cover" alt="" />
+                <button onClick={() => setBannerUrl("")}
+                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white/70 hover:text-white">
+                  <XIcon className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <ImageUploadBtn onUploaded={setBannerUrl} label="Upload banner" className="w-full justify-center py-4 border-dashed" />
+            )}
+          </div>
+
+          {/* Avatar upload */}
+          <div>
+            <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1.5 block">Community Image</label>
+            <div className="flex items-center gap-3">
+              {avatarUrl ? (
+                <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-white/[0.1]">
+                  <img src={avatarUrl} className="w-full h-full object-cover" alt="" />
+                  <button onClick={() => setAvatarUrl("")}
+                    className="absolute top-0 right-0 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center text-white/60">
+                    <XIcon className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <ImageUploadBtn onUploaded={setAvatarUrl} label="Upload" />
+              )}
+            </div>
+          </div>
+
           {/* Icon picker */}
           <div>
-            <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1 block">Icon</label>
+            <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1 block">Emoji Icon</label>
             <div className="flex gap-1.5 flex-wrap">
               {ICONS.map(i => (
                 <button key={i} onClick={() => setIcon(i)}
                   className={cn("w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all",
                     icon === i ? "bg-og-cyan/10 border-2 border-og-cyan scale-110" : "bg-white/[0.04] border border-transparent"
-                  )}>
-                  {i}
-                </button>
+                  )}>{i}</button>
               ))}
             </div>
           </div>
           <div>
             <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1 block">Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Community name..."
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:border-og-cyan/30"
-            />
+            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Community name..."
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:border-og-cyan/30" />
           </div>
           <div>
             <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1 block">Description</label>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="What's this community about?"
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none resize-none h-20 focus:border-og-cyan/30"
-            />
+            <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="What's this community about?"
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none resize-none h-20 focus:border-og-cyan/30" />
           </div>
           <div>
             <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1 block">Privacy</label>
@@ -1717,9 +1929,7 @@ function CreateCommunityModal({
                 <button key={p} onClick={() => setPrivacy(p)}
                   className={cn("flex-1 py-2 rounded-xl text-xs font-medium capitalize border transition-colors",
                     privacy === p ? "border-og-cyan bg-og-cyan/10 text-og-cyan" : "border-white/[0.06] text-white/25"
-                  )}>
-                  {p === "public" ? "🌐 " : "🔒 "}{p}
-                </button>
+                  )}>{p === "public" ? "🌐 " : "🔒 "}{p}</button>
               ))}
             </div>
           </div>
