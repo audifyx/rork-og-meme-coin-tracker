@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { WalletCalloutButton } from "@/components/webhooks/WalletCalloutButton";
-import { TokenDetailPopup } from "@/components/tokens/TokenDetailPopup";
+import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 // CreditBalance removed — credits system disabled
 import { getWalletOverview, getAssets, getTransactions, WalletOverview, TokenAsset, Transaction, formatAddress, formatUsd } from "@/lib/solana-api";
 import { toast } from "@/hooks/use-toast";
@@ -74,7 +74,7 @@ const Wallets = () => {
   const [tokensWithLinks, setTokensWithLinks] = useState<TokenWithLinks[]>([]);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  const [selectedToken, setSelectedToken] = useState<string | null>(null);
+  const [selectedToken, setSelectedToken] = useState<{ address: string; name: string; symbol: string } | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const activeWalletRef = useRef<string | null>(null);
@@ -432,7 +432,7 @@ const Wallets = () => {
                                     <Button variant="ghost" size="icon" className="h-8 w-8" asChild><a href={token.links?.dex} target="_blank" rel="noopener noreferrer"><TrendingUp className="h-4 w-4" /></a></Button>
                                     <Button variant="ghost" size="icon" className="h-8 w-8" asChild><a href={token.links?.explorer} target="_blank" rel="noopener noreferrer"><ExternalLink className="h-4 w-4" /></a></Button>
                                     <Button variant="outline" size="sm" onClick={() => pushTokenToDiscord(token)} className="gap-1 bg-[#5865F2]/10 border-[#5865F2]/30 hover:bg-[#5865F2]/20 text-[#5865F2]"><Send className="h-3 w-3" />Push</Button>
-                                    <Button variant="outline" size="sm" onClick={() => setSelectedToken(token.address)}>Analyze</Button>
+                                    <Button variant="outline" size="sm" onClick={() => setSelectedToken({ address: token.address, name: token.name, symbol: token.symbol })}>Analyze</Button>
                                   </div>
                                 </div>
                               </div>
@@ -547,7 +547,12 @@ const Wallets = () => {
       </div>
 
       {selectedToken && (
-        <TokenDetailPopup tokenAddress={selectedToken} open={!!selectedToken} onOpenChange={(open) => !open && setSelectedToken(null)} />
+        <CoinDetailDialog
+          key={selectedToken.address}
+          token={{ id: selectedToken.address, name: selectedToken.name, symbol: selectedToken.symbol, decimals: 9 }}
+          defaultOpen
+          onOpenChange={(open) => { if (!open) setSelectedToken(null); }}
+        />
       )}
     </AppLayout>
   );

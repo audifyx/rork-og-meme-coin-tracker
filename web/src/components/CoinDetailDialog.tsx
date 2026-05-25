@@ -100,6 +100,8 @@ type CoinDetailDialogProps = {
   onOpenScanner?: (mint: string) => void;
   actionLabel?: string;
   className?: string;
+  defaultOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -283,8 +285,8 @@ function linkHost(url: string | undefined): string {
 
 // ─── Main Dialog ──────────────────────────────────────────────────────────────
 
-export const CoinDetailDialog = ({ token, trigger, onOpenScanner, actionLabel = "Scan", className }: CoinDetailDialogProps) => {
-  const [open, setOpen] = useState<boolean>(false);
+export const CoinDetailDialog = ({ token, trigger, onOpenScanner, actionLabel = "Scan", className, defaultOpen, onOpenChange: externalOnOpenChange }: CoinDetailDialogProps) => {
+  const [open, setOpen] = useState<boolean>(defaultOpen ?? false);
   const chainId = token.chainId ?? "solana";
 
   const { data: dexPairs, isFetching: isFetchingPairs } = useQuery({
@@ -397,7 +399,7 @@ export const CoinDetailDialog = ({ token, trigger, onOpenScanner, actionLabel = 
   const freezeAuthOk = detailToken.heliusAuthorities?.freezeAuthorityDisabled === true || detailToken.audit?.freezeAuthorityDisabled === true;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); externalOnOpenChange?.(v); }}>
       <DialogTrigger asChild>
         {trigger ?? (
           <button
