@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, Loader2, Search, ShieldCheck, Zap } from "lucide-react";
 import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { CopyMintButton } from "@/components/CopyMintButton";
+import { ToolHeader } from "@/components/ToolPageShell";
 import {
   jupQuote,
   jupGetTokens,
@@ -80,23 +81,27 @@ export const SwapPanel = ({ ogMint, onSelectMint }: Props) => {
   return (
     <section id="swap" className="relative scroll-mt-36">
       <div className="grid gap-8 lg:grid-cols-5">
-        <div className="lg:col-span-2">
-          <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.4em] text-og-lime">
-            <span className="h-px w-10 bg-og-lime" /> JUPITER ROUTER
+        <div className="lg:col-span-2 space-y-5">
+          <ToolHeader
+            icon={Zap}
+            title={`Swap — $${og?.symbol ?? "OG"}`}
+            subtitle="Live quote routed through Jupiter's aggregator — the same engine that powers jup.ag. Connect a wallet on Jupiter to execute."
+            gradient="from-emerald-500 to-lime-400"
+            glowColor="rgba(16,185,129,0.25)"
+            badge="JUPITER"
+            badgeColor="lime"
+          />
+          <div className="grid gap-2">
+            <div className="flex items-center gap-2.5 text-[11px] text-white/40">
+              <span className="h-1 w-4 rounded-full bg-og-lime" /> Best execution across Solana DEXs
+            </div>
+            <div className="flex items-center gap-2.5 text-[11px] text-white/40">
+              <span className="h-1 w-4 rounded-full bg-og-gold" /> 1% slippage default
+            </div>
+            <div className="flex items-center gap-2.5 text-[11px] text-white/40">
+              <span className="h-1 w-4 rounded-full bg-og-cyan" /> Refreshes every 12s
+            </div>
           </div>
-          <h2 className="font-display text-3xl font-bold tracking-tight sm:text-5xl">
-            <span className="text-foreground">COP THE</span>{" "}
-            <span className="text-og-lime text-glow">${og?.symbol ?? "OG"}</span>
-          </h2>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Live quote routed through Jupiter's aggregator — the same engine that powers jup.ag.
-            Connect a wallet on Jupiter to execute.
-          </p>
-          <ul className="mt-6 space-y-2 text-xs text-muted-foreground">
-            <li className="flex items-center gap-2"><span className="h-1 w-4 bg-og-lime" /> Best execution across Solana DEXs</li>
-            <li className="flex items-center gap-2"><span className="h-1 w-4 bg-og-gold" /> 1% slippage default</li>
-            <li className="flex items-center gap-2"><span className="h-1 w-4 bg-og-cyan" /> Refreshes every 12s</li>
-          </ul>
         </div>
 
         <div className="lg:col-span-3">

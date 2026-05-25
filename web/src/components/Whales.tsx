@@ -9,6 +9,7 @@ import {
   fmtUsd,
   shortAddr,
 } from "@/lib/og";
+import { ToolHeader } from "@/components/ToolPageShell";
 
 type Props = { mint: string; onSelectWallet?: (w: string) => void };
 
@@ -56,7 +57,18 @@ export const Whales = ({ mint, onSelectWallet }: Props) => {
           : "text-og-lime";
 
   return (
-    <div className="grid gap-3 lg:grid-cols-3">
+    <div className="space-y-4">
+      <ToolHeader
+        icon={Crown}
+        title="Whale Watch"
+        subtitle="Top 20 holders by balance from Helius RPC — concentration risk analysis and wallet breakdown."
+        gradient="from-purple-500 to-violet-400"
+        glowColor="rgba(139,92,246,0.25)"
+        badge={concentration !== "—" ? concentration : undefined}
+        badgeColor={top10Pct != null && top10Pct > 40 ? "red" : top10Pct != null && top10Pct > 25 ? "orange" : "lime"}
+        rightSlot={isLoading ? <Loader2 className="h-4 w-4 animate-spin text-white/30" /> : undefined}
+      />
+      <div className="grid gap-3 lg:grid-cols-3">
       <div className="border border-og-grid bg-og-ink/70 p-4 lg:col-span-1">
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-og-gold">
           <Crown className="h-3 w-3" /> CONCENTRATION
@@ -167,6 +179,7 @@ export const Whales = ({ mint, onSelectWallet }: Props) => {
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpDown, Loader2 } from "lucide-react";
+import { ArrowUpDown, Loader2, Radio } from "lucide-react";
 import { heliusTxs, shortAddr, timeAgo, fmtNum } from "@/lib/og";
+import { ToolHeader } from "@/components/ToolPageShell";
 
 type Props = { mint: string; compact?: boolean };
 
@@ -30,21 +31,22 @@ export const TxFeed = ({ mint, compact = false }: Props) => {
     <section className="relative">
       <div>
         {!compact && (
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.4em] text-og-gold">
-                <span className="h-px w-10 bg-og-gold" /> THE TAPE
-              </div>
-              <h2 className="font-display text-3xl font-bold tracking-tight sm:text-5xl">
-                <span className="text-og-gold text-glow-gold">LIVE</span>{" "}
-                <span className="text-foreground">TX FEED</span>
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">Last 30 transactions touching this mint · streamed via Helius.</p>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-              {isFetching && <Loader2 className="h-3 w-3 animate-spin text-og-lime" />}
-              {isFetching ? "POLLING" : "IDLE"} · 20s
-            </div>
+          <div className="mb-5">
+            <ToolHeader
+              icon={Radio}
+              title="Live TX Feed"
+              subtitle="Last 30 transactions touching this mint — streamed via Helius RPC with 20s auto-refresh."
+              gradient="from-amber-500 to-yellow-400"
+              glowColor="rgba(245,158,11,0.25)"
+              badge={isFetching ? "POLLING" : "LIVE"}
+              badgeColor={isFetching ? "gold" : "lime"}
+              rightSlot={
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-white/30">
+                  {isFetching && <Loader2 className="h-3 w-3 animate-spin text-og-lime" />}
+                  {isFetching ? "SYNCING" : "IDLE"} · 20s
+                </div>
+              }
+            />
           </div>
         )}
 
