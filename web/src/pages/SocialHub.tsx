@@ -877,6 +877,9 @@ const VoiceRooms = ({ members }: { members: CommunityMember[] }) => {
       roomRef.current = room;
       await room.connect(LK_URL, token);
 
+      // Enable audio playback (handles browser autoplay policy)
+      try { await room.startAudio(); } catch {}
+
       // Start with mic off (muted)
       try { await room.localParticipant.setMicrophoneEnabled(false); } catch {}
       setMuted(true);

@@ -1,10 +1,12 @@
 /**
  * Soundboard — Audio effects for hosts during live Spaces.
  * Built-in sound effects using Web Audio API oscillator tones (no external files needed).
+ * Broadcasts sound IDs via LiveKit data channel so all participants hear them.
  */
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Volume2, VolumeX, ChevronUp, Sparkles, Zap, Trophy, AlertTriangle, Music } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Room } from "livekit-client";
 
 interface SoundEffect {
   id: string;
@@ -113,9 +115,10 @@ const createEffects = (): SoundEffect[] => {
 
 interface SoundboardProps {
   isHost: boolean;
+  room?: Room | null;
 }
 
-const Soundboard: React.FC<SoundboardProps> = ({ isHost }) => {
+const Soundboard: React.FC<SoundboardProps> = ({ isHost, room }) => {
   const [expanded, setExpanded] = useState(false);
   const [muted, setMuted] = useState(false);
   const [lastPlayed, setLastPlayed] = useState<string | null>(null);
@@ -127,15 +130,53 @@ const Soundboard: React.FC<SoundboardProps> = ({ isHost }) => {
     return ctxRef.current;
   }, []);
 
-  const playEffect = (effect: SoundEffect) => {
+  /** Play a sound locally */
+  const playSoundLocally = useCallback((effect: SoundEffect) => {
     if (muted) return;
     try {
       effect.play(getCtx());
       setLastPlayed(effect.id);
       setTimeout(() => setLastPlayed(null), 500);
     } catch {}
+  }, [muted, getCtx]);
+
+  /** Broadcast sound ID to other participants via LiveKit data channel */
+  const broadcastSound = useCallback((soundId: string) => {
+    if (!room) return;
+    try {
+      const encoder = new TextEncoder();
+      const msg = JSON.stringify({ type: "soundboard", soundId, ts: Date.now() });
+      room.localParticipant.publishData(encoder.encode(msg), { reliable: true });
+    } catch (e) {
+      console.warn("Failed to broadcast soundboard:", e);
+    }
+  }, [room]);
+
+  /** Host clicks a sound: play locally + broadcast */
+  const playEffect = (effect: SoundEffect) => {
+    playSoundLocally(effect);
+    broadcastSound(effect.id);
   };
 
+  /** Listen for incoming soundboard broadcasts from other participants */
+  useEffect(() => {
+    if (!room) return;
+    const handleData = (payload: Uint8Array, participant: any) => {
+      // Skip sounds we sent ourselves
+      if (participant?.identity === room.localParticipant?.identity) return;
+      try {
+        const msg = JSON.parse(new TextDecoder().decode(payload));
+        if (msg.type === "soundboard") {
+          const effect = effects.find((e: SoundEffect) => e.id === msg.soundId);
+          if (effect) playSoundLocally(effect);
+        }
+      } catch {}
+    };
+    room.on("dataReceived" as any, handleData);
+    return () => { room.off("dataReceived" as any, handleData); };
+  }, [room, effects, playSoundLocally]);
+
+  // Non-hosts still listen for broadcasts (useEffect above), but don't render the UI
   if (!isHost) return null;
 
   return (
