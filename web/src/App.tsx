@@ -40,6 +40,7 @@ import ArtFeed from "./pages/ArtFeed";
 import SpaceReplay from "./pages/SpaceReplay";
 import { AppLayout } from "./components/layout/AppLayout";
 import { NotificationListener } from "./components/notifications/NotificationListener";
+import { PresenceHeartbeat } from "./components/PresenceHeartbeat";
 
 const DirectMessagesPage = () => (
   <AppLayout>
@@ -60,6 +61,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <NotificationListener />
+        <PresenceHeartbeat />
         <BrowserRouter>
           <Routes>
             {/* ── Public routes (no auth required) ── */}
