@@ -91,6 +91,24 @@ const ACCENT_GOLD = "hsl(var(--og-gold))";
 const ACCENT_LIME = "hsl(var(--og-lime))";
 const ACCENT_CYAN = "hsl(var(--og-cyan))";
 
+/* ── Enrich posts with missing username/avatar from profiles table ── */
+async function enrichPostProfiles(posts: Post[]): Promise<Post[]> {
+  const missing = posts.filter(p => !p.username || p.username === "Anonymous" || p.username === "anon");
+  if (missing.length === 0) return posts;
+  const userIds = [...new Set(missing.map(p => p.user_id))];
+  const { data: profiles } = await supabase.from("profiles")
+    .select("user_id, username, avatar_url")
+    .in("user_id", userIds);
+  if (!profiles || profiles.length === 0) return posts;
+  const profileMap = new Map(profiles.map(p => [p.user_id, p]));
+  return posts.map(p => {
+    if (p.username && p.username !== "Anonymous" && p.username !== "anon") return p;
+    const prof = profileMap.get(p.user_id);
+    if (!prof) return p;
+    return { ...p, username: prof.username || p.username, avatar_url: prof.avatar_url || p.avatar_url };
+  });
+}
+
 const Communities = () => {
   const { user } = useAuth();
   const [mainView, setMainView] = useState<MainView>("home");
@@ -291,7 +309,7 @@ function HomeFeed({
       else q = q.order("views_count", { ascending: false });
 
       const { data } = await q;
-      let items = (data || []) as Post[];
+      let items = await enrichPostProfiles((data || []) as Post[]);
 
       // Enrich with user's interactions
       if (user && items.length > 0) {
@@ -623,7 +641,7 @@ function NewsFeed({ user, onSelectPost }: { user: any; onSelectPost: (p: Post) =
         .eq("is_article", true)
         .order("created_at", { ascending: false })
         .limit(30);
-      setArticles((data || []) as Post[]);
+      setArticles(await enrichPostProfiles((data || []) as Post[]));
       setLoading(false);
     })();
   }, []);
@@ -709,7 +727,7 @@ function CommunityFeed({
     else if (filter === "posts") q = q.eq("post_type", "post");
 
     const { data } = await q;
-    let items = (data || []) as Post[];
+    let items = await enrichPostProfiles((data || []) as Post[]);
 
     if (user && items.length > 0) {
       const ids = items.map(p => p.id);
@@ -1115,7 +1133,7 @@ function PostDetail({ post, user, onBack }: { post: Post; user: any; onBack: () 
         .select("*")
         .eq("thread_id", post.id)
         .order("thread_order", { ascending: true });
-      setThreadPosts((children || []) as Post[]);
+      setThreadPosts(await enrichPostProfiles((children || []) as Post[]));
     }
 
     setLoading(false);
