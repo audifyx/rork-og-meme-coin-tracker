@@ -9,6 +9,7 @@ import {
   X,
   Menu,
   Bell,
+  Mail,
   MessageSquare,
   Shield,
 } from "lucide-react";
@@ -99,6 +100,7 @@ export const AppSidebar = ({
     { to: "/callouts",        icon: Bell,           label: "Callouts",        eyebrow: "Trade alerts" },
     { to: "/trading-lobbies", icon: MessageSquare,  label: "Trading Lobbies", eyebrow: "Voice + charts" },
     { to: "/leaderboard",     icon: Trophy,         label: "Leaderboard",     eyebrow: "Top traders" },
+    { to: "/messages",        icon: Mail,           label: "Messages",        eyebrow: "Direct messages" },
   ];
 
   const moreItems: ExternalNavItem[] = [

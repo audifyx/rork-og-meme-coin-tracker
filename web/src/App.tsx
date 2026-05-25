@@ -23,6 +23,15 @@ import AlphaChat from "./pages/AlphaChat";
 // Webhooks removed
 import TradingLobbies from "./pages/TradingLobbies";
 import Leaderboard from "./pages/Leaderboard";
+import DirectMessages from "./pages/DirectMessages";
+
+const DirectMessagesPage = () => (
+  <AppLayout>
+    <div className="h-[calc(100vh-68px)] lg:h-screen">
+      <DirectMessages />
+    </div>
+  </AppLayout>
+);
 import Notifications from "./pages/Notifications";
 // Premium removed
 import OfficialToken from "./pages/OfficialToken";
@@ -121,6 +130,7 @@ const App = () => (
             {/* ── Protected: Community ── */}
             <Route path="/trading-lobbies" element={<ProtectedRoute><TradingLobbies /></ProtectedRoute>} />
             <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+            <Route path="/messages" element={<ProtectedRoute><DirectMessagesPage /></ProtectedRoute>} />
 
             {/* Premium removed */}
 
