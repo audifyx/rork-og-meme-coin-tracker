@@ -1443,7 +1443,7 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
 
           {/* ── Soundboard (host only) ── */}
           <div className="mt-4">
-            <Soundboard isHost={isHost} />
+            <Soundboard isHost={isHost} room={voicePanelRef.current?.getRoom?.()} />
           </div>
 
           {/* ── Co-Host Manager (host only) ── */}

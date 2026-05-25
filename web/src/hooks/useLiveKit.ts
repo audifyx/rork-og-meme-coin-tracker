@@ -175,6 +175,9 @@ export function useLiveKit(options: UseLiveKitOptions) {
 
       await room.connect(LIVEKIT_URL, token);
 
+      // Enable audio playback (handles browser autoplay policy)
+      try { await room.startAudio(); } catch {}
+
       // Enable mic (muted by default)
       try {
         await room.localParticipant.setMicrophoneEnabled(false);

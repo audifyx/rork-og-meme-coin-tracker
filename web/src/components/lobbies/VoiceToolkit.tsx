@@ -222,7 +222,7 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
   }, []);
 
   /* ─── Play a sound clip (synthesized) ─── */
-  const playSound = useCallback((clip: SoundClip) => {
+  const playSound = useCallback((clip: SoundClip, { broadcast = true }: { broadcast?: boolean } = {}) => {
     if (!connected) return;
     setPlayingSound(clip.id);
     const ctx = getAudioCtx();
@@ -252,7 +252,7 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
       source.onended = () => setPlayingSound(null);
 
       // Also broadcast via LiveKit data channel
-      broadcastSound(clip.id);
+      if (broadcast) broadcastSound(clip.id);
       return;
     }
 
@@ -274,7 +274,7 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
         osc.stop(ctx.currentTime + duration);
       });
       setTimeout(() => setPlayingSound(null), clip.duration || 500);
-      broadcastSound(clip.id);
+      if (broadcast) broadcastSound(clip.id);
       return;
     }
 
@@ -293,7 +293,7 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
         osc.stop(ctx.currentTime + (i + 1) * 0.3 + 0.1);
       });
       setTimeout(() => setPlayingSound(null), 1200);
-      broadcastSound(clip.id);
+      if (broadcast) broadcastSound(clip.id);
       return;
     }
 
@@ -332,7 +332,7 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
         }
       });
       setTimeout(() => setPlayingSound(null), 600);
-      broadcastSound(clip.id);
+      if (broadcast) broadcastSound(clip.id);
       return;
     }
 
@@ -348,7 +348,7 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
       osc.start();
       osc.stop(ctx.currentTime + duration);
       setTimeout(() => setPlayingSound(null), clip.duration || 500);
-      broadcastSound(clip.id);
+      if (broadcast) broadcastSound(clip.id);
       return;
     }
 
@@ -364,7 +364,7 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
       osc.start();
       osc.stop(ctx.currentTime + duration);
       setTimeout(() => setPlayingSound(null), clip.duration || 300);
-      broadcastSound(clip.id);
+      if (broadcast) broadcastSound(clip.id);
       return;
     }
 
@@ -393,7 +393,7 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
       osc.stop(ctx.currentTime + duration);
       noiseSrc.start();
       setTimeout(() => setPlayingSound(null), clip.duration || 1500);
-      broadcastSound(clip.id);
+      if (broadcast) broadcastSound(clip.id);
       return;
     }
 
@@ -412,7 +412,7 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
         osc.stop(ctx.currentTime + i * 0.2 + 0.35);
       });
       setTimeout(() => setPlayingSound(null), 1200);
-      broadcastSound(clip.id);
+      if (broadcast) broadcastSound(clip.id);
       return;
     }
 
@@ -451,7 +451,7 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
         const msg = JSON.parse(new TextDecoder().decode(payload));
         if (msg.type === "soundboard") {
           const clip = SOUND_CLIPS.find(c => c.id === msg.soundId);
-          if (clip) playSound(clip);
+          if (clip) playSound(clip, { broadcast: false });
         }
       } catch {}
     };

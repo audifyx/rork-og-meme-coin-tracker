@@ -40,6 +40,7 @@ export interface VoicePanelHandle {
   demoteToListener: (userId: string) => void;
   muteUser: (userId: string) => void;
   toggleMute: (muted: boolean) => Promise<void>;
+  getRoom: () => Room | null;
 }
 
 export interface VoiceParticipant {
@@ -209,11 +210,14 @@ export const LiveKitVoicePanel = forwardRef<VoicePanelHandle, LiveKitVoicePanelP
       await room.connect(LIVEKIT_URL, token);
       roomRef.current = room;
 
-      // Publish mic if speaker
+      // Enable audio playback (handles browser autoplay policy)
+      try { await room.startAudio(); } catch {}
+
+      // Publish mic if speaker — start muted
       if (initialRole === "speaker") {
-        await room.localParticipant.setMicrophoneEnabled(true);
-        // Start muted
-        await room.localParticipant.setMicrophoneEnabled(false);
+        try {
+          await room.localParticipant.setMicrophoneEnabled(false);
+        } catch {}
         setMuted(true);
       }
 
@@ -429,6 +433,7 @@ export const LiveKitVoicePanel = forwardRef<VoicePanelHandle, LiveKitVoicePanelP
     demoteToListener: (userId: string) => sendCommand("demote", userId),
     muteUser: (userId: string) => sendCommand("force-mute", userId),
     toggleMute,
+    getRoom: () => roomRef.current,
   }));
 
   /* ─── Auto-join ─── */
