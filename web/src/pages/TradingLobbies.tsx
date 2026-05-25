@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { safeAvatarUrl } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LobbyChat } from "@/components/lobbies/LobbyChat";
@@ -51,6 +52,7 @@ const TradingLobbies = ({ inline = false }: { inline?: boolean }) => {
   const Wrap = inline ? ({ children }: { children: React.ReactNode }) => <>{children}</> : AppLayout;
   const navigate = useNavigate();
   const { user, profile } = useAuth();
+  const { isAdmin } = useAdmin();
   const [lobbies, setLobbies] = useState<Lobby[]>([]);
   const [activeLobby, setActiveLobby] = useState<Lobby | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -296,7 +298,7 @@ const TradingLobbies = ({ inline = false }: { inline?: boolean }) => {
               <Share className="h-4 w-4" />
             </button>
 
-            {isCreator && (
+            {(isCreator || isAdmin) && (
               <button
                 onClick={() => { if (confirm("Delete this lobby?")) deleteLobby(activeLobby.id); }}
                 className="p-2 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive transition-colors"
@@ -501,7 +503,7 @@ const TradingLobbies = ({ inline = false }: { inline?: boolean }) => {
                   </div>
                 </div>
               </div>
-              {lobby.created_by === user?.id && (
+              {(lobby.created_by === user?.id || isAdmin) && (
                 <button
                   onClick={(e) => { e.stopPropagation(); if (confirm("Delete this lobby?")) deleteLobby(lobby.id); }}
                   className="absolute top-3 right-3 p-1.5 text-muted-foreground/30 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
