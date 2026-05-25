@@ -494,62 +494,59 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={onClose} />
-      <div className="relative w-full sm:max-w-lg mx-4 bg-[#0c1219] rounded-3xl border border-white/[0.08] shadow-2xl shadow-black/40 overflow-hidden max-h-[92vh] flex flex-col sp-slide-up">
-        {/* Decorative top glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 bg-og-cyan/20 rounded-full blur-3xl pointer-events-none" />
-
+      <div className="relative w-full sm:max-w-lg mx-4 bg-[#0c1219] rounded-3xl border border-white/[0.08] shadow-2xl shadow-black/40 overflow-hidden max-h-[85vh] flex flex-col sp-slide-up">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/[0.06] relative">
+        <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-white/[0.06] relative shrink-0">
           <div>
-            <h2 className="text-lg font-black flex items-center gap-2.5 text-white">
-              <div className="p-1.5 rounded-xl bg-og-cyan/15 border border-og-cyan/25">
-                <Radio className="h-4 w-4 text-og-cyan" />
+            <h2 className="text-base font-black flex items-center gap-2 text-white">
+              <div className="p-1 rounded-lg bg-og-cyan/15 border border-og-cyan/25">
+                <Radio className="h-3.5 w-3.5 text-og-cyan" />
               </div>
               {isScheduled ? "Schedule a Space" : "Start a Space"}
             </h2>
-            <p className="text-[11px] text-white/30 mt-1">
+            <p className="text-[10px] text-white/30 mt-0.5">
               {isScheduled ? "Set a time for your community to join" : "Go live with voice for your community"}
             </p>
           </div>
-          <button onClick={onClose} className="p-2.5 rounded-full hover:bg-white/10 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-white/10 transition-colors">
             <XIcon className="h-4 w-4 text-white/40" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3" style={{ scrollbarWidth: "none" }}>
+        <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2" style={{ scrollbarWidth: "none" }}>
           {/* Title */}
           <div>
-            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 block">Title *</label>
+            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 block">Title *</label>
             <Input placeholder="e.g. Solana Alpha Call — New Launches" value={title} onChange={e => setTitle(e.target.value)} maxLength={80}
-              className="bg-white/[0.04] border-white/[0.08] rounded-xl h-9 text-sm focus:border-og-cyan/50 transition-colors" />
-            <div className="flex justify-end -mt-0.5">
+              className="bg-white/[0.04] border-white/[0.08] rounded-xl h-8 text-sm focus:border-og-cyan/50 transition-colors" />
+            <div className="flex justify-end">
               <span className={cn("text-[9px] tabular-nums", title.length > 70 ? "text-amber-400" : "text-white/15")}>{title.length}/80</span>
             </div>
           </div>
 
           {/* Description */}
           <div>
-            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 block">Description</label>
+            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 block">Description</label>
             <Textarea placeholder="What will you discuss?" value={description} onChange={e => setDescription(e.target.value)} maxLength={280}
-              className="bg-white/[0.04] border-white/[0.08] rounded-xl resize-none min-h-[56px] text-sm focus:border-og-cyan/50" />
+              className="bg-white/[0.04] border-white/[0.08] rounded-xl resize-none min-h-[44px] text-sm focus:border-og-cyan/50" />
           </div>
 
           {/* Topic */}
           <div>
-            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1.5 block">Topic</label>
-            <div className="grid grid-cols-5 gap-1.5">
+            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 block">Topic</label>
+            <div className="flex flex-wrap gap-1.5">
               {TOPICS.map(t => {
                 const m = topicOf(t);
                 return (
                   <button key={t} onClick={() => setTopic(t)}
                     className={cn(
-                      "flex flex-col items-center gap-0.5 py-1.5 rounded-lg border transition-all text-center",
+                      "flex items-center gap-1 px-2 py-1 rounded-lg border transition-all",
                       topic === t
-                        ? "bg-og-cyan/10 border-og-cyan/40 scale-[1.02] shadow-lg shadow-og-cyan/10"
+                        ? "bg-og-cyan/10 border-og-cyan/40 shadow-lg shadow-og-cyan/10"
                         : "border-white/[0.06] hover:border-white/[0.12] bg-white/[0.02]"
                     )}>
-                    <span className="text-base">{m.icon}</span>
+                    <span className="text-sm">{m.icon}</span>
                     <span className={cn("text-[10px] font-bold", topic === t ? "text-og-cyan" : "text-white/40")}>{t}</span>
                   </button>
                 );
@@ -559,12 +556,12 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
 
           {/* Tags */}
           <div>
-            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 block">Tags <span className="text-white/20">({tags.length}/5)</span></label>
+            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 block">Tags <span className="text-white/20">({tags.length}/5)</span></label>
             <div className="flex gap-2">
               <Input placeholder="#solana, #alpha..." value={tagInput} onChange={e => setTagInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addTag())}
-                className="bg-white/[0.04] border-white/[0.08] rounded-xl flex-1" />
-              <Button size="sm" variant="outline" onClick={addTag} disabled={!tagInput.trim() || tags.length >= 5} className="rounded-xl border-white/[0.08] shrink-0 h-9 w-9 p-0">
+                className="bg-white/[0.04] border-white/[0.08] rounded-xl flex-1 h-8" />
+              <Button size="sm" variant="outline" onClick={addTag} disabled={!tagInput.trim() || tags.length >= 5} className="rounded-xl border-white/[0.08] shrink-0 h-8 w-8 p-0">
                 <Plus className="h-3.5 w-3.5" />
               </Button>
             </div>
@@ -581,74 +578,74 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
           </div>
 
           {/* Settings Cards */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {/* Schedule */}
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-              <div className="flex items-center justify-between p-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-1.5 rounded-lg bg-og-cyan/10"><Calendar className="h-3.5 w-3.5 text-og-cyan" /></div>
-                  <div><p className="text-[13px] font-bold text-white">Schedule for later</p><p className="text-[10px] text-white/25">Set a date & time</p></div>
+              <div className="flex items-center justify-between px-3 py-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1 rounded-lg bg-og-cyan/10"><Calendar className="h-3 w-3 text-og-cyan" /></div>
+                  <div><p className="text-[12px] font-bold text-white leading-tight">Schedule for later</p><p className="text-[9px] text-white/25">Set a date & time</p></div>
                 </div>
                 <Toggle on={isScheduled} onChange={() => setIsScheduled(v => !v)} />
               </div>
               {isScheduled && (
-                <div className="flex gap-2 px-3 pb-3 pl-12">
+                <div className="flex gap-2 px-3 pb-2 pl-10">
                   <Input type="date" value={scheduledDate} onChange={e => setScheduledDate(e.target.value)} min={new Date().toISOString().split("T")[0]}
-                    className="bg-white/[0.04] border-white/[0.08] rounded-lg text-sm flex-1 h-9" />
+                    className="bg-white/[0.04] border-white/[0.08] rounded-lg text-sm flex-1 h-8" />
                   <Input type="time" value={scheduledTime} onChange={e => setScheduledTime(e.target.value)}
-                    className="bg-white/[0.04] border-white/[0.08] rounded-lg text-sm w-28 h-9" />
+                    className="bg-white/[0.04] border-white/[0.08] rounded-lg text-sm w-28 h-8" />
                 </div>
               )}
             </div>
             {/* Private */}
-            <div className="flex items-center justify-between p-3 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-white/5"><Lock className="h-3.5 w-3.5 text-white/40" /></div>
-                <div><p className="text-[13px] font-bold text-white">Private Space</p><p className="text-[10px] text-white/25">Invite-only access</p></div>
+            <div className="flex items-center justify-between px-3 py-2 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1 rounded-lg bg-white/5"><Lock className="h-3 w-3 text-white/40" /></div>
+                <div><p className="text-[12px] font-bold text-white leading-tight">Private Space</p><p className="text-[9px] text-white/25">Invite-only access</p></div>
               </div>
               <Toggle on={isPrivate} onChange={() => setIsPrivate(v => !v)} />
             </div>
             {/* Recording */}
-            <div className="flex items-center justify-between p-3 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 rounded-lg bg-red-500/10">
-                  <div className="h-3.5 w-3.5 rounded-full border-2 border-red-400 flex items-center justify-center"><div className="h-1.5 w-1.5 rounded-full bg-red-400" /></div>
+            <div className="flex items-center justify-between px-3 py-2 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1 rounded-lg bg-red-500/10">
+                  <div className="h-3 w-3 rounded-full border-2 border-red-400 flex items-center justify-center"><div className="h-1.5 w-1.5 rounded-full bg-red-400" /></div>
                 </div>
-                <div><p className="text-[13px] font-bold text-white">Record Space</p><p className="text-[10px] text-white/25">Save for replay</p></div>
+                <div><p className="text-[12px] font-bold text-white leading-tight">Record Space</p><p className="text-[9px] text-white/25">Save for replay</p></div>
               </div>
               <Toggle on={isRecording} onChange={() => setIsRecording(v => !v)} activeColor="bg-red-500" />
             </div>
 
             {/* Token Gate */}
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
-              <div className="flex items-center justify-between p-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-1.5 rounded-lg bg-amber-500/10"><Shield className="h-3.5 w-3.5 text-amber-400" /></div>
-                  <div><p className="text-[13px] font-bold text-white">Token Gate</p><p className="text-[10px] text-white/25">Require token to join</p></div>
+              <div className="flex items-center justify-between px-3 py-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1 rounded-lg bg-amber-500/10"><Shield className="h-3 w-3 text-amber-400" /></div>
+                  <div><p className="text-[12px] font-bold text-white leading-tight">Token Gate</p><p className="text-[9px] text-white/25">Require token to join</p></div>
                 </div>
                 <Toggle on={isTokenGated} onChange={() => setIsTokenGated(v => !v)} activeColor="bg-amber-500" />
               </div>
               {isTokenGated && (
-                <div className="px-3 pb-3 space-y-2 border-t border-white/[0.04] pt-2">
+                <div className="px-3 pb-2 space-y-1.5 border-t border-white/[0.04] pt-1.5">
                   <input value={tokenGateCA} onChange={e => setTokenGateCA(e.target.value)} placeholder="Token contract address (CA)..."
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] text-white placeholder:text-white/15 focus:outline-none focus:border-amber-500/20 font-mono" />
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] text-white placeholder:text-white/15 focus:outline-none focus:border-amber-500/20 font-mono" />
                   <input value={tokenGateName} onChange={e => setTokenGateName(e.target.value)} placeholder="Token name (e.g. $BONK)..."
-                    className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] text-white placeholder:text-white/15 focus:outline-none focus:border-amber-500/20" />
-                  <p className="text-[9px] text-white/15">Users must paste their wallet to verify they hold this token</p>
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] text-white placeholder:text-white/15 focus:outline-none focus:border-amber-500/20" />
+                  <p className="text-[9px] text-white/15">Users must verify they hold this token</p>
                 </div>
               )}
             </div>
 
             {/* Speaker Timer */}
-            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-1.5 rounded-lg bg-blue-500/10"><Timer className="h-3.5 w-3.5 text-blue-400" /></div>
-                <div><p className="text-[13px] font-bold text-white">Speaker Timer</p><p className="text-[10px] text-white/25">Auto-remove after time limit</p></div>
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <div className="p-1 rounded-lg bg-blue-500/10"><Timer className="h-3 w-3 text-blue-400" /></div>
+                <div><p className="text-[12px] font-bold text-white leading-tight">Speaker Timer</p><p className="text-[9px] text-white/25">Auto-remove after time limit</p></div>
               </div>
-              <div className="flex gap-1.5 flex-wrap">
+              <div className="flex gap-1 flex-wrap">
                 {[0, 2, 5, 10, 15, 30, 60].map(m => (
                   <button key={m} type="button" onClick={() => setSpeakerTimerMin(m)}
-                    className={cn("px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all",
+                    className={cn("px-2 py-1 rounded-lg text-[10px] font-bold transition-all",
                       speakerTimerMin === m ? "bg-blue-500/15 text-blue-400 border border-blue-500/25" : "bg-white/[0.04] text-white/20 border border-white/[0.06]")}>
                     {m === 0 ? "Off" : `${m}m`}
                   </button>

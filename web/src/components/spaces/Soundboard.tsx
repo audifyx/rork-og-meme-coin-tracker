@@ -122,11 +122,15 @@ const Soundboard: React.FC<SoundboardProps> = ({ isHost, room }) => {
   const [expanded, setExpanded] = useState(false);
   const [muted, setMuted] = useState(false);
   const [lastPlayed, setLastPlayed] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(false);
   const ctxRef = useRef<AudioContext | null>(null);
+  const cooldownRef = useRef(false);
+  const processedIds = useRef(new Set<string>());
   const effects = useRef(createEffects()).current;
 
   const getCtx = useCallback(() => {
     if (!ctxRef.current) ctxRef.current = new AudioContext();
+    if (ctxRef.current.state === "suspended") ctxRef.current.resume();
     return ctxRef.current;
   }, []);
 
@@ -152,11 +156,15 @@ const Soundboard: React.FC<SoundboardProps> = ({ isHost, room }) => {
     }
   }, [room]);
 
-  /** Host clicks a sound: play locally + broadcast */
-  const playEffect = (effect: SoundEffect) => {
+  /** Host clicks a sound: play locally + broadcast (with cooldown to prevent spam) */
+  const playEffect = useCallback((effect: SoundEffect) => {
+    if (cooldownRef.current) return;
+    cooldownRef.current = true;
+    setCooldown(true);
     playSoundLocally(effect);
     broadcastSound(effect.id);
-  };
+    setTimeout(() => { cooldownRef.current = false; setCooldown(false); }, 800);
+  }, [playSoundLocally, broadcastSound]);
 
   /** Listen for incoming soundboard broadcasts from other participants */
   useEffect(() => {
@@ -166,7 +174,16 @@ const Soundboard: React.FC<SoundboardProps> = ({ isHost, room }) => {
       if (participant?.identity === room.localParticipant?.identity) return;
       try {
         const msg = JSON.parse(new TextDecoder().decode(payload));
-        if (msg.type === "soundboard") {
+        if (msg.type === "soundboard" && msg.ts) {
+          // Dedup: skip if we already processed this exact broadcast
+          const key = `${msg.soundId}-${msg.ts}`;
+          if (processedIds.current.has(key)) return;
+          processedIds.current.add(key);
+          // Trim set to prevent memory leak
+          if (processedIds.current.size > 50) {
+            const arr = Array.from(processedIds.current);
+            processedIds.current = new Set(arr.slice(-25));
+          }
           const effect = effects.find((e: SoundEffect) => e.id === msg.soundId);
           if (effect) playSoundLocally(effect);
         }
@@ -199,11 +216,12 @@ const Soundboard: React.FC<SoundboardProps> = ({ isHost, room }) => {
         <div className="grid grid-cols-3 gap-1.5 pt-1">
           {effects.map(e => (
             <button key={e.id} onClick={() => playEffect(e)}
+              disabled={cooldown || muted}
               className={cn(
                 "flex flex-col items-center gap-1 py-2.5 px-2 rounded-xl border transition-all",
                 e.color,
                 lastPlayed === e.id && "scale-95 brightness-125",
-                muted && "opacity-30"
+                (muted || cooldown) && "opacity-30 pointer-events-none"
               )}>
               <span className="text-xl">{e.emoji}</span>
               <span className="text-[9px] font-bold">{e.name}</span>
