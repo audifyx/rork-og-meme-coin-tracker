@@ -670,7 +670,9 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
     effectChainRef.current = null;
   }, [room]);
 
-  // Build/rebuild audio effect chain whenever params change
+  // Build/rebuild audio effect chain whenever params or mute state change.
+  // `muted` is in the dep array so the chain rebuilds after the user unmutes
+  // (mic track only exists when microphone is enabled / published).
   useEffect(() => {
     if (!connected || !room) { teardownEffectChain(); return; }
     const isNormal = customPitch === 1.0 && customReverb === 0 && customEcho === 0 && customDistortion === 0 && customGain === 1.0;
@@ -686,7 +688,7 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
         room.localParticipant?.audioTrackPublications.forEach((pub: any) => {
           if (pub.track?.mediaStreamTrack) micTrack = pub.track.mediaStreamTrack;
         });
-        if (!micTrack) return;
+        if (!micTrack) return; // mic not published yet — will retry when muted changes
 
         const source = ctx.createMediaStreamSource(new MediaStream([micTrack]));
         const dest = ctx.createMediaStreamDestination();
@@ -702,17 +704,62 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
           nodes.push(gain);
         }
 
-        // 2. Pitch shift via bandpass + frequency shifting (simplified approach)
+        // 2. Pitch / formant shift — reshapes the spectral envelope so the
+        //    voice sounds perceptibly higher or deeper.
         if (customPitch !== 1.0) {
-          // Use a biquad peaking filter to shift perceived pitch
-          const bq = ctx.createBiquadFilter();
-          bq.type = "peaking";
-          bq.frequency.value = customPitch > 1 ? 2000 * customPitch : 400 * customPitch;
-          bq.Q.value = 0.5;
-          bq.gain.value = (customPitch - 1.0) * 12; // boost/cut
-          lastNode.connect(bq);
-          lastNode = bq;
-          nodes.push(bq);
+          if (customPitch > 1.0) {
+            // Higher: thin lows, boost upper formants, add brightness
+            const hp = ctx.createBiquadFilter();
+            hp.type = "highpass";
+            hp.frequency.value = 100 + (customPitch - 1.0) * 300;
+            hp.Q.value = 0.7;
+            lastNode.connect(hp); lastNode = hp; nodes.push(hp);
+
+            const peak1 = ctx.createBiquadFilter();
+            peak1.type = "peaking";
+            peak1.frequency.value = 2500 * customPitch;
+            peak1.Q.value = 1.5;
+            peak1.gain.value = 6;
+            lastNode.connect(peak1); lastNode = peak1; nodes.push(peak1);
+
+            const hShelf = ctx.createBiquadFilter();
+            hShelf.type = "highshelf";
+            hShelf.frequency.value = 3000;
+            hShelf.gain.value = (customPitch - 1.0) * 8;
+            lastNode.connect(hShelf); lastNode = hShelf; nodes.push(hShelf);
+
+            const lCut = ctx.createBiquadFilter();
+            lCut.type = "lowshelf";
+            lCut.frequency.value = 300;
+            lCut.gain.value = -(customPitch - 1.0) * 12;
+            lastNode.connect(lCut); lastNode = lCut; nodes.push(lCut);
+          } else {
+            // Lower: boost low formants, roll off highs
+            const peak1 = ctx.createBiquadFilter();
+            peak1.type = "peaking";
+            peak1.frequency.value = 300 * customPitch;
+            peak1.Q.value = 1.0;
+            peak1.gain.value = 8;
+            lastNode.connect(peak1); lastNode = peak1; nodes.push(peak1);
+
+            const lShelf = ctx.createBiquadFilter();
+            lShelf.type = "lowshelf";
+            lShelf.frequency.value = 400;
+            lShelf.gain.value = (1.0 - customPitch) * 10;
+            lastNode.connect(lShelf); lastNode = lShelf; nodes.push(lShelf);
+
+            const lp = ctx.createBiquadFilter();
+            lp.type = "lowpass";
+            lp.frequency.value = 4000 - (1.0 - customPitch) * 2500;
+            lp.Q.value = 0.5;
+            lastNode.connect(lp); lastNode = lp; nodes.push(lp);
+
+            const hCut = ctx.createBiquadFilter();
+            hCut.type = "highshelf";
+            hCut.frequency.value = 2000;
+            hCut.gain.value = -(1.0 - customPitch) * 10;
+            lastNode.connect(hCut); lastNode = hCut; nodes.push(hCut);
+          }
         }
 
         // 3. Distortion
@@ -808,7 +855,7 @@ const VoiceToolkit: React.FC<VoiceToolkitProps> = ({ room, connected, muted, com
     }, 150);
 
     return () => clearTimeout(timer);
-  }, [connected, room, customPitch, customReverb, customEcho, customDistortion, customGain, customNoiseGate, getAudioCtx, teardownEffectChain]);
+  }, [connected, room, muted, customPitch, customReverb, customEcho, customDistortion, customGain, customNoiseGate, getAudioCtx, teardownEffectChain]);
 
   // Cleanup effect chain on unmount
   useEffect(() => {
