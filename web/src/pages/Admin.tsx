@@ -493,12 +493,16 @@ const Admin = ({ inline = false }: { inline?: boolean }) => {
     const deleteUser = async (userId: string) => {
       if (!confirm("Delete this user and all their data? This cannot be undone.")) return;
       setProcessing(true);
-      await supabase.from("community_posts").delete().eq("user_id", userId);
-      await supabase.from("community_post_replies").delete().eq("user_id", userId);
-      await supabase.from("community_members").delete().eq("user_id", userId);
-      await supabase.from("profiles").delete().eq("user_id", userId);
-      await supabase.from("admin_audit_log").insert({ admin_user_id: user!.id, action: "delete_user", target_type: "user", target_id: userId });
-      toast.success("User deleted");
+      try {
+        const { data, error } = await supabase.functions.invoke("delete-user", {
+          body: { userId, adminId: user!.id },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        toast.success("User fully deleted (auth + data)");
+      } catch (err: any) {
+        toast.error("Delete failed: " + (err?.message || "unknown error"));
+      }
       setSelectedUser(null);
       refresh();
       setProcessing(false);
@@ -537,8 +541,7 @@ const Admin = ({ inline = false }: { inline?: boolean }) => {
       for (const uid of bulkSelected) {
         if (action === "ban") await supabase.from("profiles").update({ status: "banned" }).eq("user_id", uid);
         if (action === "delete") {
-          await supabase.from("community_posts").delete().eq("user_id", uid);
-          await supabase.from("profiles").delete().eq("user_id", uid);
+          await supabase.functions.invoke("delete-user", { body: { userId: uid, adminId: user!.id } });
         }
       }
       await supabase.from("admin_audit_log").insert({ admin_user_id: user!.id, action: `bulk_${action}`, target_type: "users", new_values: { count: bulkSelected.size } });
