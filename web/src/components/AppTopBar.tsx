@@ -1,5 +1,5 @@
 import { ComponentType } from "react";
-import { Search, Menu, ChevronRight } from "lucide-react";
+import { Menu, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { shortAddr } from "@/lib/og";
 import { AuthButton } from "@/components/AuthButton";
@@ -76,8 +76,9 @@ export const AppTopBar = ({
 }) => {
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full flex-col border-b border-white/[0.07] bg-background/80 backdrop-blur-md">
-      <div className="flex h-16 w-full items-center justify-between px-4 lg:px-6">
-        <div className="flex items-center gap-4">
+      <div className="relative flex h-16 w-full items-center justify-center px-4 lg:px-6">
+        {/* Left: hamburger */}
+        <div className="absolute left-4 flex items-center gap-4">
           <button
             type="button"
             onClick={onOpenSidebar}
@@ -85,34 +86,17 @@ export const AppTopBar = ({
           >
             <Menu className="h-5 w-5" />
           </button>
-
-          <div className="hidden h-5 w-px bg-white/10 lg:block" />
-
-          <div className="flex items-center gap-2">
-            <div className={cn("hidden h-8 w-8 items-center justify-center rounded-lg border sm:flex", accentIcon(tab.accent))}>
-              <tab.Icon className="h-4 w-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold uppercase tracking-widest text-white/30">{tab.eyebrow}</span>
-                <ChevronRight className="h-3 w-3 text-white/10" />
-                <span className={cn("text-xs font-black uppercase tracking-wider", accentText(tab.accent))}>{tab.label}</span>
-              </div>
-            </div>
-          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onChangeMint}
-            className="group hidden items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left transition hover:border-og-cyan/40 hover:bg-white/[0.07] sm:flex"
-          >
-            <Search className="h-3.5 w-3.5 text-white/30 transition group-hover:text-og-cyan" />
-            <span className="font-mono text-[11px] font-semibold text-white/60 group-hover:text-white/90">
-              {shortAddr(mint, 6)}
-            </span>
-          </button>
+        {/* Center: breadcrumb */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-bold uppercase tracking-widest text-white/30">{tab.eyebrow}</span>
+          <ChevronRight className="h-3 w-3 text-white/10" />
+          <span className={cn("text-xs font-black uppercase tracking-wider", accentText(tab.accent))}>{tab.label}</span>
+        </div>
+
+        {/* Right: search + auth */}
+        <div className="absolute right-4 flex items-center gap-3">
           <AuthButton />
         </div>
       </div>
