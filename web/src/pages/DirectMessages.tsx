@@ -195,6 +195,13 @@ const DirectMessages: React.FC = () => {
           const msg = payload.new as DMMessage;
           setMessages(prev => {
             if (prev.some(m => m.id === msg.id)) return prev;
+            // Replace optimistic temp message from same sender with same body
+            const tempIdx = prev.findIndex(m => m.id.startsWith("temp-") && m.sender_id === msg.sender_id && m.body === msg.body);
+            if (tempIdx !== -1) {
+              const updated = [...prev];
+              updated[tempIdx] = msg;
+              return updated;
+            }
             return [...prev, msg];
           });
           setTimeout(() => scrollToBottom(), 50);
@@ -269,14 +276,14 @@ const DirectMessages: React.FC = () => {
     setMessages(prev => [...prev, optimisticMsg]);
     setTimeout(() => scrollToBottom(), 20);
 
-    const { data, error } = await supabase.from("dm_messages").insert({
+    const { error } = await supabase.from("dm_messages").insert({
       conversation_id: activeConvo.id,
       sender_id: user.id,
       body,
       reply_to_id: replyId,
       read: false,
       message_type: "text",
-    }).select("id").single();
+    });
 
     if (error) {
       // Remove optimistic message on failure
@@ -284,10 +291,6 @@ const DirectMessages: React.FC = () => {
       toast.error("Failed to send");
       setInput(body);
     } else {
-      // Replace temp ID with real ID so realtime dedup works
-      if (data?.id) {
-        setMessages(prev => prev.map(m => m.id === tempId ? { ...m, id: data.id } : m));
-      }
       // Update conversation timestamp
       supabase.from("dm_conversations").update({ updated_at: new Date().toISOString() }).eq("id", activeConvo.id);
       // Notify recipient (in-app + push)
