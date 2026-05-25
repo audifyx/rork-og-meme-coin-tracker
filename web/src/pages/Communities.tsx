@@ -875,9 +875,8 @@ function PostCard({
 
   return (
     <article
-      onClick={onClick}
       className={cn(
-        "px-4 py-3 hover:bg-white/[0.015] transition-colors cursor-pointer",
+        "px-4 py-3 hover:bg-white/[0.015] transition-colors",
         post.is_pinned && "bg-og-cyan/[0.03]"
       )}
     >
@@ -955,7 +954,7 @@ function PostCard({
           )}
 
           {/* Action bar */}
-          <PostActions post={post} user={user} onUpdate={onUpdate} />
+          <PostActions post={post} user={user} onUpdate={onUpdate} onComment={onClick} />
         </div>
       </div>
     </article>
@@ -967,11 +966,12 @@ function PostCard({
    ═══════════════════════════════════════════════════════════════ */
 
 function PostActions({
-  post, user, onUpdate
+  post, user, onUpdate, onComment
 }: {
   post: Post;
   user: any;
   onUpdate?: () => void;
+  onComment?: () => void;
 }) {
   const [liked, setLiked] = useState(post.liked || false);
   const [likeCount, setLikeCount] = useState(post.likes_count || 0);
@@ -1036,8 +1036,8 @@ function PostActions({
 
   return (
     <div className="flex items-center justify-between mt-2 -ml-2 max-w-sm" onClick={e => e.stopPropagation()}>
-      {/* Reply */}
-      <ActionBtn icon={<MessageSquare className="h-4 w-4" />} count={post.replies_count || 0} />
+      {/* Reply / Comment — navigates to post detail */}
+      <ActionBtn icon={<MessageSquare className="h-4 w-4" />} count={post.replies_count || 0} onClick={onComment ? (e) => { e.stopPropagation(); onComment(); } : undefined} />
       {/* Repost */}
       <ActionBtn
         icon={<Repeat2 className="h-4 w-4" />}
