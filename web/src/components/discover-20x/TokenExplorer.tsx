@@ -3,12 +3,13 @@
  * Categories: Trending, New, Top Gainers, Top Volume, Viral.
  */
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Search, Flame, Sparkles, TrendingUp, Clock, Shield, Zap, RefreshCw, ArrowUpRight, ArrowDownRight, ExternalLink, Star, ChevronDown, Filter, BarChart3, Droplets, Users, Volume2, X, Loader2 } from "lucide-react";
+import { Search, Flame, Sparkles, TrendingUp, Clock, Shield, Zap, RefreshCw, ArrowUpRight, ArrowDownRight, ExternalLink, Star, ChevronDown, Filter, BarChart3, Droplets, Users, Volume2, X, Loader2, Megaphone } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { jupSearchToken, fmtUsd, fmtNum, shortAddr, DEXSCREENER_WEB_BASE, SOLANA_CHAIN_ID, type JupTokenInfo } from "@/lib/og";
 import { CoinDetailDialog } from "@/components/CoinDetailDialog";
+import { supabase } from "@/lib/supabase";
 
 /* ── Types ───────────────────────────────────────────────────── */
 interface DiscoverToken {
@@ -61,6 +62,39 @@ export const TokenExplorer: React.FC<Props> = ({ onSelectMint }) => {
   const [selectedToken, setSelectedToken] = useState<DiscoverToken | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
+
+  /* ── Listed tokens from Supabase ── */
+  interface ListedToken {
+    id: string;
+    mint_address: string;
+    name: string | null;
+    symbol: string | null;
+    image_url: string | null;
+    price_usd: number | null;
+    price_change_24h: number | null;
+    market_cap: number | null;
+    liquidity_usd: number | null;
+    volume_24h: number | null;
+    holder_count: number | null;
+    is_promoted: boolean;
+    analysis_verdict: string | null;
+    created_at: string;
+  }
+  const [listedTokens, setListedTokens] = useState<ListedToken[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from("token_listings")
+          .select("id,mint_address,name,symbol,image_url,price_usd,price_change_24h,market_cap,liquidity_usd,volume_24h,holder_count,is_promoted,analysis_verdict,created_at")
+          .order("is_promoted", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(10);
+        if (data) setListedTokens(data as ListedToken[]);
+      } catch {}
+    })();
+  }, []);
 
   /* ── Fetch tokens from DexScreener ── */
   const fetchTokens = useCallback(async () => {
@@ -225,6 +259,73 @@ export const TokenExplorer: React.FC<Props> = ({ onSelectMint }) => {
         <span>·</span>
         <span>{CATEGORIES.find(c => c.id === category)?.desc}</span>
       </div>
+
+      {/* ── Listed on OG Scan ── */}
+      {listedTokens.length > 0 && (
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-2">
+            <Megaphone className="h-3.5 w-3.5 text-og-gold" />
+            <h3 className="text-[12px] font-black text-white/60 uppercase tracking-wider">Listed on OG Scan</h3>
+            <div className="h-[1px] flex-1 bg-white/[0.04]" />
+          </div>
+          <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
+            {listedTokens.map((lt) => {
+              const ch = lt.price_change_24h ?? 0;
+              return (
+                <button
+                  key={lt.id}
+                  onClick={() => setSelectedToken({
+                    address: lt.mint_address,
+                    symbol: lt.symbol || "???",
+                    name: lt.name || "Unknown",
+                    imageUrl: lt.image_url || undefined,
+                    price: lt.price_usd ?? 0,
+                    priceChange24h: ch,
+                    priceChange1h: 0,
+                    volume24h: lt.volume_24h ?? 0,
+                    liquidity: lt.liquidity_usd ?? 0,
+                    marketCap: lt.market_cap ?? 0,
+                    fdv: lt.market_cap ?? 0,
+                    txns24h: 0,
+                  })}
+                  className={cn(
+                    "shrink-0 w-[150px] rounded-xl border p-3 text-left transition-all hover:scale-[1.02] active:scale-[0.98]",
+                    lt.is_promoted
+                      ? "border-og-gold/25 bg-gradient-to-br from-og-gold/[0.06] to-transparent"
+                      : "border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12]",
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    {lt.image_url ? (
+                      <img src={lt.image_url} className="w-8 h-8 rounded-full border border-white/[0.08]" alt="" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[10px] font-bold text-white/20">{lt.symbol?.charAt(0)}</div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] font-bold text-white truncate">{lt.symbol}</p>
+                      <p className="text-[8px] text-white/20 truncate">{lt.name}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-end justify-between">
+                    <span className="text-[11px] font-bold text-white/70">
+                      {lt.price_usd != null ? (lt.price_usd < 0.01 ? `$${lt.price_usd.toFixed(6)}` : `$${lt.price_usd.toFixed(4)}`) : "$0"}
+                    </span>
+                    <span className={cn("text-[9px] font-bold", ch > 0 ? "text-emerald-400" : ch < 0 ? "text-red-400" : "text-white/20")}>
+                      {ch > 0 ? "+" : ""}{ch.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    {lt.is_promoted && <span className="rounded px-1 py-0.5 text-[7px] font-black uppercase bg-og-gold/15 text-og-gold">AD</span>}
+                    {lt.analysis_verdict === "bullish" && <span className="rounded px-1 py-0.5 text-[7px] font-black uppercase bg-emerald-500/15 text-emerald-400">BULL</span>}
+                    {lt.analysis_verdict === "bearish" && <span className="rounded px-1 py-0.5 text-[7px] font-black uppercase bg-red-500/15 text-red-400">BEAR</span>}
+                    <span className="text-[7px] text-white/10 ml-auto">{fmtUsd(lt.market_cap ?? 0)}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Token grid — card layout */}
       {loading ? (
