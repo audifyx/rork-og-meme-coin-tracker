@@ -49,7 +49,7 @@ import { DEFAULT_OG_MINT, OGSCAN_TOKEN_MINT, SOL_MINT, STORAGE_OG_MINT, shortAdd
 import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { AuthButton } from "@/components/AuthButton";
 import { AppTopBar } from "@/components/AppTopBar";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 /* ─── Standard Feature imports ─── */
@@ -662,6 +662,7 @@ const Index = () => {
   const [mint, setMint] = useState<string>(DEFAULT_OG_MINT);
   const [selectedWallet, setSelectedWallet] = useState<string>("");
   const [tab, setTab] = useState<TabId>(routeTab);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
 
   useEffect(() => {
@@ -707,8 +708,23 @@ const Index = () => {
           <div className="absolute inset-0 bg-background/80 backdrop-blur-md" />
         </div>
       )}
-      {/* Left sidebar — same component as standalone pages for consistency */}
-      <Sidebar />
+      {/* Left sidebar */}
+      <AppSidebar
+        activeId={tab}
+        mint={mint}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onChangeMint={promptMint}
+        onNavigate={(t) => { setSidebarOpen(false); switchTab(t); }}
+      />
+
+      {/* Overlay for mobile sidebar */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
       {/* Main content */}
       <div className="flex min-w-0 flex-1 flex-col lg:ml-[260px]">
@@ -717,6 +733,7 @@ const Index = () => {
           tab={activeTab}
           mint={mint}
           activeId={tab}
+          onOpenSidebar={() => setSidebarOpen(true)}
           onChangeMint={promptMint}
           onNavigate={switchTab}
         />
