@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { shortAddr, fmtUsd } from "@/lib/og";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ScanEntry {
   id: string;
@@ -49,28 +51,44 @@ function loadHistory(): ScanEntry[] {
 }
 
 function saveHistory(entries: ScanEntry[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(0, MAX_HISTORY)));
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(0, MAX_HISTORY))); } catch {}
 }
 
+/** Add a scan to history — writes to both localStorage and Supabase */
 export function addToScanHistory(entry: Omit<ScanEntry, "id" | "scannedAt" | "tag" | "note">) {
   const history = loadHistory();
+  const id = crypto.randomUUID();
+  const scannedAt = new Date().toISOString();
   // Dedupe: if same mint was scanned in last 5 minutes, update instead of add
   const recent = history.find(h => h.mint === entry.mint && (Date.now() - new Date(h.scannedAt).getTime()) < 300000);
   if (recent) {
-    Object.assign(recent, entry, { scannedAt: new Date().toISOString() });
+    Object.assign(recent, entry, { scannedAt });
   } else {
-    history.unshift({
-      ...entry,
-      id: crypto.randomUUID(),
-      scannedAt: new Date().toISOString(),
-      tag: null,
-      note: "",
-    });
+    history.unshift({ ...entry, id, scannedAt, tag: null, note: "" });
   }
   saveHistory(history);
+
+  // Also write to Supabase (async, fire-and-forget)
+  supabase.auth.getUser().then(({ data }) => {
+    if (!data?.user) return;
+    supabase.from("scan_history").insert({
+      user_id: data.user.id,
+      mint: entry.mint,
+      symbol: entry.symbol,
+      name: entry.name,
+      risk_score: entry.rugScore,
+      scan_result: {
+        liquidity: entry.liquidity,
+        marketCap: entry.marketCap,
+        holders: entry.holders,
+        priceAtScan: entry.priceAtScan,
+      },
+    }).then(() => {});
+  });
 }
 
 export const ScanHistory: React.FC<Props> = ({ onSelectMint, currentMint }) => {
+  const { user } = useAuth();
   const [history, setHistory] = useState<ScanEntry[]>(loadHistory);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterTag, setFilterTag] = useState<string | null>(null);
@@ -78,6 +96,37 @@ export const ScanHistory: React.FC<Props> = ({ onSelectMint, currentMint }) => {
   const [editingNote, setEditingNote] = useState<string | null>(null);
   const [noteText, setNoteText] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Load from Supabase on mount (if logged in)
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("scan_history")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(MAX_HISTORY)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const entries: ScanEntry[] = data.map((r: any) => ({
+            id: r.id,
+            mint: r.mint,
+            symbol: r.symbol || "???",
+            name: r.name || "",
+            scannedAt: r.created_at,
+            rugScore: r.risk_score,
+            liquidity: r.scan_result?.liquidity ?? null,
+            marketCap: r.scan_result?.marketCap ?? null,
+            holders: r.scan_result?.holders ?? null,
+            tag: r.scan_result?.tag ?? null,
+            note: r.scan_result?.note ?? "",
+            priceAtScan: r.scan_result?.priceAtScan ?? null,
+          }));
+          setHistory(entries);
+          saveHistory(entries);
+        }
+      });
+  }, [user?.id]);
 
   const filtered = useMemo(() => {
     let items = history;
@@ -100,6 +149,13 @@ export const ScanHistory: React.FC<Props> = ({ onSelectMint, currentMint }) => {
     setHistory(prev => {
       const next = prev.map(h => h.id === id ? { ...h, tag: h.tag === tag ? null : tag } : h);
       saveHistory(next);
+      // Persist tag to Supabase
+      const entry = next.find(h => h.id === id);
+      if (entry && user) {
+        supabase.from("scan_history").update({
+          scan_result: { tag: entry.tag, note: entry.note, liquidity: entry.liquidity, marketCap: entry.marketCap, holders: entry.holders, priceAtScan: entry.priceAtScan },
+        }).eq("id", id).then(() => {});
+      }
       return next;
     });
   };
@@ -108,6 +164,12 @@ export const ScanHistory: React.FC<Props> = ({ onSelectMint, currentMint }) => {
     setHistory(prev => {
       const next = prev.map(h => h.id === id ? { ...h, note } : h);
       saveHistory(next);
+      const entry = next.find(h => h.id === id);
+      if (entry && user) {
+        supabase.from("scan_history").update({
+          scan_result: { tag: entry.tag, note, liquidity: entry.liquidity, marketCap: entry.marketCap, holders: entry.holders, priceAtScan: entry.priceAtScan },
+        }).eq("id", id).then(() => {});
+      }
       return next;
     });
     setEditingNote(null);
@@ -119,12 +181,14 @@ export const ScanHistory: React.FC<Props> = ({ onSelectMint, currentMint }) => {
       saveHistory(next);
       return next;
     });
+    if (user) supabase.from("scan_history").delete().eq("id", id).then(() => {});
   };
 
   const clearAll = () => {
     if (confirm("Clear all scan history?")) {
       setHistory([]);
       saveHistory([]);
+      if (user) supabase.from("scan_history").delete().eq("user_id", user.id).then(() => {});
       toast.success("History cleared");
     }
   };
