@@ -2128,6 +2128,13 @@ const Spaces = () => {
         supabase.from("space_polls").delete().eq("space_id", s.id),
         supabase.from("space_qa_questions").delete().eq("space_id", s.id),
         supabase.from("space_highlights").delete().eq("space_id", s.id),
+        supabase.from("space_follows").delete().eq("space_id", s.id),
+        supabase.from("space_invites").delete().eq("space_id", s.id),
+        supabase.from("space_reactions").delete().eq("space_id", s.id),
+        supabase.from("space_views").delete().eq("space_id", s.id),
+        supabase.from("space_reports").delete().eq("space_id", s.id),
+        supabase.from("space_participant_blocks").delete().eq("space_id", s.id),
+        supabase.from("space_message_likes").delete().eq("space_id", s.id),
       ]);
       // Delete recording from storage if exists
       if (s.recording_url) {
@@ -2240,7 +2247,7 @@ const Spaces = () => {
             </p>
             <div className="flex items-center gap-2 mt-3">
               <span className="text-[11px] text-white/25 font-mono px-2.5 py-1 rounded-full border border-white/[0.08] bg-white/[0.02]">/spaces</span>
-              <SpaceNotifications onNavigateToSpace={(id) => { const s = spaces.find(sp => sp.id === id); if (s) setSelectedSpace(s); }} />
+              <SpaceNotifications onNavigateToSpace={(id) => { const s = spaces.find(sp => sp.id === id); if (s) setActiveSpace(s); }} />
             </div>
           </div>
         </div>
