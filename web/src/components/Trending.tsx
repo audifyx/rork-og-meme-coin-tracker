@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { CopyMintButton } from "@/components/CopyMintButton";
+import { ToolHeader } from "@/components/ToolPageShell";
 import {
   enrichTokensWithMarketIntel,
   fmtPct,
@@ -254,45 +255,42 @@ export const Trending = ({ onSelect }: Props) => {
   return (
     <section className="relative">
       <div>
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.4em] text-og-blood">
-              <span className="h-px w-10 bg-og-blood" /> /TRENDING · LIVE DEX
-            </div>
-            <h2 className="font-display text-3xl font-bold tracking-tight sm:text-5xl">
-              <span className="text-foreground">HOTTEST</span>{" "}
-              <span className="text-og-blood text-glow">RIGHT NOW</span>
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              <Flame className="mr-1 inline h-3.5 w-3.5 text-og-blood" />
-              Ranked from DexScreener live Solana boosts + pair volume, buys, liquidity and price action for {activeInterval?.title ?? interval}.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex border border-og-grid bg-og-ink/80">
-              {INTERVALS.map((item) => (
+        <div className="mb-5">
+          <ToolHeader
+            icon={Flame}
+            title="Trending"
+            subtitle={`Ranked from DexScreener live Solana boosts + pair volume, buys, liquidity and price action for ${activeInterval?.title ?? interval}.`}
+            gradient="from-red-500 to-orange-400"
+            glowColor="rgba(239,68,68,0.25)"
+            badge="HOT"
+            badgeColor="red"
+            rightSlot={
+              <div className="flex items-center gap-2">
+                <div className="flex overflow-hidden rounded-xl border border-white/[0.08]">
+                  {INTERVALS.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => setInterval(item.id)}
+                      className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition ${
+                        interval === item.id
+                          ? "bg-white/10 text-white"
+                          : "text-white/25 hover:text-white/50"
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
                 <button
-                  key={item.id}
-                  onClick={() => setInterval(item.id)}
-                  className={`px-3 py-2 font-mono text-[11px] uppercase tracking-widest transition ${
-                    interval === item.id
-                      ? "bg-og-blood text-og-ink"
-                      : "text-muted-foreground hover:text-og-blood"
-                  }`}
+                  onClick={() => void refetch()}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/40 transition hover:bg-white/[0.06] hover:text-white/60"
                 >
-                  {item.label}
+                  {isFetching ? <Loader2 className="h-3 w-3 animate-spin text-og-lime" /> : <Zap className="h-3 w-3" />}
+                  LIVE
                 </button>
-              ))}
-            </div>
-            <button
-              onClick={() => void refetch()}
-              className="inline-flex items-center gap-1.5 border border-og-grid px-2.5 py-2 font-mono text-[10px] uppercase tracking-widest text-foreground/70 transition hover:border-og-blood hover:text-og-blood"
-            >
-              {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : <Zap className="h-3 w-3" />}
-              LIVE
-            </button>
-          </div>
+              </div>
+            }
+          />
         </div>
 
         <div className="mb-4 grid gap-3 lg:grid-cols-[1fr_260px]">

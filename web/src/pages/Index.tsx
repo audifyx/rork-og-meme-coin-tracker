@@ -6,6 +6,7 @@ import {
   ArrowUpRight,
   Bell,
   Bot,
+  ChevronLeft,
   ChevronRight,
   Coins,
   Compass,
@@ -51,6 +52,7 @@ import { AuthButton } from "@/components/AuthButton";
 import { AppTopBar } from "@/components/AppTopBar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { ToolHeader } from "@/components/ToolPageShell";
 
 /* ─── Standard Feature imports ─── */
 const OgStats = lazy(() => import("@/components/OgStats").then(m => ({ default: m.OgStats })));
@@ -68,6 +70,10 @@ const SnipeFeed = lazy(() => import("@/components/SnipeFeed").then(m => ({ defau
 const Feed = lazy(() => import("@/components/Feed").then(m => ({ default: m.Feed })));
 const NewsSignal = lazy(() => import("@/components/NewsSignal").then(m => ({ default: m.NewsSignal })));
 const SolToolsRoadmap = lazy(() => import("@/components/SolToolsRoadmap").then(m => ({ default: m.SolToolsRoadmap })));
+
+/* ─── Merged tool imports ─── */
+const AboutOgScan = lazy(() => import("@/components/AboutOgScan").then(m => ({ default: m.AboutOgScan })));
+const TokenIntel = lazy(() => import("@/components/TokenIntel").then(m => ({ default: m.TokenIntel })));
 
 /* ─── Page imports ─── */
 const CommunitiesPage = lazy(() => import("./Communities"));
@@ -582,44 +588,35 @@ const getTabPath = (id: TabId): string => {
 };
 
 const renderTool = (tab: TabId, mint: string, updateMint: (m: string) => void, onNavigate?: (t: string) => void, profileViewUserId?: string): ReactNode => {
-  if (tab === "our-coin") return <OurCoin />;
-  if (tab === "roadmap") return <SolToolsRoadmap />;
-  if (tab === "market-pulse") return <OgStats mint={mint} onSelect={updateMint} />;
-  if (tab === "snipe-feed") return <LaunchRadarSuite onSelect={updateMint} />;
-  if (tab === "feed") return <MarketFeedSuite mint={mint} onSelect={updateMint} />;
+  /* ─── Consolidated: About OGScan (token + roadmap + tech) ─── */
+  if (tab === "our-coin") return <AboutOgScan initialTab="token" />;
+  if (tab === "roadmap") return <AboutOgScan initialTab="roadmap" />;
+  if (tab === "tech") return <AboutOgScan initialTab="tech" />;
+
+  /* ─── Consolidated: Token Intel (vitals + pairs + whales + tx-feed + charts) ─── */
+  if (tab === "market-pulse") return <TokenIntel mint={mint} onSelect={updateMint} initialTab="vitals" />;
+  if (tab === "pairs") return <TokenIntel mint={mint} onSelect={updateMint} initialTab="pairs" />;
+  if (tab === "whales") return <TokenIntel mint={mint} onSelect={updateMint} initialTab="whales" />;
+  if (tab === "tx-feed") return <TokenIntel mint={mint} onSelect={updateMint} initialTab="tx-feed" />;
+  if (tab === "charts") return <TokenIntel mint={mint} onSelect={updateMint} initialTab="charts" />;
+
+  /* ─── Consolidated: Truth Scanner suite ─── */
   if (tab === "scanner") return <TruthScanSuite onSelect={updateMint} />;
-  if (tab === "og-finder") return <OgFinder onSelect={updateMint} />;
-  if (tab === "pairs") return <PairTracker onSelect={updateMint} />;
-  if (tab === "migrations") return <Migrations onSelect={updateMint} />;
-  if (tab === "trending") return <Trending onSelect={updateMint} />;
-  if (tab === "whales") return (
-    <div className="space-y-4">
-      <Whales mint={mint} onSelectWallet={setSelectedWallet} />
-      {selectedWallet ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-og-cyan">Wallet X-Ray: {shortAddr(selectedWallet)}</h3>
-            <button onClick={() => setSelectedWallet("")} className="text-[10px] text-white/40 hover:text-white">Clear</button>
-          </div>
-          <WalletXRay walletAddress={selectedWallet} compact={false} />
-        </div>
-      ) : (
-        <div className="rounded-xl border border-white/[0.05] bg-white/[0.02] p-8 text-center">
-          <p className="text-xs text-white/30 uppercase tracking-widest">Select a whale below to inspect their wallet</p>
-        </div>
-      )}
-      <CopyTradingFeed onSelectMint={updateMint} />
-    </div>
-  );
-  if (tab === "tx-feed") return <TxFeed mint={mint} />;
+  if (tab === "og-finder") return <TruthScanSuite onSelect={updateMint} />;
+
+  /* ─── Consolidated: Launch Radar suite ─── */
+  if (tab === "snipe-feed") return <LaunchRadarSuite onSelect={updateMint} />;
+  if (tab === "migrations") return <LaunchRadarSuite onSelect={updateMint} />;
+
+  /* ─── Consolidated: Market Feed suite ─── */
+  if (tab === "feed") return <MarketFeedSuite mint={mint} onSelect={updateMint} />;
+  if (tab === "trending") return <MarketFeedSuite mint={mint} onSelect={updateMint} />;
+  if (tab === "news-signal") return <MarketFeedSuite mint={mint} onSelect={updateMint} />;
+
+  /* ─── Standalone tools ─── */
   if (tab === "swap") return <SwapPanel ogMint={mint} onSelectMint={updateMint} />;
-  if (tab === "tech") return <TechStack />;
-  if (tab === "news-signal") return (
-    <div className="space-y-4">
-      <NewsSignal onSelect={updateMint} />
-      <TokenCompare onSelectMint={updateMint} />
-    </div>
-  );
+
+  /* ─── Social / community pages ─── */
   if (tab === "communities") return <CommunitiesInline />;
   if (tab === "discover") return <DiscoverInline />;
   if (tab === "memes") return <ArtFeed inline />;
@@ -627,7 +624,6 @@ const renderTool = (tab: TabId, mint: string, updateMint: (m: string) => void, o
   if (tab === "social") return <SocialHub />;
   if (tab === "tools") return <ToolsHub onNavigate={onNavigate || (() => {})} />;
   if (tab === "profile") return <UserProfile viewUserId={profileViewUserId} />;
-  if (tab === "charts") return <ChartsPage />;
   if (tab === "live-trading") return <LiveTradingPage />;
   if (tab === "live-feed-page") return <LiveFeedPage />;
   return null;
@@ -756,7 +752,7 @@ const Index = () => {
                 onSelectMint={updateMint}
               />
             ) : (
-              <ToolShell tab={activeTab}><Suspense fallback={<div className="flex items-center justify-center py-20"><div className="h-6 w-6 border-2 border-[#22d3ee] border-t-transparent rounded-full animate-spin" /></div>}>{renderTool(tab, mint, updateMint, switchTab, profileViewUserId)}</Suspense></ToolShell>
+              <ToolShell tab={activeTab} onBack={() => switchTab("tools")}><Suspense fallback={<div className="flex items-center justify-center py-20"><div className="h-6 w-6 border-2 border-[#22d3ee] border-t-transparent rounded-full animate-spin" /></div>}>{renderTool(tab, mint, updateMint, switchTab, profileViewUserId)}</Suspense></ToolShell>
             )}
           </main>
         )}
@@ -1020,8 +1016,19 @@ const AllToolRow = ({ tool, onClick }: { tool: TabConfig; onClick: () => void })
 );
 
 /* ─── Tool Shell (wraps each tool) ─── */
-const ToolShell = ({ children }: { tab: TabConfig; children: ReactNode }) => (
-  <div className="og-tool-shell og-tool-shell-redesign relative">{children}</div>
+const ToolShell = ({ children, tab, onBack }: { tab: TabConfig; children: ReactNode; onBack?: () => void }) => (
+  <div className="og-tool-shell og-tool-shell-redesign relative">
+    {tab.id !== "tools" && tab.id !== "community" && onBack && (
+      <button
+        onClick={onBack}
+        className="mb-3 inline-flex items-center gap-1.5 rounded-xl bg-white/[0.04] px-3 py-1.5 text-[11px] font-bold text-white/40 transition hover:bg-white/[0.08] hover:text-white/70"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+        Back
+      </button>
+    )}
+    {children}
+  </div>
 );
 
 /* ─── Suite nav for merged tools ─── */
@@ -1083,20 +1090,25 @@ const launchSuiteOptions: SuiteOption<"snipe-feed" | "migrations">[] = [
   { id: "migrations", label: "Migrations", eyebrow: "Pump.fun → DEX", description: "Migration timing and breakouts.", Icon: Rocket, accent: "gold" },
 ];
 
-const marketSuiteOptions: SuiteOption<"feed" | "market-pulse" | "pairs" | "trending" | "news-signal" | "whales" | "tx-feed">[] = [
+const marketSuiteOptions: SuiteOption<"feed" | "trending" | "news-signal">[] = [
   { id: "feed", label: "Live Feed", eyebrow: "Narrative tape", description: "Trending, runners, bundles, boosts.", Icon: Rss, accent: "lime" },
-  { id: "news-signal", label: "News Signal", eyebrow: "Influencer intel", description: "Elon, Trump, White House — find coins early.", Icon: Radio, accent: "lime" },
-  { id: "market-pulse", label: "Vitals", eyebrow: "Active mint", description: "Price, liquidity, holders, chart.", Icon: Activity, accent: "blue" },
-  { id: "pairs", label: "Pairs", eyebrow: "Pool discovery", description: "Fresh Solana DEX pair radar.", Icon: Radar, accent: "cyan" },
   { id: "trending", label: "Trending", eyebrow: "Market heat", description: "Fastest-moving tokens now.", Icon: Flame, accent: "cyan" },
-  { id: "whales", label: "Whales", eyebrow: "Holder power", description: "Concentration and whale structure.", Icon: Wallet, accent: "white" },
-  { id: "tx-feed", label: "Tx Tape", eyebrow: "Live prints", description: "Focused transaction tape.", Icon: Activity, accent: "cyan" },
+  { id: "news-signal", label: "News Signal", eyebrow: "Influencer intel", description: "Elon, Trump, White House — find coins early.", Icon: Radio, accent: "lime" },
 ];
 
 const TruthScanSuite = ({ onSelect }: { onSelect: (m: string) => void }) => {
   const [active, setActive] = useState<"scanner" | "og-finder">("scanner");
   return (
     <section className="space-y-4">
+      <ToolHeader
+        icon={Crosshair}
+        title="Truth Scanner"
+        subtitle="Verify any token's origin, detect clones, and surface the real OG with forensic-grade chain analysis."
+        gradient="from-emerald-500 to-green-400"
+        glowColor="rgba(16,185,129,0.25)"
+        badge="FORENSIC"
+        badgeColor="lime"
+      />
       <SuiteNav options={truthSuiteOptions} activeId={active} onChange={setActive} />
       {active === "scanner" ? <Scanner onSelect={onSelect} /> : <OgFinder onSelect={onSelect} />}
       {/* 20x Features */}
@@ -1112,6 +1124,15 @@ const LaunchRadarSuite = ({ onSelect }: { onSelect: (m: string) => void }) => {
   const [active, setActive] = useState<"snipe-feed" | "migrations">("snipe-feed");
   return (
     <section className="space-y-4">
+      <ToolHeader
+        icon={Rocket}
+        title="Launch Radar"
+        subtitle="Track new token launches from Pump.fun, monitor migrations to DEX, and get early alerts on breakout potential."
+        gradient="from-amber-500 to-yellow-400"
+        glowColor="rgba(245,158,11,0.25)"
+        badge="LIVE"
+        badgeColor="gold"
+      />
       <SuiteNav options={launchSuiteOptions} activeId={active} onChange={setActive} />
       {active === "snipe-feed" ? <SnipeFeed onSelect={onSelect} /> : <Migrations onSelect={onSelect} />}
       {/* 20x Features */}
@@ -1123,17 +1144,22 @@ const LaunchRadarSuite = ({ onSelect }: { onSelect: (m: string) => void }) => {
 };
 
 const MarketFeedSuite = ({ mint, onSelect }: { mint: string; onSelect: (m: string) => void }) => {
-  const [active, setActive] = useState<"feed" | "market-pulse" | "pairs" | "trending" | "news-signal" | "whales" | "tx-feed">("feed");
+  const [active, setActive] = useState<"feed" | "trending" | "news-signal">("feed");
   return (
     <section className="space-y-4">
+      <ToolHeader
+        icon={Rss}
+        title="Market Feed"
+        subtitle="Trending tokens, narrative signals, and live market tape — the pulse of Solana in one view."
+        gradient="from-cyan-500 to-blue-400"
+        glowColor="rgba(6,182,212,0.25)"
+        badge="STREAMING"
+        badgeColor="cyan"
+      />
       <SuiteNav options={marketSuiteOptions} activeId={active} onChange={setActive} />
       {active === "feed" && <Feed onSelect={onSelect} />}
-      {active === "news-signal" && <NewsSignal onSelect={onSelect} />}
-      {active === "market-pulse" && <OgStats mint={mint} onSelect={onSelect} />}
-      {active === "pairs" && <PairTracker onSelect={onSelect} />}
       {active === "trending" && <Trending onSelect={onSelect} />}
-      {active === "whales" && <Whales mint={mint} />}
-      {active === "tx-feed" && <TxFeed mint={mint} />}
+      {active === "news-signal" && <NewsSignal onSelect={onSelect} />}
       {/* 20x Features */}
       <div className="space-y-3 mt-4">
         <MomentumHeatmap onSelectMint={onSelect} />
