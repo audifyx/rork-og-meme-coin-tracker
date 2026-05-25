@@ -409,14 +409,11 @@ const DirectMessages: React.FC = () => {
     return (
       <div className="flex h-full flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <MessageSquare className="h-4 w-4 text-white/40" />
-            <span className="text-sm font-black tracking-wide text-white">Messages</span>
-          </div>
+        <div className="relative flex items-center justify-center border-b border-white/[0.07] px-4 py-3">
+          <span className="text-sm font-black tracking-wide text-white">Messages</span>
           <button
             onClick={() => setShowNewDM(true)}
-            className="rounded-lg bg-og-lime/10 p-1.5 text-og-lime transition hover:bg-og-lime/20"
+            className="absolute right-4 rounded-lg bg-og-lime/10 p-1.5 text-og-lime transition hover:bg-og-lime/20"
           >
             <Plus className="h-4 w-4" />
           </button>
