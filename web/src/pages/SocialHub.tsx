@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { safeAvatarUrl } from "@/lib/utils";
@@ -768,6 +769,7 @@ interface VoiceParticipantInfo {
 
 const VoiceRooms = ({ members }: { members: CommunityMember[] }) => {
   const { user, profile } = useAuth();
+  const { isAdmin } = useAdmin();
   const [subTab, setSubTab] = useState<VoiceSubTab>("lobby");
   const [rooms, setRooms] = useState<VoiceRoom[]>([]);
 
@@ -1009,7 +1011,7 @@ const VoiceRooms = ({ members }: { members: CommunityMember[] }) => {
                     "relative h-9 w-9 overflow-hidden rounded-full border-2 transition-all",
                     p.isSpeaking ? "border-og-lime shadow-[0_0_12px_hsl(var(--og-lime)/0.5)]" : "border-white/10",
                   )}>
-                    <img src={dicebear(p.name)} alt="" className="h-full w-full object-cover" />
+                    <img src={avatarSrc(members.find(m => m.user_id === p.identity)?.avatar_url || (p.isLocal ? profile?.avatar_url : null), p.name)} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = dicebear(p.name); }} />
                     {p.isMuted && (
                       <div className="absolute inset-0 flex items-end justify-end">
                         <div className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500">
@@ -1088,7 +1090,7 @@ const VoiceRooms = ({ members }: { members: CommunityMember[] }) => {
                           "h-14 w-14 overflow-hidden rounded-full border-2 transition-all",
                           p.isSpeaking && !p.isMuted ? "border-og-lime shadow-[0_0_16px_hsl(var(--og-lime)/0.5)]" : p.isMuted ? "border-red-500/30" : "border-white/10",
                         )}>
-                          <img src={dicebear(p.name)} alt="" className="h-full w-full object-cover" />
+                          <img src={avatarSrc(members.find(m => m.user_id === p.identity)?.avatar_url || (p.isLocal ? profile?.avatar_url : null), p.name)} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = dicebear(p.name); }} />
                         </div>
                         <span className={cn(
                           "absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-full border-2 border-[#0a1018]",
@@ -1202,8 +1204,8 @@ const VoiceRooms = ({ members }: { members: CommunityMember[] }) => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {isOwner && !isInThisRoom && (
-                            <button onClick={() => deleteRoom(room.id)} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/20 transition hover:bg-red-500/15 hover:text-red-400" title="Delete room">
+                          {(isOwner || isAdmin) && (
+                            <button onClick={(e) => { e.stopPropagation(); deleteRoom(room.id); }} className="flex h-8 w-8 items-center justify-center rounded-lg text-white/20 transition hover:bg-red-500/15 hover:text-red-400" title="Delete room">
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
                           )}
@@ -1219,7 +1221,7 @@ const VoiceRooms = ({ members }: { members: CommunityMember[] }) => {
                           {participants.map((p) => (
                             <div key={p.identity} className="flex flex-col items-center gap-1">
                               <div className={cn("h-8 w-8 overflow-hidden rounded-full border", p.isSpeaking ? "border-og-lime shadow-[0_0_8px_hsl(var(--og-lime)/0.4)]" : "border-white/10")}>
-                                <img src={dicebear(p.name)} alt="" className="h-full w-full object-cover" />
+                                <img src={avatarSrc(members.find(m => m.user_id === p.identity)?.avatar_url || (p.isLocal ? profile?.avatar_url : null), p.name)} alt="" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = dicebear(p.name); }} />
                               </div>
                               <span className="text-[8px] text-white/40">{p.isLocal ? "You" : p.name}</span>
                             </div>
