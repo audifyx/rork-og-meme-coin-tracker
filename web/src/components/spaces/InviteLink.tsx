@@ -1,9 +1,9 @@
 /**
- * InviteLink — Generate shareable invite links with optional role assignment.
- * Links can pre-assign speaker or listener role when someone joins.
+ * InviteLink — Generate shareable invite links for Spaces.
+ * Uses /listen/:id which auto-redirects to live spaces or shows replay.
  */
 import React, { useState } from "react";
-import { Link2, Copy, Check, Mic, Headphones, Share2, ExternalLink } from "lucide-react";
+import { Link2, Copy, Check, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface InviteLinkProps {
@@ -13,11 +13,9 @@ interface InviteLinkProps {
 }
 
 const InviteLink: React.FC<InviteLinkProps> = ({ spaceId, spaceName, isHost }) => {
-  const [role, setRole] = useState<"listener" | "speaker">("listener");
   const [copied, setCopied] = useState(false);
 
-  const baseUrl = `${window.location.origin}`;
-  const inviteUrl = `${baseUrl}?join=${spaceId}&role=${role}`;
+  const inviteUrl = `${window.location.origin}/listen/${spaceId}`;
 
   const copyLink = () => {
     navigator.clipboard.writeText(inviteUrl);
@@ -39,30 +37,6 @@ const InviteLink: React.FC<InviteLinkProps> = ({ spaceId, spaceName, isHost }) =
         <Link2 className="h-3.5 w-3.5 text-blue-400" />
         <span className="text-[11px] font-bold text-white/50">Invite Link</span>
       </div>
-
-      {/* Role selector */}
-      {isHost && (
-        <div className="flex gap-2">
-          <button onClick={() => setRole("listener")}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-bold transition-all border",
-              role === "listener"
-                ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
-                : "bg-white/[0.03] text-white/25 border-white/[0.06] hover:bg-white/[0.05]"
-            )}>
-            <Headphones className="h-3 w-3" /> Listener
-          </button>
-          <button onClick={() => setRole("speaker")}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[10px] font-bold transition-all border",
-              role === "speaker"
-                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                : "bg-white/[0.03] text-white/25 border-white/[0.06] hover:bg-white/[0.05]"
-            )}>
-            <Mic className="h-3 w-3" /> Speaker
-          </button>
-        </div>
-      )}
 
       {/* Link display */}
       <div className="flex gap-1.5">
