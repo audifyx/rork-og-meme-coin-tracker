@@ -1,33 +1,90 @@
-import { Home, Search, Users, Radio, Palette } from "lucide-react";
+import { Home, Users, Wrench, User } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
+/**
+ * Canonical bottom nav — used on EVERY page (Index + external pages).
+ * 4 items: Home, Community, Tools, Profile.
+ */
+
 const navItems = [
   { to: "/app", icon: Home, label: "Home" },
-  { to: "/scanner", icon: Search, label: "Scan" },
-  { to: "/communities", icon: Users, label: "Social" },
-  { to: "/spaces", icon: Radio, label: "Spaces" },
-  { to: "/art", icon: Palette, label: "Memes" },
+  { to: "/community", icon: Users, label: "Community" },
+  { to: "/tools", icon: Wrench, label: "Tools" },
+  { to: "/profile", icon: User, label: "Profile" },
 ];
 
-// Aliases: routes that should highlight a specific bottom nav item
-const routeAliases: Record<string, string> = {
+/* ── Map every known route to a bottom nav item ── */
+const routeToNav: Record<string, string> = {
+  /* Home */
+  "/app": "/app",
   "/home": "/app",
   "/command": "/app",
-  "/snipe-feed": "/app",
-  "/feed": "/app",
-  "/swap": "/app",
-  "/discover": "/app",
-  "/trending": "/app",
-  "/og-finder": "/scanner",
-  "/og-scanner": "/scanner",
-  "/ogscan-scanner": "/scanner",
-  "/communities": "/communities",
-  "/spaces": "/spaces",
-  "/voice-rooms": "/spaces",
-  "/art": "/art",
-  "/memes": "/art",
-  "/art-feed": "/art",
+
+  /* Community — social, voice, discovery */
+  "/community": "/community",
+  "/communities": "/community",
+  "/social": "/community",
+  "/social-hub": "/community",
+  "/socialhub": "/community",
+  "/discover": "/community",
+  "/spaces": "/community",
+  "/voice-rooms": "/community",
+  "/live-rooms": "/community",
+  "/trading-lobbies": "/community",
+  "/leaderboard": "/community",
+
+  /* Tools — scanners, feeds, charts, trading, all instruments */
+  "/tools": "/tools",
+  "/scanner": "/tools",
+  "/og-finder": "/tools",
+  "/og-scanner": "/tools",
+  "/ogscan-scanner": "/tools",
+  "/snipe-feed": "/tools",
+  "/dev-wallet": "/tools",
+  "/dev-wallet-radar": "/tools",
+  "/feed": "/tools",
+  "/live-feed": "/tools",
+  "/market": "/tools",
+  "/market-pulse": "/tools",
+  "/market-command": "/tools",
+  "/trending": "/tools",
+  "/pairs": "/tools",
+  "/whales": "/tools",
+  "/tx-feed": "/tools",
+  "/tape": "/tools",
+  "/transactions": "/tools",
+  "/transaction-feed": "/tools",
+  "/swap": "/tools",
+  "/news-signal": "/tools",
+  "/migrations": "/tools",
+  "/migration-tool": "/tools",
+  "/migration-tracker": "/tools",
+  "/memes": "/tools",
+  "/art": "/tools",
+  "/art-feed": "/tools",
+  "/our-coin": "/tools",
+  "/roadmap": "/tools",
+  "/tech": "/tools",
+  "/charts": "/tools",
+  "/live-trading": "/tools",
+  "/live-feed-page": "/tools",
+  "/wallets": "/tools",
+  "/tokens": "/tools",
+  "/alpha-chat": "/tools",
+  "/ai-chat": "/tools",
+  "/advanced-tools": "/tools",
+  "/callouts": "/tools",
+  "/webhooks": "/tools",
+  "/pumpv5": "/tools",
+
+  /* Profile — account, settings, premium */
+  "/profile": "/profile",
+  "/settings": "/profile",
+  "/premium": "/profile",
+  "/notifications": "/profile",
+  "/credits": "/profile",
+  "/admin": "/profile",
 };
 
 const triggerHaptic = () => {
@@ -39,15 +96,24 @@ const triggerHaptic = () => {
 export const BottomNav = () => {
   const location = useLocation();
 
-  const getActiveItem = () => {
+  const getActiveItem = (): string => {
     const path = location.pathname;
-    // Direct match
-    const directMatch = navItems.find((item) => path === item.to || path.startsWith(item.to + "/"));
-    if (directMatch) return directMatch.to;
-    // Alias match
-    const alias = Object.entries(routeAliases).find(([key]) => path === key || path.startsWith(key + "/"));
-    if (alias) return alias[1];
-    // Default to Home
+
+    /* Exact match */
+    if (routeToNav[path]) return routeToNav[path];
+
+    /* Prefix match — find the longest matching route */
+    let best = "";
+    let bestLen = 0;
+    for (const [route, nav] of Object.entries(routeToNav)) {
+      if (path.startsWith(route + "/") && route.length > bestLen) {
+        best = nav;
+        bestLen = route.length;
+      }
+    }
+    if (best) return best;
+
+    /* Catch-all — default to Home */
     return "/app";
   };
 

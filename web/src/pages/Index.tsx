@@ -46,9 +46,9 @@ import {
 import { cn } from "@/lib/utils";
 import { DEFAULT_OG_MINT, OGSCAN_TOKEN_MINT, SOL_MINT, STORAGE_OG_MINT, shortAddr } from "@/lib/og";
 import { AuthButton } from "@/components/AuthButton";
-import { AppSidebar } from "@/components/AppSidebar";
 import { AppTopBar } from "@/components/AppTopBar";
-import { MobileNav } from "@/components/MobileNav";
+import { Sidebar } from "@/components/layout/Sidebar";
+import { BottomNav } from "@/components/layout/BottomNav";
 
 /* ─── Standard Feature imports ─── */
 const OgStats = lazy(() => import("@/components/OgStats").then(m => ({ default: m.OgStats })));
@@ -658,7 +658,7 @@ const Index = () => {
   const [mint, setMint] = useState<string>(DEFAULT_OG_MINT);
   const [selectedWallet, setSelectedWallet] = useState<string>("");
   const [tab, setTab] = useState<TabId>(routeTab);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+
 
   useEffect(() => {
     try {
@@ -681,7 +681,6 @@ const Index = () => {
   const switchTab = (next: string): void => {
     const safe: TabId = TABS.some((t) => t.id === next) ? (next as TabId) : "overview";
     setTab(safe);
-    setSidebarOpen(false);
     try { localStorage.setItem(STORAGE_TAB, safe); } catch { /* noop */ }
     navigate(getTabPath(safe));
   };
@@ -698,23 +697,8 @@ const Index = () => {
 
   return (
     <div className="st-workspace flex min-h-screen bg-[#070d14] text-white">
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <AppSidebar
-        activeId={tab}
-        mint={mint}
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        onChangeMint={promptMint}
-        onNavigate={switchTab}
-      />
+      {/* Shared sidebar — consistent across all pages */}
+      <Sidebar />
 
       {/* Main content */}
       <div className="flex min-w-0 flex-1 flex-col lg:ml-[260px]">
@@ -723,43 +707,13 @@ const Index = () => {
           tab={activeTab}
           mint={mint}
           activeId={tab}
-          onOpenSidebar={() => setSidebarOpen(true)}
+          onOpenSidebar={() => {}}
           onChangeMint={promptMint}
           onNavigate={switchTab}
         />
 
         {/* Page content */}
-<<<<<<< HEAD
-        <Suspense fallback={
-          <div className="flex flex-1 items-center justify-center p-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-og-lime border-t-transparent" />
-          </div>
-        }>
-          {tab === "community" || tab === "social" ? (
-            /* CommunityHub / SocialHub need full height — skip ToolShell wrapper and padding.
-               pb-[4.5rem] on mobile accounts for fixed MobileNav (lg:pb-0 on desktop). */
-            <main className="min-h-0 flex-1 overflow-hidden pb-[4.5rem] lg:pb-0">
-              <CommunityHub />
-            </main>
-          ) : (
-            <main className="min-h-0 flex-1 overflow-x-hidden px-3 pb-28 pt-4 sm:px-5 lg:px-6 lg:pb-8">
-              {tab === "overview" ? (
-                <OverviewPage
-                  mint={mint}
-                  onSwitchTab={(t: TabId) => switchTab(t)}
-                  onScanClick={() => switchTab("scanner")}
-                  onChangeMint={promptMint}
-                />
-              ) : (
-                <ToolShell tab={activeTab}>{renderTool(tab, mint, updateMint, switchTab)}</ToolShell>
-              )}
-            </main>
-          )}
-        </Suspense>
-=======
         {tab === "community" || tab === "social" ? (
-          /* CommunityHub / SocialHub need full height — skip ToolShell wrapper and padding.
-             pb-[4.5rem] on mobile accounts for fixed MobileNav (lg:pb-0 on desktop). */
           <main className="min-h-0 flex-1 overflow-hidden pb-[4.5rem] lg:pb-0">
             <CommunityHub />
           </main>
@@ -778,11 +732,10 @@ const Index = () => {
             )}
           </main>
         )}
->>>>>>> origin/main
       </div>
 
-      {/* Mobile bottom nav */}
-      <MobileNav activeId={tab} onNavigate={switchTab} />
+      {/* Shared bottom nav — consistent across all pages */}
+      <BottomNav />
     </div>
   );
 };
