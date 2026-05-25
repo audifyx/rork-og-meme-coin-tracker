@@ -330,7 +330,7 @@ const TradingLobbies = ({ inline = false }: { inline?: boolean }) => {
           </div>
 
           {/* Content */}
-          <div className="flex-1 min-h-0 flex">
+          <div className="flex-1 min-h-0 flex flex-col lg:flex-row">
             {/* Desktop: 3 columns */}
             <div className="hidden lg:flex flex-1 gap-3 p-3 min-h-0">
               <div className="flex-[2] min-w-0 flex flex-col gap-3">
@@ -390,7 +390,7 @@ const TradingLobbies = ({ inline = false }: { inline?: boolean }) => {
                 </div>
               )}
               {mobileTab === "chat" && (
-                <div className="flex-1 p-2 min-h-0 h-full overflow-hidden">
+                <div className="flex-1 min-h-0 overflow-hidden p-2">
                   <LobbyChat lobbyId={activeLobby.id} />
                 </div>
               )}
