@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { heliusTxs, type HeliusTx, HELIUS_API_KEY, type JupTokenInfo } from "@/lib/og";
 import { CoinDetailDialog } from "@/components/CoinDetailDialog";
-import { chainFromDexSlug, type ChainConfig } from "@/lib/chains";
+import { chainFromDexSlug, SUPPORTED_CHAINS, type ChainConfig } from "@/lib/chains";
 
 /* ═══════════════════════════════════════════════════════════════
    Types
@@ -158,78 +158,92 @@ function parseHeliusTx(tx: HeliusTx, walletAddress: string, walletLabel?: string
    Batch DexScreener fetch — one request per 30 addresses
    ═══════════════════════════════════════════════════════════════ */
 
-async function fetchNewTokensBatch(): Promise<NewToken[]> {
-  const res = await fetch("https://api.dexscreener.com/token-profiles/latest/v1");
-  if (!res.ok) return [];
-  const profiles: any[] = await res.json();
-  if (!Array.isArray(profiles) || profiles.length === 0) return [];
-
-  // Group profiles by chainId (all chains, not just Solana)
-  const byChain = new Map<string, any[]>();
-  for (const p of profiles) {
-    if (!p.chainId || !p.tokenAddress) continue;
-    const list = byChain.get(p.chainId) ?? [];
-    list.push(p);
-    byChain.set(p.chainId, list);
-  }
-
-  // Fetch pairs per chain in parallel (DexScreener supports max 30 addresses per call)
-  const iconMap = new Map(profiles.map((p: any) => [`${p.chainId}:${p.tokenAddress}`, p.icon]));
-  const allPairs: any[] = [];
-
-  const chainFetches = Array.from(byChain.entries()).map(async ([chainId, chainProfiles]) => {
-    // Take up to 30 per chain
-    const batch = chainProfiles.slice(0, 30);
-    const addresses = batch.map((p: any) => p.tokenAddress).join(",");
-    try {
-      const pairRes = await fetch(`https://api.dexscreener.com/tokens/v1/${chainId}/${addresses}`);
-      if (!pairRes.ok) return [];
-      const pairs = await pairRes.json();
-      return Array.isArray(pairs) ? pairs : [];
-    } catch {
-      return [];
+/** Fetch new pools from GeckoTerminal for a single chain */
+async function fetchGeckoNewPools(geckoSlug: string, dexSlug: string): Promise<NewToken[]> {
+  try {
+    const res = await fetch(`https://api.geckoterminal.com/api/v2/networks/${geckoSlug}/new_pools?page=1&include=base_token`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const pools: any[] = json?.data ?? [];
+    // Build a map of included base token info (symbol, name, image)
+    const tokenInfoMap = new Map<string, { symbol: string; name: string; imageUrl?: string }>();
+    for (const inc of json?.included ?? []) {
+      if (inc.type === "token") {
+        const a = inc.attributes ?? {};
+        tokenInfoMap.set(inc.id, { symbol: a.symbol ?? "???", name: a.name ?? "Unknown", imageUrl: a.image_url || undefined });
+      }
     }
-  });
+    return pools
+      .map((pool: any) => {
+        const attrs = pool.attributes ?? {};
+        const rels = pool.relationships ?? {};
+        const pairAddr = attrs.address ?? "";
+        // Base token address from relationship: "base_0x1234..." → "0x1234..."
+        const baseTokenId = rels.base_token?.data?.id ?? "";
+        const tokenAddr = baseTokenId.includes("_") ? baseTokenId.split("_").slice(1).join("_") : pairAddr;
+        // Get proper symbol/name from included token data
+        const tokenInfo = tokenInfoMap.get(baseTokenId);
+        const symbol = tokenInfo?.symbol ?? attrs.name?.split(" / ")?.[0]?.trim() ?? "???";
+        const tokenName = tokenInfo?.name ?? attrs.name ?? "Unknown";
+        // DEX from relationship: { id: "pump-fun", type: "dex" }
+        const dexId = rels.dex?.data?.id ?? "";
+        const liq = parseFloat(attrs.reserve_in_usd ?? "0");
+        return {
+          id: `${dexSlug}:${tokenAddr}`,
+          address: tokenAddr,
+          name: tokenName,
+          symbol,
+          pairAddress: pairAddr,
+          chainId: dexSlug,
+          dexId,
+          priceUsd: attrs.base_token_price_usd ?? "0",
+          priceChange24h: parseFloat(attrs.price_change_percentage?.h24 ?? "0"),
+          volume24h: parseFloat(attrs.volume_usd?.h24 ?? "0"),
+          liquidity: Math.max(liq, 0),
+          fdv: parseFloat(attrs.fdv_usd ?? "0"),
+          pairCreatedAt: attrs.pool_created_at ? new Date(attrs.pool_created_at).getTime() : Date.now(),
+          url: `https://www.geckoterminal.com/${geckoSlug}/pools/${pairAddr}`,
+          imageUrl: tokenInfo?.imageUrl,
+          launchPlatform: detectLaunchPlatform(dexId, ""),
+        };
+      })
+      .filter((t) => t.liquidity >= 0);
+  } catch {
+    return [];
+  }
+}
+
+/** Primary chains to fetch new launches from (ordered by popularity) */
+const LIVE_FEED_CHAINS = SUPPORTED_CHAINS
+  .filter((c) => c.geckoTerminalSlug)
+  .slice(0, 10); // Top 10 chains
+
+async function fetchNewTokensBatch(): Promise<NewToken[]> {
+  // Fetch new pools from GeckoTerminal across all major chains in parallel
+  const chainFetches = LIVE_FEED_CHAINS.map((chain) =>
+    fetchGeckoNewPools(chain.geckoTerminalSlug!, chain.dexScreenerSlug)
+  );
 
   const results = await Promise.allSettled(chainFetches);
+  const allTokens: NewToken[] = [];
   for (const r of results) {
-    if (r.status === "fulfilled") allPairs.push(...r.value);
+    if (r.status === "fulfilled") allTokens.push(...r.value);
   }
 
-  // Group pairs by (chainId + base address), take best pair per token
-  const bestPairByToken = new Map<string, any>();
-  for (const pair of allPairs) {
-    const addr = pair.baseToken?.address;
-    const chain = pair.chainId;
-    if (!addr || !chain) continue;
-    const key = `${chain}:${addr}`;
-    const existing = bestPairByToken.get(key);
-    if (!existing || (pair.liquidity?.usd ?? 0) > (existing.liquidity?.usd ?? 0)) {
-      bestPairByToken.set(key, pair);
+  // Deduplicate by token address per chain (keep highest liquidity)
+  const bestByKey = new Map<string, NewToken>();
+  for (const token of allTokens) {
+    const existing = bestByKey.get(token.id);
+    if (!existing || token.liquidity > existing.liquidity) {
+      bestByKey.set(token.id, token);
     }
   }
 
-  return Array.from(bestPairByToken.entries()).map(([key, pair]) => {
-    const addr = pair.baseToken?.address;
-    return {
-      id: key,
-      address: addr,
-      name: pair.baseToken?.name || "Unknown",
-      symbol: pair.baseToken?.symbol || "???",
-      pairAddress: pair.pairAddress,
-      chainId: pair.chainId,
-      dexId: pair.dexId,
-      priceUsd: pair.priceUsd || "0",
-      priceChange24h: pair.priceChange?.h24 || 0,
-      volume24h: pair.volume?.h24 || 0,
-      liquidity: pair.liquidity?.usd || 0,
-      fdv: pair.fdv || 0,
-      pairCreatedAt: pair.pairCreatedAt || Date.now(),
-      url: pair.url,
-      imageUrl: iconMap.get(key),
-      launchPlatform: detectLaunchPlatform(pair.dexId, pair.url),
-    };
-  });
+  // Sort by creation time (newest first)
+  return Array.from(bestByKey.values())
+    .sort((a, b) => b.pairCreatedAt - a.pairCreatedAt);
 }
 
 /* ═══════════════════════════════════════════════════════════════
