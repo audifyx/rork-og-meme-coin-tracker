@@ -11,6 +11,7 @@
  * - App marketplace (publish + install third-party apps)
  */
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
