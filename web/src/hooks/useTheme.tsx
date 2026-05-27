@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { useAuth } from "./useAuth";
 import { THEME_PRESETS, applyThemeVars } from "./themePresets";
 export type { ThemePreset } from "./themePresets";
+export { THEME_PRESETS } from "./themePresets";
 
 
 
