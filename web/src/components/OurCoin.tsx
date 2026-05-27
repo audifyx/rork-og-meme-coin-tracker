@@ -1,161 +1,354 @@
-import { memo, useCallback, useState, type ComponentType } from "react";
-import { Bell, Check, Coins, Copy, ExternalLink, Flame, Megaphone, RadioTower, ShieldAlert, Sparkles } from "lucide-react";
-import { OGSCAN_DEXSCREENER_URL, OGSCAN_PUMPFUN_URL, OGSCAN_SITE_URL, OGSCAN_TOKEN_MINT, OGSCAN_X_URL, shortAddr } from "@/lib/og";
+import { memo, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Activity,
+  ArrowUpRight,
+  BadgeDollarSign,
+  Bell,
+  CandlestickChart,
+  Coins,
+  ExternalLink,
+  Flame,
+  Layers3,
+  Loader2,
+  ShieldCheck,
+  Sparkles,
+  Users,
+  Wallet,
+} from "lucide-react";
+import { CopyMintButton } from "@/components/CopyMintButton";
+import { OurCoinBuyFeed } from "@/components/OurCoinBuyFeed";
+import { TxFeed } from "@/components/TxFeed";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import {
+  OGSCAN_BRAND_IMAGE,
+  OGSCAN_DEXSCREENER_URL,
+  OGSCAN_PUMPFUN_URL,
+  OGSCAN_SITE_URL,
+  OGSCAN_TOKEN_MINT,
+  OGSCAN_X_URL,
+  OGSCAN_DEV_WALLET,
+  dexScreenerChartUrl,
+  dexScreenerEmbedUrl,
+  enrichTokensWithMarketIntel,
+  fmtNum,
+  fmtPct,
+  fmtUsd,
+  hasPulledOrDeadLiquidity,
+  HELIUS_API_KEY,
+  jupGetTokens,
+  shortAddr,
+  shortDate,
+  tokenDexPaidLabel,
+  tokenEffectiveLiquidityUsd,
+  tokenMigrationDateIso,
+  tokenOgCreatedAtIso,
+  type JupTokenInfo,
+} from "@/lib/og";
+import { cn } from "@/lib/utils";
 
-const launchSignals: { label: string; value: string; tone: "cyan" | "gold" | "lime" }[] = [
-  { label: "Official CA", value: shortAddr(OGSCAN_TOKEN_MINT, 6), tone: "gold" },
-  { label: "Launch status", value: "Live", tone: "lime" },
-];
-
-const safetyNotes: { Icon: ComponentType<{ className?: string }>; title: string; detail: string }[] = [
-  {
-    Icon: ShieldAlert,
-    title: "Use only this CA",
-    detail: "The official OGScan coin address is published here. Copy it from this page before trading.",
-  },
-  {
-    Icon: Megaphone,
-    title: "Verify links first",
-    detail: "Use the chart and Pump.fun buttons here instead of random links posted in replies or DMs.",
-  },
-  {
-    Icon: Bell,
-    title: "Holder tech next",
-    detail: "Reward mechanics and creator-fee ideas can now be built around the live mint.",
-  },
-];
-
-const copyToClipboard = async (value: string): Promise<boolean> => {
-  try {
-    if (navigator.clipboard?.writeText && window.isSecureContext) {
-      await navigator.clipboard.writeText(value);
-      return true;
-    }
-  } catch {
-    /* fall through */
-  }
-
-  try {
-    const textarea: HTMLTextAreaElement = document.createElement("textarea");
-    textarea.value = value;
-    textarea.setAttribute("readonly", "true");
-    textarea.style.position = "fixed";
-    textarea.style.left = "-9999px";
-    textarea.style.opacity = "0";
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-    const copied: boolean = document.execCommand("copy");
-    document.body.removeChild(textarea);
-    return copied;
-  } catch {
-    return false;
-  }
+type DetailDexPair = {
+  chainId?: string;
+  dexId?: string;
+  url?: string;
+  pairAddress?: string;
+  baseToken?: { address?: string; name?: string; symbol?: string };
+  quoteToken?: { address?: string; name?: string; symbol?: string };
+  priceUsd?: string;
+  priceChange?: { m5?: number; h1?: number; h24?: number };
+  liquidity?: { usd?: number; base?: number; quote?: number };
+  volume?: { h24?: number };
+  txns?: {
+    h24?: { buys?: number; sells?: number };
+  };
+  fdv?: number;
+  marketCap?: number;
+  pairCreatedAt?: number;
+  info?: {
+    imageUrl?: string;
+    header?: string;
+    openGraph?: string;
+    websites?: { url?: string; label?: string }[];
+    socials?: { type?: string; url?: string }[];
+  };
+  boosts?: { active?: number };
 };
 
-export const OurCoin = memo(() => {
-  const [copied, setCopied] = useState<"coin" | "dev" | null>(null);
+async function fetchDexPairs(mint: string): Promise<DetailDexPair[]> {
+  const response = await fetch(`https://api.dexscreener.com/tokens/v1/solana/${encodeURIComponent(mint)}`);
+  if (!response.ok) return [];
+  const json = (await response.json()) as DetailDexPair[];
+  return Array.isArray(json) ? json : [];
+}
 
-  const copyValue = useCallback(async (kind: "coin" | "dev", value: string): Promise<void> => {
-    const ok: boolean = await copyToClipboard(value);
-    if (ok) {
-      setCopied(kind);
-      window.setTimeout((): void => setCopied(null), 1400);
-    }
-  }, []);
+function bestPair(pairs: DetailDexPair[]): DetailDexPair | undefined {
+  return [...pairs].sort((a, b) => {
+    const aScore = (a.liquidity?.usd ?? 0) + (a.volume?.h24 ?? 0) * 0.35 + (a.txns?.h24?.buys ?? 0) * 12;
+    const bScore = (b.liquidity?.usd ?? 0) + (b.volume?.h24 ?? 0) * 0.35 + (b.txns?.h24?.buys ?? 0) * 12;
+    return bScore - aScore;
+  })[0];
+}
+
+function websiteLinks(pair: DetailDexPair | undefined): { label: string; url: string }[] {
+  const raw = [
+    { label: "Website", url: OGSCAN_SITE_URL },
+    { label: "Chart", url: OGSCAN_DEXSCREENER_URL },
+    { label: "Pump.fun", url: OGSCAN_PUMPFUN_URL },
+    { label: "Updates", url: OGSCAN_X_URL },
+    ...((pair?.info?.websites ?? []).filter((site): site is { url: string; label?: string } => Boolean(site.url)).map((site) => ({ label: site.label ?? "Website", url: site.url }))),
+    ...((pair?.info?.socials ?? []).filter((site): site is { url: string; type?: string } => Boolean(site.url)).map((site) => ({ label: site.type ?? "Social", url: site.url }))),
+  ];
+
+  const seen = new Set<string>();
+  return raw.filter((item) => !seen.has(item.url) && seen.add(item.url)).slice(0, 6);
+}
+
+const skeletonCardClass = "border border-og-grid bg-og-ink/70 p-4";
+
+export const OurCoin = memo(() => {
+  const { permission, isRegistered, requestPermission, isSyncing } = usePushNotifications();
+
+  const { data: dexPairs = [], isLoading: pairsLoading } = useQuery({
+    queryKey: ["our-coin-dex-pairs", OGSCAN_TOKEN_MINT],
+    queryFn: () => fetchDexPairs(OGSCAN_TOKEN_MINT),
+    refetchInterval: 30_000,
+    staleTime: 20_000,
+  });
+
+  const pair = useMemo(() => bestPair(dexPairs), [dexPairs]);
+
+  const { data: token, isLoading: tokenLoading } = useQuery({
+    queryKey: ["our-coin-token-intel", OGSCAN_TOKEN_MINT, pair?.pairAddress ?? "none"],
+    queryFn: async (): Promise<JupTokenInfo | null> => {
+      const jupTokens = await jupGetTokens([OGSCAN_TOKEN_MINT]);
+      const base = jupTokens[0] ?? {
+        id: OGSCAN_TOKEN_MINT,
+        chainId: "solana",
+        name: pair?.baseToken?.name ?? "OUR COIN",
+        symbol: pair?.baseToken?.symbol ?? "OUR",
+        decimals: 6,
+      };
+      const enriched = await enrichTokensWithMarketIntel([base], { includeAth: true, includeOnChainIntel: true, maxOnChain: 1, maxBirdeye: 1 });
+      return enriched[0] ?? base;
+    },
+    enabled: true,
+    refetchInterval: 60_000,
+    staleTime: 45_000,
+  });
+
+  const chartUrl = dexScreenerChartUrl({
+    id: OGSCAN_TOKEN_MINT,
+    chainId: "solana",
+    dexUrl: pair?.url,
+    pairAddress: pair?.pairAddress,
+  });
+  const chartEmbedUrl = dexScreenerEmbedUrl(chartUrl);
+
+  const priceUsd = pair?.priceUsd ? Number(pair.priceUsd) : token?.usdPrice;
+  const marketCap = token?.mcap ?? pair?.marketCap;
+  const fdv = token?.fdv ?? pair?.fdv;
+  const liquidity = token ? tokenEffectiveLiquidityUsd(token) : pair?.liquidity?.usd;
+  const change24 = pair?.priceChange?.h24 ?? token?.stats24h?.priceChange ?? 0;
+  const change1h = pair?.priceChange?.h1 ?? token?.stats1h?.priceChange ?? 0;
+  const volume24 = pair?.volume?.h24 ?? ((token?.stats24h?.buyVolume ?? 0) + (token?.stats24h?.sellVolume ?? 0));
+  const buys24 = pair?.txns?.h24?.buys ?? token?.stats24h?.numBuys ?? 0;
+  const sells24 = pair?.txns?.h24?.sells ?? token?.stats24h?.numSells ?? 0;
+  const total24 = buys24 + sells24;
+  const buyPct = total24 > 0 ? Math.round((buys24 / total24) * 100) : 0;
+  const athPrice = token?.allTimeHighUsd;
+  const athMcap = token?.allTimeHighMarketCap;
+  const createdAt = token ? tokenOgCreatedAtIso(token) : undefined;
+  const migratedAt = token ? tokenMigrationDateIso(token) : undefined;
+  const migrated = Boolean(migratedAt || pair?.pairCreatedAt || token?.pumpFun?.complete);
+  const migrationProgress = migrated ? 100 : 0;
+  const lpLooksHealthy = token ? !hasPulledOrDeadLiquidity(token) : (pair?.liquidity?.usd ?? 0) > 1_000;
+  const holderCount = token?.holderCount ?? 0;
+  const whaleCount = token?.whaleCount ?? 0;
+  const dexPaid = token ? tokenDexPaidLabel(token) : "Watching";
+  const heroImage = pair?.info?.header ?? pair?.info?.openGraph ?? pair?.info?.imageUrl ?? OGSCAN_BRAND_IMAGE;
+  const loading = pairsLoading || tokenLoading;
+  const links = websiteLinks(pair);
 
   return (
-    <section className="relative min-h-[620px] overflow-hidden border border-og-gold/35 bg-og-ink/90 shadow-og-gold">
-      <div className="absolute inset-0 grid-bg opacity-25" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_8%,hsl(var(--og-gold)/0.18),transparent_34%),radial-gradient(circle_at_88%_16%,hsl(var(--og-cyan)/0.14),transparent_34%),linear-gradient(180deg,hsl(var(--og-ink)/0.4),hsl(var(--background)/0.96))]" />
-      <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full border border-og-cyan/20" />
-      <div className="absolute -bottom-20 left-8 h-56 w-56 rounded-full border border-og-gold/20" />
-
-      <div className="relative flex min-h-[620px] flex-col justify-between p-5 sm:p-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 border border-og-gold/45 bg-og-gold/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-og-gold">
-            <Flame className="h-3.5 w-3.5" /> Official token live
-          </div>
-          <div className="inline-flex items-center gap-2 border border-og-cyan/40 bg-og-cyan/10 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.26em] text-og-cyan">
-            <RadioTower className="h-3.5 w-3.5 animate-pulse" /> Mainnet live
-          </div>
-        </div>
-
-        <div className="mx-auto grid w-full max-w-5xl gap-8 py-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-          <div>
-            <div className="mb-4 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.42em] text-og-cyan">
-              <span className="h-px w-12 bg-og-cyan" /> official token room
-            </div>
-            <h2 className="font-display text-[clamp(3rem,8vw,7.5rem)] font-black uppercase leading-[0.82] tracking-tighter">
-              <span className="block text-og-gold text-glow-gold">Token</span>
-              <span className="block text-og-lime text-glow">is live.</span>
-            </h2>
-            <p className="mt-6 max-w-2xl text-lg font-semibold leading-relaxed text-foreground sm:text-2xl">
-              OGScan is live on Solana. Copy the official coin address below before opening charts, swapping, or sharing it with the community.
-            </p>
-            <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground">
-              The official coin mint is pinned here as the single source of truth for the beta community.
-            </p>
-
-            <div className="mt-7 grid max-w-2xl gap-3">
-              <AddressCard label="Official coin CA" value={OGSCAN_TOKEN_MINT} copied={copied === "coin"} onCopy={() => copyValue("coin", OGSCAN_TOKEN_MINT)} Icon={Coins} />
-            </div>
-
-            <div className="mt-7 flex flex-wrap gap-3">
-              <a
-                href={OGSCAN_DEXSCREENER_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 border border-og-lime bg-og-lime px-5 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-og-ink transition hover:bg-og-lime/90"
-              >
-                Open chart <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-              <a
-                href={OGSCAN_PUMPFUN_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 border border-og-gold bg-og-gold px-5 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-og-ink transition hover:bg-og-gold/90"
-              >
-                Pump.fun <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-              <a
-                href={OGSCAN_X_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 border border-og-grid bg-og-ink/75 px-5 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-foreground/70 transition hover:border-og-cyan hover:text-og-cyan"
-              >
-                Follow updates
-              </a>
-              <a
-                href={OGSCAN_SITE_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 border border-og-grid bg-og-ink/75 px-5 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-foreground/70 transition hover:border-og-cyan hover:text-og-cyan"
-              >
-                Official site
-              </a>
-            </div>
-          </div>
-
-          <div className="grid gap-3">
-            {launchSignals.map((signal) => (
-              <LaunchSignal key={signal.label} {...signal} />
-            ))}
-            <div className="mt-2 border border-dashed border-og-gold/45 bg-og-gold/5 p-4">
-              <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-og-gold">
-                <Sparkles className="h-3.5 w-3.5" /> Live token room
+    <section className="space-y-5">
+      <div className="overflow-hidden border border-og-gold/35 bg-og-ink/95 shadow-og-gold">
+        <div className="relative min-h-[280px] border-b border-og-grid">
+          <img src={heroImage} alt="OUR COIN banner" className="absolute inset-0 h-full w-full object-cover opacity-35" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.08),rgba(0,0,0,0.72)),radial-gradient(circle_at_top_right,rgba(255,205,64,0.22),transparent_30%)]" />
+          <div className="relative grid gap-6 px-5 py-6 lg:grid-cols-[1.3fr_0.7fr] lg:px-8 lg:py-8">
+            <div>
+              <div className="mb-3 inline-flex items-center gap-2 border border-og-gold/45 bg-og-gold/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.28em] text-og-gold">
+                <Flame className="h-3.5 w-3.5" /> Official token room
               </div>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                Next step: connect this live mint to holder tracking, top-holder reward rules, creator-fee experiments, and community announcements.
+              <h1 className="font-display text-4xl font-black uppercase tracking-tight text-white sm:text-6xl">
+                OUR COIN
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80 sm:text-base">
+                Official OG Scan token intelligence page with live price, metadata, buy flow, migration status, charting, and push-ready buy tracking.
               </p>
+
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <div className="border border-og-grid bg-black/45 px-3 py-2 font-mono text-[11px] text-white/80">
+                  {shortAddr(OGSCAN_TOKEN_MINT, 8)}
+                </div>
+                <CopyMintButton mint={OGSCAN_TOKEN_MINT} className="h-10 px-3 text-[10px]" />
+                <a
+                  href={OGSCAN_DEXSCREENER_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-10 items-center gap-2 border border-og-lime bg-og-lime px-4 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-og-ink transition hover:bg-og-lime/90"
+                >
+                  Open chart <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+                <a
+                  href={OGSCAN_PUMPFUN_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-10 items-center gap-2 border border-og-gold bg-og-gold px-4 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-og-ink transition hover:bg-og-gold/90"
+                >
+                  Pump.fun <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            </div>
+
+            <div className="grid gap-3 self-end">
+              <SignalCard label="Price" value={loading ? "Loading…" : fmtUsd(priceUsd)} Icon={CandlestickChart} tone="lime" />
+              <SignalCard label="24h buy pressure" value={loading ? "Loading…" : `${buyPct}% buys`} Icon={Activity} tone="gold" />
+              <SignalCard label="Migration" value={migrated ? "Migrated" : "Monitoring"} Icon={Layers3} tone="cyan" />
             </div>
           </div>
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-3">
-          {safetyNotes.map((note) => (
-            <SafetyNote key={note.title} {...note} />
-          ))}
+        <div className="grid gap-3 border-t border-og-grid bg-black/30 px-5 py-4 lg:grid-cols-4 lg:px-8">
+          <StatCard label="Market cap" value={loading ? "Loading…" : fmtUsd(marketCap)} Icon={BadgeDollarSign} />
+          <StatCard label="Liquidity" value={loading ? "Loading…" : fmtUsd(liquidity)} Icon={Coins} />
+          <StatCard label="24h volume" value={loading ? "Loading…" : fmtUsd(volume24)} Icon={ArrowUpRight} />
+          <StatCard label="ATH" value={loading ? "Loading…" : fmtUsd(athPrice)} Icon={Sparkles} />
+        </div>
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
+        <div className="space-y-5">
+          <div className={skeletonCardClass}>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-og-cyan">Live chart</div>
+                <h2 className="mt-1 text-xl font-black uppercase tracking-tight text-white">Price + market view</h2>
+              </div>
+              {loading && <Loader2 className="h-4 w-4 animate-spin text-og-lime" />}
+            </div>
+            <div className="aspect-[16/10] overflow-hidden border border-og-grid bg-black">
+              <iframe title="OUR COIN chart" src={chartEmbedUrl} className="h-full w-full" loading="lazy" />
+            </div>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div className={skeletonCardClass}>
+              <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.3em] text-og-gold">Full scan analysis</div>
+              <div className="space-y-3 text-sm">
+                <AnalysisRow label="24h change" value={fmtPct(change24)} tone={change24 >= 0 ? "good" : "bad"} />
+                <AnalysisRow label="1h change" value={fmtPct(change1h)} tone={change1h >= 0 ? "good" : "bad"} />
+                <AnalysisRow label="FDV" value={fmtUsd(fdv)} />
+                <AnalysisRow label="ATH market cap" value={fmtUsd(athMcap)} />
+                <AnalysisRow label="Holders" value={holderCount ? fmtNum(holderCount) : "—"} />
+                <AnalysisRow label="Whales" value={whaleCount ? fmtNum(whaleCount) : "—"} />
+                <AnalysisRow label="Dex status" value={dexPaid || "Watching"} tone={dexPaid && dexPaid !== "Watching" ? "good" : "neutral"} />
+                <AnalysisRow label="LP status" value={lpLooksHealthy ? "Liquidity active" : "Watch liquidity"} tone={lpLooksHealthy ? "good" : "bad"} />
+              </div>
+            </div>
+
+            <div className={skeletonCardClass}>
+              <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.3em] text-og-gold">Metadata + links</div>
+              <div className="space-y-3 text-sm">
+                <AnalysisRow label="Mint" value={shortAddr(OGSCAN_TOKEN_MINT, 7)} />
+                <AnalysisRow label="Dev wallet" value={shortAddr(OGSCAN_DEV_WALLET, 7)} />
+                <AnalysisRow label="Created" value={shortDate(createdAt)} />
+                <AnalysisRow label="Migrated" value={migrated ? shortDate(migratedAt ?? (pair?.pairCreatedAt ? new Date(pair.pairCreatedAt).toISOString() : undefined)) : "Monitoring"} />
+                <AnalysisRow label="Pair" value={pair?.pairAddress ? shortAddr(pair.pairAddress, 6) : "Waiting"} />
+                <AnalysisRow label="Helius" value={HELIUS_API_KEY ? "Live tracking on" : "Unavailable"} tone="good" />
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {links.map((link) => (
+                  <a
+                    key={link.url}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 border border-og-grid bg-og-ink/80 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/75 transition hover:border-og-cyan hover:text-og-cyan"
+                  >
+                    {link.label} <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className={skeletonCardClass}>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-og-cyan">Migration bar</div>
+                <div className="mt-1 text-xl font-black uppercase tracking-tight text-white">Official launch status</div>
+              </div>
+              <div className="font-mono text-sm font-bold uppercase tracking-[0.18em] text-og-gold">{migrationProgress}%</div>
+            </div>
+            <div className="h-3 overflow-hidden border border-og-grid bg-black">
+              <div className="h-full bg-[linear-gradient(90deg,hsl(var(--og-gold)),hsl(var(--og-lime)))] transition-all duration-500" style={{ width: `${migrationProgress}%` }} />
+            </div>
+            <div className="mt-3 grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
+              <div className="border border-og-grid bg-black/40 p-3">Status: <span className="font-semibold text-white">{migrated ? "DEX live" : "Watching curve"}</span></div>
+              <div className="border border-og-grid bg-black/40 p-3">Buys vs sells: <span className="font-semibold text-white">{buyPct}% / {100 - buyPct}%</span></div>
+              <div className="border border-og-grid bg-black/40 p-3">24h flow: <span className="font-semibold text-white">{fmtNum(total24)} trades</span></div>
+            </div>
+          </div>
+
+          <TxFeed mint={OGSCAN_TOKEN_MINT} />
+        </div>
+
+        <div className="space-y-5">
+          <OurCoinBuyFeed
+            mint={OGSCAN_TOKEN_MINT}
+            compact={false}
+            buysOnly
+            alertOnNewBuys
+            title="Side buy feed"
+            subtitle="Live buy flow on the official mint with push-trigger monitoring."
+          />
+
+          <div className={skeletonCardClass}>
+            <div className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.3em] text-og-gold">
+              <Bell className="h-3.5 w-3.5" /> Buy alerts
+            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Turn on push to get buy notifications while the official mint is being monitored from the app.
+            </p>
+            <div className="mt-4 grid gap-2 text-sm">
+              <AlertStatus label="Browser permission" value={permission} tone={permission === "granted" ? "good" : permission === "denied" ? "bad" : "neutral"} />
+              <AlertStatus label="Push registration" value={isRegistered ? "connected" : "not connected"} tone={isRegistered ? "good" : "neutral"} />
+            </div>
+            <button
+              type="button"
+              onClick={() => void requestPermission()}
+              disabled={permission === "granted" || isSyncing}
+              className={cn(
+                "mt-4 inline-flex min-h-11 items-center justify-center gap-2 border px-4 py-3 font-mono text-[10px] font-bold uppercase tracking-[0.24em] transition",
+                permission === "granted"
+                  ? "border-og-lime/40 bg-og-lime/10 text-og-lime"
+                  : "border-og-gold bg-og-gold text-og-ink hover:bg-og-gold/90",
+              )}
+            >
+              {isSyncing && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {permission === "granted" ? "Buy alerts enabled" : "Enable buy alerts"}
+            </button>
+          </div>
+
+          <div className={skeletonCardClass}>
+            <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.3em] text-og-gold">Trust signals</div>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <TrustRow icon={ShieldCheck} title="Official mint pinned" detail="The token mint is hard-coded into the app’s OG token constants and surfaced everywhere from this page." />
+              <TrustRow icon={Wallet} title="Dev wallet tracked" detail={`Official dev wallet: ${shortAddr(OGSCAN_DEV_WALLET, 6)}.`} />
+              <TrustRow icon={Users} title="Holder intelligence" detail={holderCount ? `${fmtNum(holderCount)} holders and ${fmtNum(whaleCount)} whales currently tracked.` : "Holder data is being refreshed from live market intel."} />
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -164,49 +357,52 @@ export const OurCoin = memo(() => {
 
 OurCoin.displayName = "OurCoin";
 
-const AddressCard = memo(({ label, value, copied, onCopy, Icon }: { label: string; value: string; copied: boolean; onCopy: () => void; Icon: ComponentType<{ className?: string }> }) => (
-  <div className="border border-og-grid bg-black/28 p-3">
-    <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.28em] text-og-cyan">
+const StatCard = ({ label, value, Icon }: { label: string; value: string; Icon: typeof Coins }) => (
+  <div className="border border-og-grid bg-black/35 p-4">
+    <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-white/45">
       <Icon className="h-3.5 w-3.5" /> {label}
     </div>
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <code className="min-w-0 flex-1 break-all border border-og-grid bg-og-ink/80 px-3 py-2 font-mono text-xs text-foreground sm:text-sm">
-        {value}
-      </code>
-      <button type="button" onClick={onCopy} className="inline-flex min-h-10 items-center justify-center gap-2 border border-og-gold/60 bg-og-gold/10 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-og-gold transition hover:bg-og-gold hover:text-og-ink">
-        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-        {copied ? "Copied" : "Copy"}
-      </button>
-    </div>
+    <div className="mt-2 text-2xl font-black tracking-tight text-white">{value}</div>
   </div>
-));
+);
 
-AddressCard.displayName = "AddressCard";
-
-const LaunchSignal = memo(({ label, value, tone }: { label: string; value: string; tone: "cyan" | "gold" | "lime" }) => {
-  const toneClass: string = tone === "cyan" ? "text-og-cyan border-og-cyan/45 bg-og-cyan/10" : tone === "gold" ? "text-og-gold border-og-gold/45 bg-og-gold/10" : "text-og-lime border-og-lime/45 bg-og-lime/10";
-
+const SignalCard = ({ label, value, Icon, tone }: { label: string; value: string; Icon: typeof Activity; tone: "lime" | "gold" | "cyan" }) => {
+  const toneClass = tone === "lime" ? "border-og-lime/40 bg-og-lime/10 text-og-lime" : tone === "gold" ? "border-og-gold/40 bg-og-gold/10 text-og-gold" : "border-og-cyan/40 bg-og-cyan/10 text-og-cyan";
   return (
-    <div className={`relative overflow-hidden border p-4 ${toneClass}`}>
-      <div className="absolute inset-x-0 top-0 h-px bg-current opacity-70" />
-      <div className="font-mono text-[10px] uppercase tracking-[0.32em] opacity-70">{label}</div>
-      <div className="mt-2 flex items-center justify-between gap-4">
-        <span className="font-display text-2xl font-bold uppercase tracking-tight text-foreground">{value}</span>
-        <Sparkles className="h-5 w-5 shrink-0" />
+    <div className={cn("border p-4", toneClass)}>
+      <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] opacity-80">
+        <Icon className="h-3.5 w-3.5" /> {label}
       </div>
+      <div className="mt-2 text-2xl font-black tracking-tight text-white">{value}</div>
     </div>
   );
-});
+};
 
-LaunchSignal.displayName = "LaunchSignal";
+const AnalysisRow = ({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "good" | "bad" | "neutral" }) => (
+  <div className="flex items-center justify-between gap-4 border-b border-og-grid/70 pb-2 last:border-b-0 last:pb-0">
+    <span className="text-white/55">{label}</span>
+    <span className={cn(
+      "text-right font-mono text-xs uppercase tracking-[0.18em]",
+      tone === "good" ? "text-og-lime" : tone === "bad" ? "text-og-blood" : "text-white",
+    )}>{value}</span>
+  </div>
+);
 
-const SafetyNote = memo(({ Icon, title, detail }: { Icon: ComponentType<{ className?: string }>; title: string; detail: string }) => (
-  <div className="border border-og-grid bg-og-ink/72 p-4 shadow-[inset_3px_0_0_hsl(var(--og-cyan)/0.4)]">
-    <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.28em] text-og-cyan">
+const AlertStatus = ({ label, value, tone }: { label: string; value: string; tone: "good" | "bad" | "neutral" }) => (
+  <div className="flex items-center justify-between gap-3 border border-og-grid bg-black/35 px-3 py-2.5 text-sm">
+    <span className="text-white/55">{label}</span>
+    <span className={cn(
+      "font-mono text-[10px] uppercase tracking-[0.22em]",
+      tone === "good" ? "text-og-lime" : tone === "bad" ? "text-og-blood" : "text-og-gold",
+    )}>{value}</span>
+  </div>
+);
+
+const TrustRow = ({ icon: Icon, title, detail }: { icon: typeof ShieldCheck; title: string; detail: string }) => (
+  <div className="border border-og-grid bg-black/40 p-3">
+    <div className="mb-1 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.24em] text-og-cyan">
       <Icon className="h-3.5 w-3.5" /> {title}
     </div>
-    <p className="text-xs leading-relaxed text-muted-foreground">{detail}</p>
+    <p>{detail}</p>
   </div>
-));
-
-SafetyNote.displayName = "SafetyNote";
+);
