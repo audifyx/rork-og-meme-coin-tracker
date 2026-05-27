@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { OGSCAN_TOKEN_MINT, shortAddr } from "@/lib/og";
 import { useAdmin } from "@/hooks/useAdmin";
+import { OurCoinBuyFeed } from "@/components/OurCoinBuyFeed";
 
 type TabId =
   | "overview"
@@ -256,6 +257,17 @@ export const AppSidebar = ({
           </div>
           <Menu className="h-3.5 w-3.5 text-white/30" />
         </button>
+      </div>
+
+      <div className="border-t border-white/[0.07] px-3 py-3">
+        <OurCoinBuyFeed
+          mint={OGSCAN_TOKEN_MINT}
+          limit={10}
+          compact
+          buysOnly
+          alertOnNewBuys
+          title="OUR COIN live buys"
+        />
       </div>
 
       <div className="border-t border-white/[0.07] px-3 pb-4 pt-2">

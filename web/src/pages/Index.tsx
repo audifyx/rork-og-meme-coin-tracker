@@ -622,7 +622,7 @@ const getTabPath = (id: TabId): string => {
 
 const renderTool = (tab: TabId, mint: string, updateMint: (m: string) => void, onNavigate?: (t: string) => void, profileViewUserId?: string, listingMint?: string): ReactNode => {
   /* ─── Consolidated: About OGScan (token + roadmap + tech) ─── */
-  if (tab === "our-coin") return <AboutOgScan initialTab="token" />;
+  if (tab === "our-coin") return <OurCoin />;
   if (tab === "roadmap") return <AboutOgScan initialTab="roadmap" />;
   if (tab === "tech") return <AboutOgScan initialTab="tech" />;
 
