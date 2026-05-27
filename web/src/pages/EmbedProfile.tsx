@@ -337,6 +337,7 @@ export default function EmbedProfile() {
 
         {/* ── Past Spaces ──────────────────────────────── */}
         {pastSpaces.length > 0 && (
+          <>
           {/* ── Upcoming spaces ── */}
           {upcomingSpaces.length > 0 && (
             <div className="mb-4">
@@ -408,6 +409,7 @@ export default function EmbedProfile() {
               ))}
             </div>
           </div>
+          </>
         )}
 
         {/* ── No content state ─────────────────────────── */}
