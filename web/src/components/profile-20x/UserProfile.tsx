@@ -8,6 +8,7 @@ import {
   Link2,
   Settings,
   MoreHorizontal,
+  ExternalLink,
   LogOut,
   Copy,
   Check,
@@ -21,6 +22,12 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -314,6 +321,32 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const getPublicProfileUrl = () => {
+    if (typeof window === "undefined") return "";
+    if (profileData?.username) return `${window.location.origin}/u/${profileData.username}`;
+    if (profileData?.user_id) return `${window.location.origin}/profile/${profileData.user_id}`;
+    return window.location.href;
+  };
+
+  const copyProfileLink = async () => {
+    const url = getPublicProfileUrl();
+    if (!url) return;
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Profile link copied");
+    } catch (error) {
+      console.error("Failed to copy profile link", error);
+      toast.error("Could not copy profile link");
+    }
+  };
+
+  const openProfileLink = () => {
+    const url = getPublicProfileUrl();
+    if (!url || typeof window === "undefined") return;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   if (viewingUser) {
     return (
       <div>
@@ -395,9 +428,26 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
               </button>
             ) : user && (
               <>
-                <button className="rounded-full border border-white/15 bg-[#08101b]/75 p-2 text-white/60 backdrop-blur-xl transition hover:bg-white/[0.12] hover:text-white">
-                  <MoreHorizontal className="h-4 w-4" />
-                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="rounded-full border border-white/15 bg-[#08101b]/75 p-2 text-white/60 backdrop-blur-xl transition hover:bg-white/[0.12] hover:text-white"
+                      aria-label="Profile actions"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 border-white/[0.12] bg-[#0b1420] text-white">
+                    <DropdownMenuItem onClick={copyProfileLink} className="gap-2 text-white/85 focus:bg-white/[0.08] focus:text-white">
+                      <Copy className="h-4 w-4" />
+                      Copy profile link
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={openProfileLink} className="gap-2 text-white/85 focus:bg-white/[0.08] focus:text-white">
+                      <ExternalLink className="h-4 w-4" />
+                      Open profile
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <button
                   onClick={() => friends.isFollowing(profileData?.user_id || "") ? friends.unfollow(profileData?.user_id || "") : friends.follow(profileData?.user_id || "")}
                   className={cn(
