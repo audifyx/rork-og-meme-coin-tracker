@@ -13,6 +13,7 @@
  */
 
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Mic, Rss, ExternalLink, Copy, Check, Loader2, AlertCircle,
   Music, Apple, Globe, ChevronRight, Play, Hash, Star,

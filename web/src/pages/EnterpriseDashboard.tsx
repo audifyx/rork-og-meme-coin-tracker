@@ -11,6 +11,7 @@
  * - SLA guarantees
  */
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { cn } from "@/lib/utils";
 import {

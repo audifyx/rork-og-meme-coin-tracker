@@ -12,6 +12,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Scissors, Download, Twitter, Share2, Play, Pause, Copy,
   Check, Loader2, AlertCircle, ChevronRight, Volume2,
