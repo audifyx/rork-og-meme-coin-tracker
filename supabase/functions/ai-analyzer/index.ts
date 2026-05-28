@@ -189,10 +189,7 @@ async function callGroq(messages: ChatMessage[], maxTokens = DEFAULT_MAX_TOKENS)
 
     if (!response.ok) {
       failures.push(`Groq ${response.status}: ${json?.error?.message || JSON.stringify(json)}`);
-      if (response.status === 429 || response.status >= 500) {
-        continue;
-      }
-      throw new Error(failures[failures.length - 1]);
+      continue;
     }
 
     const text = json?.choices?.[0]?.message?.content?.trim();

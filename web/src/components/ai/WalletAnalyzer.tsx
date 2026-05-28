@@ -50,6 +50,16 @@ export const WalletAnalyzer = () => {
         getTransactions(walletAddress),
       ]);
 
+      const aiTokens = (assets.items || []).map((asset) => ({
+        symbol: asset.content?.metadata?.symbol || asset.content?.metadata?.name || "???",
+        name: asset.content?.metadata?.name || asset.content?.metadata?.symbol || "Unknown",
+        balance: asset.token_info?.balance || 0,
+        amount: asset.token_info?.balance || 0,
+        priceUsd: asset.token_info?.price_info?.price_per_token || 0,
+        usdValue: asset.token_info?.price_info?.total_price || 0,
+        interface: asset.interface,
+      }));
+
       // Send to AI for analysis
       const { data, error } = await supabase.functions.invoke("ai-analyzer", {
         body: {
@@ -57,8 +67,8 @@ export const WalletAnalyzer = () => {
           data: {
             walletAddress,
             ...overview,
-            tokens: assets.assets?.filter((a: any) => a.interface === "FungibleToken") || [],
-            transactions: txs.transactions || [],
+            tokens: aiTokens,
+            transactions: txs,
           }
         }
       });
