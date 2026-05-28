@@ -91,6 +91,16 @@ export const LiveKitVoicePanel = forwardRef<VoicePanelHandle, LiveKitVoicePanelP
   const participantsRef = useRef<VoiceParticipant[]>([]);
   const userIdRef = useRef<string>("");
 
+  const updateLocalParticipant = useCallback((patch: Partial<VoiceParticipant>) => {
+    const localUserId = userIdRef.current;
+    if (!localUserId) return;
+    setParticipants((prev) => prev.map((participant) =>
+      participant.user_id === localUserId
+        ? { ...participant, ...patch }
+        : participant
+    ));
+  }, []);
+
   // Recording refs
   const recorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
@@ -330,11 +340,32 @@ export const LiveKitVoicePanel = forwardRef<VoicePanelHandle, LiveKitVoicePanelP
   /* ─── Supabase Broadcast for host commands ─── */
   const setupBroadcast = () => {
     if (!user) return;
+
+    const syncApprovedPromotion = async () => {
+      if (!spaceId || roleRef.current === "speaker") return;
+      const { data } = await supabase
+        .from("speaker_requests")
+        .select("id")
+        .eq("space_id", spaceId)
+        .eq("user_id", user.id)
+        .eq("status", "approved")
+        .limit(1);
+
+      if (data && data.length > 0 && roleRef.current === "listener") {
+        console.log("[LiveKit] Initial approved request detected for", user.id);
+        await handleCommand("promote", user.id);
+      }
+    };
+
     const ch = supabase.channel(`lk-commands-${lobbyId}`);
     ch.on("broadcast", { event: "command" }, ({ payload }) => {
       if (payload.target !== user.id) return;
       handleCommand(payload.cmd, payload.from);
-    }).subscribe();
+    }).subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        void syncApprovedPromotion();
+      }
+    });
     broadcastChannelRef.current = ch;
 
     // Redundant DB-backed promote: subscribe to speaker_requests changes
@@ -360,7 +391,11 @@ export const LiveKitVoicePanel = forwardRef<VoicePanelHandle, LiveKitVoicePanelP
           table: "speaker_requests",
           filter: `space_id=eq.${spaceId}`,
         }, handleDbPromote)
-        .subscribe();
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            void syncApprovedPromotion();
+          }
+        });
       dbPromoteChannelRef.current = dbCh;
 
       // Polling fallback: check every 5s if we have an approved request
@@ -376,7 +411,7 @@ export const LiveKitVoicePanel = forwardRef<VoicePanelHandle, LiveKitVoicePanelP
           console.log("[LiveKit] Poll detected approved request for", user.id);
           handleCommand("promote", user.id);
         }
-      }, 5000);
+      }, 1500);
       // Store interval for cleanup
       (dbPromoteChannelRef as any)._pollInterval = pollInterval;
     }
@@ -392,6 +427,7 @@ export const LiveKitVoicePanel = forwardRef<VoicePanelHandle, LiveKitVoicePanelP
         if (roleRef.current === "speaker") return;
         setRole("speaker");
         roleRef.current = "speaker";
+        updateLocalParticipant({ role: "speaker", is_muted: false });
         await room.localParticipant.setMicrophoneEnabled(true);
         setMuted(false);
         // Update presence
@@ -410,6 +446,7 @@ export const LiveKitVoicePanel = forwardRef<VoicePanelHandle, LiveKitVoicePanelP
       case "demote":
         setRole("listener");
         roleRef.current = "listener";
+        updateLocalParticipant({ role: "listener", is_muted: true });
         await room.localParticipant.setMicrophoneEnabled(false);
         setMuted(true);
         presenceChannelRef.current?.track({
@@ -423,6 +460,7 @@ export const LiveKitVoicePanel = forwardRef<VoicePanelHandle, LiveKitVoicePanelP
       case "force-mute":
         await room.localParticipant.setMicrophoneEnabled(false);
         setMuted(true);
+        updateLocalParticipant({ is_muted: true });
         break;
     }
   };
@@ -502,7 +540,8 @@ export const LiveKitVoicePanel = forwardRef<VoicePanelHandle, LiveKitVoicePanelP
     const newMuted = forceMuted !== undefined ? forceMuted : !muted;
     await room.localParticipant.setMicrophoneEnabled(!newMuted);
     setMuted(newMuted);
-  }, [muted]);
+    updateLocalParticipant({ is_muted: newMuted });
+  }, [muted, updateLocalParticipant]);
 
   useImperativeHandle(ref, () => ({
     leaveVoice,
