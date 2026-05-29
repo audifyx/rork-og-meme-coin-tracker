@@ -1,1 +1,10 @@
 project_id = "ffjipnkhcebjvttliptb"
+
+[functions.telegram-invite-bot]
+verify_jwt = false
+
+[functions.telegram-announcer]
+verify_jwt = false
+
+[functions.news-fetcher]
+verify_jwt = false
