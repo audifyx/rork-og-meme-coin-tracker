@@ -141,6 +141,43 @@ const durationToExpiry = (duration: ModerationDuration) => {
 const formatTime = (value: string) => new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 const formatShortDate = (value: string) => new Date(value).toLocaleDateString([], { month: "short", day: "numeric" });
 
+const slugifyRoomName = (value: string) => {
+  const slug = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9- ]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+
+  return slug || "room";
+};
+
+async function buildUniqueRoomSlug(name: string) {
+  const baseSlug = slugifyRoomName(name);
+  const { data, error } = await supabase
+    .from("community_rooms")
+    .select("slug")
+    .ilike("slug", `${baseSlug}%`)
+    .limit(100);
+
+  if (error) {
+    console.error("community room slug lookup failed", error);
+    return baseSlug;
+  }
+
+  const taken = new Set(((data || []) as Array<{ slug: string | null }>).map(row => row.slug).filter(Boolean) as string[]);
+  if (!taken.has(baseSlug)) return baseSlug;
+
+  for (let index = 2; index <= 1000; index += 1) {
+    const candidate = `${baseSlug}-${index}`.slice(0, 64);
+    if (!taken.has(candidate)) return candidate;
+  }
+
+  return `${baseSlug}-${Date.now()}`.slice(0, 64);
+}
+
 async function fetchProfilesMap(userIds: string[]) {
   const ids = Array.from(new Set(userIds.filter(Boolean)));
   if (ids.length === 0) return {} as Record<string, ProfileLite>;
@@ -439,9 +476,13 @@ const CommunityRooms: React.FC = () => {
 
   const createRoom = async () => {
     if (!user || !newRoom.name.trim()) return;
-    const cleanName = newRoom.name.trim().toLowerCase().replace(/[^a-z0-9- ]/g, "").replace(/\s+/g, "-").slice(0, 48);
+
+    const roomName = newRoom.name.trim().slice(0, 80);
+    const roomSlug = await buildUniqueRoomSlug(roomName);
+
     const { data, error } = await supabase.from("community_rooms").insert({
-      name: cleanName,
+      name: roomName,
+      slug: roomSlug,
       description: newRoom.description.trim() || null,
       category: newRoom.category,
       room_type: newRoom.room_type,
@@ -457,7 +498,7 @@ const CommunityRooms: React.FC = () => {
       return;
     }
     await supabase.from("community_room_members").upsert({ room_id: data.id, user_id: user.id, role: "owner" }, { onConflict: "room_id,user_id" });
-    await supabase.from("community_room_moderation_actions").insert({ room_id: data.id, moderator_id: user.id, action_type: "channel_created", reason: `Created #${cleanName}` });
+    await supabase.from("community_room_moderation_actions").insert({ room_id: data.id, moderator_id: user.id, action_type: "channel_created", reason: `Created #${roomSlug}` });
     setRooms(prev => [data as Room, ...prev]);
     setActiveRoom(data as Room);
     setShowCreateModal(false);
