@@ -3,7 +3,7 @@
  * Internal sub-tabs let users switch between modes without navigating away.
  */
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { MessageSquare, Radio, Users, Compass, Activity, Search, Rocket } from "lucide-react";
+import { Hash, MessageSquare, Radio, Users, Compass, Activity, Search, Rocket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SocialHub from "./SocialHub";
 import SpacesPage from "./Spaces";
@@ -11,13 +11,15 @@ import CommunitiesPage from "./Communities";
 import DiscoverPage from "./Discover";
 
 const LiveFeedPage = lazy(() => import("./LiveFeed"));
+const CommunityRoomsPage = lazy(() => import("./CommunityRooms"));
 const TokenExplorer = lazy(() => import("@/components/discover-20x/TokenExplorer").then(m => ({ default: m.TokenExplorer })));
 
-type SubTab = "social" | "spaces" | "communities" | "discover";
+type SubTab = "social" | "rooms" | "spaces" | "communities" | "discover";
 type DiscoverSub = "launchpad" | "live-feed" | "explore";
 
 const SUB_TABS: { id: SubTab; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "social", label: "Chat", Icon: MessageSquare },
+  { id: "rooms", label: "Rooms", Icon: Hash },
   { id: "spaces", label: "Spaces", Icon: Radio },
   { id: "communities", label: "Groups", Icon: Users },
   { id: "discover", label: "Discover", Icon: Compass },
@@ -81,6 +83,11 @@ const CommunityHub: React.FC = () => {
       {/* Content */}
       <div className="min-h-0 flex-1 overflow-hidden">
         {sub === "social" && <SocialHub />}
+        {sub === "rooms" && (
+          <Suspense fallback={<Spinner />}>
+            <CommunityRoomsPage />
+          </Suspense>
+        )}
         {sub === "spaces" && (
           <div className="h-full overflow-y-auto px-3 py-4 sm:px-5 lg:px-6 pb-4">
             <SpacesPage />
