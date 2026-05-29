@@ -5,12 +5,12 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle, Archive, BadgeCheck, Ban, Bell, BookOpen, CalendarDays,
-  CheckCircle2, ChevronLeft, Crown, EyeOff, FileText, Flag, Gauge, Hash,
-  Image as ImageIcon, Link2, Loader2, Lock, Megaphone, MessageSquare,
-  Mic, MoreHorizontal, Pin, Plus, Radio, Search, Send, Settings, Shield,
-  ShieldCheck, Smile, Sparkles, Trash2, UserMinus, UserPlus, Users, VolumeX,
-  X,
+  AlertTriangle, Archive, BadgeCheck, Ban, Bell, BookOpen, Bookmark, CalendarDays,
+  Check, CheckCircle2, ChevronLeft, Copy, Crown, ExternalLink, EyeOff, FileText,
+  Flag, Gauge, Hash, Image as ImageIcon, Link2, Loader2, Lock, Megaphone,
+  MessageSquare, Mic, MoreHorizontal, Pin, Plus, Radio, Search, Send, Settings,
+  Shield, ShieldCheck, Smile, Sparkles, Trash2, UserMinus, UserPlus, Users,
+  VolumeX, X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -63,6 +63,20 @@ interface Room {
   last_message_at?: string | null;
 }
 
+interface MessageReactionSummary {
+  emoji: string;
+  count: number;
+  reacted: boolean;
+}
+
+interface ReplyPreview {
+  id: string;
+  sender_id: string;
+  content: string;
+  is_deleted?: boolean | null;
+  profiles?: ProfileLite | null;
+}
+
 interface Message {
   id: string;
   room_id: string;
@@ -79,6 +93,16 @@ interface Message {
   deleted_at?: string | null;
   created_at: string;
   profiles?: ProfileLite | null;
+  replyPreview?: ReplyPreview | null;
+  replyCount?: number;
+  reactions?: MessageReactionSummary[];
+}
+
+interface MessageReactionRow {
+  message_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
 }
 
 interface AttachmentDraft {
@@ -136,7 +160,9 @@ const ROOM_TYPES: { value: RoomType; label: string; Icon: React.ComponentType<{ 
 
 const DEFAULT_CHANNELS = ["general", "announcements", "research", "questions", "memes", "support", "events", "spaces-discussion"];
 const QUICK_EMOJIS = ["🔥", "💎", "🚀", "👀", "✅", "💯", "🧠", "🛡️"];
+const MESSAGE_ACTION_REACTIONS = ["👀", "🚀", "💎", "🔥"];
 const MOD_ROLES: RoomRole[] = ["owner", "admin", "moderator"];
+const SAVED_MESSAGES_STORAGE_PREFIX = "ogscan-community-saved-messages:";
 
 const durationToExpiry = (duration: ModerationDuration) => {
   const mins: Record<ModerationDuration, number> = { "15m": 15, "1h": 60, "6h": 360, "24h": 1440, "7d": 10080 };
@@ -148,6 +174,12 @@ const formatShortDate = (value: string) => new Date(value).toLocaleDateString([]
 const IMAGE_URL_RE = /\.(png|jpe?g|gif|webp|svg|avif)(\?.*)?$/i;
 
 const isImageUrl = (value: string) => IMAGE_URL_RE.test(value) || value.includes("images") || value.includes("img") || value.includes("photo");
+const truncateText = (value: string | null | undefined, max = 80) => {
+  const clean = (value || "").trim();
+  if (!clean) return "Message";
+  return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
+};
+const getSavedMessagesStorageKey = (userId: string) => `${SAVED_MESSAGES_STORAGE_PREFIX}${userId}`;
 
 const slugifyRoomName = (value: string) => {
   const slug = value
@@ -252,20 +284,34 @@ function MessageRow({
   msg,
   isOwn,
   canModerate,
+  isSaved,
+  isHighlighted,
   onPin,
   onDelete,
   onReport,
   onReact,
   onReply,
+  onToggleSave,
+  onCopyMessage,
+  onCopyLink,
+  onJumpToMessage,
+  registerMessageRef,
 }: {
   msg: Message;
   isOwn: boolean;
   canModerate: boolean;
+  isSaved: boolean;
+  isHighlighted: boolean;
   onPin: (message: Message) => void;
   onDelete: (message: Message) => void;
   onReport: (message: Message) => void;
   onReact: (message: Message, emoji: string) => void;
   onReply: (message: Message) => void;
+  onToggleSave: (message: Message) => void;
+  onCopyMessage: (message: Message) => void;
+  onCopyLink: (message: Message) => void;
+  onJumpToMessage: (messageId: string) => void;
+  registerMessageRef: (messageId: string, node: HTMLDivElement | null) => void;
 }) {
   const attachmentUrl = msg.media_url || msg.file_url;
   const hasAttachment = !!attachmentUrl;
@@ -275,69 +321,161 @@ function MessageRow({
   if (msg.is_deleted || msg.deleted_at) return null;
 
   return (
-    <div className={cn("group flex gap-2.5", isOwn && "flex-row-reverse")}>
-      <Avatar url={msg.profiles?.avatar_url} username={msg.profiles?.username} size="sm" />
-      <div className={cn("min-w-0 max-w-[78%]", isOwn ? "items-end" : "items-start", "flex flex-col gap-1")}>
-        <div className={cn("flex items-center gap-1.5 px-1", isOwn && "flex-row-reverse")}>
-          <span className="truncate text-xs font-bold text-white/65">{isOwn ? "You" : msg.profiles?.username || "Member"}</span>
-          {msg.profiles?.verified && <BadgeCheck className="h-3 w-3 text-og-cyan" />}
-          <span className="text-[10px] text-white/20">{formatTime(msg.created_at)}</span>
-          {msg.edited_at && <span className="text-[9px] text-white/18">edited</span>}
-        </div>
-        <div
-          className={cn(
-            "relative rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm",
-            isOwn ? "rounded-tr-sm bg-og-cyan/20 text-white" : "rounded-tl-sm bg-white/[0.06] text-white/86",
-            msg.is_pinned && "ring-1 ring-og-gold/40",
-          )}
-        >
-          {msg.is_pinned && <Pin className="mr-1 inline h-3 w-3 text-og-gold" />}
-          <div className="space-y-2">
-            {msg.content && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
-            {hasAttachment && (
-              attachmentIsImage ? (
-                <a href={attachmentUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-white/10 bg-black/20">
-                  <img src={attachmentUrl || undefined} alt="Attachment" className="max-h-72 w-full object-cover" />
-                </a>
-              ) : (
-                <a href={attachmentUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-bold text-white/80 hover:bg-black/30">
-                  <Link2 className="h-3.5 w-3.5 text-og-cyan" />
-                  Open attachment
-                </a>
-              )
+    <div
+      ref={node => registerMessageRef(msg.id, node)}
+      className={cn(
+        "group scroll-mt-24 rounded-[24px] px-2 py-1.5 transition-all",
+        isOwn && "flex-row-reverse",
+        isHighlighted && "bg-og-cyan/[0.08] ring-1 ring-og-cyan/25 shadow-[0_0_0_1px_rgba(34,211,238,0.08)]",
+      )}
+    >
+      <div className={cn("flex gap-2.5", isOwn && "flex-row-reverse")}>
+        <Avatar url={msg.profiles?.avatar_url} username={msg.profiles?.username} size="sm" />
+        <div className={cn("min-w-0 max-w-[82%]", isOwn ? "items-end" : "items-start", "flex flex-col gap-1")}>
+          <div className={cn("flex items-center gap-1.5 px-1", isOwn && "flex-row-reverse")}>
+            <span className="truncate text-xs font-bold text-white/65">{isOwn ? "You" : msg.profiles?.username || "Member"}</span>
+            {msg.profiles?.verified && <BadgeCheck className="h-3 w-3 text-og-cyan" />}
+            <span className="text-[10px] text-white/20">{formatTime(msg.created_at)}</span>
+            {msg.edited_at && <span className="text-[9px] text-white/18">edited</span>}
+            {isSaved && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-og-gold/20 bg-og-gold/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.2em] text-og-gold">
+                <Bookmark className="h-2.5 w-2.5" /> Saved
+              </span>
             )}
           </div>
-        </div>
-        <div className={cn("flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100", isOwn && "flex-row-reverse")}>
-          {QUICK_EMOJIS.slice(0, 4).map(emoji => (
-            <button key={emoji} onClick={() => onReact(msg, emoji)} className="rounded-lg px-1 text-xs hover:bg-white/[0.06]">{emoji}</button>
-          ))}
-          <button onClick={() => onReply(msg)} className="rounded-lg p-1 text-white/25 hover:bg-white/[0.06] hover:text-white/60" title="Reply">
-            <MessageSquare className="h-3.5 w-3.5" />
-          </button>
-          <button onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg p-1 text-white/25 hover:bg-white/[0.06] hover:text-white/60" title="More">
-            <MoreHorizontal className="h-3.5 w-3.5" />
-          </button>
-          {menuOpen && (
-            <div className="absolute z-30 mt-8 min-w-[150px] rounded-xl border border-white/10 bg-[#11111a] p-1 shadow-2xl">
-              {(canModerate || isOwn) && (
-                <button onClick={() => { onPin(msg); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs text-white/55 hover:bg-white/[0.05]">
-                  <Pin className="h-3.5 w-3.5" /> {msg.is_pinned ? "Unpin" : "Pin"}
+          <div
+            className={cn(
+              "relative rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed shadow-sm",
+              isOwn ? "rounded-tr-sm bg-og-cyan/20 text-white" : "rounded-tl-sm bg-white/[0.06] text-white/86",
+              msg.is_pinned && "ring-1 ring-og-gold/40",
+            )}
+          >
+            {msg.is_pinned && <Pin className="mr-1 inline h-3 w-3 text-og-gold" />}
+            {msg.is_deleted ? (
+              <span className="italic text-white/30">Message deleted</span>
+            ) : (
+              <div className="space-y-2">
+                {msg.replyPreview && (
+                  <button
+                    onClick={() => onJumpToMessage(msg.replyPreview!.id)}
+                    className={cn(
+                      "flex w-full items-start gap-2 rounded-xl border border-white/[0.08] bg-black/20 px-2.5 py-2 text-left text-[11px] text-white/52 transition-colors hover:border-white/[0.15] hover:bg-black/30 hover:text-white/75",
+                      isOwn && "text-right"
+                    )}
+                  >
+                    <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 text-og-cyan" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-white/62">Replying to {msg.replyPreview.profiles?.username || "member"}</p>
+                      <p className="truncate">{msg.replyPreview.is_deleted ? "Deleted message" : truncateText(msg.replyPreview.content, 90)}</p>
+                    </div>
+                  </button>
+                )}
+                {msg.content && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
+                {hasAttachment && (
+                  attachmentIsImage ? (
+                    <a href={attachmentUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-white/10 bg-black/20">
+                      <img src={attachmentUrl || undefined} alt="Attachment" className="max-h-72 w-full object-cover" />
+                    </a>
+                  ) : (
+                    <a href={attachmentUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-bold text-white/80 hover:bg-black/30">
+                      <Link2 className="h-3.5 w-3.5 text-og-cyan" />
+                      Open attachment
+                    </a>
+                  )
+                )}
+              </div>
+            )}
+          </div>
+
+          {!!msg.reactions?.length && (
+            <div className={cn("flex flex-wrap items-center gap-1 px-1", isOwn && "justify-end")}>
+              {msg.reactions.map(reaction => (
+                <button
+                  key={reaction.emoji}
+                  onClick={() => onReact(msg, reaction.emoji)}
+                  className={cn(
+                    "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-bold transition-colors",
+                    reaction.reacted
+                      ? "border-og-cyan/35 bg-og-cyan/15 text-white"
+                      : "border-white/10 bg-white/[0.03] text-white/55 hover:border-white/20 hover:text-white"
+                  )}
+                >
+                  <span>{reaction.emoji}</span>
+                  <span>{reaction.count}</span>
                 </button>
-              )}
-              <button onClick={() => { navigator.clipboard?.writeText(msg.content); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs text-white/55 hover:bg-white/[0.05]">
-                <FileText className="h-3.5 w-3.5" /> Copy
-              </button>
-              <button onClick={() => { onReport(msg); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs text-white/55 hover:bg-white/[0.05]">
-                <Flag className="h-3.5 w-3.5" /> Report
-              </button>
-              {(canModerate || isOwn) && (
-                <button onClick={() => { onDelete(msg); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs text-red-300 hover:bg-red-400/10">
-                  <Trash2 className="h-3.5 w-3.5" /> Delete
-                </button>
-              )}
+              ))}
             </div>
           )}
+
+          <div className={cn("flex flex-wrap items-center gap-1 px-1 text-[10px] text-white/28", isOwn && "justify-end")}>
+            {msg.replyCount ? (
+              <button onClick={() => onReply(msg)} className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 font-bold text-white/45 hover:text-white">
+                {msg.replyCount} repl{msg.replyCount === 1 ? "y" : "ies"}
+              </button>
+            ) : null}
+            {hasAttachment ? <span>Attachment</span> : null}
+          </div>
+
+          <div className={cn("relative flex flex-wrap items-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100", isOwn && "justify-end")}>
+            <button onClick={() => setMenuOpen(prev => !prev)} className="rounded-full bg-white/[0.04] px-2 py-1.5 text-white/32 hover:bg-white/[0.08] hover:text-white/70" title="More">
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </button>
+            <button onClick={() => onReply(msg)} className="rounded-full bg-white/[0.04] px-2 py-1.5 text-white/32 hover:bg-white/[0.08] hover:text-white/70" title="Reply">
+              <MessageSquare className="h-3.5 w-3.5" />
+            </button>
+            {MESSAGE_ACTION_REACTIONS.map(emoji => {
+              const activeReaction = msg.reactions?.find(reaction => reaction.emoji === emoji)?.reacted;
+              return (
+                <button
+                  key={emoji}
+                  onClick={() => onReact(msg, emoji)}
+                  className={cn(
+                    "rounded-full px-2.5 py-1 text-sm transition-colors",
+                    activeReaction ? "bg-white/[0.1] text-white" : "bg-white/[0.04] text-white/85 hover:bg-white/[0.08]"
+                  )}
+                  title={`React ${emoji}`}
+                >
+                  {emoji}
+                </button>
+              );
+            })}
+            {menuOpen && (
+              <div className={cn("absolute z-30 min-w-[190px] rounded-2xl border border-white/10 bg-[#11111a] p-1.5 shadow-2xl", isOwn ? "right-0 top-10" : "left-0 top-10")}>
+                <button onClick={() => { onToggleSave(msg); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-xs text-white/60 hover:bg-white/[0.05] hover:text-white">
+                  {isSaved ? <Check className="h-3.5 w-3.5 text-og-gold" /> : <Bookmark className="h-3.5 w-3.5" />} {isSaved ? "Saved" : "Save message"}
+                </button>
+                <button onClick={() => { onCopyMessage(msg); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-xs text-white/60 hover:bg-white/[0.05] hover:text-white">
+                  <Copy className="h-3.5 w-3.5" /> Copy text
+                </button>
+                <button onClick={() => { onCopyLink(msg); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-xs text-white/60 hover:bg-white/[0.05] hover:text-white">
+                  <Link2 className="h-3.5 w-3.5" /> Copy link
+                </button>
+                {msg.replyPreview && (
+                  <button onClick={() => { onJumpToMessage(msg.replyPreview!.id); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-xs text-white/60 hover:bg-white/[0.05] hover:text-white">
+                    <ExternalLink className="h-3.5 w-3.5" /> Jump to original
+                  </button>
+                )}
+                {hasAttachment && attachmentUrl && (
+                  <a href={attachmentUrl} target="_blank" rel="noreferrer" onClick={() => setMenuOpen(false)} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-xs text-white/60 hover:bg-white/[0.05] hover:text-white">
+                    <FileText className="h-3.5 w-3.5" /> Open attachment
+                  </a>
+                )}
+                {(canModerate || isOwn) && (
+                  <button onClick={() => { onPin(msg); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-xs text-white/60 hover:bg-white/[0.05] hover:text-white">
+                    <Pin className="h-3.5 w-3.5" /> {msg.is_pinned ? "Unpin" : "Pin"}
+                  </button>
+                )}
+                <button onClick={() => { onReport(msg); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-xs text-white/60 hover:bg-white/[0.05] hover:text-white">
+                  <Flag className="h-3.5 w-3.5" /> Report
+                </button>
+                {(canModerate || isOwn) && (
+                  <button onClick={() => { onDelete(msg); setMenuOpen(false); }} className="flex w-full items-center gap-2 rounded-xl px-2.5 py-2 text-left text-xs text-red-300 hover:bg-red-400/10">
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -370,10 +508,15 @@ const CommunityRooms: React.FC = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachModal, setShowAttachModal] = useState(false);
   const [attachmentDraft, setAttachmentDraft] = useState<AttachmentDraft>({ url: "", caption: "" });
+  const [savedMessageIds, setSavedMessageIds] = useState<string[]>([]);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const realtimeRef = useRef<any>(null);
   const presenceRef = useRef<any>(null);
+  const activeMessageIdsRef = useRef<string[]>([]);
+  const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const handledRequestedMessageRef = useRef<string | null>(null);
 
   const currentMember = useMemo(() => members.find(member => member.user_id === user?.id), [members, user?.id]);
   const canModerate = !!currentMember && MOD_ROLES.includes(currentMember.role);
@@ -381,6 +524,7 @@ const CommunityRooms: React.FC = () => {
   const isBanned = !!currentMember?.is_banned || (!!currentMember?.banned_until && new Date(currentMember.banned_until).getTime() > Date.now());
   const pinnedMessages = messages.filter(message => message.is_pinned && !message.is_deleted);
   const requestedRoomId = useMemo(() => new URLSearchParams(window.location.search).get("room"), []);
+  const requestedMessageId = useMemo(() => new URLSearchParams(window.location.search).get("message"), []);
 
   const filteredRooms = useMemo(() => {
     return rooms.filter(room => {
@@ -390,6 +534,21 @@ const CommunityRooms: React.FC = () => {
       return matchesSearch && matchesState;
     });
   }, [rooms, roomFilter, searchQuery]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setSavedMessageIds([]);
+      return;
+    }
+
+    try {
+      const raw = localStorage.getItem(getSavedMessagesStorageKey(user.id));
+      const parsed = raw ? JSON.parse(raw) : [];
+      setSavedMessageIds(Array.isArray(parsed) ? parsed.filter(value => typeof value === "string") : []);
+    } catch {
+      setSavedMessageIds([]);
+    }
+  }, [user?.id]);
 
   const loadRooms = useCallback(async () => {
     setLoadingRooms(true);
@@ -446,13 +605,70 @@ const CommunityRooms: React.FC = () => {
       console.error("community message load failed", error);
       toast.error("Could not load messages");
       setMessages([]);
+      activeMessageIdsRef.current = [];
     } else {
-      const rows = ((data || []) as Message[]).filter(message => !message.is_deleted && !message.deleted_at);
-      const profilesMap = await fetchProfilesMap(rows.map(message => message.sender_id));
-      setMessages(rows.reverse().map(message => ({ ...message, profiles: profilesMap[message.sender_id] || null })));
+      const rows = (data || []) as Message[];
+      const messageIds = rows.map(message => message.id);
+      const inlineReplyIds = Array.from(new Set(rows.map(message => message.reply_to_id).filter(Boolean) as string[]));
+      const missingReplyIds = inlineReplyIds.filter(replyId => !messageIds.includes(replyId));
+
+      const [reactionRowsResult, missingRepliesResult] = await Promise.all([
+        messageIds.length > 0
+          ? supabase.from("community_room_reactions").select("message_id, user_id, emoji, created_at").in("message_id", messageIds)
+          : Promise.resolve({ data: [], error: null }),
+        missingReplyIds.length > 0
+          ? supabase.from("community_room_messages").select("*").in("id", missingReplyIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      const missingReplyRows = ((missingRepliesResult.data || []) as Message[]);
+      const combinedRows = [...rows, ...missingReplyRows];
+      const profilesMap = await fetchProfilesMap(combinedRows.map(message => message.sender_id));
+      const rowsById = new Map<string, Message>(combinedRows.map(message => [message.id, { ...message, profiles: profilesMap[message.sender_id] || null }]));
+      const replyCountById = rows.reduce<Record<string, number>>((acc, message) => {
+        if (message.reply_to_id) acc[message.reply_to_id] = (acc[message.reply_to_id] || 0) + 1;
+        return acc;
+      }, {});
+
+      const groupedReactions = new Map<string, Map<string, Set<string>>>();
+      for (const reaction of (reactionRowsResult.data || []) as MessageReactionRow[]) {
+        if (!groupedReactions.has(reaction.message_id)) groupedReactions.set(reaction.message_id, new Map());
+        const byEmoji = groupedReactions.get(reaction.message_id)!;
+        if (!byEmoji.has(reaction.emoji)) byEmoji.set(reaction.emoji, new Set());
+        byEmoji.get(reaction.emoji)!.add(reaction.user_id);
+      }
+
+      const hydratedRows = rows.reverse().map(message => {
+        const reactionSummary = Array.from(groupedReactions.get(message.id)?.entries() || []).map(([emoji, userIds]) => ({
+          emoji,
+          count: userIds.size,
+          reacted: !!user?.id && userIds.has(user.id),
+        })).sort((a, b) => {
+          if (b.count !== a.count) return b.count - a.count;
+          return MESSAGE_ACTION_REACTIONS.indexOf(a.emoji) - MESSAGE_ACTION_REACTIONS.indexOf(b.emoji);
+        });
+
+        const replyMessage = message.reply_to_id ? rowsById.get(message.reply_to_id) : null;
+        return {
+          ...message,
+          profiles: profilesMap[message.sender_id] || null,
+          reactions: reactionSummary,
+          replyCount: replyCountById[message.id] || 0,
+          replyPreview: replyMessage ? {
+            id: replyMessage.id,
+            sender_id: replyMessage.sender_id,
+            content: replyMessage.content,
+            is_deleted: replyMessage.is_deleted,
+            profiles: replyMessage.profiles || null,
+          } : null,
+        } as Message;
+      });
+
+      activeMessageIdsRef.current = hydratedRows.map(message => message.id);
+      setMessages(hydratedRows);
     }
     setLoadingMessages(false);
-  }, []);
+  }, [user?.id]);
 
   const loadModeration = useCallback(async (roomId: string) => {
     if (!canModerate) {
@@ -488,6 +704,12 @@ const CommunityRooms: React.FC = () => {
       .channel(`community-room-messages-${activeRoom.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "community_room_messages", filter: `room_id=eq.${activeRoom.id}` }, () => loadMessages(activeRoom.id))
       .on("postgres_changes", { event: "*", schema: "public", table: "community_room_members", filter: `room_id=eq.${activeRoom.id}` }, () => loadMembers(activeRoom.id))
+      .on("postgres_changes", { event: "*", schema: "public", table: "community_room_reactions" }, payload => {
+        const changedMessageId = (payload.new as { message_id?: string } | null)?.message_id || (payload.old as { message_id?: string } | null)?.message_id;
+        if (changedMessageId && activeMessageIdsRef.current.includes(changedMessageId)) {
+          loadMessages(activeRoom.id);
+        }
+      })
       .subscribe();
     return () => { realtimeRef.current?.unsubscribe(); };
   }, [activeRoom, loadMembers, loadMessages]);
@@ -509,6 +731,35 @@ const CommunityRooms: React.FC = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
+
+  const registerMessageRef = useCallback((messageId: string, node: HTMLDivElement | null) => {
+    messageRefs.current[messageId] = node;
+  }, []);
+
+  const focusMessage = useCallback((messageId: string) => {
+    setHighlightedMessageId(messageId);
+    requestAnimationFrame(() => {
+      messageRefs.current[messageId]?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    window.setTimeout(() => {
+      setHighlightedMessageId(current => current === messageId ? null : current);
+    }, 2400);
+  }, []);
+
+  useEffect(() => {
+    if (!requestedMessageId || handledRequestedMessageRef.current === requestedMessageId) return;
+    const exists = messages.some(message => message.id === requestedMessageId);
+    if (exists) {
+      handledRequestedMessageRef.current = requestedMessageId;
+      focusMessage(requestedMessageId);
+    }
+  }, [focusMessage, messages, requestedMessageId]);
+
+  const persistSavedMessageIds = useCallback((nextIds: string[]) => {
+    setSavedMessageIds(nextIds);
+    if (!user?.id) return;
+    localStorage.setItem(getSavedMessagesStorageKey(user.id), JSON.stringify(nextIds));
+  }, [user?.id]);
 
   const createRoom = async () => {
     if (!user || !newRoom.name.trim()) return;
@@ -592,21 +843,6 @@ const CommunityRooms: React.FC = () => {
       toast.error(error.message || "Could not delete message");
       return;
     }
-
-    setMessages(prev => prev.filter(item => item.id !== message.id));
-    const { data: latest } = await supabase
-      .from("community_room_messages")
-      .select("content, created_at")
-      .eq("room_id", activeRoom.id)
-      .or("is_deleted.is.null,is_deleted.eq.false")
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    await supabase
-      .from("community_rooms")
-      .update({ last_message: latest?.content?.slice(0, 180) || null, last_message_at: latest?.created_at || null })
-      .eq("id", activeRoom.id);
     loadMessages(activeRoom.id);
   };
 
@@ -626,8 +862,69 @@ const CommunityRooms: React.FC = () => {
   };
 
   const reactToMessage = async (message: Message, emoji: string) => {
-    if (!user) return;
-    await supabase.from("community_room_reactions").upsert({ message_id: message.id, user_id: user.id, emoji }, { onConflict: "message_id,user_id,emoji" });
+    if (!user || !activeRoom) return;
+    const alreadyReacted = !!message.reactions?.find(reaction => reaction.emoji === emoji && reaction.reacted);
+
+    const query = supabase.from("community_room_reactions");
+    const { error } = alreadyReacted
+      ? await query.delete().eq("message_id", message.id).eq("user_id", user.id).eq("emoji", emoji)
+      : await query.upsert({ message_id: message.id, user_id: user.id, emoji }, { onConflict: "message_id,user_id,emoji" });
+
+    if (error) {
+      toast.error("Could not update reaction");
+      return;
+    }
+
+    loadMessages(activeRoom.id);
+  };
+
+  const toggleSavedMessage = (message: Message) => {
+    const nextIds = savedMessageIds.includes(message.id)
+      ? savedMessageIds.filter(id => id !== message.id)
+      : [message.id, ...savedMessageIds].slice(0, 250);
+
+    persistSavedMessageIds(nextIds);
+    toast.success(savedMessageIds.includes(message.id) ? "Message removed from saved" : "Message saved");
+  };
+
+  const copyMessageText = async (message: Message) => {
+    const text = message.content?.trim() || message.file_url || message.media_url;
+    if (!text) {
+      toast.error("Nothing to copy");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Message copied");
+    } catch {
+      toast.error("Could not copy message");
+    }
+  };
+
+  const copyMessageLink = async (message: Message) => {
+    if (!activeRoom) return;
+    const params = new URLSearchParams(window.location.search);
+    params.set("room", activeRoom.id);
+    params.set("message", message.id);
+    const messageUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+
+    try {
+      await navigator.clipboard.writeText(messageUrl);
+      focusMessage(message.id);
+      toast.success("Message link copied");
+    } catch {
+      toast.error("Could not copy message link");
+    }
+  };
+
+  const jumpToMessage = (messageId: string) => {
+    if (!activeRoom) return;
+    const params = new URLSearchParams(window.location.search);
+    params.set("room", activeRoom.id);
+    params.set("message", messageId);
+    window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+    focusMessage(messageId);
   };
 
   const logModAction = async (target: Member, action_type: string, reason?: string) => {
@@ -987,11 +1284,18 @@ const CommunityRooms: React.FC = () => {
                           msg={message}
                           isOwn={message.sender_id === user?.id}
                           canModerate={canModerate}
+                          isSaved={savedMessageIds.includes(message.id)}
+                          isHighlighted={highlightedMessageId === message.id}
                           onPin={pinMessage}
                           onDelete={deleteMessage}
                           onReport={reportMessage}
                           onReact={reactToMessage}
                           onReply={setReplyTo}
+                          onToggleSave={toggleSavedMessage}
+                          onCopyMessage={copyMessageText}
+                          onCopyLink={copyMessageLink}
+                          onJumpToMessage={jumpToMessage}
+                          registerMessageRef={registerMessageRef}
                         />
                       ))}
                       <div ref={messagesEndRef} />
