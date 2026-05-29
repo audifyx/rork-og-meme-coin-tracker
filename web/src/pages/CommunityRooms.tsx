@@ -25,7 +25,11 @@ type ModerationDuration = "15m" | "1h" | "6h" | "24h" | "7d";
 interface ProfileLite {
   username: string | null;
   avatar_url: string | null;
-  is_verified?: boolean | null;
+  verified?: boolean | null;
+}
+
+interface ProfileRow extends ProfileLite {
+  user_id: string;
 }
 
 interface Room {
@@ -137,6 +141,30 @@ const durationToExpiry = (duration: ModerationDuration) => {
 const formatTime = (value: string) => new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 const formatShortDate = (value: string) => new Date(value).toLocaleDateString([], { month: "short", day: "numeric" });
 
+async function fetchProfilesMap(userIds: string[]) {
+  const ids = Array.from(new Set(userIds.filter(Boolean)));
+  if (ids.length === 0) return {} as Record<string, ProfileLite>;
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("user_id, username, avatar_url, verified")
+    .in("user_id", ids);
+
+  if (error) {
+    console.error("community room profile load failed", error);
+    return {} as Record<string, ProfileLite>;
+  }
+
+  return ((data || []) as ProfileRow[]).reduce<Record<string, ProfileLite>>((acc, row) => {
+    acc[row.user_id] = {
+      username: row.username,
+      avatar_url: row.avatar_url,
+      verified: row.verified,
+    };
+    return acc;
+  }, {});
+}
+
 const roleTone: Record<RoomRole, string> = {
   owner: "border-og-gold/25 bg-og-gold/10 text-og-gold",
   admin: "border-og-cyan/25 bg-og-cyan/10 text-og-cyan",
@@ -202,7 +230,7 @@ function MessageRow({
       <div className={cn("min-w-0 max-w-[78%]", isOwn ? "items-end" : "items-start", "flex flex-col gap-1")}>
         <div className={cn("flex items-center gap-1.5 px-1", isOwn && "flex-row-reverse")}>
           <span className="truncate text-xs font-bold text-white/65">{isOwn ? "You" : msg.profiles?.username || "Member"}</span>
-          {msg.profiles?.is_verified && <BadgeCheck className="h-3 w-3 text-og-cyan" />}
+          {msg.profiles?.verified && <BadgeCheck className="h-3 w-3 text-og-cyan" />}
           <span className="text-[10px] text-white/20">{formatTime(msg.created_at)}</span>
           {msg.edited_at && <span className="text-[9px] text-white/18">edited</span>}
         </div>
@@ -318,18 +346,26 @@ const CommunityRooms: React.FC = () => {
   const loadMembers = useCallback(async (roomId: string) => {
     const { data, error } = await supabase
       .from("community_room_members")
-      .select("*, profiles(username, avatar_url, is_verified)")
+      .select("*")
       .eq("room_id", roomId)
       .order("role", { ascending: true })
       .limit(200);
-    if (!error) setMembers((data || []) as Member[]);
+
+    if (error) {
+      console.error("community member load failed", error);
+      return;
+    }
+
+    const rows = (data || []) as Member[];
+    const profilesMap = await fetchProfilesMap(rows.map(member => member.user_id));
+    setMembers(rows.map(member => ({ ...member, profiles: profilesMap[member.user_id] || null })));
   }, []);
 
   const loadMessages = useCallback(async (roomId: string) => {
     setLoadingMessages(true);
     const { data, error } = await supabase
       .from("community_room_messages")
-      .select("*, profiles!community_room_messages_sender_id_fkey(username, avatar_url, is_verified)")
+      .select("*")
       .eq("room_id", roomId)
       .order("created_at", { ascending: false })
       .limit(80);
@@ -338,7 +374,9 @@ const CommunityRooms: React.FC = () => {
       toast.error("Could not load messages");
       setMessages([]);
     } else {
-      setMessages(((data || []) as Message[]).reverse());
+      const rows = (data || []) as Message[];
+      const profilesMap = await fetchProfilesMap(rows.map(message => message.sender_id));
+      setMessages(rows.reverse().map(message => ({ ...message, profiles: profilesMap[message.sender_id] || null })));
     }
     setLoadingMessages(false);
   }, []);
