@@ -152,12 +152,26 @@ export function RaidTab({ roomId }: RaidTabProps) {
         ? supabase.from("community_posts").select("id, user_id, username, avatar_url, content, image_url, likes_count, replies_count, reposts_count, comments_count, created_at, post_type").in("id", postIds)
         : Promise.resolve({ data: [] }),
       creatorIds.length > 0
-        ? supabase.from("profiles").select("id, username, avatar_url").in("id", creatorIds)
+        ? supabase.from("profiles").select("id, user_id, username, avatar_url").in("id", creatorIds)
         : Promise.resolve({ data: [] }),
       supabase.from("community_raid_participants").select("raid_id").in("raid_id", data.map(r => r.id)),
     ]);
 
-    const postsMap = new Map((postsRes.data || []).map(p => [p.id, p]));
+    // Build a profiles map keyed by user_id for hydrating post usernames
+    const profilesById = new Map((creatorsRes.data || []).map((p: any) => [p.user_id || p.id, p]));
+
+    // Fetch profiles for post authors that aren't in creatorsRes yet
+    const rawPosts = postsRes.data || [];
+    const missingPostAuthorIds = [...new Set(rawPosts.filter((p: any) => !p.username).map((p: any) => p.user_id))].filter((id: string) => !profilesById.has(id));
+    if (missingPostAuthorIds.length > 0) {
+      const { data: extraProfiles } = await supabase.from("profiles").select("user_id, username, avatar_url").in("user_id", missingPostAuthorIds);
+      for (const prof of (extraProfiles || [])) profilesById.set(prof.user_id, prof);
+    }
+
+    const postsMap = new Map(rawPosts.map((p: any) => {
+      const hydratedPost = p.username ? p : { ...p, username: profilesById.get(p.user_id)?.username || p.username, avatar_url: profilesById.get(p.user_id)?.avatar_url || p.avatar_url };
+      return [p.id, hydratedPost];
+    }));
     const creatorsMap = new Map((creatorsRes.data || []).map(c => [c.id, c]));
 
     // Count participants per raid
@@ -258,7 +272,24 @@ export function RaidTab({ roomId }: RaidTabProps) {
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(30);
-    setPosts(data || []);
+    if (!data) { setPosts([]); setLoadingPosts(false); return; }
+    // Hydrate username/avatar from profiles for posts where they're null
+    const missingIds = data.filter(p => !p.username).map(p => p.user_id);
+    if (missingIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, username, avatar_url")
+        .in("user_id", missingIds);
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      const hydrated = data.map(p => {
+        if (p.username) return p;
+        const prof = profileMap.get(p.user_id);
+        return prof ? { ...p, username: prof.username || p.username, avatar_url: prof.avatar_url || p.avatar_url } : p;
+      });
+      setPosts(hydrated);
+    } else {
+      setPosts(data);
+    }
     setLoadingPosts(false);
   };
 
