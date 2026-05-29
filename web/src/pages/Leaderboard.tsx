@@ -46,8 +46,16 @@ interface TraderRow {
   is_pioneer: boolean | null;
   verified: boolean | null;
   is_online: boolean | null;
+  last_seen_at: string | null;
   wallet_address: string | null;
 }
+
+/** Returns true only if user has been seen within the last 3 minutes */
+const isActuallyOnline = (row: TraderRow): boolean => {
+  if (!row.is_online) return false;
+  if (!row.last_seen_at) return false;
+  return new Date(row.last_seen_at).getTime() > Date.now() - 3 * 60 * 1000;
+};
 
 interface InviteLeaderRow {
   inviter_id: string;
@@ -146,7 +154,7 @@ const Leaderboard = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("user_id, username, display_name, avatar_url, badge, xp, total_xp, current_level, reputation_score, daily_streak, longest_streak, holder_streak, trades_count, total_pnl, pnl_pct, win_rate, volume_usd, followers_count, is_pioneer, verified, is_online, wallet_address")
+        .select("user_id, username, display_name, avatar_url, badge, xp, total_xp, current_level, reputation_score, daily_streak, longest_streak, holder_streak, trades_count, total_pnl, pnl_pct, win_rate, volume_usd, followers_count, is_pioneer, verified, is_online, last_seen_at, wallet_address")
         .order("total_xp", { ascending: false, nullsFirst: false })
         .limit(100);
       if (error) throw error;
@@ -360,7 +368,7 @@ const Leaderboard = () => {
                             <AvatarImage src={safeAvatarUrl(t.avatar_url)} />
                             <AvatarFallback className="bg-muted text-sm font-mono">{(t.username ?? "?")[0]?.toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          {t.is_online && <div className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-background" />}
+                          {isActuallyOnline(t) && <div className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-background" />}
                         </div>
 
                         <p className="font-bold text-sm truncate max-w-full">{t.display_name || t.username || "Anon"}</p>
@@ -447,7 +455,7 @@ const Leaderboard = () => {
                             <AvatarImage src={safeAvatarUrl(t.avatar_url)} />
                             <AvatarFallback className="bg-muted text-xs font-mono">{(t.username ?? "?")[0]?.toUpperCase()}</AvatarFallback>
                           </Avatar>
-                          {t.is_online && <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />}
+                          {isActuallyOnline(t) && <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-green-500 border-2 border-background" />}
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">

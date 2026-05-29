@@ -52,6 +52,9 @@ export function usePresence() {
 
     const goOffline = () => {
       // Fire-and-forget: mark offline
+      navigator.sendBeacon
+        ? undefined // sendBeacon doesn't support custom headers — use fetch below
+        : undefined;
       supabase
         .from("profiles")
         .update({ is_online: false, last_seen_at: new Date().toISOString() })
@@ -65,12 +68,18 @@ export function usePresence() {
     // Periodic heartbeat
     intervalRef.current = setInterval(heartbeat, HEARTBEAT_MS);
 
-    // Visibility change
+    // Visibility change — go offline immediately when tab hidden, come back online when visible
     const onVisChange = () => {
       if (document.hidden) goOffline();
       else heartbeat();
     };
     document.addEventListener("visibilitychange", onVisChange);
+
+    // Page focus/blur for extra accuracy
+    const onBlur = () => goOffline();
+    const onFocus = () => heartbeat();
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
 
     // Before unload
     const onUnload = () => goOffline();
@@ -79,6 +88,8 @@ export function usePresence() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       document.removeEventListener("visibilitychange", onVisChange);
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
       window.removeEventListener("beforeunload", onUnload);
       goOffline();
     };

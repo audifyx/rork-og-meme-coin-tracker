@@ -1075,10 +1075,10 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
       if (user && !isOwnProfile) {
         const { data: relationship } = await supabase
           .from("followers")
-          .select("id")
+          .select("follower_id")
           .eq("follower_id", user.id)
           .eq("followee_id", targetUserId)
-          .single();
+          .maybeSingle();
         setIsFollowing(Boolean(relationship));
       } else {
         setIsFollowing(false);
