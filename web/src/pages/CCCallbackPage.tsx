@@ -30,7 +30,7 @@ export const CCCallbackPage = () => {
 
     const code = searchParams.get("code");
     const errorParam = searchParams.get("error");
-    const challengeCode = searchParams.get("cc_challenge");
+    const challengeCode = searchParams.get("challengeCode") ?? searchParams.get("cc_challenge");
 
     const finish = () => {
       setStatus("success");
