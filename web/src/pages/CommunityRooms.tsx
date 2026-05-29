@@ -272,6 +272,8 @@ function MessageRow({
   const attachmentIsImage = !!msg.media_url || (!!attachmentUrl && isImageUrl(attachmentUrl));
   const [menuOpen, setMenuOpen] = useState(false);
 
+  if (msg.is_deleted || msg.deleted_at) return null;
+
   return (
     <div className={cn("group flex gap-2.5", isOwn && "flex-row-reverse")}>
       <Avatar url={msg.profiles?.avatar_url} username={msg.profiles?.username} size="sm" />
@@ -290,25 +292,21 @@ function MessageRow({
           )}
         >
           {msg.is_pinned && <Pin className="mr-1 inline h-3 w-3 text-og-gold" />}
-          {msg.is_deleted ? (
-            <span className="italic text-white/30">Message deleted</span>
-          ) : (
-            <div className="space-y-2">
-              {msg.content && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
-              {hasAttachment && (
-                attachmentIsImage ? (
-                  <a href={attachmentUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-white/10 bg-black/20">
-                    <img src={attachmentUrl || undefined} alt="Attachment" className="max-h-72 w-full object-cover" />
-                  </a>
-                ) : (
-                  <a href={attachmentUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-bold text-white/80 hover:bg-black/30">
-                    <Link2 className="h-3.5 w-3.5 text-og-cyan" />
-                    Open attachment
-                  </a>
-                )
-              )}
-            </div>
-          )}
+          <div className="space-y-2">
+            {msg.content && <p className="whitespace-pre-wrap break-words">{msg.content}</p>}
+            {hasAttachment && (
+              attachmentIsImage ? (
+                <a href={attachmentUrl} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-xl border border-white/10 bg-black/20">
+                  <img src={attachmentUrl || undefined} alt="Attachment" className="max-h-72 w-full object-cover" />
+                </a>
+              ) : (
+                <a href={attachmentUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-bold text-white/80 hover:bg-black/30">
+                  <Link2 className="h-3.5 w-3.5 text-og-cyan" />
+                  Open attachment
+                </a>
+              )
+            )}
+          </div>
         </div>
         <div className={cn("flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100", isOwn && "flex-row-reverse")}>
           {QUICK_EMOJIS.slice(0, 4).map(emoji => (
