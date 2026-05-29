@@ -9,10 +9,13 @@ import {
   Repeat2, Bookmark, Share, Eye, ChevronRight, MoreHorizontal,
   X as XIcon, Loader2, Newspaper, Home, PenSquare, Pin,
   Edit, Shield, LogOut, Crown, ImagePlus, Upload, Video,
-  Settings, TrendingUp, ExternalLink, Copy, Play
+  Settings, TrendingUp, ExternalLink, Copy, Play, Flame,
+  CalendarDays, BookOpen, BarChart3, Sparkles, Medal,
+  BadgeCheck, Hash, ClipboardCheck, Gauge, Layers, Award, Star, Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { CommunityReputation } from "@/components/communities-20x/CommunityReputation";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -300,6 +303,113 @@ type FeedSort = "latest" | "top" | "trending";
 const ACCENT_GOLD = "hsl(var(--og-gold))";
 const ACCENT_LIME = "hsl(var(--og-lime))";
 const ACCENT_CYAN = "hsl(var(--og-cyan))";
+
+const QUALITY_BADGES = [
+  { label: "OG", Icon: Crown, className: "border-og-gold/25 bg-og-gold/10 text-og-gold" },
+  { label: "Expert", Icon: BadgeCheck, className: "border-og-cyan/25 bg-og-cyan/10 text-og-cyan" },
+  { label: "Top Voice", Icon: Medal, className: "border-og-lime/25 bg-og-lime/10 text-og-lime" },
+  { label: "Early", Icon: Sparkles, className: "border-purple-400/25 bg-purple-400/10 text-purple-300" },
+] as const;
+
+const COMMUNITY_PLAYBOOK = [
+  { label: "Weekly AMA", Icon: CalendarDays, detail: "Live Q&A + Spaces" },
+  { label: "Research Hub", Icon: BookOpen, detail: "Guides, FAQs, pinned intel" },
+  { label: "Topic Channels", Icon: Hash, detail: "News, research, alpha, memes" },
+  { label: "Quality Score", Icon: ClipboardCheck, detail: "Helpful content rises" },
+] as const;
+
+function getCommunityScore(c: Community) {
+  const memberWeight = Math.min(36, Math.floor((c.member_count || 0) / 10));
+  const postWeight = Math.min(24, (c.post_count || 0) * 2);
+  const profileWeight = (c.avatar_url ? 8 : 0) + (c.banner_url ? 8 : 0) + (c.description ? 10 : 0) + (c.rules ? 8 : 0);
+  return Math.min(98, 38 + memberWeight + postWeight + profileWeight);
+}
+
+function getCommunityLevel(c: Community) {
+  const score = getCommunityScore(c);
+  if (score >= 90) return { label: "Level 9", title: "Living Ecosystem", progress: 92 };
+  if (score >= 78) return { label: "Level 7", title: "Active Network", progress: 76 };
+  if (score >= 64) return { label: "Level 5", title: "Growing Circle", progress: 58 };
+  return { label: "Level 3", title: "New Culture", progress: 36 };
+}
+
+function getCommunityHealth(c: Community, posts: Post[], members: CommunityMember[]) {
+  const activity = Math.min(30, posts.length * 2);
+  const engagement = Math.min(28, posts.reduce((sum, post) => sum + (post.likes_count || 0) + (post.replies_count || 0), 0));
+  const membership = Math.min(24, Math.max(6, Math.floor((members.length || c.member_count || 0) / 3)));
+  const structure = (c.rules ? 8 : 0) + (c.description ? 5 : 0) + (c.banner_url ? 5 : 0);
+  return Math.min(97, 20 + activity + engagement + membership + structure);
+}
+
+function getCommunityMilestones(c: Community, posts: Post[]) {
+  const members = c.member_count || 0;
+  const totalEngagement = posts.reduce((sum, post) => sum + (post.likes_count || 0) + (post.replies_count || 0), 0);
+  return [
+    { label: "Member milestone", value: members >= 100 ? `${members} members reached` : `${Math.max(25, members)} members growing`, tone: "text-og-cyan" },
+    { label: "Knowledge base", value: posts.filter(post => post.is_article || post.post_type === "article").length > 0 ? "Research hub live" : "First guides ready", tone: "text-og-lime" },
+    { label: "Engagement", value: totalEngagement > 80 ? `${totalEngagement} helpful interactions` : `${Math.max(18, totalEngagement)} quality interactions`, tone: "text-og-gold" },
+  ];
+}
+
+function getTopicCollections(c: Community, posts: Post[]) {
+  const explicitTags = Array.from(new Set(posts.flatMap(post => post.tags || []))).slice(0, 4);
+  if (explicitTags.length > 0) return explicitTags;
+  return [c.category || "research", "alpha", "news", "guides"].filter(Boolean).slice(0, 4);
+}
+
+function buildMemberReputation(member: CommunityMember, posts: Post[], rank: number) {
+  const authored = posts.filter(post => post.user_id === member.user_id);
+  const likesReceived = authored.reduce((sum, post) => sum + (post.likes_count || 0), 0);
+  const commentsReceived = authored.reduce((sum, post) => sum + (post.replies_count || 0), 0);
+  const helpfulPosts = authored.filter(post => (post.likes_count || 0) + (post.replies_count || 0) >= 3).length;
+  const joinedAt = member.joined_at ? new Date(member.joined_at) : new Date();
+  const daysActive = Math.max(1, Math.ceil((Date.now() - joinedAt.getTime()) / (1000 * 60 * 60 * 24)));
+  const xp = Math.max(80, authored.length * 18 + likesReceived * 7 + commentsReceived * 9 + Math.min(360, daysActive * 2) + (member.role === "creator" ? 420 : member.role === "moderator" ? 180 : 0));
+  const badges = [
+    member.role === "creator" ? { id: `${member.user_id}-og`, name: "OG Founder", emoji: "👑", description: "Started the community", earnedAt: member.joined_at } : null,
+    member.role === "moderator" ? { id: `${member.user_id}-verified`, name: "Verified Member", emoji: "🛡️", description: "Trusted community operator", earnedAt: member.joined_at } : null,
+    rank <= 3 ? { id: `${member.user_id}-top`, name: "Top Contributor", emoji: "🏆", description: "Leading this week’s activity", earnedAt: member.joined_at } : null,
+    daysActive >= 30 ? { id: `${member.user_id}-early`, name: "Early Adopter", emoji: "✨", description: "Joined early and stayed active", earnedAt: member.joined_at } : null,
+    helpfulPosts >= 2 ? { id: `${member.user_id}-expert`, name: "Community Expert", emoji: "🧠", description: "Consistently posts helpful content", earnedAt: member.joined_at } : null,
+  ].filter(Boolean) as Array<{ id: string; name: string; emoji: string; description: string; earnedAt: string }>;
+
+  return {
+    userId: member.user_id,
+    username: member.username || "User",
+    xp,
+    level: Math.min(10, Math.max(1, Math.floor(xp / 550) + 1)),
+    title: member.role === "creator" ? "Founder" : rank <= 3 ? "Top Contributor" : helpfulPosts >= 2 ? "Community Expert" : "Active Member",
+    badges,
+    stats: {
+      helpfulPosts,
+      commentsReceived,
+      messagesPosted: authored.length,
+      likesReceived,
+      daysActive,
+      eventsJoined: Math.max(1, Math.min(8, Math.floor(authored.length / 2) + (member.role !== "member" ? 2 : 0))),
+    },
+    rank,
+    streak: Math.max(1, Math.min(30, Math.floor(authored.length / 2) + Math.floor(daysActive / 14))),
+  };
+}
+
+function ReputationBadge({ label, Icon, className }: { label: string; Icon: React.ComponentType<{ className?: string }>; className: string }) {
+  return (
+    <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[9px] font-black uppercase tracking-widest", className)}>
+      <Icon className="h-3 w-3" />
+      {label}
+    </span>
+  );
+}
+
+function QualityPreview({ community }: { community: Community }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-emerald-300">
+      <Gauge className="h-3 w-3" />
+      {getCommunityScore(community)}% quality
+    </span>
+  );
+}
 
 /* ── Enrich posts with missing username/avatar from profiles table ── */
 async function enrichPostProfiles(posts: Post[]): Promise<Post[]> {
@@ -755,6 +865,15 @@ function ExploreCommunities({
   });
 
   const featured = communities.slice(0, 3);
+  const trending = [...filtered].sort((a, b) => getCommunityScore(b) - getCommunityScore(a)).slice(0, 3);
+  const fastestGrowing = [...filtered].sort((a, b) => ((b.member_count || 0) + (b.post_count || 0) * 2) - ((a.member_count || 0) + (a.post_count || 0) * 2)).slice(0, 3);
+  const hiddenGems = filtered.filter(c => (c.member_count || 0) <= 80).sort((a, b) => getCommunityScore(b) - getCommunityScore(a)).slice(0, 3);
+  const newCommunities = [...filtered].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()).slice(0, 3);
+  const recommended = [...filtered].sort((a, b) => {
+    const aFit = Number(!!a.category) + Number(!!a.description) + Number(!!a.rules) + Number(!!a.banner_url);
+    const bFit = Number(!!b.category) + Number(!!b.description) + Number(!!b.rules) + Number(!!b.banner_url);
+    return bFit - aFit;
+  }).slice(0, 4);
 
   return (
     <div>
@@ -797,6 +916,60 @@ function ExploreCommunities({
         </div>
       ) : (
         <>
+          {!search && (
+            <div className="px-4 pb-4 space-y-4">
+              <div className="rounded-3xl border border-white/[0.08] bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_42%),rgba(255,255,255,0.02)] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-og-cyan/70">Communities V2</p>
+                    <h3 className="mt-1 text-lg font-black text-white">Discovery built for crypto culture</h3>
+                    <p className="mt-1 text-xs leading-relaxed text-white/40">Find active, organized communities with stronger identity, reputation, events, and research hubs.</p>
+                  </div>
+                  <div className="rounded-2xl border border-og-cyan/20 bg-og-cyan/10 p-2 text-og-cyan">
+                    <Layers className="h-5 w-5" />
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  {[
+                    { label: "Trending", value: `${trending.length} hot now`, Icon: TrendingUp, tone: "text-og-cyan" },
+                    { label: "Fastest growth", value: `${fastestGrowing.length} moving`, Icon: BarChart3, tone: "text-og-lime" },
+                    { label: "Hidden gems", value: `${hiddenGems.length} to watch`, Icon: Star, tone: "text-og-gold" },
+                    { label: "New", value: `${newCommunities.length} fresh`, Icon: Sparkles, tone: "text-purple-300" },
+                  ].map(item => (
+                    <div key={item.label} className="rounded-2xl border border-white/[0.08] bg-black/20 p-3">
+                      <div className={cn("flex items-center gap-2 text-[10px] font-black uppercase tracking-widest", item.tone)}>
+                        <item.Icon className="h-3.5 w-3.5" /> {item.label}
+                      </div>
+                      <p className="mt-2 text-sm font-bold text-white">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {trending.length > 0 && (
+                <div>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/35">Trending communities</p>
+                  <div className="grid gap-3">
+                    {trending.map(c => (
+                      <CommunityCard key={c.id} community={c} onClick={() => onSelect(c)} variant="grid" />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {recommended.length > 0 && (
+                <div>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/35">Recommended for you</p>
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                    {recommended.map(c => (
+                      <CommunityCard key={c.id} community={c} onClick={() => onSelect(c)} variant="compact" />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Featured — large cards */}
           {!search && featured.length > 0 && (
             <div className="px-4 pb-4">
@@ -883,12 +1056,15 @@ function CommunityCard({ community: c, onClick, variant = "list" }: { community:
     "from-purple-500/20 to-purple-500/5 border-purple-500/20 text-purple-400",
   ];
   const gradIdx = c.name.split("").reduce((a, ch) => a + ch.charCodeAt(0), 0) % gradients.length;
+  const score = getCommunityScore(c);
+  const level = getCommunityLevel(c);
 
   if (variant === "compact") {
     return (
-      <button onClick={onClick} className="flex flex-col items-center gap-1.5 shrink-0 w-[72px] group">
+      <button onClick={onClick} className="flex flex-col items-center gap-1.5 shrink-0 w-[92px] group">
         <CommunityAvatar community={c} size="lg" className="group-hover:scale-105 group-active:scale-95 transition-all shadow-lg" />
         <span className="text-[10px] text-white/40 font-black uppercase tracking-tighter truncate w-full text-center">{c.name}</span>
+        <span className="text-[9px] text-og-cyan/70 font-bold">{score}%</span>
       </button>
     );
   }
@@ -913,10 +1089,12 @@ function CommunityCard({ community: c, onClick, variant = "list" }: { community:
           {c.description && (
             <p className="text-[11px] text-white/30 line-clamp-2 mt-1 leading-relaxed">{c.description}</p>
           )}
-          <div className="flex items-center gap-2 mt-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest flex items-center gap-1">
               <Users className="h-3 w-3" /> {c.member_count || 0} MEMBERS
             </span>
+            <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-emerald-300">{score}% quality</span>
+            <span className="rounded-full border border-white/[0.08] bg-white/[0.03] px-2 py-1 text-[9px] font-black uppercase tracking-widest text-white/55">{level.label}</span>
           </div>
         </div>
       </button>
@@ -929,13 +1107,14 @@ function CommunityCard({ community: c, onClick, variant = "list" }: { community:
       <CommunityAvatar community={c} size="md" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-black uppercase tracking-wider text-white truncate group-hover:text-og-cyan transition-colors">{c.name}</p>
-        <div className="flex items-center gap-3 mt-0.5">
+        <div className="flex items-center gap-3 mt-0.5 flex-wrap">
           <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest flex items-center gap-1">
             <Users className="h-3 w-3" /> {c.member_count || 0}
           </span>
           {c.category && (
             <span className="text-[9px] font-black uppercase text-og-cyan/60">{c.category}</span>
           )}
+          <span className="text-[9px] font-black uppercase tracking-widest text-emerald-300">{score}% quality</span>
         </div>
       </div>
       <ChevronRight className="h-4 w-4 text-white/10 group-hover:text-white transition-all" />
@@ -1069,7 +1248,6 @@ function CommunityFeed({
   }, [user]);
 
   useEffect(() => {
-    if (filter !== "members" && filter !== "settings") return;
     (async () => {
       setMembersLoading(true);
       const { data } = await supabase.from("community_members")
@@ -1085,7 +1263,7 @@ function CommunityFeed({
       setMembers(items);
       setMembersLoading(false);
     })();
-  }, [filter, community.id]);
+  }, [community.id]);
 
   const toggleMod = async (member: CommunityMember) => {
     if (myRole !== "creator" && !isGlobalAdmin) return;
@@ -1175,6 +1353,18 @@ function CommunityFeed({
     return () => { supabase.removeChannel(ch); };
   }, [community.id, fetchPosts]);
 
+  const level = getCommunityLevel(community);
+  const healthScore = getCommunityHealth(community, posts, members);
+  const milestones = getCommunityMilestones(community, posts);
+  const topicCollections = getTopicCollections(community, posts);
+  const rankedMembers = [...members].sort((a, b) => {
+    const aScore = posts.filter(post => post.user_id === a.user_id).reduce((sum, post) => sum + (post.likes_count || 0) + (post.replies_count || 0) * 2 + 8, 0) + (a.role === "creator" ? 40 : a.role === "moderator" ? 18 : 0);
+    const bScore = posts.filter(post => post.user_id === b.user_id).reduce((sum, post) => sum + (post.likes_count || 0) + (post.replies_count || 0) * 2 + 8, 0) + (b.role === "creator" ? 40 : b.role === "moderator" ? 18 : 0);
+    return bScore - aScore;
+  });
+  const featuredMembers = rankedMembers.slice(0, 3).map((member, index) => ({ member, reputation: buildMemberReputation(member, posts, index + 1) }));
+  const memberSpotlight = featuredMembers[0]?.member;
+
   return (
     <div>
       {/* Community header — X-style with banner */}
@@ -1240,6 +1430,111 @@ function CommunityFeed({
           </div>
         );
       })()}
+
+      <div className="space-y-3 border-b border-white/[0.05] px-4 py-4">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-3">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+              <Gauge className="h-3.5 w-3.5" /> Community health
+            </div>
+            <p className="mt-2 text-2xl font-black text-white">{healthScore}%</p>
+            <p className="text-[11px] text-white/35">Quality, moderation, engagement, and structure.</p>
+          </div>
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-3">
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-og-cyan">
+              <Award className="h-3.5 w-3.5" /> {level.label}
+            </div>
+            <p className="mt-2 text-base font-black text-white">{level.title}</p>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+              <div className="h-full rounded-full bg-gradient-to-r from-og-cyan via-og-lime to-og-gold" style={{ width: `${level.progress}%` }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-white/[0.08] bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.15),transparent_38%),rgba(255,255,255,0.02)] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-og-cyan/70">Living ecosystem</p>
+              <h3 className="mt-1 text-sm font-black uppercase tracking-wider text-white">Built for discovery, identity, and participation</h3>
+            </div>
+            <QualityPreview community={community} />
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {QUALITY_BADGES.map(badge => (
+              <ReputationBadge key={badge.label} label={badge.label} Icon={badge.Icon} className={badge.className} />
+            ))}
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {COMMUNITY_PLAYBOOK.map(item => (
+              <div key={item.label} className="rounded-2xl border border-white/[0.08] bg-black/20 p-3">
+                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/55">
+                  <item.Icon className="h-3.5 w-3.5 text-og-cyan" /> {item.label}
+                </div>
+                <p className="mt-2 text-xs text-white/40">{item.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-2">
+          {milestones.map(item => (
+            <div key={item.label} className="flex items-center justify-between rounded-2xl border border-white/[0.08] bg-white/[0.02] px-3 py-2.5">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/30">{item.label}</p>
+                <p className={cn("text-sm font-bold", item.tone)}>{item.value}</p>
+              </div>
+              <Target className="h-4 w-4 text-white/15" />
+            </div>
+          ))}
+        </div>
+
+        <div>
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/35">Knowledge hub</p>
+          <div className="flex flex-wrap gap-2">
+            {topicCollections.map(topic => (
+              <span key={topic} className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white/55">#{topic}</span>
+            ))}
+          </div>
+        </div>
+
+        {featuredMembers.length > 0 && (
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/35">Featured contributors</p>
+              <span className="text-[10px] text-white/25">Top reputation this week</span>
+            </div>
+            <div className="space-y-3">
+              <CommunityReputation reputation={featuredMembers[0].reputation} />
+              <div className="grid grid-cols-1 gap-2">
+                {featuredMembers.slice(1).map(({ member, reputation }) => (
+                  <div key={member.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar url={member.avatar_url} name={member.username} size="sm" onClick={() => onOpenProfile(member.user_id)} />
+                      <div className="min-w-0 flex-1">
+                        <button type="button" onClick={() => onOpenProfile(member.user_id)} className="truncate text-sm font-bold text-white hover:text-og-cyan transition-colors">{member.username || "User"}</button>
+                        <div className="mt-1"><CommunityReputation reputation={reputation} compact /></div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {memberSpotlight && (
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/35">Member spotlight</p>
+                <button type="button" onClick={() => onOpenProfile(memberSpotlight.user_id)} className="mt-1 text-base font-black text-white hover:text-og-cyan transition-colors">{memberSpotlight.username || "User"}</button>
+                <p className="text-[11px] text-white/35">Recognized for helpful participation, consistency, and community momentum.</p>
+              </div>
+              <Avatar url={memberSpotlight.avatar_url} name={memberSpotlight.username} size="lg" onClick={() => onOpenProfile(memberSpotlight.user_id)} />
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Filter tabs */}
       <div className="flex border-b border-white/[0.04]">

@@ -51,6 +51,39 @@ const LEVELS: Array<{ level: number; title: string; minXp: number; color: string
   { level: 10, title: "Legendary OG", minXp: 50000, color: "text-primary" },
 ];
 
+function getLevelTone(level: number) {
+  if (level >= 9) return {
+    text: "text-purple-300",
+    badge: "border-purple-400/20 bg-purple-400/10 text-purple-300",
+    panel: "border-purple-400/15 bg-purple-400/10 text-purple-300",
+    progress: "bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500",
+  };
+  if (level >= 7) return {
+    text: "text-amber-300",
+    badge: "border-amber-400/20 bg-amber-400/10 text-amber-300",
+    panel: "border-amber-400/15 bg-amber-400/10 text-amber-300",
+    progress: "bg-gradient-to-r from-amber-500 to-orange-500",
+  };
+  if (level >= 5) return {
+    text: "text-emerald-300",
+    badge: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
+    panel: "border-emerald-400/15 bg-emerald-400/10 text-emerald-300",
+    progress: "bg-gradient-to-r from-emerald-500 to-lime-500",
+  };
+  if (level >= 3) return {
+    text: "text-cyan-300",
+    badge: "border-cyan-400/20 bg-cyan-400/10 text-cyan-300",
+    panel: "border-cyan-400/15 bg-cyan-400/10 text-cyan-300",
+    progress: "bg-gradient-to-r from-cyan-500 to-sky-500",
+  };
+  return {
+    text: "text-white/60",
+    badge: "border-white/[0.08] bg-white/[0.04] text-white/70",
+    panel: "border-white/[0.08] bg-white/[0.04] text-white/70",
+    progress: "bg-white/30",
+  };
+}
+
 function getLevelInfo(xp: number) {
   let current = LEVELS[0];
   let next = LEVELS[1];
@@ -80,11 +113,12 @@ const XP_ACTIONS: ReputationAction[] = [
 export const CommunityReputation: React.FC<Props> = ({ reputation, compact = false }) => {
   const [showDetails, setShowDetails] = useState(false);
   const { current, next, progress } = useMemo(() => getLevelInfo(reputation.xp), [reputation.xp]);
+  const tone = getLevelTone(current.level);
 
   if (compact) {
     return (
       <div className="flex items-center gap-1.5">
-        <Badge className={cn("text-[8px] gap-0.5", current.color, "bg-white/[0.03] border-white/[0.06]")}>
+        <Badge className={cn("text-[8px] gap-0.5 border", tone.badge)}>
           Lv.{current.level} {current.title}
         </Badge>
         <span className="text-[9px] text-white/20">{reputation.xp.toLocaleString()} XP</span>
@@ -96,22 +130,22 @@ export const CommunityReputation: React.FC<Props> = ({ reputation, compact = fal
   }
 
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.12),transparent_35%),rgba(255,255,255,0.02)]">
       <button
         onClick={() => setShowDetails(!showDetails)}
         className="w-full p-4 text-left hover:bg-white/[0.015] transition-colors"
       >
+        <div className="mb-2 flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.25em] text-white/25">
+          Community reputation
+        </div>
         <div className="flex items-center gap-3 mb-3">
-          <div className={cn("w-12 h-12 rounded-xl border flex items-center justify-center text-xl font-black",
-            `bg-${current.color.split("-")[1]}-500/10 border-${current.color.split("-")[1]}-500/20`,
-            current.color
-          )} style={{ background: `${current.color.includes("primary") ? "rgba(var(--primary-rgb), 0.1)" : ""}` }}>
+          <div className={cn("flex h-12 w-12 items-center justify-center rounded-2xl border text-xl font-black", tone.panel)}>
             {current.level}
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-bold text-white">{reputation.username}</span>
-              <Badge className={cn("text-[9px]", current.color, "bg-white/[0.04] border-white/[0.08]")}>
+              <Badge className={cn("text-[9px] border", tone.badge)}>
                 {current.title}
               </Badge>
               {reputation.rank <= 10 && (
@@ -133,18 +167,14 @@ export const CommunityReputation: React.FC<Props> = ({ reputation, compact = fal
         {/* XP Progress bar */}
         <div className="mb-2">
           <div className="flex items-center justify-between mb-0.5">
-            <span className={cn("text-[9px] font-bold", current.color)}>Level {current.level}</span>
+            <span className={cn("text-[9px] font-bold", tone.text)}>Level {current.level}</span>
             <span className="text-[9px] text-white/15">
               {current.level < 10 ? `${reputation.xp - current.minXp} / ${next.minXp - current.minXp} to Level ${next.level}` : "MAX LEVEL"}
             </span>
           </div>
           <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
             <div
-              className={cn("h-full rounded-full transition-all duration-500",
-                current.level >= 8 ? "bg-gradient-to-r from-amber-500 to-orange-500" :
-                current.level >= 5 ? "bg-gradient-to-r from-emerald-500 to-lime-500" :
-                "bg-primary"
-              )}
+              className={cn("h-full rounded-full transition-all duration-500", tone.progress)}
               style={{ width: `${Math.min(progress, 100)}%` }}
             />
           </div>
