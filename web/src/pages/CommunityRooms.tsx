@@ -10,8 +10,9 @@ import {
   Flag, Gauge, Hash, Image as ImageIcon, Link2, Loader2, Lock, Megaphone,
   MessageSquare, Mic, MoreHorizontal, Pin, Plus, Radio, Search, Send, Settings,
   Shield, ShieldCheck, Smile, Sparkles, Trash2, UserMinus, UserPlus, Users,
-  VolumeX, X,
+  VolumeX, X, Zap,
 } from "lucide-react";
+import { RaidTab } from "@/components/RaidTab";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -539,6 +540,7 @@ const CommunityRooms: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [roomFilter, setRoomFilter] = useState<"active" | "discover" | "archived">("active");
   const [sidePanel, setSidePanel] = useState<"members" | "moderation" | "info" | null>(null);
+  const [roomView, setRoomView] = useState<"chat" | "raid">("chat");
   const [input, setInput] = useState("");
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [loadingRooms, setLoadingRooms] = useState(true);
@@ -1410,15 +1412,41 @@ const CommunityRooms: React.FC = () => {
                   ))}
                 </div>
               </div>
+              {/* Chat / Raid tab switcher */}
+              <div className="flex items-center gap-1 border-t border-white/[0.04] px-4 py-1.5">
+                {([
+                  { id: "chat" as const, label: "Chat", Icon: MessageSquare },
+                  { id: "raid" as const, label: "Raid", Icon: Zap },
+                ] as const).map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setRoomView(tab.id)}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all",
+                      roomView === tab.id
+                        ? tab.id === "raid" ? "bg-og-gold/10 text-og-gold" : "bg-og-cyan/10 text-og-cyan"
+                        : "text-white/30 hover:bg-white/[0.04] hover:text-white/50"
+                    )}
+                  >
+                    <tab.Icon className="h-3.5 w-3.5" />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </header>
 
-            {pinnedMessages.length > 0 && (
+            {roomView === "chat" && pinnedMessages.length > 0 && (
               <div className="flex items-center gap-2 border-b border-og-gold/10 bg-og-gold/[0.055] px-4 py-2">
                 <Pin className="h-3.5 w-3.5 text-og-gold" />
                 <p className="truncate text-xs text-og-gold/80">{pinnedMessages[pinnedMessages.length - 1].content}</p>
               </div>
             )}
 
+            {roomView === "raid" ? (
+              <div className="min-h-0 flex-1">
+                <RaidTab roomId={activeRoom.id} />
+              </div>
+            ) : (
             <div className="flex min-h-0 flex-1">
               <section className="flex min-w-0 flex-1 flex-col">
                 <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
@@ -1539,6 +1567,7 @@ const CommunityRooms: React.FC = () => {
                 </>
               )}
             </div>
+            )}
           </>
         ) : (
           <div className="flex flex-1 items-center justify-center text-center">
