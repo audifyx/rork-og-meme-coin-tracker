@@ -593,6 +593,7 @@ const Communities = () => {
         selectedPost={selectedPost}
         goBack={goBack}
         onCompose={() => setShowCompose(true)}
+        onCreateCommunity={() => setShowCreateCommunity(true)}
       />
 
       {/* ─── Content ─── */}
@@ -669,7 +670,7 @@ const Communities = () => {
    ═══════════════════════════════════════════════════════════════ */
 
 function TopNav({
-  mainView, setMainView, selectedCommunity, selectedPost, goBack, onCompose
+  mainView, setMainView, selectedCommunity, selectedPost, goBack, onCompose, onCreateCommunity
 }: {
   mainView: MainView;
   setMainView: (v: MainView) => void;
@@ -677,6 +678,7 @@ function TopNav({
   selectedPost: Post | null;
   goBack: () => void;
   onCompose: () => void;
+  onCreateCommunity: () => void;
 }) {
   const showBack = !!selectedPost || !!selectedCommunity;
   const title = selectedPost
@@ -696,9 +698,18 @@ function TopNav({
         )}
         <h1 className="text-lg font-bold text-white flex-1 truncate">{title}</h1>
         {!showBack && (
-          <button onClick={onCompose} className="p-2 rounded-full hover:bg-white/[0.06] text-white/40">
-            <PenSquare className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={onCreateCommunity}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-og-lime/10 border border-og-lime/30 text-og-lime text-xs font-bold hover:bg-og-lime/20 hover:border-og-lime/50 transition-all"
+            >
+              <Plus className="h-3.5 w-3.5 stroke-[3]" />
+              New
+            </button>
+            <button onClick={onCompose} className="p-2 rounded-full hover:bg-white/[0.06] text-white/40">
+              <PenSquare className="h-4 w-4" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -3090,8 +3101,32 @@ function ComposeModal({
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Create Community Modal
+   Advanced Create Community Modal — 4-step wizard
    ═══════════════════════════════════════════════════════════════ */
+
+const COMMUNITY_CATEGORIES = [
+  { id: "meme", label: "Meme Coins", icon: "🐸" },
+  { id: "alpha", label: "Alpha Calls", icon: "⚡" },
+  { id: "defi", label: "DeFi", icon: "🏦" },
+  { id: "nft", label: "NFTs", icon: "🎨" },
+  { id: "trading", label: "Trading", icon: "📈" },
+  { id: "gaming", label: "Gaming", icon: "🎮" },
+  { id: "education", label: "Education", icon: "📚" },
+  { id: "degen", label: "Degen Zone", icon: "💀" },
+  { id: "dao", label: "DAO / Gov", icon: "🗳️" },
+  { id: "other", label: "Other", icon: "🌐" },
+];
+
+const COMMUNITY_ICONS = ["🚀", "💎", "🔥", "📈", "🐸", "🤖", "⚡", "🎯", "🏆", "🌙", "💰", "🎮", "👑", "🦁", "🐉", "🌊", "🧠", "💥", "🎪", "🛸"];
+
+const PRESET_RULES = [
+  "No spam or self-promotion without approval",
+  "Verified contract addresses only — no rugpulls",
+  "DYOR — nothing posted here is financial advice",
+  "Respect all members regardless of bag size",
+  "No doxxing, harassment, or personal attacks",
+  "Alpha stays in the community — don't leak outside",
+];
 
 function CreateCommunityModal({
   user, onClose, onCreated
@@ -3100,15 +3135,54 @@ function CreateCommunityModal({
   onClose: () => void;
   onCreated: (c: Community) => void;
 }) {
+  const [step, setStep] = useState(1);
+  const TOTAL_STEPS = 4;
+
+  // Step 1 — Identity
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("meme");
   const [icon, setIcon] = useState("🚀");
-  const [privacy, setPrivacy] = useState<"public" | "private">("public");
-  const [creating, setCreating] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+
+  // Step 2 — Appearance
   const [avatarUrl, setAvatarUrl] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
+  const [accentColor, setAccentColor] = useState("#00ffcc");
 
-  const ICONS = ["🚀", "💎", "🔥", "📈", "🐸", "🤖", "⚡", "🎯", "🏆", "🌙", "💰", "🎮"];
+  // Step 3 — Settings
+  const [privacy, setPrivacy] = useState<"public" | "private" | "invite">("public");
+  const [tokenGateEnabled, setTokenGateEnabled] = useState(false);
+  const [tokenGateCA, setTokenGateCA] = useState("");
+  const [tokenGateMin, setTokenGateMin] = useState("1000");
+  const [rules, setRules] = useState<string[]>([]);
+  const [customRule, setCustomRule] = useState("");
+  const [slowModeSeconds, setSlowModeSeconds] = useState(0);
+  const [nsfw, setNsfw] = useState(false);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+
+  // Step 4 — Links & Socials
+  const [website, setWebsite] = useState("");
+  const [xHandle, setXHandle] = useState("");
+  const [telegram, setTelegram] = useState("");
+  const [discord, setDiscord] = useState("");
+  const [amaSchedule, setAmaSchedule] = useState("");
+  const [qualityFocus, setQualityFocus] = useState("");
+
+  const [creating, setCreating] = useState(false);
+
+  const addTag = () => {
+    const t = tagInput.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+    if (t && tags.length < 8 && !tags.includes(t)) { setTags([...tags, t]); setTagInput(""); }
+  };
+
+  const toggleRule = (r: string) => setRules(prev => prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r]);
+
+  const canProceed = () => {
+    if (step === 1) return name.trim().length >= 3;
+    return true;
+  };
 
   const handleCreate = async () => {
     if (!user) { toast.error("Sign in first"); return; }
@@ -3118,99 +3192,441 @@ function CreateCommunityModal({
       const code = Math.random().toString(36).substring(2, 8).toUpperCase();
       const { data: profile } = await supabase.from("profiles")
         .select("username, avatar_url").eq("user_id", user.id).maybeSingle();
-      const { data, error } = await supabase.from("communities").insert({
-        name: name.trim(), description: description.trim() || null, icon, privacy,
-        created_by: user.id, creator_name: profile?.username || user.email?.split("@")[0],
-        creator_avatar: profile?.avatar_url, invite_code: code, is_active: true, member_count: 1,
-        avatar_url: avatarUrl || null, banner_url: bannerUrl || null,
-      }).select().single();
+
+      const links: CommunityExternalLink[] = [];
+      if (website) links.push({ id: "website", title: "Website", url: website });
+      if (xHandle) links.push({ id: "x", title: "X / Twitter", url: `https://x.com/${xHandle.replace("@", "")}`, badge: "X" });
+      if (telegram) links.push({ id: "tg", title: "Telegram", url: telegram.startsWith("http") ? telegram : `https://t.me/${telegram.replace("@", "")}`, badge: "TG" });
+      if (discord) links.push({ id: "dc", title: "Discord", url: discord, badge: "DC" });
+
+      const allRules = [...rules, ...(customRule.trim() ? [customRule.trim()] : [])];
+
+      const insertPayload: Record<string, any> = {
+        name: name.trim(),
+        description: description.trim() || null,
+        icon,
+        privacy: privacy === "invite" ? "private" : privacy,
+        category,
+        tags: tags.length > 0 ? tags : null,
+        rules: allRules.length > 0 ? allRules.join("\n") : null,
+        weekly_ama_schedule: amaSchedule.trim() || null,
+        quality_focus: qualityFocus.trim() || null,
+        created_by: user.id,
+        creator_name: profile?.username || user.email?.split("@")[0],
+        creator_avatar: profile?.avatar_url,
+        invite_code: code,
+        is_active: true,
+        member_count: 1,
+        avatar_url: avatarUrl || null,
+        banner_url: bannerUrl || null,
+        community_links: links.length > 0 ? links : null,
+      };
+
+      if (tokenGateEnabled && tokenGateCA.trim()) {
+        insertPayload.research_hub_summary = JSON.stringify({
+          token_gate: { ca: tokenGateCA.trim(), min_amount: parseFloat(tokenGateMin) || 0 }
+        });
+      }
+
+      const { data, error } = await supabase.from("communities").insert(insertPayload).select().single();
       if (error) throw error;
       await supabase.from("community_members").insert({ community_id: data.id, user_id: user.id, role: "creator" });
-      toast.success("Community created! 🎉");
+      toast.success("Community launched! 🚀");
       onCreated(data as Community);
     } catch (e: any) { toast.error("Failed: " + (e.message || "Unknown error")); }
     finally { setCreating(false); }
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center px-4">
-      <div className="bg-[#0a0a0f] border border-white/[0.08] rounded-2xl w-full max-w-md shadow-2xl max-h-[85vh] overflow-y-auto">
-        <div className="flex items-center gap-3 p-4 border-b border-white/[0.06]">
-          <button onClick={onClose} className="text-white/40 hover:text-white"><XIcon className="h-5 w-5" /></button>
-          <h3 className="text-sm font-bold text-white flex-1">Create Community</h3>
-          <Button onClick={handleCreate} disabled={creating || !name.trim()} className="h-8 px-4 rounded-full text-xs font-bold">
-            {creating ? <Loader2 className="h-3 w-3 animate-spin" /> : "Create"}
-          </Button>
-        </div>
-        <div className="p-4 space-y-4">
-          {/* Banner upload */}
-          <div>
-            <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1.5 block">Banner</label>
-            {bannerUrl ? (
-              <div className="relative rounded-xl overflow-hidden border border-white/[0.08]">
-                <img src={bannerUrl} className="w-full aspect-[3/1] object-cover" alt="" />
-                <button onClick={() => setBannerUrl("")}
-                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white/70 hover:text-white">
-                  <XIcon className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ) : (
-              <ImageUploadBtn onUploaded={setBannerUrl} label="Upload banner" className="w-full justify-center py-4 border-dashed" />
-            )}
-          </div>
+  const stepLabels = ["Identity", "Appearance", "Settings", "Links"];
 
-          {/* Avatar upload */}
-          <div>
-            <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1.5 block">Community Image</label>
-            <div className="flex items-center gap-3">
-              {avatarUrl ? (
-                <div className="relative w-16 h-16 rounded-2xl overflow-hidden border border-white/[0.1]">
-                  <img src={avatarUrl} className="w-full h-full object-cover" alt="" />
-                  <button onClick={() => setAvatarUrl("")}
-                    className="absolute top-0 right-0 w-5 h-5 rounded-full bg-black/70 flex items-center justify-center text-white/60">
-                    <XIcon className="h-3 w-3" />
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center px-4">
+      <div className="bg-[#08080e] border border-white/[0.08] rounded-2xl w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
+
+        {/* ── Header ── */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.06] shrink-0">
+          <button onClick={onClose} className="text-white/30 hover:text-white transition-colors"><XIcon className="h-5 w-5" /></button>
+          <div className="flex-1">
+            <h3 className="text-sm font-bold text-white">Create Community</h3>
+            <p className="text-[11px] text-white/25 mt-0.5">Step {step} of {TOTAL_STEPS} — {stepLabels[step - 1]}</p>
+          </div>
+          {step === TOTAL_STEPS ? (
+            <Button onClick={handleCreate} disabled={creating || !name.trim()}
+              className="h-8 px-5 rounded-full text-xs font-bold bg-og-lime text-black hover:bg-og-lime/90">
+              {creating ? <Loader2 className="h-3 w-3 animate-spin" /> : "🚀 Launch"}
+            </Button>
+          ) : (
+            <Button onClick={() => canProceed() && setStep(s => s + 1)}
+              disabled={!canProceed()}
+              className="h-8 px-5 rounded-full text-xs font-bold">
+              Next →
+            </Button>
+          )}
+        </div>
+
+        {/* ── Progress bar ── */}
+        <div className="flex gap-1 px-5 pt-3 shrink-0">
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <button key={i} onClick={() => i < step - 1 && setStep(i + 1)}
+              className={cn("h-1 flex-1 rounded-full transition-all",
+                i < step ? "bg-og-lime" : i === step - 1 ? "bg-og-lime/60" : "bg-white/[0.08]"
+              )} />
+          ))}
+        </div>
+
+        {/* ── Step content ── */}
+        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
+
+          {/* ───── Step 1: Identity ───── */}
+          {step === 1 && (
+            <>
+              <div>
+                <label className="text-[10px] text-white/25 uppercase tracking-wider mb-1.5 block font-semibold">Community Name *</label>
+                <input
+                  autoFocus
+                  type="text" value={name} onChange={e => setName(e.target.value)}
+                  placeholder="e.g. Degen Alpha Den"
+                  maxLength={50}
+                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:border-og-cyan/40 transition-colors"
+                />
+                <div className="flex justify-between mt-1">
+                  {name.trim().length < 3 && name.length > 0 && <p className="text-[10px] text-red-400">Min 3 characters</p>}
+                  <span className="text-[10px] text-white/20 ml-auto">{name.length}/50</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] text-white/25 uppercase tracking-wider mb-1.5 block font-semibold">Description</label>
+                <textarea value={description} onChange={e => setDescription(e.target.value)}
+                  placeholder="What's this community about? What kind of content will be shared here?"
+                  maxLength={500}
+                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none resize-none h-24 focus:border-og-cyan/40 transition-colors"
+                />
+                <p className="text-[10px] text-white/15 text-right mt-0.5">{description.length}/500</p>
+              </div>
+
+              <div>
+                <label className="text-[10px] text-white/25 uppercase tracking-wider mb-2 block font-semibold">Category</label>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {COMMUNITY_CATEGORIES.map(cat => (
+                    <button key={cat.id} onClick={() => setCategory(cat.id)}
+                      className={cn("flex flex-col items-center gap-1 p-2 rounded-xl border text-center transition-all",
+                        category === cat.id
+                          ? "border-og-cyan/60 bg-og-cyan/10 text-white"
+                          : "border-white/[0.05] bg-white/[0.02] text-white/30 hover:border-white/[0.12] hover:text-white/50"
+                      )}>
+                      <span className="text-base leading-none">{cat.icon}</span>
+                      <span className="text-[9px] font-medium leading-tight">{cat.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] text-white/25 uppercase tracking-wider mb-2 block font-semibold">Emoji Icon</label>
+                <div className="flex gap-1.5 flex-wrap">
+                  {COMMUNITY_ICONS.map(i => (
+                    <button key={i} onClick={() => setIcon(i)}
+                      className={cn("w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all",
+                        icon === i ? "bg-og-cyan/15 border-2 border-og-cyan/80 scale-110" : "bg-white/[0.04] border border-transparent hover:bg-white/[0.07]"
+                      )}>{i}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] text-white/25 uppercase tracking-wider mb-1.5 block font-semibold">Tags <span className="text-white/15 normal-case">(up to 8)</span></label>
+                <div className="flex gap-2">
+                  <input value={tagInput} onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addTag())}
+                    placeholder="solana, meme, alpha..."
+                    className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder-white/20 outline-none focus:border-og-cyan/40 transition-colors"
+                  />
+                  <button onClick={addTag} className="px-3 py-2 rounded-xl bg-white/[0.06] border border-white/[0.08] text-white/50 text-sm hover:bg-white/[0.10] transition-colors">Add</button>
+                </div>
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {tags.map(t => (
+                      <span key={t} className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-og-cyan/10 border border-og-cyan/20 text-og-cyan text-xs">
+                        #{t}
+                        <button onClick={() => setTags(tags.filter(x => x !== t))} className="text-og-cyan/50 hover:text-og-cyan ml-0.5"><XIcon className="h-2.5 w-2.5" /></button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ───── Step 2: Appearance ───── */}
+          {step === 2 && (
+            <>
+              {/* Banner */}
+              <div>
+                <label className="text-[10px] text-white/25 uppercase tracking-wider mb-2 block font-semibold">Banner Image</label>
+                {bannerUrl ? (
+                  <div className="relative rounded-xl overflow-hidden border border-white/[0.08] group">
+                    <img src={bannerUrl} className="w-full aspect-[3/1] object-cover" alt="" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <ImageUploadBtn onUploaded={setBannerUrl} label="Replace" />
+                      <button onClick={() => setBannerUrl("")}
+                        className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-xs hover:bg-red-500/30 transition-colors">
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <ImageUploadBtn onUploaded={setBannerUrl} label="Upload banner (recommended 1500×500)" className="w-full justify-center py-8 border-dashed rounded-xl" />
+                )}
+              </div>
+
+              {/* Avatar */}
+              <div>
+                <label className="text-[10px] text-white/25 uppercase tracking-wider mb-2 block font-semibold">Community Logo</label>
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    {avatarUrl ? (
+                      <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-white/10 group">
+                        <img src={avatarUrl} className="w-full h-full object-cover" alt="" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <button onClick={() => setAvatarUrl("")} className="text-white/70"><XIcon className="h-5 w-5" /></button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl bg-white/[0.04] border-2 border-dashed border-white/[0.10] flex items-center justify-center text-3xl">
+                        {icon}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <ImageUploadBtn onUploaded={setAvatarUrl} label="Upload logo" />
+                    <p className="text-[10px] text-white/20 mt-1.5">If no logo, the emoji icon will be used.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preview card */}
+              <div>
+                <label className="text-[10px] text-white/25 uppercase tracking-wider mb-2 block font-semibold">Preview</label>
+                <div className="rounded-xl border border-white/[0.06] overflow-hidden bg-white/[0.02]">
+                  {bannerUrl ? (
+                    <div className="w-full aspect-[4/1] overflow-hidden">
+                      <img src={bannerUrl} className="w-full h-full object-cover" alt="" />
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-[4/1] bg-gradient-to-r from-og-cyan/10 via-purple-500/10 to-og-lime/10" />
+                  )}
+                  <div className="px-4 pb-3 -mt-5 flex items-end gap-3">
+                    <div className="w-12 h-12 rounded-xl border-2 border-[#08080e] overflow-hidden bg-[#0a0a10] shrink-0 flex items-center justify-center text-2xl">
+                      {avatarUrl ? <img src={avatarUrl} className="w-full h-full object-cover" alt="" /> : icon}
+                    </div>
+                    <div className="pb-0.5 min-w-0">
+                      <p className="text-sm font-bold text-white truncate">{name || "Community Name"}</p>
+                      <p className="text-[10px] text-white/30">{COMMUNITY_CATEGORIES.find(c => c.id === category)?.label}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ───── Step 3: Settings ───── */}
+          {step === 3 && (
+            <>
+              {/* Privacy */}
+              <div>
+                <label className="text-[10px] text-white/25 uppercase tracking-wider mb-2 block font-semibold">Privacy</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { id: "public", icon: "🌐", label: "Public", desc: "Anyone can join" },
+                    { id: "private", icon: "🔒", label: "Private", desc: "Approval required" },
+                    { id: "invite", icon: "📩", label: "Invite Only", desc: "Link required" },
+                  ] as const).map(p => (
+                    <button key={p.id} onClick={() => setPrivacy(p.id)}
+                      className={cn("p-3 rounded-xl border text-left transition-all",
+                        privacy === p.id ? "border-og-cyan/60 bg-og-cyan/10" : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12]"
+                      )}>
+                      <div className="text-lg mb-1">{p.icon}</div>
+                      <div className="text-xs font-bold text-white">{p.label}</div>
+                      <div className="text-[10px] text-white/30 mt-0.5">{p.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Token gate */}
+              <div className="rounded-xl border border-white/[0.06] p-3.5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold text-white">Token Gate</p>
+                    <p className="text-[10px] text-white/30 mt-0.5">Require holding a token to join</p>
+                  </div>
+                  <button onClick={() => setTokenGateEnabled(!tokenGateEnabled)}
+                    className={cn("w-10 h-5 rounded-full transition-all relative",
+                      tokenGateEnabled ? "bg-og-lime" : "bg-white/[0.10]"
+                    )}>
+                    <span className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow",
+                      tokenGateEnabled ? "right-0.5" : "left-0.5"
+                    )} />
                   </button>
                 </div>
-              ) : (
-                <ImageUploadBtn onUploaded={setAvatarUrl} label="Upload" />
-              )}
-            </div>
-          </div>
+                {tokenGateEnabled && (
+                  <div className="space-y-2 pt-1 border-t border-white/[0.05]">
+                    <div>
+                      <label className="text-[10px] text-white/25 uppercase tracking-wider mb-1 block">Token Contract Address</label>
+                      <input value={tokenGateCA} onChange={e => setTokenGateCA(e.target.value)}
+                        placeholder="Solana CA..."
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs font-mono text-white placeholder-white/20 outline-none focus:border-og-cyan/40" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-white/25 uppercase tracking-wider mb-1 block">Minimum Holding</label>
+                      <input type="number" value={tokenGateMin} onChange={e => setTokenGateMin(e.target.value)}
+                        placeholder="1000"
+                        className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder-white/20 outline-none focus:border-og-cyan/40" />
+                    </div>
+                  </div>
+                )}
+              </div>
 
-          {/* Icon picker */}
-          <div>
-            <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1 block">Emoji Icon</label>
-            <div className="flex gap-1.5 flex-wrap">
-              {ICONS.map(i => (
-                <button key={i} onClick={() => setIcon(i)}
-                  className={cn("w-9 h-9 rounded-lg flex items-center justify-center text-lg transition-all",
-                    icon === i ? "bg-og-cyan/10 border-2 border-og-cyan scale-110" : "bg-white/[0.04] border border-transparent"
-                  )}>{i}</button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1 block">Name</label>
-            <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Community name..."
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:border-og-cyan/30" />
-          </div>
-          <div>
-            <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1 block">Description</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="What's this community about?"
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none resize-none h-20 focus:border-og-cyan/30" />
-          </div>
-          <div>
-            <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1 block">Privacy</label>
-            <div className="flex gap-2">
-              {(["public", "private"] as const).map(p => (
-                <button key={p} onClick={() => setPrivacy(p)}
-                  className={cn("flex-1 py-2 rounded-xl text-xs font-medium capitalize border transition-colors",
-                    privacy === p ? "border-og-cyan bg-og-cyan/10 text-og-cyan" : "border-white/[0.06] text-white/25"
-                  )}>{p === "public" ? "🌐 " : "🔒 "}{p}</button>
-              ))}
-            </div>
-          </div>
+              {/* Community Rules */}
+              <div>
+                <label className="text-[10px] text-white/25 uppercase tracking-wider mb-2 block font-semibold">Community Rules</label>
+                <div className="space-y-1.5 mb-2">
+                  {PRESET_RULES.map(r => (
+                    <button key={r} onClick={() => toggleRule(r)}
+                      className={cn("w-full text-left px-3 py-2.5 rounded-xl border text-xs transition-all flex items-start gap-2",
+                        rules.includes(r)
+                          ? "border-og-lime/30 bg-og-lime/[0.07] text-white"
+                          : "border-white/[0.05] bg-white/[0.02] text-white/35 hover:text-white/55 hover:border-white/[0.10]"
+                      )}>
+                      <span className={cn("w-4 h-4 rounded-full border shrink-0 mt-0.5 flex items-center justify-center text-[9px]",
+                        rules.includes(r) ? "border-og-lime bg-og-lime/20 text-og-lime" : "border-white/20"
+                      )}>
+                        {rules.includes(r) && "✓"}
+                      </span>
+                      {r}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input value={customRule} onChange={e => setCustomRule(e.target.value)}
+                    placeholder="Add a custom rule..."
+                    className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-xs text-white placeholder-white/20 outline-none focus:border-og-cyan/40" />
+                </div>
+              </div>
+
+              {/* Extra settings */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                  <div>
+                    <p className="text-xs font-medium text-white/60">Slow Mode</p>
+                    <p className="text-[10px] text-white/25">Limit post frequency</p>
+                  </div>
+                  <select value={slowModeSeconds} onChange={e => setSlowModeSeconds(Number(e.target.value))}
+                    className="bg-white/[0.06] border border-white/[0.08] rounded-lg px-2 py-1.5 text-xs text-white/60 outline-none">
+                    <option value={0}>Off</option>
+                    <option value={30}>30s</option>
+                    <option value={60}>1 min</option>
+                    <option value={300}>5 min</option>
+                    <option value={3600}>1 hour</option>
+                  </select>
+                </div>
+                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                  <div>
+                    <p className="text-xs font-medium text-white/60">Wallet Verified Members Only</p>
+                    <p className="text-[10px] text-white/25">Posts only from verified wallets</p>
+                  </div>
+                  <button onClick={() => setVerifiedOnly(!verifiedOnly)}
+                    className={cn("w-10 h-5 rounded-full transition-all relative", verifiedOnly ? "bg-og-cyan" : "bg-white/[0.10]")}>
+                    <span className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow", verifiedOnly ? "right-0.5" : "left-0.5")} />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-white/[0.02] border border-white/[0.05]">
+                  <div>
+                    <p className="text-xs font-medium text-white/60">NSFW Content</p>
+                    <p className="text-[10px] text-white/25">Allow explicit content</p>
+                  </div>
+                  <button onClick={() => setNsfw(!nsfw)}
+                    className={cn("w-10 h-5 rounded-full transition-all relative", nsfw ? "bg-red-500/80" : "bg-white/[0.10]")}>
+                    <span className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all shadow", nsfw ? "right-0.5" : "left-0.5")} />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ───── Step 4: Links & Socials ───── */}
+          {step === 4 && (
+            <>
+              <div className="space-y-3">
+                {[
+                  { label: "Website", value: website, set: setWebsite, placeholder: "https://yoursite.com", icon: "🌐" },
+                  { label: "X / Twitter", value: xHandle, set: setXHandle, placeholder: "@handle", icon: "𝕏" },
+                  { label: "Telegram", value: telegram, set: setTelegram, placeholder: "@group or https://t.me/...", icon: "✈️" },
+                  { label: "Discord", value: discord, set: setDiscord, placeholder: "https://discord.gg/...", icon: "💬" },
+                ].map(({ label, value, set, placeholder, icon: linkIcon }) => (
+                  <div key={label}>
+                    <label className="text-[10px] text-white/25 uppercase tracking-wider mb-1.5 block font-semibold">{label}</label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base w-8 text-center shrink-0">{linkIcon}</span>
+                      <input value={value} onChange={e => set(e.target.value)} placeholder={placeholder}
+                        className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:border-og-cyan/40 transition-colors" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <label className="text-[10px] text-white/25 uppercase tracking-wider mb-1.5 block font-semibold">Weekly AMA Schedule</label>
+                <input value={amaSchedule} onChange={e => setAmaSchedule(e.target.value)}
+                  placeholder="e.g. Every Friday 3PM UTC"
+                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:border-og-cyan/40 transition-colors" />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-white/25 uppercase tracking-wider mb-1.5 block font-semibold">Community Focus / Vibe</label>
+                <input value={qualityFocus} onChange={e => setQualityFocus(e.target.value)}
+                  placeholder="e.g. High-conviction calls only, no noise"
+                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:border-og-cyan/40 transition-colors" />
+              </div>
+
+              {/* Final summary card */}
+              <div className="rounded-xl border border-og-lime/20 bg-og-lime/[0.04] p-4 space-y-2">
+                <p className="text-xs font-bold text-og-lime mb-3">🚀 Ready to launch</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center text-xl">
+                    {avatarUrl ? <img src={avatarUrl} className="w-full h-full object-cover rounded-xl" alt="" /> : icon}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">{name || "Unnamed"}</p>
+                    <p className="text-[10px] text-white/30">{COMMUNITY_CATEGORIES.find(c => c.id === category)?.label} · {privacy === "invite" ? "Invite Only" : privacy === "private" ? "Private" : "Public"}</p>
+                  </div>
+                </div>
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 pt-1">
+                    {tags.map(t => <span key={t} className="text-[10px] text-og-cyan/70 bg-og-cyan/10 px-2 py-0.5 rounded-full">#{t}</span>)}
+                  </div>
+                )}
+                {tokenGateEnabled && tokenGateCA && (
+                  <p className="text-[10px] text-og-lime/60">🔐 Token gated · Min {Number(tokenGateMin).toLocaleString()} tokens</p>
+                )}
+                {rules.length > 0 && (
+                  <p className="text-[10px] text-white/30">{rules.length} rule{rules.length !== 1 ? "s" : ""} set</p>
+                )}
+              </div>
+            </>
+          )}
         </div>
+
+        {/* ── Footer nav ── */}
+        {step > 1 && (
+          <div className="px-5 pb-4 pt-2 border-t border-white/[0.04] shrink-0">
+            <button onClick={() => setStep(s => s - 1)}
+              className="text-xs text-white/30 hover:text-white/60 transition-colors flex items-center gap-1">
+              <ArrowLeft className="h-3.5 w-3.5" /> Back
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
