@@ -141,6 +141,18 @@ function buildTradingLobbyMessage(record: Record<string, unknown>, eventType: st
   );
 }
 
+function buildNewUserMessage(record: Record<string, unknown>, eventType: string): string | null {
+  if (eventType !== "INSERT") return null;
+  const username = escapeHtml(String(record["username"] || record["display_name"] || "a new member"));
+  const isPioneer = record["is_pioneer"] ? " 🏅" : "";
+  return (
+    `👋 <b>Welcome to OG SCAN, @${username}!</b>${isPioneer}\n\n` +
+    `A new member just joined the community — give them a warm OG welcome! 🔥\n\n` +
+    `OG SCAN is your home for Solana meme coin intelligence: live feeds, community rooms, voice lobbies, spaces, raids &amp; more.\n\n` +
+    `🔗 <a href="${OG_SCAN_URL}">Dive in at OG SCAN →</a>`
+  );
+}
+
 // ─── Route webhook payload to correct builder ────────────────────────────────
 
 type WebhookPayload = {
@@ -170,6 +182,8 @@ function buildMessage(payload: WebhookPayload): string | null {
       return buildVoiceLobbyMessage(record, type);
     case "trading_lobbies":
       return buildTradingLobbyMessage(record, type);
+    case "profiles":
+      return buildNewUserMessage(record, type);
     default:
       return null;
   }
