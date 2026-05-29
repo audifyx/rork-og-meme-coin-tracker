@@ -26,6 +26,13 @@ import { useNavigate } from "react-router-dom";
    Types
    ═══════════════════════════════════════════════════════════════ */
 
+interface CommunityExternalLink {
+  id: string;
+  title: string;
+  url: string;
+  badge?: string | null;
+}
+
 interface Community {
   id: string;
   name: string;
@@ -46,6 +53,7 @@ interface Community {
   weekly_ama_schedule?: string | null;
   research_hub_summary?: string | null;
   quality_focus?: string | null;
+  community_links?: CommunityExternalLink[] | null;
   is_active?: boolean;
   invite_code?: string | null;
 }
@@ -329,6 +337,41 @@ const COMMUNITY_PLAYBOOK = [
   { key: "topics", label: "Topic Channels", Icon: Hash },
 ] as const;
 
+const COMMUNITY_LINK_BADGES = [
+  { key: "website", label: "Website", emoji: "🌐", className: "border-sky-400/25 bg-sky-400/10 text-sky-200" },
+  { key: "x", label: "X", emoji: "𝕏", className: "border-white/20 bg-white/10 text-white" },
+  { key: "verified", label: "Verified", emoji: "✅", className: "border-emerald-400/25 bg-emerald-400/10 text-emerald-300" },
+  { key: "instagram", label: "Instagram", emoji: "📸", className: "border-pink-400/25 bg-pink-400/10 text-pink-200" },
+  { key: "tiktok", label: "TikTok", emoji: "🎵", className: "border-fuchsia-400/25 bg-fuchsia-400/10 text-fuchsia-200" },
+  { key: "discord", label: "Discord", emoji: "💬", className: "border-indigo-400/25 bg-indigo-400/10 text-indigo-200" },
+  { key: "telegram", label: "Telegram", emoji: "✈️", className: "border-cyan-400/25 bg-cyan-400/10 text-cyan-200" },
+  { key: "youtube", label: "YouTube", emoji: "▶️", className: "border-red-400/25 bg-red-400/10 text-red-200" },
+  { key: "docs", label: "Docs", emoji: "📚", className: "border-amber-400/25 bg-amber-400/10 text-amber-200" },
+  { key: "news", label: "News", emoji: "📰", className: "border-orange-400/25 bg-orange-400/10 text-orange-200" },
+  { key: "alpha", label: "Alpha", emoji: "⚡", className: "border-og-cyan/25 bg-og-cyan/10 text-og-cyan" },
+  { key: "podcast", label: "Podcast", emoji: "🎙️", className: "border-violet-400/25 bg-violet-400/10 text-violet-200" },
+  { key: "video", label: "Video", emoji: "🎬", className: "border-rose-400/25 bg-rose-400/10 text-rose-200" },
+  { key: "art", label: "Art", emoji: "🎨", className: "border-purple-400/25 bg-purple-400/10 text-purple-200" },
+  { key: "memes", label: "Memes", emoji: "😂", className: "border-yellow-400/25 bg-yellow-400/10 text-yellow-200" },
+  { key: "calendar", label: "Calendar", emoji: "📅", className: "border-lime-400/25 bg-lime-400/10 text-lime-200" },
+  { key: "events", label: "Events", emoji: "🎟️", className: "border-blue-400/25 bg-blue-400/10 text-blue-200" },
+  { key: "launch", label: "Launch", emoji: "🚀", className: "border-og-gold/25 bg-og-gold/10 text-og-gold" },
+  { key: "research", label: "Research", emoji: "🔬", className: "border-teal-400/25 bg-teal-400/10 text-teal-200" },
+  { key: "guide", label: "Guide", emoji: "🧭", className: "border-emerald-300/25 bg-emerald-300/10 text-emerald-200" },
+  { key: "market", label: "Market", emoji: "📈", className: "border-green-400/25 bg-green-400/10 text-green-200" },
+  { key: "alerts", label: "Alerts", emoji: "🚨", className: "border-red-300/25 bg-red-300/10 text-red-100" },
+  { key: "bot", label: "Bot", emoji: "🤖", className: "border-slate-400/25 bg-slate-400/10 text-slate-200" },
+  { key: "form", label: "Form", emoji: "📝", className: "border-stone-400/25 bg-stone-400/10 text-stone-200" },
+  { key: "shop", label: "Shop", emoji: "🛒", className: "border-orange-300/25 bg-orange-300/10 text-orange-100" },
+  { key: "gaming", label: "Gaming", emoji: "🎮", className: "border-fuchsia-300/25 bg-fuchsia-300/10 text-fuchsia-100" },
+  { key: "ai", label: "AI", emoji: "🧠", className: "border-sky-300/25 bg-sky-300/10 text-sky-100" },
+  { key: "community", label: "Community", emoji: "👥", className: "border-white/15 bg-white/10 text-white/90" },
+  { key: "music", label: "Music", emoji: "🎶", className: "border-pink-300/25 bg-pink-300/10 text-pink-100" },
+  { key: "link", label: "Link", emoji: "🔗", className: "border-zinc-400/25 bg-zinc-400/10 text-zinc-200" },
+] as const;
+
+const DEFAULT_COMMUNITY_LINK_BADGE = "website";
+
 type CommunityActionKey = typeof COMMUNITY_PLAYBOOK[number]["key"];
 
 function getCommunityPostCount(c: Community) {
@@ -350,7 +393,7 @@ function getCommunityScore(c: Community) {
   const memberWeight = Math.min(38, Math.floor((c.member_count || 0) / 12));
   const postWeight = Math.min(22, getCommunityPostCount(c) * 2);
   const profileWeight = (c.avatar_url ? 8 : 0) + (c.banner_url ? 8 : 0) + (c.description ? 8 : 0) + (c.rules ? 6 : 0);
-  const experienceWeight = (c.tags?.length ? Math.min(8, c.tags.length * 2) : 0) + (c.weekly_ama_schedule ? 6 : 0) + (c.research_hub_summary ? 6 : 0) + (c.quality_focus ? 4 : 0);
+  const experienceWeight = (c.tags?.length ? Math.min(8, c.tags.length * 2) : 0) + (c.weekly_ama_schedule ? 6 : 0) + (c.research_hub_summary ? 6 : 0) + (c.quality_focus ? 4 : 0) + Math.min(8, getCommunityLinks(c).length * 2);
   return Math.min(98, 34 + memberWeight + postWeight + profileWeight + experienceWeight);
 }
 
@@ -1220,6 +1263,7 @@ function CommunityFeed({
   const [editResearchHub, setEditResearchHub] = useState(community.research_hub_summary || "");
   const [editTopicChannels, setEditTopicChannels] = useState((community.tags || []).join(", "));
   const [editQualityFocus, setEditQualityFocus] = useState(community.quality_focus || "");
+  const [editLinks, setEditLinks] = useState<CommunityExternalLink[]>(getCommunityLinks(community));
   const [activeActionCard, setActiveActionCard] = useState<CommunityActionKey | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
   const [savingActionCard, setSavingActionCard] = useState<CommunityActionKey | null>(null);
@@ -1234,6 +1278,7 @@ function CommunityFeed({
     setEditResearchHub(community.research_hub_summary || "");
     setEditTopicChannels((community.tags || []).join(", "));
     setEditQualityFocus(community.quality_focus || "");
+    setEditLinks(getCommunityLinks(community));
     setActiveActionCard(null);
     setActiveTopic(null);
     setFeedSort("latest");
@@ -1314,6 +1359,7 @@ function CommunityFeed({
     setEditResearchHub(nextCommunity.research_hub_summary || "");
     setEditTopicChannels((nextCommunity.tags || []).join(", "));
     setEditQualityFocus(nextCommunity.quality_focus || "");
+    setEditLinks(getCommunityLinks(nextCommunity));
     toast.success(successMessage);
     return nextCommunity;
   };
@@ -1323,6 +1369,7 @@ function CommunityFeed({
     await saveCommunityUpdate({
       description: editDesc.trim() || null,
       rules: editRules.trim() || null,
+      community_links: sanitizeCommunityLinks(editLinks),
     }, "Settings saved ✨");
     setSavingSettings(false);
   };
@@ -1432,6 +1479,7 @@ function CommunityFeed({
     : Array.from(new Set(posts.flatMap(post => post.tags || []))).slice(0, 6);
   const qualitySummary = currentCommunity.quality_focus?.trim() || "Helpful posts rise";
   const qualityScore = getCommunityScore(currentCommunity);
+  const communityLinks = getCommunityLinks(currentCommunity);
 
   return (
     <div>
@@ -1469,6 +1517,25 @@ function CommunityFeed({
                   <h2 className="text-sm font-black uppercase tracking-widest text-white">{currentCommunity.name}</h2>
                   {currentCommunity.description && (
                     <p className="text-[11px] text-white/30 mt-1 leading-relaxed">{currentCommunity.description}</p>
+                  )}
+                  {communityLinks.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {communityLinks.map(link => {
+                        const badge = getCommunityLinkBadge(link.badge);
+                        return (
+                          <a
+                            key={link.id}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[10px] font-black tracking-wider text-white/80 transition-colors hover:border-og-cyan/30 hover:text-og-cyan"
+                          >
+                            <span className={cn("inline-flex h-5 w-5 items-center justify-center rounded-full border text-[10px]", badge.className)}>{badge.emoji}</span>
+                            <span className="truncate uppercase">{link.title}</span>
+                          </a>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
@@ -1770,6 +1837,92 @@ function CommunityFeed({
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none resize-none h-32 focus:border-og-cyan/30"
               placeholder="Add community rules..." />
           </div>
+
+          <div className="space-y-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <label className="text-[10px] text-white/20 uppercase tracking-wider mb-1 block">Community Bio Links</label>
+                <p className="text-[11px] text-white/30">Add clickable titles to the community bio and choose a badge for each one.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditLinks(prev => [...prev, createCommunityLink()].slice(0, 8))}
+                className="px-3 py-1.5 rounded-xl border border-og-cyan/20 bg-og-cyan/10 text-[10px] font-black uppercase tracking-widest text-og-cyan hover:bg-og-cyan/15 transition-colors"
+              >
+                Add Link
+              </button>
+            </div>
+            {editLinks.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-white/[0.08] px-3 py-4 text-[11px] text-white/30">
+                No bio links yet. Add titles like X, Website, Docs, Instagram, or TikTok.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {editLinks.map((link, index) => {
+                  const badgeMeta = getCommunityLinkBadge(link.badge);
+                  return (
+                    <div key={link.id} className="rounded-2xl border border-white/[0.06] bg-black/20 p-3 space-y-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={cn("inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-sm", badgeMeta.className)}>{badgeMeta.emoji}</span>
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-white/70">Link {index + 1}</p>
+                            <p className="text-[11px] text-white/35 truncate">{link.title || "Untitled link"}</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setEditLinks(prev => prev.filter(item => item.id !== link.id))}
+                          className="rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-widest text-red-300/70 hover:bg-red-400/10 hover:text-red-300 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <input
+                          value={link.title}
+                          onChange={e => setEditLinks(prev => prev.map(item => item.id === link.id ? { ...item, title: e.target.value } : item))}
+                          placeholder="Title shown in bio"
+                          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:border-og-cyan/30"
+                        />
+                        <input
+                          value={link.url}
+                          onChange={e => setEditLinks(prev => prev.map(item => item.id === link.id ? { ...item, url: e.target.value } : item))}
+                          placeholder="https://..."
+                          className="w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:border-og-cyan/30"
+                        />
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)] items-start">
+                        <select
+                          value={link.badge || DEFAULT_COMMUNITY_LINK_BADGE}
+                          onChange={e => setEditLinks(prev => prev.map(item => item.id === link.id ? { ...item, badge: e.target.value } : item))}
+                          className="h-11 rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 text-sm text-white outline-none focus:border-og-cyan/30"
+                        >
+                          {COMMUNITY_LINK_BADGES.map(badge => (
+                            <option key={badge.key} value={badge.key}>{badge.emoji} {badge.label}</option>
+                          ))}
+                        </select>
+                        <div className="flex flex-wrap gap-2">
+                          {COMMUNITY_LINK_BADGES.slice(0, 30).map(badge => (
+                            <button
+                              key={`${link.id}-${badge.key}`}
+                              type="button"
+                              onClick={() => setEditLinks(prev => prev.map(item => item.id === link.id ? { ...item, badge: badge.key } : item))}
+                              className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-widest transition-colors", link.badge === badge.key ? badge.className : "border-white/[0.08] bg-white/[0.03] text-white/35 hover:text-white/70")}
+                            >
+                              <span>{badge.emoji}</span>
+                              {badge.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <button onClick={saveSettings} disabled={savingSettings}
             className="px-4 py-2 rounded-xl bg-og-cyan text-background text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all disabled:opacity-50">
             {savingSettings ? "Saving..." : "Save Settings"}
