@@ -39,6 +39,7 @@ import { safeAvatarUrl, cn } from "@/lib/utils";
 import { formatDistanceToNow, format } from "date-fns";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import SpaceBadges from "@/components/spaces/SpaceBadges";
 
 const LIVEKIT_URL = "wss://new-7unnd5e1.livekit.cloud";
 
@@ -869,6 +870,18 @@ export default function UserPublicPage() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ════════════ SPACE BADGES ════════════ */}
+        {pastSpaces.length > 0 && (
+          <div className="mb-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <SpaceBadges
+              spacesHosted={pastSpaces.length}
+              spacesAttended={pastSpaces.length}
+              totalSpeakingMin={Math.round(pastSpaces.reduce((sum, sp) => sum + (sp.duration_seconds || 0), 0) / 60)}
+              compact={false}
+            />
           </div>
         )}
 

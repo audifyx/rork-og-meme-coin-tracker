@@ -13,7 +13,7 @@ import {
   Medal, Star, CalendarDays, BookOpen, ClipboardCheck, BarChart3,
   Flame, Award, Gauge, Layers, Hash, Megaphone, Sparkles,
   Zap, Bell, Swords, AlertTriangle, TrendingDown, Wallet, Target,
-  Activity, CheckCircle2, Clock, ArrowRight, RefreshCw
+  Activity, CheckCircle2, Clock, ArrowRight, RefreshCw, Radio
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,8 @@ import { useNavigate } from "react-router-dom";
 import { CoinCommunityFull } from "@/components/CoinCommunityFull";
 import { HELIUS_API_KEY, OGSCAN_TOKEN_MINT } from "@/lib/og";
 import { trackActivity } from "@/lib/trackActivity";
+import { CommunityReputation } from "@/components/communities-20x/CommunityReputation";
+import SpaceLeaderboard from "@/components/spaces/SpaceLeaderboard";
 
 /* ═══════════════════════════════════════════════════════════════
    Types
@@ -1498,12 +1500,16 @@ function CommunityFeed({
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "posts" | "articles" | "threads" | "members" | "settings" | "cc">("all");
+  const [filter, setFilter] = useState<"all" | "posts" | "articles" | "threads" | "members" | "settings" | "cc" | "about" | "events" | "reputation">("all");
   const [feedSort, setFeedSort] = useState<FeedSort>("latest");
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [members, setMembers] = useState<CommunityMember[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
+  const [scheduledSpaces, setScheduledSpaces] = useState<any[]>([]);
+  const [scheduledLoading, setScheduledLoading] = useState(false);
+  const [topMembers, setTopMembers] = useState<Array<{ user_id: string; username: string | null; avatar_url: string | null; posts: number; likes: number; role: string }>>([]);
+  const [userReputation, setUserReputation] = useState<any | null>(null);
   const [communityState, setCommunityState] = useState<Community>(community);
   const [editRules, setEditRules] = useState(community.rules || "");
   const [editDesc, setEditDesc] = useState(community.description || "");
@@ -1549,7 +1555,7 @@ function CommunityFeed({
   }, [user]);
 
   useEffect(() => {
-    if (filter !== "members" && filter !== "settings") return;
+    if (filter !== "members" && filter !== "settings" && filter !== "about" && filter !== "reputation") return;
     (async () => {
       setMembersLoading(true);
       const { data } = await supabase.from("community_members")
@@ -1566,6 +1572,97 @@ function CommunityFeed({
       setMembersLoading(false);
     })();
   }, [filter, community.id]);
+
+  // Fetch scheduled spaces for this community's topics/tags
+  useEffect(() => {
+    if (filter !== "events") return;
+    (async () => {
+      setScheduledLoading(true);
+      const { data } = await supabase.from("spaces")
+        .select("id, title, description, host_id, host_username, host_avatar, topic, scheduled_for, listener_count, is_live, tags, category")
+        .is("ended_at", null)
+        .not("scheduled_for", "is", null)
+        .gte("scheduled_for", new Date().toISOString())
+        .order("scheduled_for", { ascending: true })
+        .limit(20);
+      setScheduledSpaces(data || []);
+      setScheduledLoading(false);
+    })();
+  }, [filter, community.id]);
+
+  // Fetch top members by post activity for community leaderboard
+  useEffect(() => {
+    if (filter !== "about" && filter !== "reputation") return;
+    (async () => {
+      const { data: posts } = await supabase.from("community_posts")
+        .select("user_id, likes_count")
+        .eq("community_id", community.id)
+        .limit(500);
+      if (!posts || posts.length === 0) { setTopMembers([]); return; }
+      const map = new Map<string, { posts: number; likes: number }>();
+      for (const p of posts) {
+        const e = map.get(p.user_id) || { posts: 0, likes: 0 };
+        e.posts++;
+        e.likes += p.likes_count || 0;
+        map.set(p.user_id, e);
+      }
+      const sorted = Array.from(map.entries())
+        .sort((a, b) => (b[1].posts * 5 + b[1].likes * 3) - (a[1].posts * 5 + a[1].likes * 3))
+        .slice(0, 8);
+      if (sorted.length === 0) { setTopMembers([]); return; }
+      const uids = sorted.map(([uid]) => uid);
+      const { data: profiles } = await supabase.from("profiles")
+        .select("user_id, username, avatar_url").in("user_id", uids);
+      const pMap = new Map((profiles || []).map(p => [p.user_id, p]));
+      const { data: memberRoles } = await supabase.from("community_members")
+        .select("user_id, role").eq("community_id", community.id).in("user_id", uids);
+      const rMap = new Map((memberRoles || []).map(m => [m.user_id, m.role]));
+      setTopMembers(sorted.map(([uid, stats]) => ({
+        user_id: uid,
+        username: pMap.get(uid)?.username || null,
+        avatar_url: pMap.get(uid)?.avatar_url || null,
+        posts: stats.posts,
+        likes: stats.likes,
+        role: rMap.get(uid) || "member",
+      })));
+    })();
+  }, [filter, community.id]);
+
+  // Build current user's reputation for this community
+  useEffect(() => {
+    if (!user || filter !== "reputation") return;
+    (async () => {
+      const { data: myPosts } = await supabase.from("community_posts")
+        .select("id, likes_count, is_article, created_at")
+        .eq("community_id", community.id)
+        .eq("user_id", user.id)
+        .limit(200);
+      const posts = myPosts || [];
+      const totalPosts = posts.length;
+      const totalLikes = posts.reduce((s, p) => s + (p.likes_count || 0), 0);
+      const xp = totalPosts * 8 + totalLikes * 2;
+      const { data: profile } = await supabase.from("profiles")
+        .select("username, avatar_url").eq("user_id", user.id).single();
+      setUserReputation({
+        userId: user.id,
+        username: profile?.username || user.email?.split("@")[0] || "You",
+        xp,
+        level: Math.min(10, Math.floor(Math.log2(xp / 50 + 1)) + 1),
+        title: "",
+        badges: [],
+        stats: {
+          helpfulPosts: posts.filter(p => (p.likes_count || 0) >= 3).length,
+          commentsReceived: 0,
+          messagesPosted: totalPosts,
+          likesReceived: totalLikes,
+          daysActive: new Set(posts.map(p => p.created_at?.slice(0, 10))).size,
+          eventsJoined: 0,
+        },
+        rank: 1,
+        streak: 0,
+      });
+    })();
+  }, [filter, user, community.id]);
 
   const toggleMod = async (member: CommunityMember) => {
     if (!canManageModerators) return;
@@ -2074,6 +2171,9 @@ function CommunityFeed({
           "posts",
           "threads",
           "articles",
+          "about",
+          "events",
+          "reputation",
           ...(currentCommunity.cc_enabled ? ["cc" as const] : []),
           "members",
           ...(canEditCommunity ? ["settings" as const] : []),
@@ -2081,13 +2181,16 @@ function CommunityFeed({
           <button
             key={f}
             onClick={() => setFilter(f as any)}
-            className={cn("shrink-0 flex-1 py-2.5 text-xs font-medium transition-colors relative capitalize min-w-[2.5rem]",
+            className={cn("shrink-0 py-2.5 text-xs font-medium transition-colors relative capitalize min-w-[2.5rem] px-2",
               filter === f ? "text-white" : "text-white/25"
             )}
           >
             {f === "members" ? <Users className="h-3.5 w-3.5 mx-auto" /> :
              f === "settings" ? <Settings className="h-3.5 w-3.5 mx-auto" /> :
              f === "cc" ? <span className="flex items-center justify-center gap-0.5"><Zap className="h-3 w-3" /><span className="text-[10px]">CC</span></span> :
+             f === "about" ? <span className="flex items-center justify-center gap-0.5"><BookOpen className="h-3 w-3" /><span className="text-[10px] hidden sm:inline">About</span></span> :
+             f === "events" ? <span className="flex items-center justify-center gap-0.5"><CalendarDays className="h-3 w-3" /><span className="text-[10px] hidden sm:inline">Events</span></span> :
+             f === "reputation" ? <span className="flex items-center justify-center gap-0.5"><Award className="h-3 w-3" /><span className="text-[10px] hidden sm:inline">Rep</span></span> :
              f}
             {filter === f && (
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-[2px] rounded-full bg-og-cyan" />
@@ -2107,7 +2210,7 @@ function CommunityFeed({
         </div>
       )}
 
-      {filter !== "members" && filter !== "settings" && filter !== "cc" && (
+      {filter !== "members" && filter !== "settings" && filter !== "cc" && filter !== "about" && filter !== "events" && filter !== "reputation" && (
         <div className="flex items-center justify-between gap-3 border-b border-white/[0.04] px-4 py-2 flex-wrap">
           <div className="flex items-center gap-1">
             {(["latest", "top", "trending"] as FeedSort[]).map(option => (
@@ -2132,6 +2235,298 @@ function CommunityFeed({
           ) : (
             <span className="text-[10px] uppercase tracking-widest text-white/20">Sorted for signal</span>
           )}
+        </div>
+      )}
+
+      {/* ─── ABOUT panel ─── */}
+      {filter === "about" && (
+        <div className="p-4 space-y-4">
+          {/* Description */}
+          {currentCommunity.description && (
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <p className="text-[10px] font-black text-white/25 uppercase tracking-wider mb-2 flex items-center gap-1.5"><BookOpen className="h-3 w-3" /> About</p>
+              <p className="text-[13px] text-white/60 leading-relaxed">{currentCommunity.description}</p>
+            </div>
+          )}
+
+          {/* Token gate info */}
+          {currentCommunity.holder_only && (currentCommunity.gate_token_mint || currentCommunity.holder_token_mint) && (
+            <div className="rounded-xl border border-og-gold/20 bg-og-gold/[0.04] p-4">
+              <p className="text-[10px] font-black text-og-gold/70 uppercase tracking-wider mb-2 flex items-center gap-1.5"><Shield className="h-3 w-3 text-og-gold" /> Token Gate</p>
+              <p className="text-[12px] text-white/50">Hold <span className="text-og-gold font-bold">${currentCommunity.gate_usd_minimum || currentCommunity.holder_min_amount || 8}</span> worth of <span className="text-og-gold font-bold">${currentCommunity.holder_token_symbol || "OG"}</span> to join this community.</p>
+              {(currentCommunity.gate_token_mint || currentCommunity.holder_token_mint) && (
+                <a href={`https://dexscreener.com/solana/${currentCommunity.gate_token_mint || currentCommunity.holder_token_mint}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 mt-2 text-[10px] font-black text-og-gold border border-og-gold/20 rounded-lg px-2.5 py-1 hover:bg-og-gold/10 transition-colors">
+                  <ExternalLink className="h-2.5 w-2.5" /> View on DexScreener
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Rules */}
+          {currentCommunity.rules && (
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <p className="text-[10px] font-black text-white/25 uppercase tracking-wider mb-2 flex items-center gap-1.5"><ClipboardCheck className="h-3 w-3" /> Community Rules</p>
+              <div className="space-y-1.5">
+                {currentCommunity.rules.split("\n").filter(Boolean).map((rule, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="shrink-0 w-5 h-5 rounded-full bg-og-cyan/10 text-og-cyan text-[9px] font-black flex items-center justify-center mt-0.5">{i + 1}</span>
+                    <p className="text-[12px] text-white/50 leading-relaxed">{rule}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* External links */}
+          {getCommunityLinks(currentCommunity).length > 0 && (
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+              <p className="text-[10px] font-black text-white/25 uppercase tracking-wider mb-2 flex items-center gap-1.5"><ExternalLink className="h-3 w-3" /> Links</p>
+              <div className="space-y-2">
+                {getCommunityLinks(currentCommunity).map(link => {
+                  const badge = getCommunityLinkBadge(link.badge);
+                  return (
+                    <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-2.5 rounded-xl border border-white/[0.05] bg-white/[0.015] hover:border-og-cyan/20 hover:bg-white/[0.03] transition-all">
+                      <span className={cn("inline-flex h-7 w-7 items-center justify-center rounded-full border text-sm shrink-0", badge.className)}>{badge.emoji}</span>
+                      <span className="text-[12px] font-bold text-white/70 flex-1">{link.title}</span>
+                      <ExternalLink className="h-3 w-3 text-white/20" />
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Stats */}
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <p className="text-[10px] font-black text-white/25 uppercase tracking-wider mb-3 flex items-center gap-1.5"><BarChart3 className="h-3 w-3" /> Community Stats</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-black/20 p-3 text-center">
+                <p className="text-lg font-black text-white">{(currentCommunity.member_count || 0).toLocaleString()}</p>
+                <p className="text-[9px] text-white/25 uppercase tracking-widest mt-0.5">Members</p>
+              </div>
+              <div className="rounded-lg bg-black/20 p-3 text-center">
+                <p className="text-lg font-black text-og-lime">{currentCommunity.active_members_24h ?? "—"}</p>
+                <p className="text-[9px] text-white/25 uppercase tracking-widest mt-0.5">Active Today</p>
+              </div>
+              <div className="rounded-lg bg-black/20 p-3 text-center">
+                <p className="text-lg font-black text-white">{posts.length}</p>
+                <p className="text-[9px] text-white/25 uppercase tracking-widest mt-0.5">Posts</p>
+              </div>
+              <div className="rounded-lg bg-black/20 p-3 text-center">
+                <p className="text-lg font-black text-og-cyan">{getCommunityScore(currentCommunity)}%</p>
+                <p className="text-[9px] text-white/25 uppercase tracking-widest mt-0.5">Quality Score</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Members widget */}
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <p className="text-[10px] font-black text-white/25 uppercase tracking-wider mb-3 flex items-center gap-1.5"><Crown className="h-3 w-3 text-amber-400" /> Top Contributors</p>
+            {membersLoading ? (
+              <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 text-white/10 animate-spin" /></div>
+            ) : topMembers.length === 0 ? (
+              <p className="text-[11px] text-white/20 text-center py-4">No activity data yet</p>
+            ) : (
+              <div className="space-y-2">
+                {topMembers.map((m, i) => (
+                  <div key={m.user_id} className="flex items-center gap-2.5 p-2 rounded-xl border border-white/[0.04] bg-white/[0.01]">
+                    <div className="w-6 text-center shrink-0">
+                      {i === 0 ? <span className="text-base">🥇</span> : i === 1 ? <span className="text-base">🥈</span> : i === 2 ? <span className="text-base">🥉</span> : <span className="text-[11px] font-bold text-white/20">#{i + 1}</span>}
+                    </div>
+                    <div className="w-8 h-8 rounded-full border border-white/[0.08] bg-white/[0.04] flex items-center justify-center overflow-hidden shrink-0">
+                      {m.avatar_url ? <img src={m.avatar_url} alt="" className="w-full h-full object-cover" /> : <span className="text-[10px] font-bold text-white/30">{m.username?.[0]?.toUpperCase() || "?"}</span>}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <button type="button" onClick={() => onOpenProfile(m.user_id)} className="text-[11px] font-bold text-white/70 hover:text-og-cyan transition-colors truncate">{m.username || "User"}</button>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[9px] text-white/20">{m.posts} posts</span>
+                        <span className="text-[9px] text-white/20">·</span>
+                        <span className="text-[9px] text-white/20">{m.likes} likes</span>
+                      </div>
+                    </div>
+                    {m.role === "creator" && <span className="text-[8px] font-black text-og-gold bg-og-gold/10 px-1.5 py-0.5 rounded-full border border-og-gold/20">OWNER</span>}
+                    {m.role === "moderator" && <span className="text-[8px] font-black text-og-cyan bg-og-cyan/10 px-1.5 py-0.5 rounded-full border border-og-cyan/20">MOD</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* CommunityRooms link */}
+          <button
+            type="button"
+            onClick={() => navigate("/rooms")}
+            className="w-full flex items-center justify-between gap-3 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-og-cyan/20 transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-og-cyan/10 border border-og-cyan/20 flex items-center justify-center">
+                <Hash className="h-4 w-4 text-og-cyan" />
+              </div>
+              <div className="text-left">
+                <p className="text-[12px] font-black text-white/70">Voice Rooms</p>
+                <p className="text-[10px] text-white/25">Open real-time audio rooms</p>
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-white/20" />
+          </button>
+        </div>
+      )}
+
+      {/* ─── EVENTS panel ─── */}
+      {filter === "events" && (
+        <div className="p-4 space-y-3">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-[10px] font-black text-white/25 uppercase tracking-wider flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Upcoming Spaces</p>
+            <button type="button" onClick={() => navigate("/spaces")} className="text-[10px] font-black text-og-cyan hover:text-white transition-colors">Open Spaces →</button>
+          </div>
+          {scheduledLoading ? (
+            <div className="flex items-center justify-center py-10"><Loader2 className="h-5 w-5 text-white/10 animate-spin" /></div>
+          ) : scheduledSpaces.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-white/[0.06] p-8 text-center">
+              <CalendarDays className="h-8 w-8 mx-auto text-white/[0.06] mb-3" />
+              <p className="text-sm font-bold text-white/40">No upcoming spaces scheduled</p>
+              <p className="text-[11px] text-white/20 mt-1">Schedule a space from the Spaces tab to see it here</p>
+              <button type="button" onClick={() => navigate("/spaces")} className="mt-4 px-4 py-2 rounded-xl bg-og-cyan/10 border border-og-cyan/20 text-og-cyan text-[10px] font-black uppercase tracking-widest hover:bg-og-cyan/15 transition-colors">
+                Go to Spaces
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {scheduledSpaces.map(space => {
+                const when = space.scheduled_for ? new Date(space.scheduled_for) : null;
+                const dateStr = when ? when.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+                const timeStr = when ? when.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : "";
+                return (
+                  <div key={space.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-og-cyan/10 border border-og-cyan/20 flex items-center justify-center shrink-0">
+                        <Radio className="h-4 w-4 text-og-cyan" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-bold text-white leading-tight">{space.title}</p>
+                        {space.description && <p className="text-[11px] text-white/35 mt-0.5 line-clamp-2">{space.description}</p>}
+                        <div className="flex items-center gap-3 mt-2 flex-wrap">
+                          {when && (
+                            <span className="text-[10px] font-bold text-og-cyan flex items-center gap-1">
+                              <CalendarDays className="h-2.5 w-2.5" /> {dateStr} at {timeStr}
+                            </span>
+                          )}
+                          {space.host_username && (
+                            <span className="text-[10px] text-white/25 flex items-center gap-1">
+                              <Users className="h-2.5 w-2.5" /> @{space.host_username}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2">
+                      <button type="button" onClick={() => navigate("/spaces")} className="px-3 py-1.5 rounded-lg bg-og-cyan/10 border border-og-cyan/20 text-og-cyan text-[10px] font-black hover:bg-og-cyan/15 transition-colors flex items-center gap-1">
+                        <Bell className="h-3 w-3" /> Set Reminder
+                      </button>
+                      {space.topic && (
+                        <span className="px-2 py-1 rounded-lg border border-white/[0.06] text-[9px] font-bold text-white/30">{space.topic}</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Space leaderboard */}
+          <div className="mt-4 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <SpaceLeaderboard compact={false} />
+          </div>
+        </div>
+      )}
+
+      {/* ─── REPUTATION panel ─── */}
+      {filter === "reputation" && (
+        <div className="p-4 space-y-4">
+          {/* My reputation card */}
+          {userReputation ? (
+            <div>
+              <p className="text-[10px] font-black text-white/25 uppercase tracking-wider mb-2 flex items-center gap-1.5"><Star className="h-3 w-3 text-amber-400" /> Your Reputation</p>
+              <CommunityReputation reputation={userReputation} />
+            </div>
+          ) : !user ? (
+            <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 text-center">
+              <Star className="h-8 w-8 mx-auto text-white/[0.06] mb-3" />
+              <p className="text-sm font-bold text-white/40">Sign in to see your reputation</p>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center py-8"><Loader2 className="h-5 w-5 text-white/10 animate-spin" /></div>
+          )}
+
+          {/* Community leaderboard */}
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <p className="text-[10px] font-black text-white/25 uppercase tracking-wider mb-3 flex items-center gap-1.5"><Crown className="h-3 w-3 text-amber-400" /> Top Contributors</p>
+            {membersLoading ? (
+              <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 text-white/10 animate-spin" /></div>
+            ) : topMembers.length === 0 ? (
+              <div className="text-center py-6">
+                <Award className="h-7 w-7 mx-auto text-white/[0.06] mb-2" />
+                <p className="text-[11px] text-white/20">No activity data yet — start posting to earn XP!</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {topMembers.map((m, i) => {
+                  const xp = m.posts * 8 + m.likes * 2;
+                  return (
+                    <div key={m.user_id} className={cn("flex items-center gap-2.5 p-2.5 rounded-xl border transition-all",
+                      i === 0 ? "border-amber-500/15 bg-amber-500/[0.03]" : "border-white/[0.04] bg-white/[0.01]"
+                    )}>
+                      <div className="w-6 text-center shrink-0">
+                        {i === 0 ? <span className="text-base">🥇</span> : i === 1 ? <span className="text-base">🥈</span> : i === 2 ? <span className="text-base">🥉</span> : <span className="text-[11px] font-bold text-white/20">#{i + 1}</span>}
+                      </div>
+                      <div className="w-8 h-8 rounded-full border border-white/[0.08] bg-white/[0.04] flex items-center justify-center overflow-hidden shrink-0">
+                        {m.avatar_url ? <img src={m.avatar_url} alt="" className="w-full h-full object-cover" /> : <span className="text-[10px] font-bold text-white/30">{m.username?.[0]?.toUpperCase() || "?"}</span>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <button type="button" onClick={() => onOpenProfile(m.user_id)} className={cn("text-[11px] font-bold transition-colors truncate", i === 0 ? "text-amber-400" : "text-white/70 hover:text-og-cyan")}>
+                          {m.username || "User"}
+                        </button>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[9px] text-white/20">{xp.toLocaleString()} XP</span>
+                          <span className="text-[9px] text-white/10">·</span>
+                          <span className="text-[9px] text-white/20">{m.posts} posts</span>
+                        </div>
+                      </div>
+                      {/* XP progress bar */}
+                      <div className="w-16 shrink-0">
+                        <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                          <div className={cn("h-full rounded-full", i === 0 ? "bg-amber-400" : "bg-og-cyan/40")}
+                            style={{ width: `${Math.min(100, (xp / ((topMembers[0]?.posts * 8 + topMembers[0]?.likes * 2) || 1)) * 100)}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* How to earn XP */}
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <p className="text-[10px] font-black text-white/25 uppercase tracking-wider mb-3 flex items-center gap-1.5"><Zap className="h-3 w-3 text-og-lime" /> Earn XP in this Community</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {[
+                { label: "Post quality content", xp: 8, emoji: "📝" },
+                { label: "Get a like on your post", xp: 2, emoji: "❤️" },
+                { label: "Write an article", xp: 20, emoji: "📖" },
+                { label: "Join a Space", xp: 5, emoji: "🎙️" },
+                { label: "Daily activity", xp: 10, emoji: "🔥" },
+                { label: "Host a Space", xp: 25, emoji: "👑" },
+              ].map(item => (
+                <div key={item.label} className="flex items-center gap-2 p-2 rounded-lg bg-white/[0.015] border border-white/[0.04]">
+                  <span className="text-sm">{item.emoji}</span>
+                  <span className="text-[9px] text-white/30 flex-1 leading-tight">{item.label}</span>
+                  <span className="text-[9px] font-black text-og-lime">+{item.xp}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 

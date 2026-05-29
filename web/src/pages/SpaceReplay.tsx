@@ -11,6 +11,9 @@ import {
   Headphones, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import SpaceHighlights from "@/components/spaces/SpaceHighlights";
+import SpaceAnalytics from "@/components/spaces/SpaceAnalytics";
 
 /* ─── Types ─── */
 interface Space {
@@ -85,6 +88,7 @@ const WaveformBars = ({ playing, barCount = 40 }: { playing: boolean; barCount?:
    ═══════════════════════════════════════════════════════════════════════════════ */
 const SpaceReplay = () => {
   const { spaceId } = useParams<{ spaceId: string }>();
+  const { user } = useAuth();
   const [space, setSpace] = useState<Space | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -361,6 +365,28 @@ const SpaceReplay = () => {
             </div>
           )}
         </div>
+
+        {/* ─── Space Highlights (chapters/key moments) ─── */}
+        {space && (
+          <div className="mt-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <SpaceHighlights
+              spaceId={space.id}
+              startedAt={space.created_at}
+              isHost={!!user && user.id === space.host_id}
+              isLive={false}
+            />
+          </div>
+        )}
+
+        {/* ─── Host Analytics (host-only post-space summary) ─── */}
+        {space && user && user.id === space.host_id && (
+          <div className="mt-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
+            <SpaceAnalytics
+              spaceId={space.id}
+              isHost={true}
+            />
+          </div>
+        )}
 
         {/* ─── CTA to join platform ─── */}
         <div className="mt-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 text-center">
