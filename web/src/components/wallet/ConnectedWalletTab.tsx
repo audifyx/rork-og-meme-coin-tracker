@@ -23,10 +23,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import {
-  getWalletOverview, getAssets, getTransactions,
-  WalletOverview, TokenAsset, Transaction, formatAddress, formatUsd
+  getWalletOverview, getAssets, getTransactions, parseTransactions, enrichTxsWithMetadata,
+  enrichTokenPrices, computeWalletPnL, fetchSolPrice,
+  WalletOverview, TokenAsset, Transaction, ParsedTransaction, TokenPnL, WalletPnLSummary,
+  formatAddress, formatUsd
 } from "@/lib/solana-api";
-import { HELIUS_RPC, HELIUS_API_KEY, jupPrice, SOL_MINT, JUPITER_BASE, JUPITER_API_KEY, BIRDEYE_BASE, BIRDEYE_API_KEY } from "@/lib/og";
+import { HELIUS_RPC, HELIUS_API_KEY, SOL_MINT, JUPITER_BASE, JUPITER_API_KEY } from "@/lib/og";
 import { formatDistanceToNow } from "date-fns";
 import { VersionedTransaction } from "@solana/web3.js";
 
@@ -49,75 +51,17 @@ interface RichToken {
   twitter?: string;
   telegram?: string;
   pairAddress?: string;
-  // PnL fields (computed from tx history)
-  totalBought?: number;      // USD spent buying
-  totalSold?: number;        // USD received selling
-  avgBuyPrice?: number;
-  realizedPnl?: number;
-  unrealizedPnl?: number;
-  totalVolume?: number;
 }
 
-interface EnrichedTx {
-  signature: string;
-  type: string;
-  timestamp?: number;
-  description?: string;
-  fee?: number;
+// Use ParsedTransaction from solana-api for tx display
+type EnrichedTx = ParsedTransaction & {
   tokenName?: string;
   tokenSymbol?: string;
   tokenImage?: string;
-  tokenMint?: string;
-  amount?: string;
-  amountUsd?: string;
-  isIncoming?: boolean;
-  isOutgoing?: boolean;
-  solAmount?: number;
-  tokenAmount?: number;
-  isBuy?: boolean;
-  isSell?: boolean;
-}
+};
 
-interface TokenTrade {
-  signature: string;
-  timestamp?: number;
-  side: "buy" | "sell";
-  tokenAmount: number;
-  solAmount: number;
-  usdValue: number;
-  pricePerToken: number;
-}
-
-interface WalletPnL {
-  totalPortfolioValue: number;
-  totalInvested: number;
-  totalRealized: number;
-  totalUnrealized: number;
-  totalPnl: number;
-  totalVolume: number;
-  totalBuyVolume: number;
-  totalSellVolume: number;
-  winCount: number;
-  lossCount: number;
-  biggestWin: { symbol: string; pnl: number } | null;
-  biggestLoss: { symbol: string; pnl: number } | null;
-  tokens: Array<{
-    mint: string;
-    symbol: string;
-    name: string;
-    image?: string;
-    currentValue: number;
-    currentPrice: number;
-    balance: number;
-    totalBought: number;
-    totalSold: number;
-    realizedPnl: number;
-    unrealizedPnl: number;
-    totalPnl: number;
-    roi: number;
-    trades: TokenTrade[];
-  }>;
-}
+// Re-export WalletPnLSummary type alias
+type WalletPnL = WalletPnLSummary;
 
 /* ─── Phantom native swap ────────────────────────────────────────── */
 function base64ToUint8Array(b64: string): Uint8Array {
@@ -153,17 +97,32 @@ async function phantomSwap(
 function getTypeIcon(tx: EnrichedTx) {
   if (tx.isBuy) return <ArrowDownLeft className="h-4 w-4 text-green-400" />;
   if (tx.isSell) return <ArrowUpRight className="h-4 w-4 text-red-400" />;
+  if (tx.isSwap) return <ArrowLeftRight className="h-4 w-4 text-[#22d3ee]" />;
   if (tx.isIncoming) return <ArrowDownLeft className="h-4 w-4 text-green-400" />;
   if (tx.isOutgoing) return <ArrowUpRight className="h-4 w-4 text-red-400" />;
-  if (tx.type === "SWAP") return <ArrowLeftRight className="h-4 w-4 text-[#22d3ee]" />;
+  if (tx.type === "SWAP" || tx.type === "BUY" || tx.type === "SELL") return <ArrowLeftRight className="h-4 w-4 text-[#22d3ee]" />;
   return <Zap className="h-4 w-4 text-white/40" />;
 }
 
 function getTypeBg(tx: EnrichedTx) {
   if (tx.isBuy || tx.isIncoming) return "bg-green-500/10 border border-green-500/20";
   if (tx.isSell || tx.isOutgoing) return "bg-red-500/10 border border-red-500/20";
-  if (tx.type === "SWAP") return "bg-[#22d3ee]/10 border border-[#22d3ee]/20";
+  if (tx.isSwap || tx.type === "SWAP") return "bg-[#22d3ee]/10 border border-[#22d3ee]/20";
   return "bg-white/[0.06] border border-white/[0.08]";
+}
+
+function getTxLabel(tx: EnrichedTx): string {
+  if (tx.isBuy) return "Bought";
+  if (tx.isSell) return "Sold";
+  if (tx.isSwap) return "Swapped";
+  if (tx.isIncoming) return "Received";
+  if (tx.isOutgoing) return "Sent";
+  const t = tx.type?.replace(/_/g, " ").toLowerCase();
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : "Unknown";
+}
+
+function getTxTokenMint(tx: EnrichedTx): string | undefined {
+  return tx.isBuy ? tx.receivedMint : tx.isSell ? tx.spentMint : tx.receivedMint ?? tx.spentMint;
 }
 
 function formatPnl(val: number) {
@@ -190,9 +149,11 @@ export function ConnectedWalletTab() {
   const [walletPnl, setWalletPnl] = useState<WalletPnL | null>(null);
   const [loading, setLoading] = useState(false);
   const [pnlLoading, setPnlLoading] = useState(false);
+  const [txsLoading, setTxsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("portfolio");
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [solPrice, setSolPrice] = useState(150);
 
   // Swap state
   const [swapOpen, setSwapOpen] = useState(false);
@@ -205,7 +166,7 @@ export function ConnectedWalletTab() {
 
   // Chart / expanded token state
   const [expandedToken, setExpandedToken] = useState<string | null>(null);
-  const [tokenTradesMap, setTokenTradesMap] = useState<Record<string, TokenTrade[]>>({});
+  const [tokenTradesMap, setTokenTradesMap] = useState<Record<string, Array<{ signature: string; timestamp?: number; side: "buy" | "sell"; tokenAmount: number; solAmount: number; usdValue: number; pricePerToken: number }>>>({});
   const [tokenTradesLoading, setTokenTradesLoading] = useState<string | null>(null);
 
   // Token search & sort
@@ -214,26 +175,34 @@ export function ConnectedWalletTab() {
 
   const address = publicKey?.toBase58() ?? "";
 
-  /* ── Fetch token market data from Birdeye ── */
+  /* ── Fetch token market data from DexScreener ── */
   const enrichTokensWithMarketData = useCallback(async (richTokens: RichToken[]): Promise<RichToken[]> => {
-    const topTokens = richTokens.slice(0, 20); // Batch top 20
+    const topTokens = richTokens.slice(0, 20);
     const enriched = await Promise.all(topTokens.map(async (t) => {
       try {
-        // DexScreener for social links + pair info
-        const dexRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${t.mint}`);
-        const dexData = await dexRes.json();
-        const pair = dexData.pairs?.[0];
+        const dexRes = await fetch(`https://api.dexscreener.com/tokens/v1/solana/${t.mint}`);
+        const pairs = await dexRes.json() as Array<{
+          priceChange?: { h24?: number };
+          volume?: { h24?: number };
+          liquidity?: { usd?: number };
+          marketCap?: number;
+          pairAddress?: string;
+          info?: { socials?: Array<{ type: string; url: string }>; websites?: Array<{ url: string }>; imageUrl?: string };
+        }>;
+        const pair = Array.isArray(pairs) ? pairs[0] : null;
         if (pair) {
           const socials = pair.info?.socials || [];
-          const twitter = socials.find((s: any) => s.type === "twitter")?.url;
-          const telegram = socials.find((s: any) => s.type === "telegram")?.url;
+          const twitter = socials.find((s) => s.type === "twitter")?.url;
+          const telegram = socials.find((s) => s.type === "telegram")?.url;
           const website = pair.info?.websites?.[0]?.url;
+          const image = pair.info?.imageUrl;
           return {
             ...t,
-            change24h: pair.priceChange?.h24 || t.change24h,
-            volume24h: pair.volume?.h24 || 0,
-            liquidity: pair.liquidity?.usd || 0,
-            mcap: pair.marketCap || 0,
+            image: t.image || image,
+            change24h: pair.priceChange?.h24 ?? t.change24h,
+            volume24h: pair.volume?.h24 ?? 0,
+            liquidity: pair.liquidity?.usd ?? 0,
+            mcap: pair.marketCap ?? 0,
             twitter, telegram, website,
             pairAddress: pair.pairAddress,
           };
@@ -248,16 +217,20 @@ export function ConnectedWalletTab() {
   const loadData = useCallback(async (addr: string, silent = false) => {
     if (!addr) return;
     if (!silent) setLoading(true);
+    setTxsLoading(true);
     try {
-      const [ov, assetData, rawTxs] = await Promise.all([
+      // Load overview + assets + transactions in parallel
+      const [ov, assetData, { price: currentSolPrice }, rawTxs] = await Promise.all([
         getWalletOverview(addr),
         getAssets(addr, 1, 100),
-        getTransactions(addr, 50),
+        fetchSolPrice(),
+        getTransactions(addr, 75),
       ]);
       setOverview(ov);
+      setSolPrice(currentSolPrice);
 
-      // Build rich token list
-      const rich: RichToken[] = assetData.items
+      // Build initial rich token list from DAS
+      const rawRich: RichToken[] = assetData.items
         .map((a: TokenAsset) => {
           const meta = a.content?.metadata ?? {};
           const info = a.token_info ?? {};
@@ -267,8 +240,37 @@ export function ConnectedWalletTab() {
           const price = info.price_info?.price_per_token ?? 0;
           const value = info.price_info?.total_price ?? 0;
           return {
-            mint: a.id, symbol: meta.symbol ?? "?", name: meta.name ?? "Unknown",
-            balance, decimals, price, value, change24h: 0, image: a.content?.links?.image,
+            mint: a.id,
+            symbol: meta.symbol ?? "?",
+            name: meta.name ?? "Unknown",
+            balance, decimals, price, value,
+            change24h: 0,
+            image: a.content?.links?.image,
+          };
+        })
+        .filter((t: RichToken) => t.balance > 0)
+        .sort((a: RichToken, b: RichToken) => b.value - a.value);
+
+      setTokens(rawRich);
+
+      // Enrich zero-price tokens with Jupiter prices (pump.fun, new launches)
+      const priceEnrichedItems = await enrichTokenPrices(assetData.items, currentSolPrice);
+      const rich: RichToken[] = priceEnrichedItems
+        .map((a: TokenAsset) => {
+          const meta = a.content?.metadata ?? {};
+          const info = a.token_info ?? {};
+          const decimals = info.decimals ?? 0;
+          const raw = info.balance ?? 0;
+          const balance = raw / Math.pow(10, decimals);
+          const price = info.price_info?.price_per_token ?? 0;
+          const value = info.price_info?.total_price ?? 0;
+          return {
+            mint: a.id,
+            symbol: meta.symbol ?? "?",
+            name: meta.name ?? "Unknown",
+            balance, decimals, price, value,
+            change24h: 0,
+            image: a.content?.links?.image,
           };
         })
         .filter((t: RichToken) => t.balance > 0)
@@ -276,53 +278,23 @@ export function ConnectedWalletTab() {
 
       setTokens(rich);
 
-      // Enrich transactions
-      const enrichedTxs: EnrichedTx[] = rawTxs.map((tx: Transaction) => {
-        const nativeTx = tx.nativeTransfers?.[0];
-        const tokenTx = tx.tokenTransfers?.[0];
-        let isIncoming = false, isOutgoing = false, isBuy = false, isSell = false;
-        let amount = "", solAmount = 0, tokenAmount = 0;
-        const txType = tx.type?.toUpperCase() ?? "";
+      // Parse + classify transactions using new comprehensive parser
+      const parsed = await parseTransactions(rawTxs, addr);
 
-        if (txType === "SWAP") {
-          // For swaps, determine buy vs sell direction
-          const outToken = tx.tokenTransfers?.find((tt: any) => tt.toUserAccount === addr);
-          const inToken = tx.tokenTransfers?.find((tt: any) => tt.fromUserAccount === addr);
-          if (outToken) { isBuy = true; tokenAmount = outToken.tokenAmount || 0; }
-          if (inToken) { isSell = true; tokenAmount = inToken.tokenAmount || 0; }
-          if (nativeTx) solAmount = Math.abs(nativeTx.amount / 1e9);
-          amount = solAmount > 0 ? `${solAmount.toFixed(4)} SOL` : `${tokenAmount.toFixed(2)} tokens`;
-        } else if (nativeTx) {
-          isIncoming = nativeTx.toUserAccount === addr;
-          isOutgoing = nativeTx.fromUserAccount === addr;
-          const sol = Math.abs(nativeTx.amount / 1e9);
-          solAmount = sol;
-          amount = `${sol.toFixed(4)} SOL`;
-        } else if (tokenTx) {
-          isIncoming = tokenTx.toUserAccount === addr;
-          isOutgoing = tokenTx.fromUserAccount === addr;
-          tokenAmount = tokenTx.tokenAmount || 0;
-          amount = `${tokenAmount.toFixed(2)} tokens`;
-        }
-
-        return {
-          signature: tx.signature, type: tx.type ?? "UNKNOWN",
-          timestamp: tx.timestamp, description: tx.description,
-          fee: tx.fee, amount, isIncoming, isOutgoing, isBuy, isSell,
-          solAmount, tokenAmount,
-          tokenMint: tx.tokenTransfers?.[0]?.mint,
-        };
-      });
-      setTxs(enrichedTxs);
+      // Enrich with token metadata from DexScreener
+      const enriched = await enrichTxsWithMetadata(parsed);
+      setTxs(enriched as EnrichedTx[]);
+      setTxsLoading(false);
       setLastRefresh(new Date());
 
-      // Enrich with market data (async, non-blocking)
+      // Enrich tokens with market data (DexScreener: volume, liquidity, mcap, links)
       enrichTokensWithMarketData(rich).then(setTokens);
 
     } catch (e) {
       if (!silent) toast({ title: "Failed to load wallet", description: String(e), variant: "destructive" });
     } finally {
       setLoading(false);
+      setTxsLoading(false);
     }
   }, [enrichTokensWithMarketData]);
 
@@ -330,125 +302,35 @@ export function ConnectedWalletTab() {
   const computePnL = useCallback(async (addr: string) => {
     setPnlLoading(true);
     try {
-      // Fetch more transactions for PnL accuracy
-      const rawTxs = await getTransactions(addr, 100);
-      const solPriceRes = await fetch("https://api.dexscreener.com/latest/dex/tokens/So11111111111111111111111111111111111111112");
-      const solPriceData = await solPriceRes.json();
-      const solPrice = parseFloat(solPriceData?.pairs?.[0]?.priceUsd || "170");
-
-      // Group trades by token mint
-      const tokenTradeGroups: Record<string, TokenTrade[]> = {};
-
-      for (const tx of rawTxs) {
-        const tokenTx = tx.tokenTransfers?.[0];
-        const nativeTx = tx.nativeTransfers?.[0];
-        const txType = tx.type?.toUpperCase() ?? "";
-
-        if (txType === "SWAP" && tokenTx && nativeTx) {
-          const mint = tokenTx.mint;
-          const tokenAmt = tokenTx.tokenAmount || 0;
-          const solAmt = Math.abs(nativeTx.amount / 1e9);
-          const usdVal = solAmt * solPrice;
-          const side: "buy" | "sell" = tokenTx.toUserAccount === addr ? "buy" : "sell";
-
-          if (!tokenTradeGroups[mint]) tokenTradeGroups[mint] = [];
-          tokenTradeGroups[mint].push({
-            signature: tx.signature,
-            timestamp: tx.timestamp,
-            side,
-            tokenAmount: tokenAmt,
-            solAmount: solAmt,
-            usdValue: usdVal,
-            pricePerToken: tokenAmt > 0 ? usdVal / tokenAmt : 0,
-          });
-        }
-      }
-
-      setTokenTradesMap(tokenTradeGroups);
-
-      // Build PnL per token
-      const tokenPnlList = await Promise.all(
-        Object.entries(tokenTradeGroups).map(async ([mint, trades]) => {
-          // Get current token info
-          const currentToken = tokens.find(t => t.mint === mint);
-          const currentPrice = currentToken?.price || 0;
-          const currentBalance = currentToken?.balance || 0;
-          const currentValue = currentToken?.value || 0;
-
-          const buys = trades.filter(t => t.side === "buy");
-          const sells = trades.filter(t => t.side === "sell");
-          const totalBought = buys.reduce((s, t) => s + t.usdValue, 0);
-          const totalSold = sells.reduce((s, t) => s + t.usdValue, 0);
-
-          // Avg buy price
-          const totalBuyTokens = buys.reduce((s, t) => s + t.tokenAmount, 0);
-          const avgBuyPrice = totalBuyTokens > 0 ? totalBought / totalBuyTokens : 0;
-
-          // Unrealized = current value of remaining holdings vs avg cost
-          const unrealizedPnl = avgBuyPrice > 0 ? (currentPrice - avgBuyPrice) * currentBalance : currentValue;
-          // Realized = what we sold minus what it cost
-          const avgCostBasis = totalBuyTokens > 0 ? totalBought / totalBuyTokens : 0;
-          const totalSellTokens = sells.reduce((s, t) => s + t.tokenAmount, 0);
-          const realizedPnl = totalSold - (avgCostBasis * totalSellTokens);
-          const totalPnl = realizedPnl + unrealizedPnl;
-          const roi = totalBought > 0 ? (totalPnl / totalBought) * 100 : 0;
-
-          // Try to get symbol from current tokens or DexScreener
-          let symbol = currentToken?.symbol || "???";
-          let name = currentToken?.name || "Unknown";
-          let image = currentToken?.image;
-
-          if (!currentToken) {
-            try {
-              const dexRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`);
-              const dexData = await dexRes.json();
-              const pair = dexData.pairs?.[0];
-              if (pair) {
-                symbol = pair.baseToken?.symbol || symbol;
-                name = pair.baseToken?.name || name;
-                image = pair.info?.imageUrl;
-              }
-            } catch { /* skip */ }
-          }
-
-          return {
-            mint, symbol, name, image,
-            currentValue, currentPrice, balance: currentBalance,
-            totalBought, totalSold, realizedPnl, unrealizedPnl, totalPnl, roi,
-            trades,
-          };
-        })
+      // Use the new computeWalletPnL which:
+      // - Fetches 200 txs for better accuracy
+      // - Handles pump.fun, Jupiter, Raydium, Orca via events.swap + accountData
+      // - Uses Jupiter Price API for accurate USD values
+      // - Falls back to DexScreener for metadata
+      const pnlResult = await computeWalletPnL(
+        addr,
+        tokens.map(t => ({
+          mint: t.mint,
+          symbol: t.symbol,
+          name: t.name,
+          image: t.image,
+          price: t.price,
+          value: t.value,
+          balance: t.balance,
+        })),
+        200
       );
 
-      const validTokens = tokenPnlList.filter(t => t.totalBought > 0 || t.currentValue > 0);
-      const totalPortfolioValue = tokens.reduce((s, t) => s + t.value, 0);
-      const totalInvested = validTokens.reduce((s, t) => s + t.totalBought, 0);
-      const totalRealized = validTokens.reduce((s, t) => s + t.realizedPnl, 0);
-      const totalUnrealized = validTokens.reduce((s, t) => s + t.unrealizedPnl, 0);
-      const totalBuyVolume = Object.values(tokenTradeGroups).flat().filter(t => t.side === "buy").reduce((s, t) => s + t.usdValue, 0);
-      const totalSellVolume = Object.values(tokenTradeGroups).flat().filter(t => t.side === "sell").reduce((s, t) => s + t.usdValue, 0);
-
-      const sorted = [...validTokens].sort((a, b) => b.totalPnl - a.totalPnl);
-      const biggestWin = sorted.find(t => t.totalPnl > 0) ? { symbol: sorted.find(t => t.totalPnl > 0)!.symbol, pnl: sorted.find(t => t.totalPnl > 0)!.totalPnl } : null;
-      const biggestLoss = [...sorted].reverse().find(t => t.totalPnl < 0) ? { symbol: [...sorted].reverse().find(t => t.totalPnl < 0)!.symbol, pnl: [...sorted].reverse().find(t => t.totalPnl < 0)!.totalPnl } : null;
-
-      setWalletPnl({
-        totalPortfolioValue,
-        totalInvested,
-        totalRealized,
-        totalUnrealized,
-        totalPnl: totalRealized + totalUnrealized,
-        totalVolume: totalBuyVolume + totalSellVolume,
-        totalBuyVolume,
-        totalSellVolume,
-        winCount: validTokens.filter(t => t.totalPnl > 0).length,
-        lossCount: validTokens.filter(t => t.totalPnl < 0).length,
-        biggestWin,
-        biggestLoss,
-        tokens: sorted,
-      });
+      // Build tokenTradesMap for the holdings expanded panels
+      const newTradesMap: Record<string, Array<{ signature: string; timestamp?: number; side: "buy" | "sell"; tokenAmount: number; solAmount: number; usdValue: number; pricePerToken: number }>> = {};
+      for (const t of pnlResult.tokens) {
+        if (t.trades.length > 0) newTradesMap[t.mint] = t.trades;
+      }
+      setTokenTradesMap(newTradesMap);
+      setWalletPnl(pnlResult);
     } catch (e) {
       console.error("PnL computation failed:", e);
+      toast({ title: "PnL calculation failed", description: String(e), variant: "destructive" });
     } finally {
       setPnlLoading(false);
     }
@@ -1270,10 +1152,13 @@ export function ConnectedWalletTab() {
                 <CardTitle className="text-base flex items-center gap-2">
                   <Clock className="h-4 w-4 text-[hsl(var(--og-lime))]" />
                   Transaction History
-                  <Badge variant="outline" className="text-[10px]">{txs.length}</Badge>
+                  {txsLoading
+                    ? <Badge variant="outline" className="text-[10px] animate-pulse">Loading…</Badge>
+                    : <Badge variant="outline" className="text-[10px]">{txs.length} txs</Badge>
+                  }
                 </CardTitle>
                 <Button variant="ghost" size="sm" className="h-7 text-xs text-white/40" onClick={() => loadData(address)}>
-                  <RefreshCw className="h-3 w-3 mr-1" />Refresh
+                  <RefreshCw className={`h-3 w-3 mr-1 ${txsLoading ? "animate-spin" : ""}`} />Refresh
                 </Button>
               </div>
             </CardHeader>
@@ -1287,7 +1172,10 @@ export function ConnectedWalletTab() {
                   <div className="divide-y divide-white/[0.04]">
                     {txs.map(tx => {
                       const ts = tx.timestamp ? formatDistanceToNow(new Date(tx.timestamp * 1000), { addSuffix: true }) : "Unknown";
-                      const label = tx.isBuy ? "Bought" : tx.isSell ? "Sold" : tx.isIncoming ? "Received" : tx.isOutgoing ? "Sent" : tx.type.replace(/_/g, " ").toLowerCase();
+                      const label = getTxLabel(tx);
+                      const mainMint = getTxTokenMint(tx);
+                      const displayAmt = tx.displayAmount || "";
+                      const usdStr = tx.usdValue && tx.usdValue > 0 ? `~${formatUsd(tx.usdValue)}` : "";
                       return (
                         <div key={tx.signature} className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors">
                           <div className={`p-2 rounded-xl shrink-0 ${getTypeBg(tx)}`}>
@@ -1296,21 +1184,36 @@ export function ConnectedWalletTab() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="text-sm font-semibold capitalize">{label}</span>
-                              {tx.tokenMint && <Badge variant="outline" className="text-[9px] px-1.5 h-4 font-mono">{tx.tokenMint.slice(0, 6)}…</Badge>}
-                              <Badge variant="secondary" className={`text-[9px] px-1 h-4 ${tx.isBuy ? "bg-green-500/10 text-green-400" : tx.isSell ? "bg-red-500/10 text-red-400" : ""}`}>
-                                {tx.type}
-                              </Badge>
+                              {/* Token name/symbol if available */}
+                              {(tx.tokenName || tx.tokenSymbol) && (
+                                <Badge variant="outline" className="text-[9px] px-1.5 h-4 font-semibold">
+                                  {tx.tokenSymbol ?? tx.tokenName}
+                                </Badge>
+                              )}
+                              {/* Mint address if no name */}
+                              {!tx.tokenName && !tx.tokenSymbol && mainMint && mainMint !== SOL_MINT && (
+                                <Badge variant="outline" className="text-[9px] px-1.5 h-4 font-mono">{mainMint.slice(0, 6)}…</Badge>
+                              )}
+                              {/* Source badge */}
+                              {tx.source && tx.source !== "UNKNOWN" && (
+                                <Badge variant="secondary" className="text-[9px] px-1 h-4 bg-white/[0.06] text-white/40">
+                                  {tx.source}
+                                </Badge>
+                              )}
                             </div>
                             <p className="text-[11px] text-white/35 mt-0.5" title={tx.timestamp ? new Date(tx.timestamp * 1000).toLocaleString() : ""}>{ts}</p>
-                            {tx.description && <p className="text-[10px] text-white/25 truncate mt-0.5">{tx.description}</p>}
+                            {!tx.isBuy && !tx.isSell && tx.description && (
+                              <p className="text-[10px] text-white/25 truncate mt-0.5">{tx.description}</p>
+                            )}
                           </div>
                           <div className="text-right shrink-0">
-                            {tx.amount && (
+                            {displayAmt && (
                               <p className={`font-mono text-sm font-semibold ${tx.isBuy || tx.isIncoming ? "text-green-400" : tx.isSell || tx.isOutgoing ? "text-red-400" : "text-white/70"}`}>
-                                {tx.isBuy || tx.isIncoming ? "+" : tx.isSell || tx.isOutgoing ? "-" : ""}{tx.amount}
+                                {displayAmt}
                               </p>
                             )}
-                            {tx.fee && <p className="text-[10px] text-white/25">{(tx.fee / 1e9).toFixed(5)} SOL fee</p>}
+                            {usdStr && <p className="text-[10px] text-white/30">{usdStr}</p>}
+                            {tx.fee != null && <p className="text-[10px] text-white/20">{(tx.fee / 1e9).toFixed(5)} SOL fee</p>}
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             <a href={`https://solscan.io/tx/${tx.signature}`} target="_blank" rel="noopener noreferrer">

@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { WalletCalloutButton } from "@/components/webhooks/WalletCalloutButton";
 import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 // CreditBalance removed — credits system disabled
-import { getWalletOverview, getAssets, getTransactions, WalletOverview, TokenAsset, Transaction, formatAddress, formatUsd } from "@/lib/solana-api";
+import { getWalletOverview, getAssets, getTransactions, parseTransactions, enrichTxsWithMetadata, enrichTokenPrices, fetchSolPrice, ParsedTransaction, WalletOverview, TokenAsset, Transaction, formatAddress, formatUsd } from "@/lib/solana-api";
 import { toast } from "@/hooks/use-toast";
 // supabase import removed — wallet page uses direct APIs now
 import { formatDistanceToNow } from "date-fns";
@@ -99,63 +99,26 @@ const Wallets = () => {
   }, [autoRefresh, activeWallet]);
 
   const enrichTransactions = useCallback(async (txs: Transaction[], wallet: string) => {
-    const enriched: EnrichedTransaction[] = txs.map((tx) => {
-      const type = tx.type || 'UNKNOWN';
-      const nativeTransfer = tx.nativeTransfers?.[0];
-      const tokenTransfer = tx.tokenTransfers?.[0];
-      const isIncoming = nativeTransfer?.toUserAccount?.toLowerCase() === wallet.toLowerCase();
-      const isOutgoing = nativeTransfer?.fromUserAccount?.toLowerCase() === wallet.toLowerCase();
+    // Use new comprehensive parser that handles pump.fun, Jupiter, Raydium via events.swap + accountData
+    const parsed = await parseTransactions(txs, wallet);
+    const enriched = await enrichTxsWithMetadata(parsed);
 
-      let amount = '';
-      let tokenMint = '';
-      let tokenSymbol = '';
-
-      if (tokenTransfer) {
-        amount = `${tokenTransfer.tokenAmount?.toFixed(4) || '0'} tokens`;
-        tokenMint = tokenTransfer.mint || '';
-      } else if (nativeTransfer?.amount) {
-        amount = `${(nativeTransfer.amount / 1e9).toFixed(4)} SOL`;
-      }
-
-      return {
-        signature: tx.signature,
-        type,
-        timestamp: tx.timestamp,
-        description: tx.description,
-        fee: tx.fee,
-        feePayer: tx.feePayer,
-        tokenMint,
-        tokenSymbol,
-        amount,
-        isIncoming,
-        isOutgoing,
-      };
-    });
-
-    // Enrich token transfers with names/images from DexScreener (batch first 10 unique mints)
-    const uniqueMints = [...new Set(enriched.filter(e => e.tokenMint).map(e => e.tokenMint!))].slice(0, 10);
-    const mintData: Record<string, { name: string; symbol: string; image?: string }> = {};
-
-    await Promise.all(uniqueMints.map(async (mint) => {
-      try {
-        const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`);
-        const data = await res.json();
-        const pair = data.pairs?.[0];
-        if (pair) {
-          mintData[mint] = {
-            name: pair.baseToken?.name || 'Unknown',
-            symbol: pair.baseToken?.symbol || '???',
-            image: pair.info?.imageUrl,
-          };
-        }
-      } catch { /* skip */ }
-    }));
-
+    // Map to EnrichedTransaction interface for compatibility
     return enriched.map(tx => ({
-      ...tx,
-      tokenName: tx.tokenMint ? mintData[tx.tokenMint]?.name : (tx.type === 'TRANSFER' ? 'SOL' : undefined),
-      tokenSymbol: tx.tokenMint ? mintData[tx.tokenMint]?.symbol : (tx.type === 'TRANSFER' ? 'SOL' : undefined),
-      tokenImage: tx.tokenMint ? mintData[tx.tokenMint]?.image : undefined,
+      signature: tx.signature,
+      type: tx.type,
+      timestamp: tx.timestamp,
+      description: tx.description,
+      fee: tx.fee,
+      feePayer: undefined,
+      tokenName: tx.tokenName,
+      tokenSymbol: tx.tokenSymbol,
+      tokenImage: tx.tokenImage,
+      tokenMint: tx.receivedMint ?? tx.spentMint,
+      amount: tx.displayAmount ?? "",
+      amountUsd: tx.usdValue ? `~$${tx.usdValue.toFixed(2)}` : undefined,
+      isIncoming: tx.isIncoming || tx.isBuy,
+      isOutgoing: tx.isOutgoing || tx.isSell,
     }));
   }, []);
 
