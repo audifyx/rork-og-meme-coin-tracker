@@ -156,12 +156,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 .eq("referral_code", refCode)
                 .maybeSingle();
               if (inviter && inviter.user_id !== data.user!.id) {
-                // Insert referral directly
+                // Insert referral directly (count-based, no points)
                 await supabase.from("referrals").insert({
                   inviter_id: inviter.user_id,
                   invitee_id: data.user!.id,
                   code: refCode,
-                  reward_credits: 100,
                 });
                 // Set referred_by on invitee profile
                 await supabase

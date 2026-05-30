@@ -1,9 +1,8 @@
 /**
  * process-referral — Edge Function
  * Called after signup when user was referred via ?ref=CODE.
- * Grants XP to inviter, records referral, notifies inviter.
- *
- * Points: +100 XP per signup, +50 XP milestone every 5 invites
+ * Records the referral (count-based, no XP/points).
+ * Notifies the inviter.
  */
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
@@ -14,10 +13,6 @@ const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-const SIGNUP_XP = 100;
-const MILESTONE_XP = 50;
-const MILESTONE_EVERY = 5;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -47,14 +42,12 @@ serve(async (req) => {
     const { data: dup } = await sb.from("referrals").select("id").eq("invitee_id", inviteeId).maybeSingle();
     if (dup) return new Response(JSON.stringify({ ok: true, duplicate: true }), { headers: { ...cors, "Content-Type": "application/json" } });
 
-    // Count existing invites for milestone calc
+    // Count existing invites
     const { count } = await sb.from("referrals").select("id", { count: "exact", head: true }).eq("inviter_id", inviterId);
     const newTotal = (count || 0) + 1;
-    const milestone = newTotal % MILESTONE_EVERY === 0 ? MILESTONE_XP : 0;
-    const xpAwarded = SIGNUP_XP + milestone;
 
-    // Insert referral
-    await sb.from("referrals").insert({ inviter_id: inviterId, invitee_id: inviteeId, code: inviteCode, reward_credits: xpAwarded });
+    // Insert referral (count-based, no points)
+    await sb.from("referrals").insert({ inviter_id: inviterId, invitee_id: inviteeId, code: inviteCode });
 
     // Increment invite_codes uses
     if (fromTable && ic) await sb.from("invite_codes").update({ uses: (ic.uses || 0) + 1 }).eq("code", inviteCode);
@@ -62,26 +55,17 @@ serve(async (req) => {
     // Set referred_by on invitee
     await sb.from("profiles").update({ referred_by: inviterId }).eq("user_id", inviteeId);
 
-    // Grant XP to inviter (increment xp + total_xp on profiles)
-    const { data: inviterProfile } = await sb.from("profiles").select("xp, total_xp").eq("user_id", inviterId).single();
-    if (inviterProfile) {
-      await sb.from("profiles").update({
-        xp: (inviterProfile.xp || 0) + xpAwarded,
-        total_xp: (inviterProfile.total_xp || 0) + xpAwarded,
-      }).eq("user_id", inviterId);
-    }
-
     // Notify inviter
     const { data: inv } = await sb.from("profiles").select("username").eq("user_id", inviteeId).maybeSingle();
     await sb.from("notifications").insert({
       user_id: inviterId, type: "referral",
-      title: "🎉 New invite signup!",
-      message: `${inv?.username || "Someone"} joined via your link! +${xpAwarded} XP${milestone ? ` (includes ${milestone} milestone bonus!)` : ""}`,
-      data: { invitee_id: inviteeId, xp: xpAwarded, url: "/leaderboard" },
+      title: "🎉 New referral!",
+      message: `${inv?.username || "Someone"} signed up via your invite link! That's ${newTotal} total invite${newTotal > 1 ? "s" : ""}.`,
+      data: { invitee_id: inviteeId, total: newTotal, url: "/invite" },
       is_read: false,
     });
 
-    return new Response(JSON.stringify({ ok: true, xpAwarded, milestone, totalInvited: newTotal }), { headers: { ...cors, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, totalInvited: newTotal }), { headers: { ...cors, "Content-Type": "application/json" } });
   } catch (err) {
     console.error("process-referral error:", err);
     return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { ...cors, "Content-Type": "application/json" } });
