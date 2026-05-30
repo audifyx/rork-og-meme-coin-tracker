@@ -94,8 +94,9 @@ export async function ccGetMessages(
   opts?: { order?: "time" | "likes" },
 ): Promise<CCMessage[]> {
   try {
-    const params = new URLSearchParams({ limit: String(limit) });
-    if (opts?.order) params.set("order", opts.order);
+    const params = new URLSearchParams({ limit: String(limit), order: "desc" });
+    // API supports sort=likes for top posts, omit for chronological (default desc)
+    if (opts?.order === "likes") params.set("sort", "likes");
     const data = await ccFetch(
       `/api/v1/communities/${encodeURIComponent(tokenAddress)}/messages/public?${params}`
     ) as { messages: CCMessage[] };
