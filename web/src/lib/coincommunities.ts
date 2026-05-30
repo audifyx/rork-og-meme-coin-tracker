@@ -84,10 +84,16 @@ export async function ccGetCommunity(tokenAddress: string): Promise<CCCommunityD
   }
 }
 
-export async function ccGetMessages(tokenAddress: string, limit = 50): Promise<CCMessage[]> {
+export async function ccGetMessages(
+  tokenAddress: string,
+  limit = 50,
+  opts?: { order?: "time" | "likes" },
+): Promise<CCMessage[]> {
   try {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (opts?.order) params.set("order", opts.order);
     const data = await ccFetch(
-      `/api/v1/communities/${encodeURIComponent(tokenAddress)}/messages/public?limit=${limit}`
+      `/api/v1/communities/${encodeURIComponent(tokenAddress)}/messages/public?${params}`
     ) as { messages: CCMessage[] };
     return data.messages ?? [];
   } catch {
@@ -98,6 +104,34 @@ export async function ccGetMessages(tokenAddress: string, limit = 50): Promise<C
 export async function ccGetPublicFeed(limit = 50): Promise<CCFeedItem[]> {
   const data = await ccFetch(`/api/v1/feed/public?limit=${limit}`) as { items: CCFeedItem[] };
   return data.items ?? [];
+}
+
+export type CCReply = {
+  id: string;
+  content: string;
+  username: string;
+  displayName: string;
+  profileImageUrl: string | null;
+  followerCount: number;
+  likeCount: number;
+  liked: boolean;
+  userTwitterUrl: string | null;
+  createdAt: string;
+};
+
+export async function ccGetReplies(
+  tokenAddress: string,
+  messageId: string,
+  limit = 50,
+): Promise<CCReply[]> {
+  try {
+    const data = await ccFetch(
+      `/api/v1/communities/${encodeURIComponent(tokenAddress)}/messages/${encodeURIComponent(messageId)}/replies?limit=${limit}&order=asc`
+    ) as { replies: CCReply[] };
+    return data.replies ?? [];
+  } catch {
+    return [];
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

@@ -202,6 +202,87 @@ export async function ccPostMessage(
   if (result.error) throw new Error((result.error as { message?: string }).message ?? "Post failed");
 }
 
+// ─── Like / unlike (no token-hold required, CC auth only) ────────────────────
+
+/** Like a message. Requires CC auth; does NOT require token holding. */
+export async function ccLikeMessage(
+  tokenAddress: string,
+  messageId: string,
+): Promise<void> {
+  let accessToken = ccGetStoredAccessToken();
+  if (!accessToken) throw new Error("Not authenticated — please sign in with X.");
+  ccConfigureWithToken(accessToken);
+
+  const result = await api.likeMessage({
+    path: { token_address: tokenAddress, message_id: messageId },
+  });
+
+  if ((result.error as { status?: number })?.status === 401) {
+    const refreshed = await ccRefreshSession();
+    if (!refreshed) { ccClearAuth(); throw new Error("Session expired — please sign in again."); }
+    accessToken = ccGetStoredAccessToken()!;
+    ccConfigureWithToken(accessToken);
+    await api.likeMessage({ path: { token_address: tokenAddress, message_id: messageId } });
+  }
+}
+
+/** Unlike a message. Requires CC auth. */
+export async function ccUnlikeMessage(
+  tokenAddress: string,
+  messageId: string,
+): Promise<void> {
+  let accessToken = ccGetStoredAccessToken();
+  if (!accessToken) throw new Error("Not authenticated — please sign in with X.");
+  ccConfigureWithToken(accessToken);
+
+  const result = await api.unlikeMessage({
+    path: { token_address: tokenAddress, message_id: messageId },
+  });
+
+  if ((result.error as { status?: number })?.status === 401) {
+    const refreshed = await ccRefreshSession();
+    if (!refreshed) { ccClearAuth(); throw new Error("Session expired — please sign in again."); }
+    accessToken = ccGetStoredAccessToken()!;
+    ccConfigureWithToken(accessToken);
+    await api.unlikeMessage({ path: { token_address: tokenAddress, message_id: messageId } });
+  }
+}
+
+// ─── Reply (requires token holding) ─────────────────────────────────────────
+
+/** Post a reply to a message. Requires CC auth AND token holding. */
+export async function ccPostReply(
+  tokenAddress: string,
+  messageId: string,
+  content: string,
+  walletAddress: string,
+  chainId: "solana" | "ethereum" | "base" | "bsc" = "solana",
+): Promise<void> {
+  let accessToken = ccGetStoredAccessToken();
+  if (!accessToken) throw new Error("Not authenticated — please sign in with X.");
+  ccConfigureWithToken(accessToken);
+
+  const result = await api.postReply({
+    path: { token_address: tokenAddress, message_id: messageId },
+    body: { content, walletAddress, chainId },
+  });
+
+  if ((result.error as { status?: number })?.status === 401) {
+    const refreshed = await ccRefreshSession();
+    if (!refreshed) { ccClearAuth(); throw new Error("Session expired — please sign in again."); }
+    accessToken = ccGetStoredAccessToken()!;
+    ccConfigureWithToken(accessToken);
+    const retry = await api.postReply({
+      path: { token_address: tokenAddress, message_id: messageId },
+      body: { content, walletAddress, chainId },
+    });
+    if (retry.error) throw new Error((retry.error as { message?: string }).message ?? "Reply failed");
+    return;
+  }
+
+  if (result.error) throw new Error((result.error as { message?: string }).message ?? "Reply failed");
+}
+
 /** Get community members */
 export async function ccGetCommunityMembers(
   tokenAddress: string,
