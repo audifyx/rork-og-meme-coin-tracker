@@ -2,7 +2,7 @@
  * Invite Tab — Referral contest with on-chain OGS holder verification.
  *
  * Rules:
- *  - Both referrer AND referred must hold ≥ $10 OGS (verified on-chain)
+ *  - Both referrer AND referred must hold ≥ threshold OGS (Week 1: $6.50, Week 2: $10, Last days: $15)
  *  - Top 8 referrers split $100 pool (tiered: $25, $20, $15, $10, $10, $8, $7, $5)
  *  - 2-week contest window
  */
@@ -30,7 +30,17 @@ import { OGSCAN_TOKEN_MINT, HELIUS_RPC, shortAddr } from "@/lib/og";
 
 const OGS_MINT = OGSCAN_TOKEN_MINT;
 const SOL_MINT = "So11111111111111111111111111111111111111112";
-const MIN_HOLDING_USD = 10;
+/** Dynamic holding threshold — increases each week of the contest */
+function getMinHoldingUsd(): number {
+  const now = Date.now();
+  const week1End = new Date("2026-06-06T00:00:00Z").getTime(); // end of week 1
+  const week2End = new Date("2026-06-13T00:00:00Z").getTime(); // end of week 2
+  if (now < week1End) return 6.5;   // Week 1: $6.50
+  if (now < week2End) return 10;    // Week 2: $10
+  return 15;                        // Last days: $15
+}
+
+const MIN_HOLDING_USD = getMinHoldingUsd();
 const BUY_AMOUNT_USD = 15;
 
 /** Prize tiers for the top 8 */
@@ -375,7 +385,7 @@ const Invite = () => {
       try {
         await navigator.share({
           title: "Join OG Scan",
-          text: `Join OG Scan — the Solana meme coin trading terminal. Sign up and buy $10 of OGS to join the referral contest!`,
+          text: `Join OG Scan — the Solana meme coin trading terminal. Sign up and buy ${MIN_HOLDING_USD === 6.5 ? "$6.50" : `$${MIN_HOLDING_USD}`} of OGS to join the referral contest!`,
           url: inviteLink,
         });
       } catch { /* user cancelled */ }
@@ -471,7 +481,7 @@ const Invite = () => {
             </h1>
             <p className="text-white/50 text-sm sm:text-base max-w-xl">
               Bring new holders to OG Scan. Top 8 referrers split a <span className="font-bold text-white">$100 prize pool</span>.
-              Every signup via your link is tracked. Referrals qualify when they connect a wallet holding ≥ $10 of OGS.
+              Every signup via your link is tracked. Referrals qualify when they connect a wallet holding ≥ ${MIN_HOLDING_USD === 6.5 ? "$6.50" : `$${MIN_HOLDING_USD}`} of OGS.
             </p>
           </div>
         </div>
@@ -528,7 +538,7 @@ const Invite = () => {
                   {!connected ? (
                     <div className="text-center py-4">
                       <Wallet className="h-10 w-10 text-white/15 mx-auto mb-3" />
-                      <p className="text-xs text-white/40 mb-4">Connect your wallet to verify you hold ≥ $10 of OGS</p>
+                      <p className="text-xs text-white/40 mb-4">Connect your wallet to verify you hold ≥ {MIN_HOLDING_USD === 6.5 ? "$6.50" : `$${MIN_HOLDING_USD}`} of OGS</p>
                       <Button onClick={() => setShowWalletPicker(true)} className="bg-[#ab9ff2] hover:bg-[#9b8fe2] text-black font-semibold">
                         <Wallet className="h-4 w-4 mr-2" />
                         Connect Wallet
