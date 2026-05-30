@@ -47,7 +47,7 @@ import { toast } from "sonner";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CC_CALLBACK_URL = `${window.location.origin}/cc-callback`;
+const getCallbackUrl = () => `${window.location.origin}/cc-callback`;
 
 const SORT_TABS = [
   { id: "top" as const, label: "Top", Icon: Star },
@@ -75,7 +75,7 @@ function useCCAuth() {
     if (signing) return;
     setSigning(true);
     await ccStartXLogin(
-      CC_CALLBACK_URL,
+      getCallbackUrl(),
       (user) => {
         setCcUser(user);
         setSigning(false);

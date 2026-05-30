@@ -72,8 +72,12 @@ export type CCFeedItem = CCMessage;
 // ─── API calls ────────────────────────────────────────────────────────────────
 
 export async function ccGetTopCommunities(limit = 20): Promise<CCTopCommunity[]> {
-  const data = await ccFetch(`/api/v1/communities/top?limit=${limit}`) as { communities: CCTopCommunity[] };
-  return data.communities ?? [];
+  try {
+    const data = await ccFetch(`/api/v1/communities/top?limit=${limit}`) as { communities: CCTopCommunity[] };
+    return data.communities ?? [];
+  } catch {
+    return [];
+  }
 }
 
 export async function ccGetCommunity(tokenAddress: string): Promise<CCCommunityDetail | null> {
@@ -102,8 +106,12 @@ export async function ccGetMessages(
 }
 
 export async function ccGetPublicFeed(limit = 50): Promise<CCFeedItem[]> {
-  const data = await ccFetch(`/api/v1/feed/public?limit=${limit}`) as { items: CCFeedItem[] };
-  return data.items ?? [];
+  try {
+    const data = await ccFetch(`/api/v1/feed/public?limit=${limit}`) as { items: CCFeedItem[] };
+    return data.items ?? [];
+  } catch {
+    return [];
+  }
 }
 
 export type CCReply = {

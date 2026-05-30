@@ -184,22 +184,26 @@ export const CoinCommunitiesPage = () => {
   const {
     data: feed = [],
     isFetching: fetchingFeed,
+    isError: feedError,
     refetch: refetchFeed,
   } = useQuery({
     queryKey: ["cc-public-feed"],
     queryFn: () => ccGetPublicFeed(50),
     staleTime: 30_000,
     refetchInterval: 60_000,
+    retry: 2,
   });
 
   const {
     data: top = [],
     isFetching: fetchingTop,
+    isError: topError,
     refetch: refetchTop,
   } = useQuery({
     queryKey: ["cc-top-communities"],
     queryFn: () => ccGetTopCommunities(30),
     staleTime: 60_000,
+    retry: 2,
   });
 
   const handleSelectToken = useCallback(
@@ -310,6 +314,17 @@ export const CoinCommunitiesPage = () => {
               <div className="flex items-center justify-center py-16 text-white/30 text-sm">
                 Loading live feed...
               </div>
+            ) : feedError ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <Globe className="h-8 w-8 text-white/15" />
+                <p className="text-white/30 text-sm">Failed to load feed</p>
+                <button
+                  onClick={() => refetchFeed()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-white/40 hover:text-white/70 font-mono text-[10px] uppercase tracking-widest transition-colors"
+                >
+                  <RefreshCw className="h-3 w-3" /> Retry
+                </button>
+              </div>
             ) : feed.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-2">
                 <Globe className="h-8 w-8 text-white/15" />
@@ -341,6 +356,17 @@ export const CoinCommunitiesPage = () => {
             {fetchingTop && top.length === 0 ? (
               <div className="flex items-center justify-center py-16 text-white/30 text-sm">
                 Loading communities...
+              </div>
+            ) : topError ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <Globe className="h-8 w-8 text-white/15" />
+                <p className="text-white/30 text-sm">Failed to load communities</p>
+                <button
+                  onClick={() => refetchTop()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.04] text-white/40 hover:text-white/70 font-mono text-[10px] uppercase tracking-widest transition-colors"
+                >
+                  <RefreshCw className="h-3 w-3" /> Retry
+                </button>
               </div>
             ) : (
               <>
