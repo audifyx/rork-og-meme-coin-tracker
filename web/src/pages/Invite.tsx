@@ -431,7 +431,7 @@ const Invite = () => {
             </h1>
             <p className="text-white/50 text-sm sm:text-base max-w-xl">
               Bring new holders to OG Scan. Top 8 referrers split a <span className="font-bold text-white">$100 prize pool</span>.
-              Both you and your referral must hold ≥ $10 of OGS to qualify.
+              Every signup via your link is tracked. Referrals qualify when they connect a wallet holding ≥ $10 of OGS.
             </p>
           </div>
         </div>
@@ -558,7 +558,7 @@ const Invite = () => {
                     Your Invite Link
                   </h3>
                   <p className="text-[11px] text-white/35 mb-4">
-                    Share this link. When someone signs up and holds $10 OGS, your referral counts!
+                    Share this link. Every signup counts as an invite — they qualify when they hold $10 OGS.
                   </p>
 
                   {referralCode ? (
@@ -788,7 +788,7 @@ const Invite = () => {
                       {
                         step: "3",
                         title: "Friends Sign Up",
-                        desc: "When someone signs up via your link and buys ≥ $10 OGS, your referral is verified.",
+                        desc: "Anyone who signs up via your link counts as an invite. They become qualified when they hold ≥ $10 OGS.",
                         icon: Users,
                       },
                       {
@@ -844,11 +844,15 @@ const Invite = () => {
                   <ul className="space-y-2 text-[11px] text-white/40 leading-relaxed">
                     <li className="flex items-start gap-2">
                       <ChevronRight className="h-3.5 w-3.5 text-[#ab9ff2] shrink-0 mt-0.5" />
-                      Both referrer and referred must hold ≥ $10 USD of OGS tokens in their connected wallet.
+                      All signups via your link are tracked as "Invited" — no holding required to count.
                     </li>
                     <li className="flex items-start gap-2">
                       <ChevronRight className="h-3.5 w-3.5 text-[#ab9ff2] shrink-0 mt-0.5" />
-                      Holdings are verified on-chain via wallet connection — no faking.
+                      An invite becomes "Qualified" when the referred person connects their wallet and holds ≥ $10 USD of OGS.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <ChevronRight className="h-3.5 w-3.5 text-[#ab9ff2] shrink-0 mt-0.5" />
+                      Leaderboard ranks by qualified count only — each qualified invite = 1 point toward your rank.
                     </li>
                     <li className="flex items-start gap-2">
                       <ChevronRight className="h-3.5 w-3.5 text-[#ab9ff2] shrink-0 mt-0.5" />
