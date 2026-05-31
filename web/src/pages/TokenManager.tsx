@@ -200,14 +200,7 @@ export default function TokenManager() {
    *  (regular mobile browser), redirect to Phantom's universal link to open
    *  the current page inside Phantom's in-app browser.
    */
-  const handleConnectWallet = useCallback(() => {
-    setError(null);
-    select("Phantom" as any);
-    setTimeout(() => connect().catch((e) => {
-      console.error("connect error:", e);
-      setError("Could not connect: " + (e?.message || e));
-    }), 100);
-  }, [select, connect]);
+  // connect is handled inline on the button (same pattern as ConnectedWalletTab)
 
     /* ─── Load metadata for a selected mint ─── */
   const loadMetadata = useCallback(
@@ -566,69 +559,51 @@ export default function TokenManager() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════ */}
-      {/* ── VIEW: Connect Wallet (shown until connected) ── */}
-      {/* ══════════════════════════════════════════════ */}
+      {/* ── VIEW: Connect Wallet ── */}
       {showConnect && (
-        <div className="flex flex-col items-center gap-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04]">
-            {connecting
-              ? <Loader2 className="h-8 w-8 animate-spin text-og-cyan" />
-              : <Wallet className="h-8 w-8 text-white/30" />}
-          </div>
-          <div className="text-center">
-            <h2 className="text-lg font-bold text-white">
-              {connecting ? "Waiting for approval…" : "Connect Your Wallet"}
-            </h2>
-            <p className="mt-1 text-xs text-white/35">
-              {connecting
-                ? "Check your Phantom extension for an approval prompt."
-                : "Connect the wallet that deployed your token to verify update authority."}
-            </p>
-          </div>
-          <div className="w-full max-w-xs space-y-2">
-            {availableWallets.map((w) => {
-              const isActive = wallet?.adapter.name === w.adapter.name && connecting;
-              return (
-              <button
-                key={w.adapter.name}
-                onClick={handleConnectWallet}
-                disabled={connecting}
-                className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 transition-all group ${
-                  isActive
-                    ? "border-og-cyan/40 bg-og-cyan/[0.08]"
-                    : "border-white/[0.08] bg-white/[0.05] hover:border-[#ab9ff2]/40 hover:bg-white/[0.1]"
-                } disabled:opacity-60 disabled:cursor-not-allowed`}
-              >
-                {w.adapter.icon && (
-                  <img src={w.adapter.icon} alt={w.adapter.name} className="h-8 w-8 rounded-lg" />
-                )}
-                <span className="text-sm font-semibold text-white">{w.adapter.name}</span>
-                <span className="ml-auto">
-                  {isActive
-                    ? <Loader2 className="h-3.5 w-3.5 animate-spin text-og-cyan" />
-                    : <span className="text-[10px] text-white/30 group-hover:text-[#ab9ff2]">Connect →</span>}
-                </span>
-              </button>
-            );})}
-            {availableWallets.length === 0 && (
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-4 text-center">
-                <p className="text-xs text-white/30">No wallet detected.</p>
-                <a
-                  href="https://phantom.app/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-bold text-[#ab9ff2] hover:underline"
+        <div className="flex flex-col items-center justify-center gap-8 px-4 py-8">
+          <div className="og-glass-card rounded-3xl p-8 max-w-md w-full text-center space-y-6">
+            <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-[hsl(var(--og-lime))] to-[#22d3ee] flex items-center justify-center shadow-lg shadow-[hsl(var(--og-lime))/0.3]">
+              {connecting ? <Loader2 className="h-10 w-10 animate-spin text-[hsl(var(--og-ink))]" /> : <Wallet className="h-10 w-10 text-[hsl(var(--og-ink))]" />}
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold mb-2">
+                {connecting ? "Waiting for approval…" : "Connect Your Wallet"}
+              </h2>
+              <p className="text-white/50 text-sm leading-relaxed">
+                {connecting
+                  ? "Check your Phantom extension and approve the connection."
+                  : "Connect the wallet that deployed your token to update its metadata."}
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              {wallets.filter(w => w.adapter.name === "Phantom").map(w => (
+                <button
+                  key={w.adapter.name}
+                  onClick={() => { select(w.adapter.name as any); setTimeout(() => connect().catch((e) => setError("Connect failed: " + (e?.message || e))), 100); }}
+                  disabled={connecting}
+                  className="flex items-center gap-3 w-full px-5 py-3.5 rounded-2xl bg-white/[0.06] border border-white/[0.1] hover:bg-white/[0.1] hover:border-[hsl(var(--og-lime))/0.4] transition-all group disabled:opacity-50"
                 >
-                  Install Phantom <ExternalLink className="h-3 w-3" />
-                </a>
-              </div>
-            )}
+                  {w.adapter.icon && <img src={w.adapter.icon} alt={w.adapter.name} className="w-7 h-7 rounded-lg" />}
+                  <span className="font-semibold text-sm">{w.adapter.name}</span>
+                  <span className="ml-auto text-[10px] text-white/30 group-hover:text-[hsl(var(--og-lime))] transition-colors">
+                    {connecting ? <Loader2 className="h-3 w-3 animate-spin" /> : "Connect →"}
+                  </span>
+                </button>
+              ))}
+              {wallets.filter(w => w.adapter.name === "Phantom").length === 0 && (
+                <div className="text-center text-sm text-white/40 py-4">
+                  <p className="mb-2">Phantom not detected.</p>
+                  <a href="https://phantom.app" target="_blank" rel="noopener noreferrer" className="text-[hsl(var(--og-lime))] underline">Install Phantom →</a>
+                </div>
+              )}
+            </div>
+            <p className="text-[11px] text-white/25">Your keys never leave your wallet.</p>
           </div>
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════ */}
+            {/* ══════════════════════════════════════════════ */}
       {/* ── VIEW: Post-Connect (select / edit / signing / success) ── */}
       {/* ══════════════════════════════════════════════ */}
       {showPostConnect && postStep === "select" && (
