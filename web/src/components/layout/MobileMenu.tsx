@@ -14,9 +14,9 @@ import { SheetClose } from "@/components/ui/sheet";
 
 
 const mainNavItems = [
-  { to: "/wallets", icon: Wallet, label: "Wallets" },
+  // Phantom Trading Terminal — hidden from UI for now (renamed from "Wallets")
+  // { to: "/wallets", icon: Wallet, label: "Phantom Trading Terminal" },
   { to: "/tokens", icon: Coins, label: "Tokens" },
-  { to: "/charts", icon: LineChart, label: "Charts" },
   { to: "/tools", icon: Wrench, label: "Tools" },
 
   { to: "/pump-v5", icon: Sparkles, label: "PUMP V6" },
