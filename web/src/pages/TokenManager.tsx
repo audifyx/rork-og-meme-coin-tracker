@@ -118,8 +118,8 @@ export default function TokenManager() {
     (w) => w.adapter.name === "Phantom",
   );
 
-  /* Whether we consider the wallet usable — match ConnectedWalletTab: just `connected` */
-  const walletReady = connected;
+  /* Usable wallet = connected AND publicKey present (needed for signing/fetching). */
+  const walletReady = !!(connected && publicKey);
 
   /* (wallet connection is handled inline on the Connect buttons below,
    *  same pattern as ConnectedWalletTab: select → setTimeout → connect) */
@@ -187,6 +187,95 @@ export default function TokenManager() {
       setSelectedMint(null);
     }
   }, [walletReady]);
+
+  /* ─── Wallet connect handler ───────────────────────────────────────
+   * Root cause of the long-standing breakage: on a normal MOBILE browser
+   * there is NO injected wallet provider, so the adapter has nothing to
+   * connect to and connect() silently fails (the old code also swallowed
+   * the error). Copying ConnectedWalletTab can't help — it has the same
+   * code. The real fix: deep-link mobile users INTO the wallet's in-app
+   * browser, and on desktop/in-app browser select + connect via the
+   * provider (so publicKey + signTransaction populate) while surfacing
+   * real errors. */
+  const [pendingConnect, setPendingConnect] = useState<string | null>(null);
+
+  const isMobile =
+    typeof navigator !== "undefined" &&
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+      navigator.userAgent,
+    );
+
+  const getInjectedProvider = useCallback((name: string): unknown => {
+    if (typeof window === "undefined") return null;
+    const w = window as any;
+    if (name === "Solflare") return w.solflare?.isSolflare ? w.solflare : null;
+    if (w.phantom?.solana?.isPhantom) return w.phantom.solana;
+    if (w.solana?.isPhantom) return w.solana;
+    return null;
+  }, []);
+
+  const buildWalletDeepLink = useCallback((name: string): string => {
+    const url = window.location.href;
+    const ref = window.location.origin;
+    if (name === "Solflare") {
+      return `https://solflare.com/ul/v1/browse/${encodeURIComponent(url)}?ref=${encodeURIComponent(ref)}`;
+    }
+    return `https://phantom.app/ul/browse/${encodeURIComponent(url)}?ref=${encodeURIComponent(ref)}`;
+  }, []);
+
+  const reportConnectError = useCallback((err: any) => {
+    const msg = err?.message || String(err);
+    if (!/user rejected|user denied|already pending|request reset|wallet not selected/i.test(msg)) {
+      setError(msg);
+    }
+    console.error("wallet connect failed:", err);
+  }, []);
+
+  const handleConnect = useCallback(
+    (name: string) => {
+      setError(null);
+      const target = wallets.find((w) => w.adapter.name === name);
+      const injected =
+        !!getInjectedProvider(name) || target?.adapter.readyState === "Installed";
+
+      if (!injected) {
+        if (isMobile) {
+          window.location.href = buildWalletDeepLink(name);
+          return;
+        }
+        setError(`${name} not detected. Install the ${name} extension, then refresh this page.`);
+        return;
+      }
+      if (!target) {
+        setError(`${name} is not available.`);
+        return;
+      }
+
+      if (wallet?.adapter.name === name) {
+        connect().catch(reportConnectError);
+      } else {
+        setPendingConnect(name);
+        select(name as any);
+      }
+    },
+    [wallets, wallet, select, connect, isMobile, getInjectedProvider, buildWalletDeepLink, reportConnectError],
+  );
+
+  useEffect(() => {
+    if (
+      pendingConnect &&
+      wallet?.adapter.name === pendingConnect &&
+      !connected &&
+      !connecting
+    ) {
+      setPendingConnect(null);
+      connect().catch(reportConnectError);
+    }
+  }, [pendingConnect, wallet, connected, connecting, connect, reportConnectError]);
+
+  useEffect(() => {
+    if (connected && pendingConnect) setPendingConnect(null);
+  }, [connected, pendingConnect]);
 
   /* ─── Wallet connect handler (same as ConnectedWalletTab) ─── */
 
@@ -562,11 +651,11 @@ export default function TokenManager() {
             </div>
             <div className="flex flex-col gap-3">
               {wallets.filter(w => ["Phantom", "Solflare"].includes(w.adapter.name)).map(w => (
-                <button key={w.adapter.name} onClick={() => { select(w.adapter.name as any); setTimeout(() => connect().catch(() => {}), 100); }}
+                <button key={w.adapter.name} onClick={() => handleConnect(w.adapter.name)} disabled={connecting || pendingConnect === w.adapter.name}
                   className="flex items-center gap-3 w-full px-5 py-3.5 rounded-2xl bg-white/[0.06] border border-white/[0.1] hover:bg-white/[0.1] hover:border-[hsl(var(--og-lime))/0.4] transition-all group">
                   {w.adapter.icon && <img src={w.adapter.icon} alt={w.adapter.name} className="w-7 h-7 rounded-lg" />}
                   <span className="font-semibold text-sm">{w.adapter.name}</span>
-                  <span className="ml-auto text-[10px] text-white/30 group-hover:text-[hsl(var(--og-lime))] transition-colors">Connect →</span>
+                  <span className="ml-auto text-[10px] text-white/30 group-hover:text-[hsl(var(--og-lime))] transition-colors">{(connecting || pendingConnect === w.adapter.name) ? "Connecting…" : (isMobile ? "Open app →" : "Connect →")}</span>
                 </button>
               ))}
               {wallets.filter(w => ["Phantom", "Solflare"].includes(w.adapter.name)).length === 0 && (
