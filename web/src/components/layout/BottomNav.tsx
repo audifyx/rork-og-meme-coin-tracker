@@ -4,12 +4,11 @@ import { cn } from "@/lib/utils";
 
 /**
  * Canonical bottom nav — used on EVERY page (Index + external pages).
- * 5 items: Home, Community, Coin Comm, Tools, Profile.
+ * 4 items: Home, Community, Tools, Profile.
  */
 
 const navItems = [
   { to: "/app", icon: Home, label: "Home" },
-  { to: "/launch", icon: Rocket, label: "Launch" },
   { to: "/community", icon: Users, label: "Community" },
   { to: "/tools", icon: Wrench, label: "Tools" },
   { to: "/profile", icon: User, label: "Profile" },
@@ -84,8 +83,8 @@ const routeToNav: Record<string, string> = {
   /* Coin Communities */
   "/coin-communities": "/coin-communities",
 
-  /* Launch */
-  "/launch": "/launch",
+  /* Launch (sidebar only — no bottom nav item) */
+  "/launch": "/app",
 
   /* Invite (sidebar only — no bottom nav highlight) */
   "/invite": "/app",
