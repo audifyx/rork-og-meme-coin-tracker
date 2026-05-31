@@ -200,45 +200,16 @@ export default function TokenManager() {
    *  (regular mobile browser), redirect to Phantom's universal link to open
    *  the current page inside Phantom's in-app browser.
    */
-  const handleConnectWallet = useCallback(async () => {
+  const handleConnectWallet = useCallback(() => {
     setError(null);
-
-    const provider = (window as any).phantom?.solana;
-
-    // No Phantom extension — open in Phantom's in-app browser
-    if (!provider?.isPhantom) {
-      const url = encodeURIComponent(window.location.href);
-      const ref = encodeURIComponent(window.location.origin);
-      window.location.href = `https://phantom.app/ul/browse/${url}?ref=${ref}`;
-      return;
-    }
-
-    try {
-      // Step 1: connect via injected provider — shows the approval popup
-      const resp = await provider.connect({ onlyIfTrusted: false });
-      console.log("Phantom connected, pubkey:", resp?.publicKey?.toString());
-
-      // Step 2: select the adapter so wallet-adapter React state picks it up
-      select("Phantom" as any);
-
-      // Step 3: force connect() on the adapter so connected+publicKey update
-      // Give select() one tick to register before calling connect()
-      setTimeout(() => {
-        connect().catch((e) => console.log("adapter sync:", e?.message));
-      }, 100);
-
-    } catch (err: any) {
-      console.error("Phantom connect error full:", err);
-      const msg = err?.message || JSON.stringify(err) || "Unknown error";
-      if (err?.code === 4001) {
-        setError("Cancelled — please approve the connection in Phantom.");
-      } else {
-        setError("Phantom error: " + msg);
-      }
-    }
+    select("Phantom" as any);
+    setTimeout(() => connect().catch((e) => {
+      console.error("connect error:", e);
+      setError("Could not connect: " + (e?.message || e));
+    }), 100);
   }, [select, connect]);
 
-  /* ─── Load metadata for a selected mint ─── */
+    /* ─── Load metadata for a selected mint ─── */
   const loadMetadata = useCallback(
     async (mint: string) => {
       setLoadingMeta(true);
