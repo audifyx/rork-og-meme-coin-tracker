@@ -23,7 +23,6 @@ import {
   SystemProgram, PublicKey, LAMPORTS_PER_SOL,
 } from "@solana/web3.js";
 import { useAdmin } from "@/hooks/useAdmin";
-import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
   Rocket, Upload, Globe, Twitter, Send,
@@ -476,7 +475,6 @@ function CreateTokenForm({ onBack, onSuccess }: { onBack: () => void; onSuccess:
   const { publicKey, signTransaction, sendTransaction, connected, connect, wallets, select } = useWallet();
   const { connection } = useConnection();
   const { isAdmin } = useAdmin();
-  const { user } = useAuth();
 
   const [form, setForm] = useState<FormData>({
     name: "", symbol: "", description: "",
@@ -541,107 +539,38 @@ function CreateTokenForm({ onBack, onSuccess }: { onBack: () => void; onSuccess:
   const updateField = (field: keyof FormData, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
-  const canLaunch = isAdmin
-    ? (form.name.trim().length > 0 && form.symbol.trim().length > 0 && !!imageFile)
-    : (connected && publicKey && signTransaction && sendTransaction &&
-       form.name.trim().length > 0 && form.symbol.trim().length > 0 &&
-       imageFile && solPrice !== null);
+  const canLaunch =
+    connected && publicKey && signTransaction && sendTransaction &&
+    form.name.trim().length > 0 && form.symbol.trim().length > 0 &&
+    imageFile && (isAdmin || solPrice !== null);
 
   /* ─── Launch flow ──────────────────────────────────────────────────── */
 
-  /* ─── Admin launch (server-side, no fee, uses project wallet) ──── */
-  const handleAdminLaunch = async () => {
-    if (!imageFile) return;
+  const handleLaunch = async () => {
+    if (!canLaunch || !publicKey || !signTransaction || !sendTransaction || !imageFile) return;
 
     try {
-      setStep("uploading");
-      setStatusMsg("Uploading image & metadata to IPFS…");
+      /* Step 0 — Pay $3 SOL fee (skipped for admin) */
+      if (!isAdmin) {
+        if (!solPrice) return;
+        setStep("paying");
+        setStatusMsg("Preparing payment…");
 
-      const base64 = await fileToBase64(imageFile);
-      const devBuy = parseFloat(form.devBuySol) || 0;
+        const feeLamports = Math.ceil((LAUNCH_FEE_USD / solPrice) * LAMPORTS_PER_SOL);
+        const feeTx = new Transaction().add(
+          SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: FEE_WALLET, lamports: feeLamports })
+        );
+        feeTx.feePayer = publicKey;
+        feeTx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
 
-      setStep("sending");
-      setStatusMsg("Creating token with project wallet (no fee)…");
+        setStatusMsg(`Pay $${LAUNCH_FEE_USD} launch fee (${(feeLamports / LAMPORTS_PER_SOL).toFixed(4)} SOL)…`);
+        const feeSig = await sendTransaction(feeTx, connection);
 
-      const res = await fetch("/api/pump-create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          step: "admin-launch",
-          adminEmail: user?.email,
-          imageBase64: base64,
-          imageMimeType: imageFile.type,
-          name: form.name.trim(),
-          symbol: form.symbol.trim().toUpperCase(),
-          description: form.description.trim(),
-          twitter: form.twitter.trim(),
-          telegram: form.telegram.trim(),
-          website: form.website.trim(),
-          devBuySol: devBuy,
-          slippage: 15,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: "Launch failed" }));
-        throw new Error(err.error || "Launch failed");
+        setStatusMsg("Confirming payment…");
+        const feeConf = await connection.confirmTransaction(feeSig, "confirmed");
+        if (feeConf.value.err) throw new Error("Fee payment failed on-chain");
+        toast.success("Payment confirmed ✓");
       }
-
-      const { mintAddress: mint, txSignature: sig, metadataUri: uri, wallet } = await res.json();
-
-      setMintAddress(mint);
-      setTxSignature(sig);
-      setMetadataUri(uri);
-
-      saveLaunch({
-        mintAddress: mint,
-        name: form.name.trim(),
-        symbol: form.symbol.trim().toUpperCase(),
-        description: form.description.trim(),
-        imageUrl: imagePreview || undefined,
-        metadataUri: uri,
-        txSignature: sig,
-        launchedAt: new Date().toISOString(),
-        twitter: form.twitter.trim() || undefined,
-        telegram: form.telegram.trim() || undefined,
-        website: form.website.trim() || undefined,
-        devBuySol: devBuy || undefined,
-        launcherWallet: wallet,
-      });
-
-      setStep("success");
-      toast.success("Token launched! 🚀 (Admin — no fee charged)");
-    } catch (err: any) {
-      console.error("Admin launch error:", err);
-      setErrorMsg(err.message || "Unknown error");
-      setStep("error");
-      toast.error("Launch failed");
-    }
-  };
-
-  /* ─── Regular launch (browser wallet, $3 fee) ──────────────────── */
-  const handleRegularLaunch = async () => {
-    if (!publicKey || !signTransaction || !sendTransaction || !imageFile || !solPrice) return;
-
-    try {
-      /* Step 0 — Pay $3 SOL fee */
-      setStep("paying");
-      setStatusMsg("Preparing payment…");
-
-      const feeLamports = Math.ceil((LAUNCH_FEE_USD / solPrice) * LAMPORTS_PER_SOL);
-      const feeTx = new Transaction().add(
-        SystemProgram.transfer({ fromPubkey: publicKey, toPubkey: FEE_WALLET, lamports: feeLamports })
-      );
-      feeTx.feePayer = publicKey;
-      feeTx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-
-      setStatusMsg(`Pay $${LAUNCH_FEE_USD} launch fee (${(feeLamports / LAMPORTS_PER_SOL).toFixed(4)} SOL)…`);
-      const feeSig = await sendTransaction(feeTx, connection);
-
-      setStatusMsg("Confirming payment…");
-      const feeConf = await connection.confirmTransaction(feeSig, "confirmed");
-      if (feeConf.value.err) throw new Error("Fee payment failed on-chain");
-      toast.success("Payment confirmed ✓");
 
       /* Step 1 — Upload to IPFS */
       setStep("uploading");
@@ -725,7 +654,7 @@ function CreateTokenForm({ onBack, onSuccess }: { onBack: () => void; onSuccess:
       });
 
       setStep("success");
-      toast.success("Token launched! 🚀");
+      toast.success(isAdmin ? "Token launched! 🚀 (No fee)" : "Token launched! 🚀");
     } catch (err: any) {
       console.error("Launch error:", err);
       if (err.message?.includes("User rejected")) { setStep("form"); toast.error("Transaction cancelled"); return; }
@@ -733,11 +662,6 @@ function CreateTokenForm({ onBack, onSuccess }: { onBack: () => void; onSuccess:
       setStep("error");
       toast.error("Launch failed");
     }
-  };
-
-  const handleLaunch = () => {
-    if (isAdmin) return handleAdminLaunch();
-    return handleRegularLaunch();
   };
 
   const resetForm = () => {
@@ -1050,16 +974,7 @@ function CreateTokenForm({ onBack, onSuccess }: { onBack: () => void; onSuccess:
             </div>
 
             {/* Connect wallet / Launch button */}
-            {isAdmin ? (
-              /* Admin: no wallet needed — launches with project wallet server-side */
-              <button onClick={handleLaunch} disabled={!canLaunch}
-                className={`w-full flex items-center justify-center gap-3 rounded-xl px-6 py-4 text-base font-black transition-all ${
-                  canLaunch ? "bg-gradient-to-r from-green-500 to-emerald-600 text-black hover:from-green-400 hover:to-emerald-500 shadow-lg shadow-green-500/20" : "bg-white/[0.04] text-white/20 cursor-not-allowed"
-                }`}>
-                <Rocket className="h-5 w-5" />
-                {!form.name.trim() || !form.symbol.trim() ? "Fill in token details" : !imageFile ? "Upload a logo" : `Launch ${form.symbol.trim()} (Admin — Free)`}
-              </button>
-            ) : !connected ? (
+            {!connected ? (
               <>
                 <button onClick={handleConnectWallet}
                   className="w-full flex items-center justify-center gap-3 rounded-xl border border-[#ab9ff2]/20 bg-[#ab9ff2]/5 px-6 py-4 text-[#ab9ff2] font-bold hover:bg-[#ab9ff2]/10 transition-all">
@@ -1088,7 +1003,7 @@ function CreateTokenForm({ onBack, onSuccess }: { onBack: () => void; onSuccess:
                   canLaunch ? "bg-gradient-to-r from-[#ab9ff2] to-[#6c63ff] text-black hover:from-[#b8aef5] hover:to-[#7b73ff] shadow-lg shadow-[#ab9ff2]/20" : "bg-white/[0.04] text-white/20 cursor-not-allowed"
                 }`}>
                 <Rocket className="h-5 w-5" />
-                {!form.name.trim() || !form.symbol.trim() ? "Fill in token details" : !imageFile ? "Upload a logo" : !solPrice ? "Loading SOL price…" : `Pay $${LAUNCH_FEE_USD} & Launch ${form.symbol.trim()}`}
+                {!form.name.trim() || !form.symbol.trim() ? "Fill in token details" : !imageFile ? "Upload a logo" : isAdmin ? `Launch ${form.symbol.trim()} (Free)` : !solPrice ? "Loading SOL price…" : `Pay $${LAUNCH_FEE_USD} & Launch ${form.symbol.trim()}`}
               </button>
             )}
 
