@@ -185,61 +185,88 @@ export default function TokenManager() {
   }, [walletReady]);
 
   /* ─── Wallet connect handler ───
-   * NOTE: select() alone is NOT enough. The provider's autoConnect only
-   * reconnects dapps the wallet already trusts (a silent connect); a
-   * first-time user never sees the approval prompt, so clicking "Connect"
-   * appears to do nothing. We must explicitly call connect() — but only
-   * AFTER the adapter is actually selected, otherwise wallet-adapter throws
-   * WalletNotSelectedError. So: connect now if already selected, else record
-   * the intent and let the effect below connect once selection settles. */
-  const pendingWalletRef = useRef<string | null>(null);
-  const connectAttemptRef = useRef<number>(0);
+   *  Bypasses the wallet-adapter autoConnect machinery entirely.
+   *
+   *  Why: The adapter's autoConnect only does a *silent* reconnect for
+   *  previously-approved dapps. For first-time or mobile users the prompt
+   *  never appears. Worse, if autoConnect fails, onConnectError() calls
+   *  changeWallet(null) which silently clears the wallet, making it look
+   *  like "nothing happened" no matter how many times you retry via the
+   *  adapter's connect() function.
+   *
+   *  Fix: Connect directly through the injected provider (window.phantom.solana),
+   *  which always shows the approval prompt. Then call select() so the adapter
+   *  picks up the already-connected provider. If the provider isn't injected
+   *  (regular mobile browser), redirect to Phantom's universal link to open
+   *  the current page inside Phantom's in-app browser.
+   */
+  const [wantConnect, setWantConnect] = useState(false);
 
-  const safeConnectError = useCallback((err: any) => {
-    const msg = err?.message || String(err);
-    if (!/already pending|user rejected|user denied|wallet not selected/i.test(msg)) {
-      setError(msg);
-    }
-    console.error("wallet connect failed:", err);
-  }, []);
+  const handleConnectWallet = useCallback(async (walletName: string) => {
+    setError(null);
 
-  const handleConnectWallet = useCallback(
-    (walletName: string) => {
-      setError(null);
-
-      // Already connected with this wallet — nothing to do
-      if (wallet?.adapter.name === walletName && connected) return;
-
-      // Right wallet already selected, just not connected yet
-      if (wallet?.adapter.name === walletName && !connecting) {
-        connect().catch(safeConnectError);
-        return;
+    /* ── Phantom ── */
+    if (walletName === "Phantom") {
+      const provider = (window as any).phantom?.solana;
+      if (provider?.isPhantom) {
+        try {
+          await provider.connect();
+          // Provider connected — tell the adapter so React state updates
+          select("Phantom" as any);
+          setWantConnect(true);
+          return;
+        } catch (err: any) {
+          setError(
+            err?.code === 4001
+              ? "Connection rejected. Please approve in Phantom."
+              : "Phantom connection failed: " + (err?.message || "Try again.")
+          );
+          return;
+        }
       }
+      // Phantom not injected → deep-link into Phantom's in-app browser
+      const url = encodeURIComponent(window.location.href);
+      const ref = encodeURIComponent(window.location.origin);
+      window.location.href = `https://phantom.app/ul/browse/${url}?ref=${ref}`;
+      return;
+    }
 
-      // Different wallet: select it, then retry connect() each rAF until the
-      // adapter has settled (WalletNotSelectedError = not settled yet, retry).
-      const attemptId = ++connectAttemptRef.current;
-      pendingWalletRef.current = walletName;
-      select(walletName as any);
+    /* ── Solflare ── */
+    if (walletName === "Solflare") {
+      const provider = (window as any).solflare;
+      if (provider?.isSolflare) {
+        try {
+          await provider.connect();
+          select("Solflare" as any);
+          setWantConnect(true);
+          return;
+        } catch (err: any) {
+          setError("Solflare connection failed: " + (err?.message || "Try again."));
+          return;
+        }
+      }
+    }
 
-      const tryConnect = () => {
-        if (connectAttemptRef.current !== attemptId) return; // superseded
-        connect().catch((err: any) => {
-          const msg = err?.message || String(err);
-          if (/wallet not selected/i.test(msg)) {
-            // Adapter hasn't settled yet — retry next animation frame
-            requestAnimationFrame(tryConnect);
-          } else {
-            safeConnectError(err);
-          }
-        });
-      };
+    /* ── Fallback: standard adapter flow ── */
+    select(walletName as any);
+    setWantConnect(true);
+  }, [select]);
 
-      // One rAF delay lets the adapter internals settle before first attempt
-      requestAnimationFrame(tryConnect);
-    },
-    [wallet, connected, connecting, select, connect, safeConnectError],
-  );
+  /* After select(), call connect() so the adapter syncs internal state with
+   * the already-connected provider. wantConnect (state) ensures this fires
+   * even when the wallet name was already cached in localStorage.           */
+  useEffect(() => {
+    if (!wantConnect) return;
+    if (!wallet) return;
+    if (connected) { setWantConnect(false); return; }
+    if (connecting) return;
+    setWantConnect(false);
+    connect().catch((err) => {
+      // The direct provider connect already succeeded; the adapter just
+      // needs to catch up. Don't show adapter-level sync errors.
+      console.log("Adapter connect sync:", err?.message);
+    });
+  }, [wantConnect, wallet, connected, connecting, connect]);
 
   /* ─── Load metadata for a selected mint ─── */
   const loadMetadata = useCallback(
