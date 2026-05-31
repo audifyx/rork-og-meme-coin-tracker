@@ -200,57 +200,36 @@ export default function TokenManager() {
    *  (regular mobile browser), redirect to Phantom's universal link to open
    *  the current page inside Phantom's in-app browser.
    */
-  const [wantConnect, setWantConnect] = useState(false);
-
-  const handleConnectWallet = useCallback(async (walletName: string) => {
+  const handleConnectWallet = useCallback(async () => {
     setError(null);
 
-    /* ── Phantom ── */
-    if (walletName === "Phantom") {
-      const provider = (window as any).phantom?.solana;
-      if (provider?.isPhantom) {
-        try {
-          await provider.connect({ onlyIfTrusted: false });
-          // Provider connected — tell the adapter so React state updates
-          select("Phantom" as any);
-          setWantConnect(true);
-          return;
-        } catch (err: any) {
-          setError(
-            err?.code === 4001
-              ? "Connection rejected. Please approve in Phantom."
-              : "Phantom connection failed: " + (err?.message || "Try again.")
-          );
-          return;
-        }
-      }
-      // Phantom not injected → deep-link into Phantom's in-app browser
+    const provider = (window as any).phantom?.solana;
+
+    // No Phantom extension — open in Phantom's in-app browser
+    if (!provider?.isPhantom) {
       const url = encodeURIComponent(window.location.href);
       const ref = encodeURIComponent(window.location.origin);
       window.location.href = `https://phantom.app/ul/browse/${url}?ref=${ref}`;
       return;
     }
 
-    /* ── Fallback: standard adapter flow ── */
-    select(walletName as any);
-    setWantConnect(true);
+    try {
+      // Connect directly via the injected provider — always shows the popup
+      const resp = await provider.connect({ onlyIfTrusted: false });
+      // resp.publicKey is set immediately after approval
+      // The WalletProvider will detect the provider is now connected
+      // and update React state automatically via its internal listeners.
+      // We just need to call select() to tell it which adapter to use.
+      select("Phantom" as any);
+    } catch (err: any) {
+      if (err?.code === 4001) {
+        setError("Cancelled — please approve the connection in Phantom.");
+      } else {
+        setError("Could not connect to Phantom. Please try again.");
+        console.error("Phantom connect error:", err);
+      }
+    }
   }, [select]);
-
-  /* After select(), call connect() so the adapter syncs internal state with
-   * the already-connected provider. wantConnect (state) ensures this fires
-   * even when the wallet name was already cached in localStorage.           */
-  useEffect(() => {
-    if (!wantConnect) return;
-    if (!wallet) return;
-    if (connected) { setWantConnect(false); return; }
-    if (connecting) return;
-    setWantConnect(false);
-    connect().catch((err) => {
-      // The direct provider connect already succeeded; the adapter just
-      // needs to catch up. Don't show adapter-level sync errors.
-      console.log("Adapter connect sync:", err?.message);
-    });
-  }, [wantConnect, wallet, connected, connecting, connect]);
 
   /* ─── Load metadata for a selected mint ─── */
   const loadMetadata = useCallback(
@@ -635,7 +614,7 @@ export default function TokenManager() {
               return (
               <button
                 key={w.adapter.name}
-                onClick={() => handleConnectWallet(w.adapter.name)}
+                onClick={handleConnectWallet}
                 disabled={connecting}
                 className={`flex w-full items-center gap-3 rounded-xl border px-4 py-3 transition-all group ${
                   isActive
