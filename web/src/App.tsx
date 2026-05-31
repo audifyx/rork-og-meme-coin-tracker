@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { MaintenanceLock } from "@/components/MaintenanceLock";
+import { IntercomSync } from "@/components/IntercomSync";
 import BetaHome from "./pages/BetaHome";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -101,6 +102,7 @@ const App = () => (
         <PushNotificationPrompt />
         <PresenceHeartbeat />
         <SecurityTracker />
+        <IntercomSync />
         <BrowserRouter>
           <Routes>
             {/* ── Public routes (no auth required) ── */}
