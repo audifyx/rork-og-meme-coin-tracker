@@ -210,7 +210,7 @@ export default function TokenManager() {
       const provider = (window as any).phantom?.solana;
       if (provider?.isPhantom) {
         try {
-          await provider.connect();
+          await provider.connect({ onlyIfTrusted: false });
           // Provider connected — tell the adapter so React state updates
           select("Phantom" as any);
           setWantConnect(true);
