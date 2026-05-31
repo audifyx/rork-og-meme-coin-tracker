@@ -163,8 +163,8 @@ export const AppSidebar = ({
   ];
 
   const tradingItems: NavItem[] = [
-    { to: "/wallets", icon: Wallet, label: "Wallets", eyebrow: "Tracked wallets" },
-    { to: "/charts", icon: LineChart, label: "Charts", eyebrow: "Live charts" },
+    // Phantom Trading Terminal — hidden from UI for now (renamed from "Wallets")
+    // { to: "/wallets", icon: Wallet, label: "Phantom Trading Terminal", eyebrow: "Phantom Trade" },
     { to: "/callouts", icon: Bell, label: "Callouts", eyebrow: "Trade alerts" },
     { to: "/trading-lobbies", icon: MessageSquare, label: "Trading Lobbies", eyebrow: "Voice + charts" },
     { to: "/leaderboard", icon: Trophy, label: "Leaderboard", eyebrow: "Top traders" },
