@@ -169,7 +169,7 @@ export const AppSidebar = ({
 
   const primaryItems: NavItem[] = [
     { id: "overview", icon: Home, label: "Home", eyebrow: "Command hub" },
-    { id: "our-coin", icon: Coins, label: "OUR COIN", eyebrow: "Official token room" },
+    { id: "our-coin", icon: Coins, label: "OFFICIAL OGS", eyebrow: "Official token room" },
     { id: "tools", icon: Wrench, label: "Tools", eyebrow: "Scanners & Feeds" },
     { id: "profile", icon: User, label: "Profile", eyebrow: "Your account" },
   ];
