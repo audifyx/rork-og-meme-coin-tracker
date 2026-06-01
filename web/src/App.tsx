@@ -103,8 +103,8 @@ const App = () => (
         <PresenceHeartbeat />
         <SecurityTracker />
         <IntercomSync />
-        <SupportNotificationBanner />
         <BrowserRouter>
+          <SupportNotificationBanner />
           <Routes>
             {/* ── Public routes (no auth required) ── */}
             <Route path="/" element={<BetaHome />} />
