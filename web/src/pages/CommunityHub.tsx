@@ -15,6 +15,7 @@ import {
   Radio,
   Mic,
   Globe,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ const SocialHub            = lazy(() => import("./SocialHub"));
 const SpacesPage           = lazy(() => import("./Spaces"));
 const CommunityRoomsPage   = lazy(() => import("./CommunityRooms"));
 const CoinCommunitiesPage  = lazy(() => import("./CoinCommunitiesPage"));
+const CommunitiesPage      = lazy(() => import("./Communities"));
 
 /* ── Voice Lobbies (trading lobby list) ── */
 const VoiceLobbiesPage = lazy(() => import("./TradingLobbies"));
@@ -31,7 +33,7 @@ const VoiceLobbiesPage = lazy(() => import("./TradingLobbies"));
    Types & Config
    ═══════════════════════════════════════════════════════════════ */
 
-type CommTab = "channels" | "rooms" | "spaces" | "voice" | "communities";
+type CommTab = "channels" | "rooms" | "spaces" | "voice" | "communities" | "og-communities";
 
 interface TabDef {
   id: CommTab;
@@ -45,7 +47,8 @@ const TABS: TabDef[] = [
   { id: "rooms",       label: "Rooms",        Icon: MessageSquare, eyebrow: "Group chat & raids" },
   { id: "spaces",      label: "Spaces",       Icon: Radio,         eyebrow: "Voice rooms & alpha" },
   { id: "voice",       label: "Voice Lobbies",Icon: Mic,           eyebrow: "Live voice hangouts" },
-  { id: "communities", label: "Communities",  Icon: Globe,         eyebrow: "X & token communities" },
+  { id: "communities",    label: "Communities",    Icon: Globe,  eyebrow: "X & token communities" },
+  { id: "og-communities", label: "OG Communities", Icon: Users,  eyebrow: "Custom OG social feed" },
 ];
 
 const STORAGE_KEY = "og_comm_tab";
@@ -185,6 +188,15 @@ const CommunityHub: React.FC = () => {
           <div className="min-h-0 flex-1 overflow-y-auto">
             <Suspense fallback={<Spinner />}>
               <CoinCommunitiesPage />
+            </Suspense>
+          </div>
+        )}
+
+        {/* ═══ OG COMMUNITIES (custom social communities feed) ═══ */}
+        {active === "og-communities" && (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <Suspense fallback={<Spinner />}>
+              <CommunitiesPage />
             </Suspense>
           </div>
         )}
