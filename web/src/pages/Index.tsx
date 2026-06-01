@@ -378,7 +378,7 @@ const TABS: TabConfig[] = [
   },
   {
     id: "our-coin",
-    label: "OUR COIN",
+    label: "OFFICIAL OGS",
     slug: "our-coin",
     pageNumber: 2,
     eyebrow: "Official Token Room",
