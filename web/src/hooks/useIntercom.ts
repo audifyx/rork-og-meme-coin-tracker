@@ -90,7 +90,7 @@ export function useIntercom() {
             user.email?.split("@")[0] ??
             undefined,
           session_duration: 86400000, // 1 day
-          hide_default_launcher: true, // we use our own custom button
+          vertical_padding: 100,
         });
         bootedRef.current = user.id;
       } else {
@@ -101,7 +101,7 @@ export function useIntercom() {
         window.Intercom("boot", {
           api_base: "https://api-iam.intercom.io",
           app_id: APP_ID,
-          hide_default_launcher: true, // we use our own custom button
+          vertical_padding: 100,
         });
         bootedRef.current = null;
       }
