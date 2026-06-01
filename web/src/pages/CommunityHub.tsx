@@ -16,6 +16,8 @@ import {
   Mic,
   Globe,
   Users,
+  Headphones,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,14 +28,16 @@ const CommunityRoomsPage   = lazy(() => import("./CommunityRooms"));
 const CoinCommunitiesPage  = lazy(() => import("./CoinCommunitiesPage"));
 const CommunitiesPage      = lazy(() => import("./Communities"));
 
-/* ── Voice Lobbies (trading lobby list) ── */
-const VoiceLobbiesPage = lazy(() => import("./TradingLobbies"));
+/* ── Trading Lobbies (text chat + watchlist rooms) ── */
+const TradingLobbiesPage = lazy(() => import("./TradingLobbies"));
+/* ── Voice Lobbies (pure voice/audio rooms) ── */
+const VoiceLobbiesPage = lazy(() => import("./VoiceLobbies"));
 
 /* ═══════════════════════════════════════════════════════════════
    Types & Config
    ═══════════════════════════════════════════════════════════════ */
 
-type CommTab = "channels" | "rooms" | "spaces" | "voice" | "communities" | "og-communities";
+type CommTab = "channels" | "rooms" | "spaces" | "trading-lobbies" | "communities" | "og-communities" | "voice-lobbies";
 
 interface TabDef {
   id: CommTab;
@@ -43,12 +47,13 @@ interface TabDef {
 }
 
 const TABS: TabDef[] = [
-  { id: "channels",    label: "Channels",     Icon: Hash,          eyebrow: "Chat rooms" },
-  { id: "rooms",       label: "Rooms",        Icon: MessageSquare, eyebrow: "Group chat & raids" },
-  { id: "spaces",      label: "Spaces",       Icon: Radio,         eyebrow: "Voice rooms & alpha" },
-  { id: "voice",       label: "Voice Lobbies",Icon: Mic,           eyebrow: "Live voice hangouts" },
-  { id: "communities",    label: "Communities",    Icon: Globe,  eyebrow: "X & token communities" },
-  { id: "og-communities", label: "OG Communities", Icon: Users,  eyebrow: "Custom OG social feed" },
+  { id: "channels",         label: "Channels",         Icon: Hash,         eyebrow: "Chat rooms" },
+  { id: "rooms",            label: "Rooms",            Icon: MessageSquare,eyebrow: "Group chat & raids" },
+  { id: "spaces",           label: "Spaces",           Icon: Radio,        eyebrow: "Voice rooms & alpha" },
+  { id: "trading-lobbies",  label: "Trading Lobbies",  Icon: TrendingUp,   eyebrow: "Token trading chat" },
+  { id: "communities",      label: "Communities",      Icon: Globe,        eyebrow: "X & token communities" },
+  { id: "og-communities",   label: "OG Communities",   Icon: Users,        eyebrow: "Custom OG social feed" },
+  { id: "voice-lobbies",    label: "Voice Lobbies",    Icon: Headphones,   eyebrow: "Live voice hangouts" },
 ];
 
 const STORAGE_KEY = "og_comm_tab";
@@ -105,7 +110,7 @@ const CommunityHub: React.FC = () => {
         if (old === "social" || old === "channels") setActive("channels");
         else if (old === "rooms")    setActive("rooms");
         else if (old === "spaces")   setActive("spaces");
-        else if (old === "voice")    setActive("voice");
+        else if (old === "voice")    setActive("trading-lobbies");
         localStorage.removeItem("og_community_sub_tab");
       } catch {}
     };
@@ -174,11 +179,11 @@ const CommunityHub: React.FC = () => {
           </div>
         )}
 
-        {/* ═══ VOICE LOBBIES ═══ */}
-        {active === "voice" && (
+        {/* ═══ TRADING LOBBIES ═══ */}
+        {active === "trading-lobbies" && (
           <div className="min-h-0 flex-1 overflow-hidden">
             <Suspense fallback={<Spinner />}>
-              <VoiceLobbiesPage />
+              <TradingLobbiesPage />
             </Suspense>
           </div>
         )}
@@ -197,6 +202,15 @@ const CommunityHub: React.FC = () => {
           <div className="min-h-0 flex-1 overflow-y-auto">
             <Suspense fallback={<Spinner />}>
               <CommunitiesPage />
+            </Suspense>
+          </div>
+        )}
+
+        {/* ═══ VOICE LOBBIES (pure audio rooms) ═══ */}
+        {active === "voice-lobbies" && (
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <Suspense fallback={<Spinner />}>
+              <VoiceLobbiesPage />
             </Suspense>
           </div>
         )}
