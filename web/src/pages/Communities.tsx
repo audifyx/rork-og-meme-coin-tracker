@@ -30,6 +30,7 @@ import { HELIUS_API_KEY, OGSCAN_TOKEN_MINT } from "@/lib/og";
 import { trackActivity } from "@/lib/trackActivity";
 import { CommunityReputation } from "@/components/communities-20x/CommunityReputation";
 import SpaceLeaderboard from "@/components/spaces/SpaceLeaderboard";
+import { xGetStoredUser, xIsConnected, xStartLogin } from "@/lib/xAuth";
 
 /* ═══════════════════════════════════════════════════════════════
    Types
@@ -730,6 +731,7 @@ const Communities = () => {
   const [showCreateCommunity, setShowCreateCommunity] = useState(false);
   const [myMemberships, setMyMemberships] = useState<Map<string, CommunityMember>>(new Map());
   const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
+  const [raidPrefill, setRaidPrefill] = useState<{ title: string; url: string } | null>(null);
 
   // Check global admin status
   useEffect(() => {
@@ -891,6 +893,7 @@ const Communities = () => {
           onCompose={() => setShowCompose(true)}
           onJoin={() => joinCommunity(selectedCommunity.id)}
           onLeave={() => leaveCommunity(selectedCommunity.id)}
+          onRaidPost={(prefill) => { setRaidPrefill(prefill); setMainView("raids"); }}
         />
       ) : mainView === "news" ? (
         <NewsFeed user={user} onSelectPost={openPost} onOpenProfile={openUserProfile} />
@@ -909,7 +912,7 @@ const Communities = () => {
       ) : mainView === "alerts" ? (
         <AlertsHub user={user} />
       ) : mainView === "raids" ? (
-        <RaidsHub user={user} />
+        <RaidsHub user={user} prefill={raidPrefill} onPrefillConsumed={() => setRaidPrefill(null)} />
       ) : mainView === "dms" ? (
         <DMsHub user={user} />
       ) : (
@@ -919,6 +922,7 @@ const Communities = () => {
           onSelectCommunity={openCommunity}
           onOpenProfile={openUserProfile}
           joinedCommunityIds={Array.from(myMemberships.keys())}
+          onRaidPost={(prefill) => { setRaidPrefill(prefill); setMainView("raids"); }}
         />
       )}
 
@@ -1040,13 +1044,14 @@ function TopNav({
    ═══════════════════════════════════════════════════════════════ */
 
 function HomeFeed({
-  user, onSelectPost, onSelectCommunity, onOpenProfile, joinedCommunityIds
+  user, onSelectPost, onSelectCommunity, onOpenProfile, joinedCommunityIds, onRaidPost
 }: {
   user: any;
   onSelectPost: (p: Post) => void;
   onSelectCommunity: (c: Community) => void;
   onOpenProfile: (userId?: string | null) => void;
   joinedCommunityIds: string[];
+  onRaidPost?: (prefill: { title: string; url: string }) => void;
 }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [communities, setCommunities] = useState<Community[]>([]);
@@ -1210,6 +1215,7 @@ function HomeFeed({
                   onClick={() => onSelectPost(post)}
                   onOpenProfile={onOpenProfile}
                   onUpdate={fetchHomeFeed}
+                  onRaidPost={onRaidPost}
                 />
               </div>
             );
@@ -1636,7 +1642,7 @@ function NewsFeed({ user, onSelectPost, onOpenProfile }: { user: any; onSelectPo
    ═══════════════════════════════════════════════════════════════ */
 
 function CommunityFeed({
-  community, user, myRole, isMember, onSelectPost, onOpenProfile, onCompose, onJoin, onLeave
+  community, user, myRole, isMember, onSelectPost, onOpenProfile, onCompose, onJoin, onLeave, onRaidPost
 }: {
   community: Community;
   user: any;
@@ -1647,6 +1653,7 @@ function CommunityFeed({
   onCompose: () => void;
   onJoin: () => void;
   onLeave: () => void;
+  onRaidPost?: (prefill: { title: string; url: string }) => void;
 }) {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -2902,6 +2909,7 @@ function CommunityFeed({
               communityOwnerId={community.created_by}
               isGlobalAdmin={isGlobalAdmin}
               onPin={togglePin}
+              onRaidPost={onRaidPost}
             />
           ))}
         </div>
@@ -3087,7 +3095,7 @@ function PostContentRenderer({ content }: { content: string }) {
    ═══════════════════════════════════════════════════════════════ */
 
 function PostCard({
-  post, user, onClick, onOpenProfile, onUpdate, compact = false, canModerate = false, communityOwnerId, isGlobalAdmin = false, onPin
+  post, user, onClick, onOpenProfile, onUpdate, compact = false, canModerate = false, communityOwnerId, isGlobalAdmin = false, onPin, onRaidPost
 }: {
   post: Post;
   user: any;
@@ -3099,6 +3107,7 @@ function PostCard({
   communityOwnerId?: string;
   isGlobalAdmin?: boolean;
   onPin?: (postId: string, pinned: boolean) => void;
+  onRaidPost?: (prefill: { title: string; url: string }) => void;
 }) {
   const isArticle = post.is_article || post.post_type === "article";
   const isThread = post.post_type === "thread" && !post.thread_id;
@@ -3245,6 +3254,19 @@ function PostCard({
                     <button onClick={(e) => { e.stopPropagation(); onPin(post.id, !!post.is_pinned); setShowMenu(false); }}
                       className="w-full flex items-center gap-2 px-3 py-2 text-xs text-white/60 hover:bg-white/[0.04] hover:text-white transition-colors">
                       <Pin className="h-3.5 w-3.5" /> {post.is_pinned ? "Unpin" : "Pin"}
+                    </button>
+                  )}
+                  {user && onRaidPost && (
+                    <button onClick={(e) => {
+                      e.stopPropagation();
+                      setShowMenu(false);
+                      // Use tweet_url if it's a cross-post, otherwise use the OGScan post URL
+                      const target = post.tweet_url || `${window.location.origin}?post=${post.id}`;
+                      const snippet = (post.content || "").slice(0, 60).trim();
+                      onRaidPost({ title: `Raid: ${snippet}${snippet.length >= 60 ? "…" : ""}`, url: target });
+                    }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400/60 hover:bg-red-500/10 hover:text-red-400 transition-colors">
+                      <Swords className="h-3.5 w-3.5" /> Raid This Post
                     </button>
                   )}
                   {canDelete && (
@@ -5228,12 +5250,14 @@ const RAID_PRESETS = [
   { label: "Legendary Push", likes: 1000, reposts: 500, replies: 200, hours: 72, emoji: "👑" },
 ];
 
-function RaidsHub({ user }: { user: any }) {
+function RaidsHub({ user, prefill, onPrefillConsumed }: { user: any; prefill?: { title: string; url: string } | null; onPrefillConsumed?: () => void }) {
   const [raids, setRaids] = useState<Raid[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<RaidFilter>("active");
   const [myRaidIds, setMyRaidIds] = useState<Set<string>>(new Set());
   const [showCreate, setShowCreate] = useState(false);
+  const [xUser, setXUser] = useState(() => xGetStoredUser());
+  const [xActioning, setXActioning] = useState<string | null>(null); // raidId-action
 
   // Create form
   const [cTitle, setCTitle] = useState("");
@@ -5271,6 +5295,58 @@ function RaidsHub({ user }: { user: any }) {
       }).subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [loadRaids]);
+
+  // Open create modal with prefill (from "Raid This Post")
+  useEffect(() => {
+    if (prefill) {
+      setCTitle(prefill.title);
+      setCUrl(prefill.url);
+      setShowCreate(true);
+      onPrefillConsumed?.();
+    }
+  }, [prefill, onPrefillConsumed]);
+
+  // Sync X auth state
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setXUser(detail?.user || xGetStoredUser());
+    };
+    window.addEventListener("x-auth-changed", handler);
+    return () => window.removeEventListener("x-auth-changed", handler);
+  }, []);
+
+  // Perform a native X action (like / repost / reply) via edge function
+  const doXAction = async (raid: Raid, action: "like" | "repost" | "reply") => {
+    if (!user) { toast.error("Sign in first"); return; }
+    if (!xUser) { xStartLogin(); return; }
+    const tweetId = raid.tweet_id || raid.target_url?.match(/status\/(\d+)/)?.[1];
+    if (!tweetId) { toast.error("No tweet ID found for this raid"); return; }
+    const key = `${raid.id}-${action}`;
+    setXActioning(key);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("post-to-x", {
+        body: { action, tweetId, text: action === "reply" ? `⚔️ Raiding from @ogscan_fun — let's go! 🚀` : undefined },
+      });
+      if (res.error) throw new Error(res.error.message || "X action failed");
+      // Increment the appropriate counter
+      const field = action === "like" ? "current_likes" : action === "repost" ? "current_reposts" : "current_replies";
+      const current = raid[field as keyof Raid] as number || 0;
+      await supabase.from("community_raids").update({ [field]: current + 1 }).eq("id", raid.id);
+      setRaids(prev => prev.map(r => r.id === raid.id ? { ...r, [field]: current + 1 } : r));
+      // Also join the raid
+      if (!myRaidIds.has(raid.id)) {
+        await supabase.from("raid_participants").insert({ raid_id: raid.id, user_id: user.id }).single();
+        await supabase.from("community_raids").update({ participants: (raid.participants || 0) + 1 }).eq("id", raid.id);
+        setMyRaidIds(prev => new Set([...prev, raid.id]));
+        setRaids(prev => prev.map(r => r.id === raid.id ? { ...r, participants: (r.participants || 0) + 1 } : r));
+      }
+      toast.success(action === "like" ? "❤️ Liked on X!" : action === "repost" ? "🔁 Reposted on X!" : "💬 Replied on X!");
+    } catch (e: any) {
+      toast.error(e.message || "X action failed");
+    } finally { setXActioning(null); }
+  };
 
   const isExpired = (r: Raid) => r.ends_at ? new Date(r.ends_at).getTime() < Date.now() : false;
   const isLive = (r: Raid) => r.status === "active" && !isExpired(r);
@@ -5561,6 +5637,39 @@ function RaidsHub({ user }: { user: any }) {
                      <><CheckCircle2 className="h-3.5 w-3.5" /> Finished</>}
                   </button>
                 </div>
+
+                {/* X native action buttons — only shown for X/Twitter targets */}
+                {live && platform.name === "X / Twitter" && (raid.tweet_id || raid.target_url?.match(/status\/\d+/)) && (
+                  <div className="border-t border-white/[0.05] pt-3 space-y-2">
+                    {xUser ? (
+                      <>
+                        <p className="text-[9px] text-white/25 uppercase tracking-widest font-bold flex items-center gap-1.5">
+                          <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current text-white/30"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.213 5.567zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                          Act on X as @{xUser.username}
+                        </p>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {([
+                            { action: "like" as const, label: "❤️ Like", key: `${raid.id}-like` },
+                            { action: "repost" as const, label: "🔁 Repost", key: `${raid.id}-repost` },
+                            { action: "reply" as const, label: "💬 Reply", key: `${raid.id}-reply` },
+                          ]).map(({ action, label, key }) => (
+                            <button key={action} onClick={() => doXAction(raid, action)}
+                              disabled={xActioning === key}
+                              className="flex items-center justify-center gap-1 py-2 rounded-xl border border-white/[0.1] bg-white/[0.04] text-[10px] font-black text-white/50 hover:bg-white/[0.08] hover:text-white/80 hover:border-white/20 disabled:opacity-40 transition-all">
+                              {xActioning === key ? <Loader2 className="h-3 w-3 animate-spin" /> : label}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <button onClick={() => xStartLogin()}
+                        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-white/[0.1] bg-white/[0.03] text-[11px] font-black text-white/40 hover:border-white/20 hover:text-white/70 hover:bg-white/[0.06] transition-all">
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.213 5.567zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                        Connect X to engage directly
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
