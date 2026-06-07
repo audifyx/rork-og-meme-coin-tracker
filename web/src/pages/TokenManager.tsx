@@ -67,7 +67,7 @@ interface TokenMetadataFull {
 type PostConnectStep = "select" | "edit" | "signing" | "success";
 
 /* ─── Helpers ─── */
-const HELIUS_KEY = "***REMOVED_HELIUS_KEY***";
+const HELIUS_KEY = import.meta.env.VITE_HELIUS_API_KEY ?? "";
 const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}`;
 
 const shortAddr = (addr: string) =>
