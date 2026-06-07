@@ -1072,15 +1072,22 @@ function HomeFeed({
     })();
   }, []);
 
+  // Default communities always shown (OG SCAN Feed + OG Official Community)
+  const OG_DEFAULT_COMMUNITY_IDS = [
+    "ce67b7a0-6372-40d9-b958-3af7fb4ac5a3", // OG SCAN Feed
+    "f680a202-209d-4242-aa1f-c44218fd80ce", // OG Official Community 📈
+  ];
+
   const fetchHomeFeed = useCallback(async () => {
     setLoading(true);
     try {
-      // Aggregated feed: only posts from communities the user has joined
-      let q = supabase.from("community_posts").select("*").is("thread_id", null).limit(50);
+      // Feed shows: joined communities + OG default communities (always visible)
+      const feedIds = joinedCommunityIds.length > 0
+        ? Array.from(new Set([...joinedCommunityIds, ...OG_DEFAULT_COMMUNITY_IDS]))
+        : OG_DEFAULT_COMMUNITY_IDS;
 
-      if (joinedCommunityIds.length > 0) {
-        q = q.in("community_id", joinedCommunityIds);
-      }
+      let q = supabase.from("community_posts").select("*").is("thread_id", null).limit(50);
+      q = q.in("community_id", feedIds);
 
       if (sort === "latest") q = q.order("created_at", { ascending: false });
       else if (sort === "top") q = q.order("likes_count", { ascending: false });
@@ -1184,12 +1191,6 @@ function HomeFeed({
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-6 w-6 text-white/10 animate-spin" />
         </div>
-      ) : !user || joinedCommunityIds.length === 0 ? (
-        <EmptyState
-          icon={<Users className="h-10 w-10" />}
-          title="Your feed is empty"
-          subtitle="Join communities to see their posts here"
-        />
       ) : posts.length === 0 ? (
         <EmptyState
           icon={<MessageSquare className="h-10 w-10" />}

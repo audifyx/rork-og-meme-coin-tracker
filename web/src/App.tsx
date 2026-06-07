@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminRoute } from "@/components/AdminRoute";
 import { MaintenanceLock } from "@/components/MaintenanceLock";
 import { IntercomSync } from "@/components/IntercomSync";
 import BetaHome from "./pages/BetaHome";
@@ -200,7 +201,7 @@ const App = () => (
             <Route path="/launch" element={<ProtectedRoute><Launch /></ProtectedRoute>} />
 
             {/* ── Protected: Admin ── */}
-            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+            <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
             <Route path="/art" element={<ProtectedRoute><Suspense fallback={null}><ArtFeedPage /></Suspense></ProtectedRoute>} />
 
             {/* ── Public: Project/legal ── */}
@@ -249,8 +250,8 @@ const App = () => (
             <Route path="/co-hosting/:spaceId" element={<ProtectedRoute><CoHostingManager /></ProtectedRoute>} />
 
             {/* ── Protected: Platform — Phase 4: White-label & API ── */}
-            <Route path="/white-label" element={<ProtectedRoute><WhiteLabelConfig /></ProtectedRoute>} />
-            <Route path="/brand" element={<ProtectedRoute><WhiteLabelConfig /></ProtectedRoute>} />
+            <Route path="/white-label" element={<AdminRoute><WhiteLabelConfig /></AdminRoute>} />
+            <Route path="/brand" element={<AdminRoute><WhiteLabelConfig /></AdminRoute>} />
             <Route path="/developer" element={<ProtectedRoute><DevPortal /></ProtectedRoute>} />
             <Route path="/api-keys" element={<ProtectedRoute><DevPortal /></ProtectedRoute>} />
             <Route path="/dev-portal" element={<ProtectedRoute><DevPortal /></ProtectedRoute>} />
@@ -261,8 +262,8 @@ const App = () => (
             <Route path="/ai-copilot" element={<ProtectedRoute><AIHostCopilot /></ProtectedRoute>} />
             <Route path="/simulcast" element={<ProtectedRoute><Simulcast /></ProtectedRoute>} />
             <Route path="/multistream" element={<ProtectedRoute><Simulcast /></ProtectedRoute>} />
-            <Route path="/enterprise" element={<ProtectedRoute><EnterpriseDashboard /></ProtectedRoute>} />
-            <Route path="/compliance" element={<ProtectedRoute><EnterpriseDashboard /></ProtectedRoute>} />
+            <Route path="/enterprise" element={<AdminRoute><EnterpriseDashboard /></AdminRoute>} />
+            <Route path="/compliance" element={<AdminRoute><EnterpriseDashboard /></AdminRoute>} />
             {/* Feature 16 — Native Mobile App */}
             <Route path="/mobile-app" element={<MobileApp />} />
             <Route path="/mobile" element={<MobileApp />} />
