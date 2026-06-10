@@ -86,7 +86,7 @@ interface FormData {
 type LaunchStep = "form" | "paying" | "uploading" | "signing" | "sending" | "success" | "error";
 type PageView = "gallery" | "create";
 
-const STEP_LABELS = ["Pay", "IPFS", "Sign", "Send"];
+const STEP_LABELS = ["IPFS", "Sign", "Send"];
 
 /* ─── Persistence helpers ────────────────────────────────────────────── */
 
@@ -558,7 +558,7 @@ function CreateTokenForm({ onBack, onSuccess }: { onBack: () => void; onSuccess:
   const canLaunch =
     connected && publicKey && signTransaction && sendTransaction &&
     form.name.trim().length > 0 && form.symbol.trim().length > 0 &&
-    imageFile !== null;
+    !!imageFile;
 
   /* ─── Launch flow ──────────────────────────────────────────────────── */
 
@@ -593,7 +593,7 @@ function CreateTokenForm({ onBack, onSuccess }: { onBack: () => void; onSuccess:
       const mintKeypair = Keypair.generate();
       setMintAddress(mintKeypair.publicKey.toBase58());
 
-      /* Step 3 — Get unsigned transaction */
+      /* Step 3 — Get unsigned transaction from PumpPortal */
       setStatusMsg("Building launch transaction…");
       const devBuy = parseFloat(form.devBuySol) || 0;
       const createRes = await fetch("/api/pump-create", {
@@ -611,18 +611,13 @@ function CreateTokenForm({ onBack, onSuccess }: { onBack: () => void; onSuccess:
       }
       const { transaction: txBase64 } = await createRes.json();
 
-      /* Step 4 — Deserialize + sign via Phantom directly */
+      /* Step 4 — Deserialize, sign with mint keypair, then sign with Phantom */
       setStep("signing");
-      setStatusMsg("Sign the token creation transaction…");
+      setStatusMsg("Sign the token creation transaction in Phantom…");
       const txBytes = Uint8Array.from(atob(txBase64), (c) => c.charCodeAt(0));
       const tx = VersionedTransaction.deserialize(txBytes);
-      // Sign with the mint keypair first (required by pump.fun)
       tx.sign([mintKeypair]);
-      // Sign with Phantom — use injected provider directly so it works on
-      // both desktop extension and Phantom in-app browser
-      const phantomProvider = (window as any).phantom?.solana ?? (window as any).solana;
-      if (!phantomProvider?.isPhantom) throw new Error("Phantom not found. Open this page inside the Phantom wallet browser.");
-      const signedTx = await phantomProvider.signTransaction(tx);
+      const signedTx = await signTransaction(tx);
 
       /* Step 5 — Send */
       setStep("sending");
@@ -634,7 +629,6 @@ function CreateTokenForm({ onBack, onSuccess }: { onBack: () => void; onSuccess:
 
       setTxSignature(sig);
 
-      // Persist the launched token
       const mintAddr = mintKeypair.publicKey.toBase58();
       saveLaunch({
         mintAddress: mintAddr,
@@ -653,7 +647,7 @@ function CreateTokenForm({ onBack, onSuccess }: { onBack: () => void; onSuccess:
       });
 
       setStep("success");
-      toast.success(isAdmin ? "Token launched! 🚀 (No fee)" : "Token launched! 🚀");
+      toast.success("Token launched! 🚀");
     } catch (err: any) {
       console.error("Launch error:", err);
       if (err.message?.includes("User rejected")) { setStep("form"); toast.error("Transaction cancelled"); return; }
@@ -663,7 +657,7 @@ function CreateTokenForm({ onBack, onSuccess }: { onBack: () => void; onSuccess:
     }
   };
 
-  const resetForm = () => {
+    const resetForm = () => {
     setStep("form"); setStatusMsg(""); setTxSignature(""); setMintAddress("");
     setErrorMsg(""); setMetadataUri("");
     setForm({ name: "", symbol: "", description: "", twitter: "", telegram: "", website: "", devBuySol: "0" });
@@ -682,10 +676,9 @@ function CreateTokenForm({ onBack, onSuccess }: { onBack: () => void; onSuccess:
 
   const getStepIndex = (): number => {
     switch (step) {
-      case "paying": return 0;
-      case "uploading": return 1;
-      case "signing": return 2;
-      case "sending": return 3;
+      case "uploading": return 0;
+      case "signing": return 1;
+      case "sending": return 2;
       default: return -1;
     }
   };
