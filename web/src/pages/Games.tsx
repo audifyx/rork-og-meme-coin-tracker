@@ -4,11 +4,7 @@
  */
 
 import { useState, useRef } from "react";
-import { AppLayout } from "@/components/layout/AppLayout";
-import {
-  RefreshCw, ExternalLink, Lock,
-  ArrowLeft, ArrowRight, Gamepad2,
-} from "lucide-react";
+import { RefreshCw, ExternalLink, Lock, ArrowLeft, ArrowRight, Gamepad2 } from "lucide-react";
 
 const GAMES_URL = "https://degen-tower.vercel.app/";
 
@@ -24,8 +20,7 @@ const Games = () => {
   };
 
   return (
-    <AppLayout>
-      <div className="flex flex-col h-[calc(100vh-4rem)] lg:h-screen w-full bg-[#0a0a0f]">
+      <div className="flex flex-col h-[calc(100vh-8rem)] w-full bg-[#0a0a0f]">
         {/* Browser chrome */}
         <div className="shrink-0 bg-[#141420] border-b border-white/[0.06]">
           {/* Tab bar */}
@@ -115,7 +110,6 @@ const Games = () => {
           )}
         </div>
       </div>
-    </AppLayout>
   );
 };
 
