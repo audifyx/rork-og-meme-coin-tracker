@@ -13,6 +13,7 @@ import { IntercomSync } from "@/components/IntercomSync";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import BetaHome from "./pages/BetaHome";
 import Index from "./pages/Index";
+import IntelScan from "./pages/IntelScan";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Setup from "./pages/Setup";
@@ -156,6 +157,7 @@ const App = () => (
             <Route path="/trending" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/communities" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/discover" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/intel-scan" element={<IntelScan />} />
             <Route path="/whales" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/tx-feed" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/tape" element={<ProtectedRoute><Index /></ProtectedRoute>} />
