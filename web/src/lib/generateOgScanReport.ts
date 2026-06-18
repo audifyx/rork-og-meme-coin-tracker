@@ -37,7 +37,7 @@ export async function generateOgScanReport(data: any): Promise<Blob> {
   doc.setFontSize(9);
   doc.text(`$${(token.priceUsd || 0).toFixed(8)}`, margin + 3, yPos + 13);
   const change = token.stats24h?.priceChange || 0;
-  doc.setTextColor(change >= 0 ? ...green : ...red);
+  doc.setTextColor(change >= 0 ? green : red);
   doc.text(`24H: ${change >= 0 ? '+' : ''}${change.toFixed(2)}%`, margin + 3, yPos + 18);
   doc.setTextColor(...black);
   doc.text(`Mint: ${token.mint.slice(0, 14)}...`, pageWidth - margin - 45, yPos + 13);
