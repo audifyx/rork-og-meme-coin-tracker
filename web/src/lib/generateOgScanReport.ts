@@ -536,16 +536,10 @@ export async function generateOgScanReport(token: Token): Promise<string> {
             </tr>
           </thead>
           <tbody>
-            ${topHolders.map((h, idx) => `
-              <tr>
-                <td>#${idx + 1}</td>
-                <td>${h.wallet_address.slice(0, 14)}...</td>
-                <td>$${(h.balance_usd / 1000).toFixed(1)}K</td>
-                <td>${(h.balance_percent_of_supply || 0).toFixed(2)}%</td>
-                <td style="color: ${h.unrealized_pnl_percent >= 0 ? '#64FF00' : '#FF4444'}">${h.unrealized_pnl_percent?.toFixed(0) || 'N/A'}%</td>
-                <td>${h.classification || 'Unknown'}</td>
-              </tr>
-            `).join('')}
+            ${topHolders.map((h, idx) => {
+              const pnlColor = h.unrealized_pnl_percent >= 0 ? '#64FF00' : '#FF4444';
+              return '<tr><td>#' + (idx + 1) + '</td><td>' + h.wallet_address.slice(0, 14) + '...</td><td>$' + (h.balance_usd / 1000).toFixed(1) + 'K</td><td>' + (h.balance_percent_of_supply || 0).toFixed(2) + '%</td><td style="color: ' + pnlColor + '">' + (h.unrealized_pnl_percent?.toFixed(0) || 'N/A') + '%</td><td>' + (h.classification || 'Unknown') + '</td></tr>';
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -578,15 +572,7 @@ export async function generateOgScanReport(token: Token): Promise<string> {
     <div class="section">
       <h2 class="section-title">⚠️ Real-Time Anomalies (${anomalies?.length || 0})</h2>
       <div class="data-grid" style="grid-template-columns: 1fr;">
-        ${recentAnomalies.map(a => `
-          <div class="data-card" style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <div class="card-label">${a.alert_type}</div>
-              <div style="font-size: 0.85em; color: #999;">${new Date(a.triggered_timestamp * 1000).toLocaleString()}</div>
-            </div>
-            <span class="badge badge-${a.severity}">${a.severity.toUpperCase()}</span>
-          </div>
-        `).join('')}
+        ${recentAnomalies.map(a => '<div class="data-card" style="display: flex; justify-content: space-between; align-items: center;"><div><div class="card-label">' + a.alert_type + '</div><div style="font-size: 0.85em; color: #999;">' + new Date(a.triggered_timestamp * 1000).toLocaleString() + '</div></div><span class="badge badge-' + a.severity + '">' + a.severity.toUpperCase() + '</span></div>').join('')}
       </div>
     </div>
 
