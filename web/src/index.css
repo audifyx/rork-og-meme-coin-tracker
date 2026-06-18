@@ -616,6 +616,8 @@
 .og-search-box,
 .og-tool-shell .og-search-box {
   position: relative;
+  width: 100%;
+  max-width: 100%;
   display: flex;
   min-height: 3.75rem;
   align-items: center;
