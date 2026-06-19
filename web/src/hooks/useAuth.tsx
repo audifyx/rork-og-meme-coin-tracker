@@ -37,6 +37,10 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updateProfile: (updates: Partial<Profile>) => Promise<{ error: Error | null }>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ error: Error | null }>;
+  changeEmail: (newEmail: string, currentPassword: string) => Promise<{ error: Error | null }>;
+  sendEmailVerification: () => Promise<{ error: Error | null }>;
+  deleteAccount: (password: string) => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -242,8 +246,145 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error: error as Error | null };
   };
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    if (!user || !user.email) return { error: new Error("Not authenticated") };
+    
+    // Verify current password by re-authenticating
+    const { error: reAuthError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    
+    if (reAuthError) {
+      return { error: new Error("Current password is incorrect") };
+    }
+
+    // Update to new password
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (!error) {
+      trackActivity({
+        user_id: user.id,
+        activity_type: "auth.password_changed",
+        title: "Password changed",
+        is_public: false,
+      });
+    }
+    return { error: error as Error | null };
+  };
+
+  const changeEmail = async (newEmail: string, currentPassword: string) => {
+    if (!user || !user.email) return { error: new Error("Not authenticated") };
+
+    // Verify current password first
+    const { error: reAuthError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    
+    if (reAuthError) {
+      return { error: new Error("Password is incorrect") };
+    }
+
+    // Request email change (sends confirmation to new email)
+    const { error } = await supabase.auth.updateUser(
+      { email: newEmail },
+      { emailRedirectTo: `${window.location.origin}/` }
+    );
+
+    if (!error) {
+      trackActivity({
+        user_id: user.id,
+        activity_type: "auth.email_change_requested",
+        title: "Email change requested",
+        data: { new_email: newEmail },
+        is_public: false,
+      });
+    }
+    return { error: error as Error | null };
+  };
+
+  const sendEmailVerification = async () => {
+    if (!user || !user.email) return { error: new Error("Not authenticated") };
+
+    try {
+      const response = await fetch(
+        `${window.location.origin}/functions/v1/send-email-verification`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        return { error: new Error(data.error || "Failed to send verification email") };
+      }
+
+      trackActivity({
+        user_id: user.id,
+        activity_type: "auth.verification_sent",
+        title: "Email verification sent",
+        is_public: false,
+      });
+
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
+  const deleteAccount = async (password: string) => {
+    if (!user || !user.email) return { error: new Error("Not authenticated") };
+
+    // Verify password before deletion
+    const { error: reAuthError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password,
+    });
+    
+    if (reAuthError) {
+      return { error: new Error("Password is incorrect") };
+    }
+
+    try {
+      const response = await fetch(
+        `${window.location.origin}/functions/v1/delete-account`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        return { error: new Error(data.error || "Failed to delete account") };
+      }
+
+      // Sign out user after deletion
+      await supabase.auth.signOut();
+      setProfile(null);
+
+      trackActivity({
+        user_id: user.id,
+        activity_type: "auth.account_deleted",
+        title: "Account deleted",
+        is_public: false,
+      });
+
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, signOut, resetPassword, updateProfile }}>
+    <AuthContext.Provider value={{ user, session, profile, loading, signUp, signIn, signOut, resetPassword, updateProfile, changePassword, changeEmail, sendEmailVerification, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );
