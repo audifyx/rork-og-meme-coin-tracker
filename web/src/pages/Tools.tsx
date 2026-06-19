@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Shield, AlertTriangle, CheckCircle, XCircle, Search, Loader2,
   Users, Droplets, Lock, ExternalLink, DollarSign, TrendingUp,
@@ -41,6 +42,16 @@ interface TokenAnalysis {
 // Theme-aware accent: alternates between primary and secondary CSS vars so cards
 // automatically match whatever theme the user has selected.
 const TOOL_CARDS = [
+  {
+    id: "ai-intelligence",
+    name: "AI Intelligence",
+    description: "Talk to 40+ AI models, ensemble analysis, and generate beautiful AI reports",
+    icon: Sparkles,
+    accent: "primary" as const,
+    category: "AI",
+    active: true,
+    route: "/intelligence",
+  },
   {
     id: "rug-checker",
     name: "Rug Checker",
@@ -107,6 +118,7 @@ const TOOL_CARDS = [
 ];
 
 const Tools = () => {
+  const navigate = useNavigate();
   const [tokenAddress, setTokenAddress] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<TokenAnalysis | null>(null);
@@ -243,7 +255,7 @@ const Tools = () => {
             return (
               <button
                 key={tool.id}
-                onClick={() => setActiveTool(tool.id)}
+                onClick={() => (("route" in tool && tool.route) ? navigate(tool.route as string) : setActiveTool(tool.id))}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-2xl border px-3 py-2 transition-all duration-200 active:scale-95",
                   isActive
