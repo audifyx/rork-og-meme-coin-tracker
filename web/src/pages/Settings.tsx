@@ -10,6 +10,15 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 // Credits removed
 import { ThemePicker } from "@/components/settings/ThemePicker";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,7 +35,7 @@ import {
   DollarSign, Bell, User, Shield, Webhook, Palette, LogOut, Eye, EyeOff,
   Check, Loader2, KeyRound, Mail, Link, Twitter, MessageSquare, Globe,
   Wallet, Star, Copy, Flame, Trophy, Zap, Clock, ChevronRight, Users, Gift, Share2,
-  Code2, Radio, Maximize2, ExternalLink, Plug,
+  Code2, Radio, Maximize2, ExternalLink, Plug, AlertTriangle, Trash2,
 } from "lucide-react";
 import {
   ccGetStoredUser,
@@ -80,6 +89,14 @@ const Settings = () => {
   // Notifications state
   const [notifications, setNotifications] = useState(DEFAULT_NOTIFICATION_PREFERENCES);
   const [savingNotifs, setSavingNotifs] = useState(false);
+
+  // Email verification state
+  const [verifyingEmail, setVerifyingEmail] = useState(false);
+
+  // Delete account state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Webhook state
   const [discordWebhook, setDiscordWebhook] = useState("");
@@ -276,6 +293,71 @@ const Settings = () => {
       setCopiedReferral(true);
       setTimeout(() => setCopiedReferral(false), 2000);
       toast.success("Referral link copied!");
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setVerifyingEmail(true);
+    try {
+      // Call the edge function to send verification email
+      const response = await fetch(`${window.location.origin}/functions/v1/send-email-verification`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to send verification email");
+      }
+
+      const data = await response.json();
+      if (data.already_verified) {
+        toast.success("Your email is already verified!");
+      } else {
+        toast.success("Verification email sent — check your inbox");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to send verification email");
+    } finally {
+      setVerifyingEmail(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      toast.error("Please enter your password to confirm");
+      return;
+    }
+
+    setDeletingAccount(true);
+    try {
+      // Call the delete-account edge function
+      const response = await fetch(`${window.location.origin}/functions/v1/delete-account`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to delete account");
+      }
+
+      toast.success("Account deleted successfully. Redirecting...");
+      // Sign out and redirect after a brief delay
+      setTimeout(() => {
+        signOut();
+        window.location.href = "/";
+      }, 1500);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete account");
+      setDeletingAccount(false);
     }
   };
 
@@ -574,6 +656,12 @@ const Settings = () => {
                       )}
                     </div>
                   </div>
+                  {!(profile as any)?.is_email_verified && (
+                    <Button onClick={handleResendVerification} disabled={verifyingEmail} className="btn-3d gap-2 w-full bg-amber-500/20 text-amber-400 border-amber-500/30 hover:bg-amber-500/30">
+                      {verifyingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                      Verify Email
+                    </Button>
+                  )}
                   <div>
                     <Label>New Email Address</Label>
                     <Input type="email" placeholder="Enter new email..." value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="mt-1" />
@@ -651,6 +739,69 @@ const Settings = () => {
                 <Button variant="outline" onClick={handleSignOut} className="border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 gap-2">
                   <LogOut className="h-4 w-4" /> Sign Out
                 </Button>
+              </Card>
+
+              {/* Delete account */}
+              <Card className="p-6 glass-card border-red-600/30 bg-red-950/10">
+                <h3 className="font-semibold mb-4 flex items-center gap-2 text-red-500">
+                  <AlertTriangle className="h-5 w-5" /> Delete Account
+                </h3>
+                <p className="text-sm text-white/40 mb-4">
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+                <Button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white gap-2 border-red-600 hover:border-red-700"
+                >
+                  <Trash2 className="h-4 w-4" /> Delete Account
+                </Button>
+
+                {/* Delete account confirmation dialog */}
+                <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                  <AlertDialogContent className="bg-slate-900/95 border-red-600/50">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-red-500 flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5" /> Delete Account?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-white/60">
+                        This will permanently delete your account, profile, and all associated data. This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-white/80">Enter your password to confirm:</Label>
+                        <Input
+                          type="password"
+                          placeholder="Your password"
+                          value={deletePassword}
+                          onChange={(e) => setDeletePassword(e.target.value)}
+                          className="mt-2 bg-white/5 border-white/10"
+                          disabled={deletingAccount}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-3">
+                      <AlertDialogCancel className="border-white/10" disabled={deletingAccount}>
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteAccount}
+                        disabled={deletingAccount || !deletePassword}
+                        className="bg-red-600 hover:bg-red-700 text-white gap-2"
+                      >
+                        {deletingAccount ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" /> Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="h-4 w-4" /> Permanently Delete
+                          </>
+                        )}
+                      </AlertDialogAction>
+                    </div>
+                  </AlertDialogContent>
+                </AlertDialog>
               </Card>
             </div>
           </div>)}
