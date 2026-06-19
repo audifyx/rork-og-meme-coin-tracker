@@ -6,19 +6,20 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Send, Brain, Zap, Users, AlertTriangle, CheckCircle } from "lucide-react";
+import { Loader2, Send, Brain, Zap, Users, FileDown, ExternalLink } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { MODEL_TEAMS, Team, ModelInfo } from "@/lib/modelTeams";
-import { SmartSignals } from "./components/SmartSignals";
-import { TokenMaturityScore } from "./components/TokenMaturityScore";
-import { DevHistoryDashboard } from "./components/DevHistoryDashboard";
-import { ContractAnalyzer } from "./components/ContractAnalyzer";
-import { HolderConcentrationTimeline } from "./components/HolderConcentrationTimeline";
-import { TokenTimelineFeed } from "./components/TokenTimelineFeed";
-import { ResearchNotes } from "./components/ResearchNotes";
-import { EcosystemMapper } from "./components/EcosystemMapper";
+import { MODEL_TEAMS, Team } from "@/lib/modelTeams";
+import { openReportHtml, downloadReportHtml } from "@/lib/reportHtml";
+import { SmartSignals } from "./advanced-intelligence/components/SmartSignals";
+import { TokenMaturityScore } from "./advanced-intelligence/components/TokenMaturityScore";
+import { DevHistoryDashboard } from "./advanced-intelligence/components/DevHistoryDashboard";
+import { ContractAnalyzer } from "./advanced-intelligence/components/ContractAnalyzer";
+import { HolderConcentrationTimeline } from "./advanced-intelligence/components/HolderConcentrationTimeline";
+import { TokenTimelineFeed } from "./advanced-intelligence/components/TokenTimelineFeed";
+import { ResearchNotes } from "./advanced-intelligence/components/ResearchNotes";
+import { EcosystemMapper } from "./advanced-intelligence/components/EcosystemMapper";
 
 interface Message {
   role: "user" | "assistant";
@@ -63,6 +64,47 @@ export const EnhancedAdvancedIntelligence = () => {
   const [context, setContext] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [tokenInput, setTokenInput] = useState(initialMint);
+
+  // AI report generation
+  const [reportLoading, setReportLoading] = useState<"open" | "download" | null>(null);
+
+  // Map the page's token (from `tokens` table) to the report generator's expected shape.
+  const toReportInput = (t: TokenData) =>
+    ({
+      token: {
+        id: t.mint,
+        symbol: t.symbol,
+        name: t.name,
+        icon: t.image_url,
+        price: t.current_price,
+        mcap: t.market_cap,
+        holderCount: t.holders_count,
+      },
+      team: selectedTeam?.id || "reasoning",
+      models: selectedTeam?.models.map((m) => m.id),
+    }) as any;
+
+  const handleGenerateReport = async (mode: "open" | "download") => {
+    if (!token) {
+      toast.error("Load a token first");
+      return;
+    }
+    setReportLoading(mode);
+    toast.info("AI agent is writing the report… this can take a few seconds");
+    try {
+      if (mode === "open") {
+        await openReportHtml(toReportInput(token));
+      } else {
+        await downloadReportHtml(toReportInput(token));
+        toast.success("Report downloaded");
+      }
+    } catch (err: any) {
+      console.error("Report error:", err);
+      toast.error(err?.message || "Failed to generate report");
+    } finally {
+      setReportLoading(null);
+    }
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -383,7 +425,7 @@ Current Token Being Analyzed:
               <>
                 {/* Token Header */}
                 <Card className="p-6 glass-card border-white/10">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex items-start gap-4">
                       {token.image_url && (
                         <img src={token.image_url} alt={token.symbol} className="h-16 w-16 rounded-lg" />
@@ -392,6 +434,33 @@ Current Token Being Analyzed:
                         <h2 className="text-2xl font-bold text-white">{token.name}</h2>
                         <p className="text-white/40 font-mono text-sm">{token.mint}</p>
                       </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => handleGenerateReport("open")}
+                        disabled={reportLoading !== null}
+                        className="btn-3d gap-2"
+                      >
+                        {reportLoading === "open" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ExternalLink className="h-4 w-4" />
+                        )}
+                        AI Report
+                      </Button>
+                      <Button
+                        onClick={() => handleGenerateReport("download")}
+                        disabled={reportLoading !== null}
+                        variant="outline"
+                        className="gap-2 border-white/10"
+                      >
+                        {reportLoading === "download" ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <FileDown className="h-4 w-4" />
+                        )}
+                        Download
+                      </Button>
                     </div>
                   </div>
                 </Card>
