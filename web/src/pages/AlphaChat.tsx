@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Bot, User as UserIcon, Loader2, Sparkles, Zap, AlertTriangle } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { supabase } from "@/lib/supabase";
+import { supabase, SUPABASE_ANON_KEY } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,64 @@ const GREETING: Message = {
   content:
     "Hey, I'm OG Scan AI — your Solana trading copilot. Ask me about tokens, wallets, DeFi strategies, risk, or how to use OGScan. What are we digging into?",
 };
+
+
+// Calls the ai-analyzer edge function. Prefers a SAME-ORIGIN proxy (/ai-fn/*,
+// configured via Vercel rewrite) so ad-blockers, VPNs, or firewalls that block
+// *.supabase.co can't kill the request. Falls back to the direct Supabase
+// invoke (e.g. local dev where the rewrite isn't active).
+async function callAiAnalyzer(
+  body: Record<string, unknown>,
+): Promise<{ analysis?: string; provider?: string; model?: string }> {
+  const direct = async () => {
+    const { data, error } = await supabase.functions.invoke("ai-analyzer", { body });
+    if (error) {
+      let detail = error.message || "Request failed";
+      try {
+        const ctx = (error as { context?: Response }).context;
+        if (ctx && typeof ctx.json === "function") {
+          const b = await ctx.json();
+          if (b?.error) detail = b.error;
+        }
+      } catch {
+        /* noop */
+      }
+      throw new Error(detail);
+    }
+    return data as { analysis?: string; provider?: string; model?: string };
+  };
+
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token || SUPABASE_ANON_KEY;
+    const res = await fetch("/ai-fn/ai-analyzer", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        apikey: SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify(body),
+    });
+    const ct = res.headers.get("content-type") || "";
+    if (ct.includes("application/json")) {
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || `Request failed (${res.status})`);
+      return json;
+    }
+    // Proxy not active (got HTML / SPA fallback) -> use direct invoke
+    return await direct();
+  } catch (e) {
+    // Genuine API error (not a transport failure) -> surface it
+    if (e instanceof Error && !/Failed to fetch|NetworkError|Load failed|fetch/i.test(e.message)) {
+      throw e;
+    }
+    // Transport failure on the proxy -> last-resort direct invoke
+    return await direct();
+  }
+}
 
 const AlphaChat = () => {
   const { user } = useAuth();
@@ -49,29 +107,12 @@ const AlphaChat = () => {
       setIsLoading(true);
 
       try {
-        const { data, error } = await supabase.functions.invoke("ai-analyzer", {
-          body: {
-            action: "chat",
-            messages: history
-              .filter((m) => m.content?.trim())
-              .map((m) => ({ role: m.role, content: m.content })),
-          },
+        const data = await callAiAnalyzer({
+          action: "chat",
+          messages: history
+            .filter((m) => m.content?.trim())
+            .map((m) => ({ role: m.role, content: m.content })),
         });
-
-        if (error) {
-          // Surface the real edge-function error body when available
-          let detail = error.message || "Request failed";
-          try {
-            const ctx = (error as { context?: Response }).context;
-            if (ctx && typeof ctx.json === "function") {
-              const body = await ctx.json();
-              if (body?.error) detail = body.error;
-            }
-          } catch {
-            /* noop */
-          }
-          throw new Error(detail);
-        }
 
         const reply = (data?.analysis as string) || "Sorry, I couldn't generate a response. Try again.";
         setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
