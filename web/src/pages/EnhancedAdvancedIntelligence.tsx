@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Send, Brain, Zap, Users, FileDown, ExternalLink } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { supabase, SUPABASE_ANON_KEY } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { MODEL_TEAMS, Team } from "@/lib/modelTeams";
@@ -104,22 +104,47 @@ const ChartEmbed = ({ url }: { url: string }) => (
   </div>
 );
 
+const fDate = (ts?: number | null) => {
+  if (!ts) return null;
+  const d = new Date(ts * 1000);
+  if (isNaN(d.getTime())) return null;
+  const days = Math.floor((Date.now() - d.getTime()) / 86400000);
+  const rel = days <= 0 ? "today" : days === 1 ? "1d ago" : days < 30 ? `${days}d ago` : `${Math.floor(days / 30)}mo ago`;
+  return `${d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "2-digit" })} (${rel})`;
+};
+
 const WalletView = ({ w }: { w: any }) => (
   <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3">
-    <div className="flex gap-4 text-[11px] text-white/60 mb-2 flex-wrap">
+    <div className="flex gap-4 text-[11px] text-white/60 mb-3 flex-wrap">
       <span>SOL: <b className="text-white">{w.solBalance != null ? Number(w.solBalance).toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—"}</b></span>
       <span>Tokens: <b className="text-white">{w.tokenCount ?? "—"}</b></span>
       <span>Est. token value: <b className="text-white">{fUsd(w.estTokenValueUsd)}</b></span>
     </div>
-    <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 gap-y-1 text-[12px]">
-      {(w.holdings || []).slice(0, 8).map((h: any, i: number) => (
-        <div key={i} className="contents">
-          <span className="text-white/80 truncate">{h.symbol || (h.mint ? h.mint.slice(0, 4) + "…" + h.mint.slice(-4) : "?")}</span>
-          <span className="text-white/40 text-right">{fAmt(h.amount)}</span>
-          <span className="text-white/70 text-right">{fUsd(h.valueUsd)}</span>
-        </div>
-      ))}
+    <div className="space-y-1.5">
+      {(w.holdings || []).slice(0, 8).map((h: any, i: number) => {
+        const first = fDate(h.firstBoughtTs);
+        const hasActivity = h.buys != null || h.sells != null;
+        return (
+          <div key={i} className="rounded-md bg-black/20 px-2.5 py-1.5">
+            <div className="flex items-center justify-between gap-3 text-[12px]">
+              <span className="text-white/90 font-medium truncate">{h.symbol || (h.mint ? h.mint.slice(0, 4) + "…" + h.mint.slice(-4) : "?")}</span>
+              <span className="text-white/40 text-right shrink-0">{fAmt(h.amount)}</span>
+              <span className="text-white/80 text-right shrink-0 w-20">{fUsd(h.valueUsd)}</span>
+            </div>
+            {(first || hasActivity) && (
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-white/45 mt-0.5">
+                {first && <span>first bought <b className="text-white/70">{first}</b></span>}
+                {h.buys != null && <span className="text-emerald-400/70">{h.buys} buys</span>}
+                {h.sells != null && <span className="text-rose-400/70">{h.sells} sells</span>}
+                {h.solSpent ? <span>spent <b className="text-white/70">{h.solSpent} SOL</b></span> : null}
+                {h.solRecv ? <span>got back <b className="text-white/70">{h.solRecv} SOL</b></span> : null}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
+    <div className="text-[9px] text-white/30 mt-2">Trade data from last 100 swaps. Exact cost-basis/PnL needs a paid source.</div>
   </div>
 );
 
@@ -149,6 +174,7 @@ export const EnhancedAdvancedIntelligence = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(MODEL_TEAMS[0]);
   const [useEnsemble, setUseEnsemble] = useState(true);
   const [context, setContext] = useState("");
@@ -309,6 +335,7 @@ export const EnhancedAdvancedIntelligence = () => {
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: userMessage, timestamp: new Date() }]);
     setLoading(true);
+    setStreaming(true);
 
     try {
       // Prepare context with token data if available
@@ -324,50 +351,98 @@ Current Token Being Analyzed:
 `
         : "";
 
-      // Call enhanced intelligence edge function (single Llama 3.1 405B)
-      const { data: responseData, error } = await supabase.functions.invoke(
-        "enhanced-intelligence",
-        {
-          body: {
-            messages: [...messages, { role: "user", content: userMessage }].map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
-            context: `${context}\n${tokenContext}`,
-          },
-        }
-      );
+      const convoMsgs = [...messages, { role: "user", content: userMessage }].map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
 
-      if (error) throw error;
-
-      const assistantMessage = responseData.content;
-      const modelsUsed = responseData.modelsUsed;
-      const consensus = responseData.consensus || 0.8;
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: assistantMessage,
-          timestamp: new Date(),
-          metadata: {
-            team: selectedTeam.name,
-            models: modelsUsed,
-            consensus: consensus,
-            toolsUsed: responseData.toolsUsed || [],
-          },
-          chart: responseData.chart || undefined,
-          tokenCard: responseData.token || undefined,
-          wallet: responseData.wallet || undefined,
+      // Real SSE streaming via the same-origin /ai-fn rewrite (adblocker-safe).
+      const { data: { session } } = await supabase.auth.getSession();
+      const resp = await fetch("/ai-fn/enhanced-intelligence", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
         },
-      ]);
+        body: JSON.stringify({ messages: convoMsgs, context: `${context}\n${tokenContext}`, stream: true }),
+      });
 
-      toast.success(`✓ Analysis by Llama 3.1 405B`);
+      if (!resp.ok || !resp.body) {
+        const errText = await resp.text().catch(() => "");
+        throw new Error(errText || `Request failed (${resp.status})`);
+      }
+
+      let inserted = false;
+      let acc = "";
+      const ensureInserted = (meta?: any) => {
+        if (inserted) return;
+        inserted = true;
+        setLoading(false); // gathering done; spinner off, bubble fills live
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "",
+            timestamp: new Date(),
+            metadata: {
+              team: selectedTeam.name,
+              models: meta?.modelsUsed || [],
+              consensus: meta?.consensus || 0.85,
+              toolsUsed: meta?.toolsUsed || [],
+            },
+            chart: meta?.chart || undefined,
+            tokenCard: meta?.token || undefined,
+            wallet: meta?.wallet || undefined,
+          },
+        ]);
+      };
+      const patchLastContent = (c: string) =>
+        setMessages((prev) => {
+          const copy = prev.slice();
+          for (let i = copy.length - 1; i >= 0; i--) {
+            if (copy[i].role === "assistant") { copy[i] = { ...copy[i], content: c }; break; }
+          }
+          return copy;
+        });
+      const handle = (obj: any) => {
+        if (obj.type === "meta") {
+          ensureInserted(obj);
+        } else if (obj.type === "delta") {
+          ensureInserted();
+          acc += obj.text || "";
+          patchLastContent(acc);
+        } else if (obj.type === "error") {
+          ensureInserted();
+          acc += `\n\n_(stream error: ${obj.error})_`;
+          patchLastContent(acc);
+        }
+      };
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const frames = buf.split("\n\n");
+        buf = frames.pop() || "";
+        for (const frame of frames) {
+          const dataLine = frame.split("\n").find((l) => l.startsWith("data:"));
+          if (!dataLine) continue;
+          const data = dataLine.slice(5).trim();
+          if (!data || data === "[DONE]") continue;
+          try { handle(JSON.parse(data)); } catch { /* ignore partial */ }
+        }
+      }
+      ensureInserted(); // safety: ensure a bubble exists even if nothing streamed
     } catch (err: any) {
       console.error("Error:", err);
       toast.error(err.message || "Failed to get response");
     } finally {
       setLoading(false);
+      setStreaming(false);
     }
   };
 
@@ -482,7 +557,7 @@ Current Token Being Analyzed:
                       }`}
                     >
                       {msg.role === "assistant"
-                        ? <TypewriterText text={msg.content} animate={idx === messages.length - 1} />
+                        ? <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}{streaming && idx === messages.length - 1 && msg.content !== "" ? <span className="inline-block w-1.5 h-4 ml-0.5 bg-white/50 align-middle animate-pulse" /> : null}</p>
                         : <p className="text-sm whitespace-pre-wrap">{msg.content}</p>}
                       {msg.tokenCard && <TokenCardView t={msg.tokenCard} />}
                       {msg.chart?.embedUrl && <ChartEmbed url={msg.chart.embedUrl} />}
