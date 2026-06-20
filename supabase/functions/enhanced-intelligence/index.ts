@@ -240,6 +240,60 @@ async function heliusWallet(address: string) {
 }
 
 
+// Per-token swap history from Helius (last 100 SWAP txs): first-buy timing,
+// buy/sell counts, SOL flows. Parses tokenTransfers/nativeTransfers (events.swap
+// is null on the free Helius plan). "When they bought" within the recent window.
+const SOL_MINT = "So11111111111111111111111111111111111111112";
+async function heliusSwapHistory(address: string) {
+  if (!HELIUS_API_KEY) return {} as Record<string, any>;
+  const txs = await fetchJson(`https://api.helius.xyz/v0/addresses/${address}/transactions?api-key=${HELIUS_API_KEY}&type=SWAP&limit=100`, {}, 12000);
+  if (!Array.isArray(txs)) return {} as Record<string, any>;
+  const per: Record<string, any> = {};
+  const touch = (m: string, ts: number | null) => {
+    per[m] = per[m] || { buys: 0, sells: 0, firstTs: null, lastTs: null, solSpent: 0, solRecv: 0 };
+    if (ts) {
+      if (!per[m].firstTs || ts < per[m].firstTs) per[m].firstTs = ts;
+      if (!per[m].lastTs || ts > per[m].lastTs) per[m].lastTs = ts;
+    }
+  };
+  for (const t of txs) {
+    const ts = t.timestamp || null;
+    const tts: any[] = Array.isArray(t.tokenTransfers) ? t.tokenTransfers : [];
+    const nts: any[] = Array.isArray(t.nativeTransfers) ? t.nativeTransfers : [];
+
+    // Owner's SOL legs this tx (wrapped-SOL token transfers + native transfers).
+    let solOut = 0; // SOL leaving owner (spent on a buy)
+    let solIn = 0;  // SOL arriving to owner (received from a sell)
+    for (const tr of tts) {
+      if (tr?.mint !== SOL_MINT) continue;
+      const amt = Number(tr.tokenAmount) || 0;
+      if (tr.fromUserAccount === address) solOut += amt;
+      if (tr.toUserAccount === address) solIn += amt;
+    }
+    for (const nt of nts) {
+      const amt = (Number(nt.amount) || 0) / 1e9;
+      if (nt.fromUserAccount === address) solOut += amt;
+      if (nt.toUserAccount === address) solIn += amt;
+    }
+
+    // Non-SOL mints the owner received (buys) / sent (sells) this tx.
+    const bought: string[] = [];
+    const sold: string[] = [];
+    for (const tr of tts) {
+      const m = tr?.mint;
+      if (!m || m === SOL_MINT) continue;
+      if (tr.toUserAccount === address) bought.push(m);
+      if (tr.fromUserAccount === address) sold.push(m);
+    }
+    // Attribute SOL flow proportionally across distinct mints in each leg.
+    const uniqBuy = [...new Set(bought)];
+    const uniqSell = [...new Set(sold)];
+    for (const m of uniqBuy) { touch(m, ts); per[m].buys++; per[m].solSpent += uniqBuy.length ? solOut / uniqBuy.length : 0; }
+    for (const m of uniqSell) { touch(m, ts); per[m].sells++; per[m].solRecv += uniqSell.length ? solIn / uniqSell.length : 0; }
+  }
+  return per;
+}
+
 function buildTokenCard(merged: any, activity: any, riskLevel: string | null) {
   if (!merged || !merged.mint) return null;
   return {
@@ -567,6 +621,16 @@ async function callNvidia(payload: Record<string, unknown>) {
   return { ok: res.ok, status: res.status, parsed, text };
 }
 
+// Streaming variant: returns the raw fetch Response so the caller can pipe the
+// OpenAI-compatible SSE chunks straight through to the client.
+async function callNvidiaStream(payload: Record<string, unknown>) {
+  return await fetch(`${NVIDIA_API_BASE}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${NVIDIA_API_KEY}` },
+    body: JSON.stringify({ ...payload, stream: true }),
+  });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -576,7 +640,7 @@ Deno.serve(async (req: Request) => {
 
     let body: any = {};
     try { body = await req.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
-    const { messages, context } = body || {};
+    const { messages, context, stream: wantStream } = body || {};
     if (!messages || !Array.isArray(messages)) return json({ error: "messages required" }, 400);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -611,9 +675,21 @@ Deno.serve(async (req: Request) => {
         toolsUsed.push("getWalletData");
         if (w) {
           const sortedTokens = (w.topTokens || []).slice().sort((a: any, b: any) => (b.valueUsd || 0) - (a.valueUsd || 0));
-          const holdings = await enrichHoldings(sortedTokens);
+          const [holdings, swaps] = await Promise.all([enrichHoldings(sortedTokens), heliusSwapHistory(mint)]);
+          // Merge per-coin buy timing / activity into each holding
+          for (const h of holdings) {
+            const sw = swaps[h.mint];
+            if (sw) {
+              h.firstBoughtTs = sw.firstTs;
+              h.lastTradeTs = sw.lastTs;
+              h.buys = sw.buys;
+              h.sells = sw.sells;
+              h.solSpent = sw.solSpent ? Math.round(sw.solSpent * 1000) / 1000 : 0;
+              h.solRecv = sw.solRecv ? Math.round(sw.solRecv * 1000) / 1000 : 0;
+            }
+          }
           const estTokenValueUsd = holdings.reduce((a: number, h: any) => a + (h.valueUsd || 0), 0);
-          walletData = { address: mint, solBalance: w.solBalance, tokenCount: w.tokenCount, estTokenValueUsd, holdings, recentTx: w.recentTx };
+          walletData = { address: mint, solBalance: w.solBalance, tokenCount: w.tokenCount, estTokenValueUsd, holdings, recentTx: w.recentTx, swapWindow: "last 100 swaps" };
           dataBlock += `WALLET (${mint}): ${JSON.stringify(walletData)}\n`;
         } else {
           dataBlock += `WALLET (${mint}): ${JSON.stringify({ error: "unavailable" })}\n`;
@@ -650,8 +726,12 @@ Deno.serve(async (req: Request) => {
       }
     } else {
       // No address — try to resolve a symbol/name to a mint for a token question.
+      // Only resolve a cashtag ($BONK) or a single-word ticker. Passing a whole
+      // sentence to DexScreener search returns the top trending token (wrong coin).
       const cashtag = (lastUser.match(/\$([A-Za-z][A-Za-z0-9]{1,9})/) || [])[1];
-      const guess = cashtag || (lastUser.length < 40 ? lastUser.replace(/[^A-Za-z0-9 ]/g, "").trim() : "");
+      const cleaned = lastUser.replace(/[^A-Za-z0-9 ]/g, "").trim();
+      const singleWord = cleaned && !/\s/.test(cleaned) && cleaned.length >= 2 && cleaned.length <= 12 ? cleaned : "";
+      const guess = cashtag || singleWord;
       const found = guess ? await dexFindMint(guess) : null;
       if (found) {
         const [tokRes, safety, activity] = await Promise.all([resolveToken(found, supabase), rugcheck(found), dexByMint(found)]);
@@ -703,13 +783,75 @@ Deno.serve(async (req: Request) => {
       `6) MEME / SARCASTIC CLOSE: one line of personality (Wojak/Pepe energy) that still ties back to the data.\n` +
       `7) FINAL CALL: the honest bottom line + exactly what to watch (top wallet flows, volume, LP). Then ALWAYS end EXACTLY with: "Always DYOR. I'm just the reaper reading the chain. NFA. — Grim"\n\n` +
       `SCAM DEFENSE: social data is pre-filtered but stay paranoid. "Vote for us on Moonshot", airdrops, "connect/verify wallet", presale/100x, follow+RT bait = engagement-farm/scam spam, NOT organic hype. If social is mostly spam or near-zero real engagement, call it manufactured bot hype and treat it as a RED FLAG. Never surface or recommend social/claim links.\n` +
-      `WALLET MODE: if the data is a WALLET (user asked about a wallet/address), skip the token-only sections and instead break it down Grim-style: SOL balance, top holdings (symbol, amount, ~USD value), recent buys/sells with timing from the activity, and call out sus patterns (fresh wallet sniping, fast dumping, coordinated funding). Be honest that exact entry prices are approximate from recent on-chain activity.\n` +
+      `WALLET MODE: if the data is a WALLET, skip token-only sections and break it down Grim-style: SOL balance, total est. token value, and the top holdings — for each give symbol, amount held, ~USD value, WHEN they first bought it (firstBoughtTs is a unix seconds timestamp; convert to a human date), buys/sells counts, and SOL spent. Call out sus patterns (fresh-wallet sniping, fast dumping, coordinated funding, paperhands vs diamond hands). firstBoughtTs is within the last 100 swaps window, so say "first bought (recent)" if it looks capped. Be honest that exact cost-basis/PnL needs a paid data source; give directional reads from SOL spent vs current value.\n` +
       `VAGUE HYPE: if the user just wants a "next 100x gem / shill me a moonshot" with no contract address: refuse to shill. Tell them straight there's no reliable "next gem" when ~98% of this is engineered exit liquidity, and demand a CA so you can run the full reaper check.\n` +
       `STYLE: punchy, not bloated. NEVER mention internal labels (TOKEN, SAFETY, ACTIVITY, NEWS, X_BUZZ, OVERALL RISK, LAUNCH, INTENT, mostlySpam) or that data was "provided" — speak like you pulled it yourself. Stay in character as Grim; never go full corporate, never get preachy.\n` +
       (dataBlock ? `\n=== LIVE CHAIN DATA (fresh pull) ===\n${dataBlock}` : `\n(No contract address detected. If they want a coin ripped apart, tell them to drop the CA. Otherwise answer in-character as Grim.)`) +
       (context ? `\nUSER CONTEXT: ${context}` : "");
 
     const convo: any[] = [{ role: "system", content: systemPrompt }, ...messages];
+    const meta = {
+      model: MODEL,
+      modelsUsed: [MODEL],
+      consensus: 0.85,
+      toolsUsed: [...new Set(toolsUsed)],
+      token: structuredToken,
+      chart,
+      wallet: walletData,
+    };
+
+    // ── Real SSE streaming branch ───────────────────────────────────────────
+    if (wantStream) {
+      const upstream = await callNvidiaStream({ model: MODEL, messages: convo, temperature: 0.85, max_tokens: 1600 });
+      if (!upstream.ok || !upstream.body) {
+        const errText = await upstream.text().catch(() => "");
+        return json({ error: `Model error: ${errText || upstream.status}` }, 502);
+      }
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      const send = (ctrl: ReadableStreamDefaultController, obj: any) =>
+        ctrl.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+
+      const sseStream = new ReadableStream({
+        async start(ctrl) {
+          // 1) Metadata first so the UI can render the coin card / chart / wallet immediately.
+          send(ctrl, { type: "meta", ...meta });
+          let any = false;
+          let buf = "";
+          const reader = upstream.body!.getReader();
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buf += decoder.decode(value, { stream: true });
+              const lines = buf.split("\n");
+              buf = lines.pop() || "";
+              for (const line of lines) {
+                const t = line.trim();
+                if (!t.startsWith("data:")) continue;
+                const data = t.slice(5).trim();
+                if (data === "[DONE]") continue;
+                try {
+                  const j = JSON.parse(data);
+                  const delta = j.choices?.[0]?.delta?.content;
+                  if (delta) { any = true; send(ctrl, { type: "delta", text: delta }); }
+                } catch { /* ignore partial */ }
+              }
+            }
+          } catch (e) {
+            send(ctrl, { type: "error", error: e instanceof Error ? e.message : String(e) });
+          }
+          if (!any) send(ctrl, { type: "delta", text: "I couldn't compose an answer — try rephrasing." });
+          send(ctrl, { type: "done" });
+          ctrl.close();
+        },
+      });
+
+      return new Response(sseStream, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" },
+      });
+    }
+
     const result = await callNvidia({ model: MODEL, messages: convo, temperature: 0.85, max_tokens: 1600 });
     if (!result.ok) {
       const msg = result.parsed?.error?.message || result.text || `NVIDIA error ${result.status}`;
@@ -719,13 +861,7 @@ Deno.serve(async (req: Request) => {
 
     return json({
       content: finalContent,
-      model: MODEL,
-      modelsUsed: [MODEL],
-      consensus: 0.85,
-      toolsUsed: [...new Set(toolsUsed)],
-      token: structuredToken,
-      chart,
-      wallet: walletData,
+      ...meta,
     });
   } catch (error: any) {
     console.error("enhanced-intelligence error:", error);
