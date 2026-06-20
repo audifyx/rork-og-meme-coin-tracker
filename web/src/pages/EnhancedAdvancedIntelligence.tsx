@@ -32,7 +32,96 @@ interface Message {
     consensus?: number;
     toolsUsed?: string[];
   };
+  chart?: { embedUrl?: string; url?: string; pairAddress?: string };
+  tokenCard?: any;
+  wallet?: any;
 }
+
+// ── Live-agent UI helpers ───────────────────────────────────────────────
+const fUsd = (n?: number | null) => {
+  if (n == null || !isFinite(n as number)) return "—";
+  const a = Math.abs(n as number);
+  if (a >= 1e9) return "$" + ((n as number) / 1e9).toFixed(2) + "B";
+  if (a >= 1e6) return "$" + ((n as number) / 1e6).toFixed(2) + "M";
+  if (a >= 1e3) return "$" + ((n as number) / 1e3).toFixed(1) + "K";
+  if (a > 0 && a < 0.01) return "$" + (n as number).toExponential(2);
+  return "$" + (n as number).toFixed(2);
+};
+const fAmt = (n?: number | null) => {
+  if (n == null || !isFinite(n as number)) return "—";
+  const a = Math.abs(n as number);
+  if (a >= 1e9) return ((n as number) / 1e9).toFixed(2) + "B";
+  if (a >= 1e6) return ((n as number) / 1e6).toFixed(2) + "M";
+  if (a >= 1e3) return ((n as number) / 1e3).toFixed(1) + "K";
+  return (n as number).toLocaleString(undefined, { maximumFractionDigits: 4 });
+};
+
+const TypewriterText = ({ text, animate }: { text: string; animate: boolean }) => {
+  const [shown, setShown] = useState(animate ? "" : text);
+  useEffect(() => {
+    if (!animate) { setShown(text); return; }
+    let i = 0; setShown("");
+    const step = Math.max(3, Math.round(text.length / 200));
+    const id = setInterval(() => {
+      i += step;
+      setShown(text.slice(0, i));
+      if (i >= text.length) { setShown(text); clearInterval(id); }
+    }, 16);
+    return () => clearInterval(id);
+  }, [text, animate]);
+  return <p className="text-sm whitespace-pre-wrap leading-relaxed">{shown}</p>;
+};
+
+const TokenCardView = ({ t }: { t: any }) => (
+  <div className="mt-3 flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-2.5">
+    {t.image && (
+      <img src={t.image} alt="" className="h-9 w-9 rounded-full object-cover shrink-0"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+    )}
+    <div className="min-w-0 flex-1">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="font-bold text-white text-sm truncate">{t.name || t.symbol || "Token"}</span>
+        {t.symbol && <span className="text-[11px] text-white/40">${t.symbol}</span>}
+        {t.riskLevel && (
+          <span className={`text-[10px] px-1.5 py-0.5 rounded ${t.riskLevel === "HIGH" ? "bg-red-500/20 text-red-300" : t.riskLevel === "MEDIUM" ? "bg-yellow-500/20 text-yellow-300" : "bg-green-500/20 text-green-300"}`}>{t.riskLevel} RISK</span>
+        )}
+      </div>
+      <div className="text-[11px] text-white/50 flex gap-3 mt-0.5 flex-wrap">
+        <span>Price {fUsd(t.priceUsd)}</span>
+        <span>MC {fUsd(t.marketCap)}</span>
+        <span>Liq {fUsd(t.liquidityUsd)}</span>
+        {t.holders != null && <span>{fAmt(t.holders)} holders</span>}
+        {t.ageDays != null && <span>{t.ageDays}d old</span>}
+      </div>
+    </div>
+    {t.dexUrl && <a href={t.dexUrl} target="_blank" rel="noreferrer" className="text-[11px] text-[#22d3ee] hover:underline shrink-0">Chart ↗</a>}
+  </div>
+);
+
+const ChartEmbed = ({ url }: { url: string }) => (
+  <div className="mt-3 overflow-hidden rounded-lg border border-white/10 bg-black/40">
+    <iframe src={url} title="DexScreener chart" loading="lazy" style={{ width: "100%", height: 340, border: 0, display: "block" }} />
+  </div>
+);
+
+const WalletView = ({ w }: { w: any }) => (
+  <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3">
+    <div className="flex gap-4 text-[11px] text-white/60 mb-2 flex-wrap">
+      <span>SOL: <b className="text-white">{w.solBalance != null ? Number(w.solBalance).toLocaleString(undefined, { maximumFractionDigits: 2 }) : "—"}</b></span>
+      <span>Tokens: <b className="text-white">{w.tokenCount ?? "—"}</b></span>
+      <span>Est. token value: <b className="text-white">{fUsd(w.estTokenValueUsd)}</b></span>
+    </div>
+    <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 gap-y-1 text-[12px]">
+      {(w.holdings || []).slice(0, 8).map((h: any, i: number) => (
+        <div key={i} className="contents">
+          <span className="text-white/80 truncate">{h.symbol || (h.mint ? h.mint.slice(0, 4) + "…" + h.mint.slice(-4) : "?")}</span>
+          <span className="text-white/40 text-right">{fAmt(h.amount)}</span>
+          <span className="text-white/70 text-right">{fUsd(h.valueUsd)}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 interface TokenData {
   mint: string;
@@ -240,9 +329,9 @@ Current Token Being Analyzed:
         "enhanced-intelligence",
         {
           body: {
-            messages: messages.map((msg) => ({
-              role: msg.role,
-              content: msg.content,
+            messages: [...messages, { role: "user", content: userMessage }].map((m) => ({
+              role: m.role,
+              content: m.content,
             })),
             context: `${context}\n${tokenContext}`,
           },
@@ -267,6 +356,9 @@ Current Token Being Analyzed:
             consensus: consensus,
             toolsUsed: responseData.toolsUsed || [],
           },
+          chart: responseData.chart || undefined,
+          tokenCard: responseData.token || undefined,
+          wallet: responseData.wallet || undefined,
         },
       ]);
 
@@ -389,7 +481,12 @@ Current Token Being Analyzed:
                           : "bg-white/5 border border-white/10 text-white/80"
                       }`}
                     >
-                      <p className="text-sm">{msg.content}</p>
+                      {msg.role === "assistant"
+                        ? <TypewriterText text={msg.content} animate={idx === messages.length - 1} />
+                        : <p className="text-sm whitespace-pre-wrap">{msg.content}</p>}
+                      {msg.tokenCard && <TokenCardView t={msg.tokenCard} />}
+                      {msg.chart?.embedUrl && <ChartEmbed url={msg.chart.embedUrl} />}
+                      {msg.wallet && <WalletView w={msg.wallet} />}
                       {msg.metadata && (
                         <div className="text-xs text-white/40 mt-2 space-y-1">
                           {msg.metadata.team && <p>Team: {msg.metadata.team}</p>}
@@ -409,7 +506,7 @@ Current Token Being Analyzed:
                 <div className="flex justify-start">
                   <div className="bg-white/5 border border-white/10 px-4 py-3 rounded-lg flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin text-white/30" />
-                    <span className="text-xs text-white/40">Team analyzing...</span>
+                    <span className="text-xs text-white/40">Grim is reading the chain<span className="animate-pulse">...</span></span>
                   </div>
                 </div>
               )}
