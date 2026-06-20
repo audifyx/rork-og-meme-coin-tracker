@@ -3,7 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const PRIMARY_GROQ_MODEL = Deno.env.get("GROQ_MODEL") || "llama-3.1-8b-instant";
+const NVIDIA_MODEL = Deno.env.get("NVIDIA_MODEL") || "meta/llama-3.3-70b-instruct";
+const NVIDIA_BASE_URL = Deno.env.get("NVIDIA_BASE_URL") || "https://integrate.api.nvidia.com/v1";
 const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-2.0-flash";
 const DEFAULT_MAX_TOKENS = Number(Deno.env.get("AI_MAX_TOKENS") || "1400");
 
@@ -49,18 +50,16 @@ type WalletTransaction = {
 
 type ProviderResult = {
   text: string;
-  provider: "groq" | "gemini";
+  provider: "nvidia" | "gemini";
   model: string;
 };
 
-function getGroqKeys() {
+function getNvidiaKeys() {
   return [
-    Deno.env.get("GROQ_API_KEY"),
-    Deno.env.get("GROQ_KEY_1"),
-    Deno.env.get("GROQ_KEY_2"),
-    Deno.env.get("GROQ_KEY_3"),
-    Deno.env.get("GROQ_KEY_4"),
-    Deno.env.get("GROQ_KEY_5"),
+    Deno.env.get("NVIDIA_API_KEY"),
+    Deno.env.get("NVIDIA_KEY_1"),
+    Deno.env.get("NVIDIA_KEY_2"),
+    Deno.env.get("NVIDIA_KEY_3"),
   ].filter((value): value is string => Boolean(value && value.trim()));
 }
 
@@ -162,25 +161,27 @@ function sanitizeMessages(messages: unknown): ChatMessage[] {
     .slice(-12);
 }
 
-async function callGroq(messages: ChatMessage[], maxTokens = DEFAULT_MAX_TOKENS): Promise<ProviderResult> {
-  const apiKeys = getGroqKeys();
+async function callNvidia(messages: ChatMessage[], maxTokens = DEFAULT_MAX_TOKENS): Promise<ProviderResult> {
+  const apiKeys = getNvidiaKeys();
   if (apiKeys.length === 0) {
-    throw new Error("No Groq API keys configured");
+    throw new Error("No NVIDIA API keys configured");
   }
 
   const failures: string[] = [];
 
   for (const apiKey of apiKeys) {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: PRIMARY_GROQ_MODEL,
+        model: NVIDIA_MODEL,
         temperature: 0.35,
+        top_p: 0.95,
         max_tokens: maxTokens,
+        stream: false,
         messages,
       }),
     });
@@ -188,20 +189,20 @@ async function callGroq(messages: ChatMessage[], maxTokens = DEFAULT_MAX_TOKENS)
     const json = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      failures.push(`Groq ${response.status}: ${json?.error?.message || JSON.stringify(json)}`);
+      failures.push(`NVIDIA ${response.status}: ${json?.error?.message || JSON.stringify(json)}`);
       continue;
     }
 
     const text = json?.choices?.[0]?.message?.content?.trim();
     if (!text) {
-      failures.push("Groq returned an empty response");
+      failures.push("NVIDIA returned an empty response");
       continue;
     }
 
-    return { text, provider: "groq", model: PRIMARY_GROQ_MODEL };
+    return { text, provider: "nvidia", model: NVIDIA_MODEL };
   }
 
-  throw new Error(failures[failures.length - 1] || "Groq request failed");
+  throw new Error(failures[failures.length - 1] || "NVIDIA request failed");
 }
 
 function messagesToGeminiText(messages: ChatMessage[]) {
@@ -246,9 +247,9 @@ async function callGemini(messages: ChatMessage[], maxTokens = DEFAULT_MAX_TOKEN
 
 async function complete(messages: ChatMessage[], maxTokens = DEFAULT_MAX_TOKENS) {
   try {
-    return await callGroq(messages, maxTokens);
-  } catch (groqError) {
-    console.error("Groq failed, falling back to Gemini:", groqError);
+    return await callNvidia(messages, maxTokens);
+  } catch (nvidiaError) {
+    console.error("NVIDIA failed, falling back to Gemini:", nvidiaError);
     return await callGemini(messages, maxTokens);
   }
 }
