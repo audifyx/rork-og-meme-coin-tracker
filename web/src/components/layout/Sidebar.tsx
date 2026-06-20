@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { OGSCAN_TOKEN_MINT, shortAddr } from "@/lib/og";
 
 // ── nav sections ────────────────────────────────────────────────────────
@@ -91,6 +91,14 @@ export const Sidebar = () => {
 
   const closeMobile = () => setMobileOpen(false);
 
+  // Always reset sidebar scroll to top when opening/route changes
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [mobileOpen, location.pathname]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
@@ -143,8 +151,8 @@ export const Sidebar = () => {
           </button>
         </div>
 
-        {/* Nav */}
-        <nav className="sidebar-scrollbar flex-1 overflow-y-auto px-2 py-3 pr-1">
+        {/* Nav — ALWAYS show all items consistently */}
+        <nav ref={scrollRef} className="sidebar-scrollbar flex-1 overflow-y-auto px-2 py-3 pr-1">
           <div className="mb-1 mt-3">
             <SectionLabel label="Main" />
             <div className="space-y-0.5">
