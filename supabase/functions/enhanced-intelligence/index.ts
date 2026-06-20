@@ -112,6 +112,7 @@ function shapeDexPair(p: any, pairCount: number) {
     websites: Array.isArray(p.info?.websites) ? p.info.websites.map((w: any) => w.url) : [],
     imageUrl: p.info?.imageUrl || null,
     dex: p.dexId,
+    pairAddress: p.pairAddress || null,
     pairCount,
     url: p.url,
   };
@@ -188,22 +189,106 @@ async function jupiterPrice(mint: string) {
 
 async function heliusWallet(address: string) {
   if (!HELIUS_API_KEY) return null;
-  const [bal, txs] = await Promise.all([
-    fetchJson(`https://api.helius.xyz/v0/addresses/${address}/balances?api-key=${HELIUS_API_KEY}`),
-    fetchJson(`https://api.helius.xyz/v0/addresses/${address}/transactions?api-key=${HELIUS_API_KEY}&limit=10`),
+  const rpc = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+  const [assetsRes, solRes, txs] = await Promise.all([
+    // DAS: fungible token holdings (amount, symbol, price when known)
+    fetchJson(rpc, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: "1", method: "getAssetsByOwner", params: { ownerAddress: address, page: 1, limit: 1000, displayOptions: { showFungible: true, showNativeBalance: true } } }),
+    }, 12000),
+    fetchJson(rpc, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: "2", method: "getBalance", params: [address] }),
+    }, 8000),
+    fetchJson(`https://api.helius.xyz/v0/addresses/${address}/transactions?api-key=${HELIUS_API_KEY}&limit=10`, {}, 10000),
   ]);
-  if (!bal && !txs) return null;
+
+  const items = assetsRes?.result?.items;
+  let solBalance: number | null = null;
+  const nativeLamports = assetsRes?.result?.nativeBalance?.lamports;
+  if (typeof nativeLamports === "number") solBalance = nativeLamports / 1e9;
+  else if (typeof solRes?.result?.value === "number") solBalance = solRes.result.value / 1e9;
+  else if (typeof solRes?.result === "number") solBalance = solRes.result / 1e9;
+
+  let topTokens: any[] = [];
+  let tokenCount: number | null = null;
+  if (Array.isArray(items)) {
+    const fungible = items.filter((it: any) => (it.interface === "FungibleToken" || it.interface === "FungibleAsset") && it.token_info);
+    tokenCount = fungible.length;
+    topTokens = fungible.map((it: any) => {
+      const ti = it.token_info || {};
+      const dec = ti.decimals || 0;
+      const amount = typeof ti.balance === "number" ? ti.balance / Math.pow(10, dec) : null;
+      const price = ti.price_info?.price_per_token ?? null;
+      const valueUsd = ti.price_info?.total_price ?? (price != null && amount != null ? price * amount : null);
+      return { mint: it.id, symbol: ti.symbol || it.content?.metadata?.symbol || null, name: it.content?.metadata?.name || null, amount, priceUsd: price, valueUsd };
+    });
+  }
+
+  if (!items && solBalance == null && !Array.isArray(txs)) return null;
   return {
     source: "helius",
-    solBalance: bal?.nativeBalance != null ? bal.nativeBalance / 1e9 : null,
-    tokenCount: Array.isArray(bal?.tokens) ? bal.tokens.length : null,
-    topTokens: Array.isArray(bal?.tokens)
-      ? bal.tokens.slice(0, 8).map((t: any) => ({ mint: t.mint, amount: t.amount / Math.pow(10, t.decimals || 0) }))
-      : null,
+    solBalance,
+    tokenCount,
+    topTokens,
     recentTx: Array.isArray(txs)
       ? txs.slice(0, 10).map((t: any) => ({ type: t.type, source: t.source, ts: t.timestamp, desc: (t.description || "").slice(0, 140) }))
       : null,
   };
+}
+
+
+function buildTokenCard(merged: any, activity: any, riskLevel: string | null) {
+  if (!merged || !merged.mint) return null;
+  return {
+    mint: merged.mint,
+    name: merged.name || null,
+    symbol: merged.symbol || null,
+    priceUsd: merged.priceUsd ?? null,
+    marketCap: merged.marketCap ?? null,
+    liquidityUsd: merged.liquidityUsd ?? activity?.liquidityUsd ?? null,
+    volume24h: merged.volume24h ?? activity?.volume24h ?? null,
+    holders: merged.holders ?? null,
+    ageDays: merged.ageDays ?? activity?.ageDays ?? null,
+    image: merged.imageUrl || null,
+    socials: merged.socials || [],
+    websites: merged.websites || [],
+    dexUrl: merged.url || activity?.url || null,
+    riskLevel: riskLevel || null,
+  };
+}
+
+function buildChart(activity: any) {
+  const pair = activity?.pairAddress;
+  if (!pair) return null;
+  return {
+    pairAddress: pair,
+    url: activity?.url || `https://dexscreener.com/solana/${pair}`,
+    embedUrl: `https://dexscreener.com/solana/${pair}?embed=1&loadChartSettings=0&theme=dark&info=0&trades=0`,
+  };
+}
+
+async function enrichHoldings(tokens: any[]) {
+  const list = (tokens || []).slice(0, 8);
+  const out = await Promise.all(list.map(async (t: any) => {
+    let price = t.priceUsd ?? null;
+    let symbol = t.symbol ?? null;
+    let name = t.name ?? null;
+    let marketCap: any = null;
+    if (price == null || symbol == null) {
+      const dex = await dexByMint(t.mint).catch(() => null);
+      price = price ?? dex?.priceUsd ?? null;
+      symbol = symbol ?? dex?.symbol ?? null;
+      name = name ?? dex?.name ?? null;
+      marketCap = dex?.marketCap ?? null;
+      if (price == null) { const jp = await jupiterPrice(t.mint).catch(() => null); price = jp?.priceUsd ?? null; }
+    }
+    const valueUsd = t.valueUsd ?? (price != null && t.amount != null ? price * t.amount : null);
+    return { mint: t.mint, symbol, name, amount: t.amount ?? null, priceUsd: price, valueUsd, marketCap };
+  }));
+  return out.sort((a: any, b: any) => (b.valueUsd || 0) - (a.valueUsd || 0));
 }
 
 function mergeToken(parts: any[]) {
@@ -508,13 +593,24 @@ Deno.serve(async (req: Request) => {
 
     let dataBlock = "";
     const toolsUsed: string[] = [];
+    let structuredToken: any = null;
+    let chart: any = null;
+    let walletData: any = null;
 
     if (mintMatches.length) {
       const mint = mintMatches[0];
       if (wantWallet) {
         const w = await heliusWallet(mint);
         toolsUsed.push("getWalletData");
-        dataBlock += `WALLET (${mint}): ${JSON.stringify(w || { error: "unavailable" })}\n`;
+        if (w) {
+          const sortedTokens = (w.topTokens || []).slice().sort((a: any, b: any) => (b.valueUsd || 0) - (a.valueUsd || 0));
+          const holdings = await enrichHoldings(sortedTokens);
+          const estTokenValueUsd = holdings.reduce((a: number, h: any) => a + (h.valueUsd || 0), 0);
+          walletData = { address: mint, solBalance: w.solBalance, tokenCount: w.tokenCount, estTokenValueUsd, holdings, recentTx: w.recentTx };
+          dataBlock += `WALLET (${mint}): ${JSON.stringify(walletData)}\n`;
+        } else {
+          dataBlock += `WALLET (${mint}): ${JSON.stringify({ error: "unavailable" })}\n`;
+        }
       } else {
         // Token question: gather everything in parallel.
         const [tokRes, safety, activity, news] = await Promise.all([
@@ -542,6 +638,8 @@ Deno.serve(async (req: Request) => {
         const risk = computeRisk(merged, safety, activity, x);
         dataBlock += `LAUNCH: launchpad=${(merged.mint || "").toLowerCase().endsWith("pump") ? "pump.fun" : "unknown"}, graduated=${activity ? "yes (has DEX liquidity)" : "no/unknown"}.\n`;
         dataBlock += `OVERALL RISK: ${risk.level} (score ${risk.score}/100). Concerns: ${risk.flags.join("; ") || "none significant"}. Positives: ${risk.goods.join("; ") || "none notable"}.\n`;
+        structuredToken = buildTokenCard(merged, activity, risk.level);
+        chart = buildChart(activity);
       }
     } else {
       // No address — try to resolve a symbol/name to a mint for a token question.
@@ -565,6 +663,8 @@ Deno.serve(async (req: Request) => {
         const risk = computeRisk(merged, safety, activity, x);
         dataBlock += `LAUNCH: launchpad=${(merged.mint || "").toLowerCase().endsWith("pump") ? "pump.fun" : "unknown"}, graduated=${activity ? "yes (has DEX liquidity)" : "no/unknown"}.\n`;
         dataBlock += `OVERALL RISK: ${risk.level} (score ${risk.score}/100). Concerns: ${risk.flags.join("; ") || "none significant"}. Positives: ${risk.goods.join("; ") || "none notable"}.\n`;
+        structuredToken = buildTokenCard(merged, activity, risk.level);
+        chart = buildChart(activity);
       } else if (/\bnext\b.*(gem|100x|1000x|moon)|\bshill\b|best.*(coin|gem|token).*(buy|ape|2026)|what.*should i (buy|ape|get)|find me a/i.test(lastUser)) {
         dataBlock += `INTENT: VAGUE_HYPE — user wants a "gem/moonshot" pick but gave no contract address.\n`;
         toolsUsed.push("intentGuard");
@@ -596,6 +696,7 @@ Deno.serve(async (req: Request) => {
       `6) MEME / SARCASTIC CLOSE: one line of personality (Wojak/Pepe energy) that still ties back to the data.\n` +
       `7) FINAL CALL: the honest bottom line + exactly what to watch (top wallet flows, volume, LP). Then ALWAYS end EXACTLY with: "Always DYOR. I'm just the reaper reading the chain. NFA. — Grim"\n\n` +
       `SCAM DEFENSE: social data is pre-filtered but stay paranoid. "Vote for us on Moonshot", airdrops, "connect/verify wallet", presale/100x, follow+RT bait = engagement-farm/scam spam, NOT organic hype. If social is mostly spam or near-zero real engagement, call it manufactured bot hype and treat it as a RED FLAG. Never surface or recommend social/claim links.\n` +
+      `WALLET MODE: if the data is a WALLET (user asked about a wallet/address), skip the token-only sections and instead break it down Grim-style: SOL balance, top holdings (symbol, amount, ~USD value), recent buys/sells with timing from the activity, and call out sus patterns (fresh wallet sniping, fast dumping, coordinated funding). Be honest that exact entry prices are approximate from recent on-chain activity.\n` +
       `VAGUE HYPE: if the user just wants a "next 100x gem / shill me a moonshot" with no contract address: refuse to shill. Tell them straight there's no reliable "next gem" when ~98% of this is engineered exit liquidity, and demand a CA so you can run the full reaper check.\n` +
       `STYLE: punchy, not bloated. NEVER mention internal labels (TOKEN, SAFETY, ACTIVITY, NEWS, X_BUZZ, OVERALL RISK, LAUNCH, INTENT, mostlySpam) or that data was "provided" — speak like you pulled it yourself. Stay in character as Grim; never go full corporate, never get preachy.\n` +
       (dataBlock ? `\n=== LIVE CHAIN DATA (fresh pull) ===\n${dataBlock}` : `\n(No contract address detected. If they want a coin ripped apart, tell them to drop the CA. Otherwise answer in-character as Grim.)`) +
@@ -615,6 +716,9 @@ Deno.serve(async (req: Request) => {
       modelsUsed: [MODEL],
       consensus: 0.85,
       toolsUsed: [...new Set(toolsUsed)],
+      token: structuredToken,
+      chart,
+      wallet: walletData,
     });
   } catch (error: any) {
     console.error("enhanced-intelligence error:", error);
