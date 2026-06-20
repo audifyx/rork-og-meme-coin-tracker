@@ -223,6 +223,44 @@ function mergeToken(parts: any[]) {
 const SCAM_RE = /(vote\s*(for|now|us)|moonshot\s*vote|\bvote\b.{0,20}(list|moonshot|win)|airdrop|claim\s*(your|now|free|reward)|free\s*(mint|sol|tokens?|crypto|nft|airdrop)|g|giveaway|presale|guaranteed|\b1?0{2,}x\b|connect\s*(your\s*)?wallet|verify\s*(your\s*)?wallet|drain|dm\s*me|send\s*\d+\s*sol|double\s*your|whitelist|\bWL\b|follow.{0,18}retweet|like.{0,18}retweet|retweet.{0,18}follow|join\s*(the\s*)?(telegram|presale|raid)|t\.me\/|bit\.ly\/|tinyurl|\bclaim\b.{0,15}\b(now|here)\b)/i;
 function isScamText(t: string) { return SCAM_RE.test(t || ""); }
 
+function fmtUsd(n: any) {
+  const x = Number(n);
+  if (!isFinite(x)) return "?";
+  const a = Math.abs(x);
+  if (a >= 1e9) return "$" + (x / 1e9).toFixed(2) + "B";
+  if (a >= 1e6) return "$" + (x / 1e6).toFixed(2) + "M";
+  if (a >= 1e3) return "$" + (x / 1e3).toFixed(1) + "K";
+  return "$" + x.toFixed(2);
+}
+
+// Deterministic Scam-Defense risk score (mirrors the OG SCAN AI Constitution).
+function computeRisk(merged: any, safety: any, activity: any, xbuzz: any) {
+  let score = 0;
+  const flags: string[] = [];
+  const goods: string[] = [];
+  if (safety) {
+    if (safety.mintAuthorityRenounced === false) { score += 40; flags.push("Mint authority LIVE — unlimited supply can be minted"); }
+    else if (safety.mintAuthorityRenounced === true) goods.push("Mint authority renounced");
+    if (safety.freezeAuthorityRenounced === false) { score += 30; flags.push("Freeze authority ACTIVE — your tokens can be frozen / sells halted"); }
+    else if (safety.freezeAuthorityRenounced === true) goods.push("Freeze authority renounced");
+    const lp = safety.lpLockedPct;
+    if (lp != null) { if (lp < 50) { score += 35; flags.push(`LP only ${lp}% locked — liquidity can be pulled`); } else goods.push(`LP ${lp}% locked/burned`); }
+    const top10 = safety.top10HolderPct;
+    if (top10 != null && top10 > 40) { score += 25; flags.push(`Top-10 wallets hold ${top10}% — heavy insider concentration`); }
+    else if (top10 != null) goods.push(`Top-10 hold ${top10}%`);
+    if (Array.isArray(safety.risks)) for (const r of safety.risks) { if (/danger|high/i.test(String(r.level))) { score += 10; flags.push(`RugCheck: ${r.name}`); } }
+  }
+  const liq = merged?.liquidityUsd ?? activity?.liquidityUsd;
+  const mc = merged?.marketCap;
+  if (liq != null && mc && liq < mc * 0.05) { score += 20; flags.push(`Thin liquidity ${fmtUsd(liq)} vs market cap ${fmtUsd(mc)} — easy to manipulate`); }
+  const age = merged?.ageDays ?? activity?.ageDays;
+  if (age != null && age < 3) { score += 15; flags.push(`Only ${age}d old — unproven, peak rug window`); }
+  if (xbuzz && xbuzz.mostlySpam) { score += 10; flags.push("X buzz is mostly scam/bot spam — manufactured hype, not organic"); }
+  const level = score >= 50 ? "HIGH" : (score >= 25 ? "MEDIUM" : "LOW");
+  return { level, score, flags, goods };
+}
+
+
 async function rugcheck(mint: string) {
   const d = await fetchJson(`https://api.rugcheck.xyz/v1/tokens/${mint}/report`, {}, 10000);
   if (!d) return null;
@@ -501,6 +539,8 @@ Deno.serve(async (req: Request) => {
         const finalNews = (betterNews && betterNews.length ? betterNews : news) || [];
         if (finalNews.length) dataBlock += `NEWS: ${JSON.stringify(finalNews)}\n`;
         if (x) dataBlock += `X_BUZZ: ${JSON.stringify(x)}\n`;
+        const risk = computeRisk(merged, safety, activity, x);
+        dataBlock += `OVERALL RISK: ${risk.level} (score ${risk.score}/100). Concerns: ${risk.flags.join("; ") || "none significant"}. Positives: ${risk.goods.join("; ") || "none notable"}.\n`;
       }
     } else {
       // No address — try to resolve a symbol/name to a mint for a token question.
@@ -521,6 +561,11 @@ Deno.serve(async (req: Request) => {
         if (activity) dataBlock += `ACTIVITY: ${JSON.stringify({ volume24h: activity.volume24h, txns24h: activity.txns24h, priceChange: activity.priceChange, ageDays: activity.ageDays })}\n`;
         if (news && news.length) dataBlock += `NEWS: ${JSON.stringify(news)}\n`;
         if (x) dataBlock += `X_BUZZ: ${JSON.stringify(x)}\n`;
+        const risk = computeRisk(merged, safety, activity, x);
+        dataBlock += `OVERALL RISK: ${risk.level} (score ${risk.score}/100). Concerns: ${risk.flags.join("; ") || "none significant"}. Positives: ${risk.goods.join("; ") || "none notable"}.\n`;
+      } else if (/\bnext\b.*(gem|100x|1000x|moon)|\bshill\b|best.*(coin|gem|token).*(buy|ape|2026)|what.*should i (buy|ape|get)|find me a/i.test(lastUser)) {
+        dataBlock += `INTENT: VAGUE_HYPE — user wants a "gem/moonshot" pick but gave no contract address.\n`;
+        toolsUsed.push("intentGuard");
       } else if (/news|happening|trend|why|sentiment|market/i.test(lastUser)) {
         // General crypto/news question
         const news = await googleNews(lastUser.slice(0, 120));
@@ -529,18 +574,22 @@ Deno.serve(async (req: Request) => {
     }
 
     const systemPrompt =
-      `You are OG Scan AI — a sharp, conversational Solana analyst who talks like a knowledgeable degen trader explaining things to a friend. ` +
-      `Answer the user's EXACT question directly and naturally, in your own words. Never dump raw stats, never paste a template, never list every metric.\n\n` +
-      `You are given a LIVE DATA block (real on-chain + market + news + X/social data fetched just now). Base your answer ONLY on it plus general crypto knowledge — never invent numbers, news, or holders.\n\n` +
+      `You are OG SCAN's Elite On-Chain Intelligence Guardian — a Grok-style, truth-seeking Solana analyst. You talk like a sharp, witty degen who protects capital: direct, anti-hype, zero sycophancy, zero FOMO, zero "to the moon" without on-chain proof. Answer the user's EXACT question conversationally, in your own words — never dump raw stats or paste a template.\n\n` +
+      `IMMUTABLE PRINCIPLES:\n` +
+      `- On-chain data is the ONLY ground truth. Social/X/news is adversarial by default; discount it heavily and corroborate on-chain.\n` +
+      `- Solana pump.fun is ~98% exit-scam territory. Assume malice until on-chain evidence proves otherwise.\n` +
+      `- Protect the user's capital above everything. One bad call destroys trust.\n\n` +
+      `You are given a LIVE DATA block (real on-chain + market + scam-filtered news/X fetched just now) and a deterministic RISK_ASSESSMENT (level + flags). Base your answer ONLY on it plus general crypto knowledge — NEVER invent numbers, holders, news, or links.\n\n` +
       `HOW TO ANSWER:\n` +
-      `- Lead with a direct verdict in your own voice (e.g. "Yeah this looks fairly legit, but..." or "Careful — there are real rug flags here:").\n` +
-      `- For "is it safe / rug?": weigh SAFETY (risk score, mint & freeze authority renounced, LP locked %, top-10 holder concentration), plus liquidity vs market cap and token age. Spell out the actual risks.\n` +
-      `- For "is it an OG?": judge legitimacy from token age, holder count, liquidity depth, LP lock, renounced authorities, and real social/community presence. Say clearly if it's an established OG vs a fresh pump.fun launch.\n` +
-      `- For "why is it viral / tell me about the project": use NEWS, X_BUZZ, and the token's socials/website to explain the narrative, who's behind it, and what's driving attention. If social data is thin, say so honestly.\n` +
-      `- SCAM AWARENESS: X_BUZZ/NEWS are already scam-filtered, but stay skeptical. "Vote for us on Moonshot", airdrops, giveaways, "connect/verify wallet", presale/100x hype = engagement-farming/scam spam, NOT organic virality. If X_BUZZ shows mostlySpam=true, a high spamFilteredOut, or low realCount/engagement, say the hype looks manufactured/bot-driven and treat it as a RED FLAG — do not present spammy campaigns as genuine community momentum.\n` +
-      `- Highlight only the 2-5 things that matter for the question. Be concise, opinionated, human. Use a few numbers where they matter, not all of them.\n` +
-      `- End with a one-line, non-preachy "not financial advice" note ONLY when you lean bullish/bearish.\n` +
-      (dataBlock ? `\n=== LIVE DATA ===\n${dataBlock}` : `\n(No specific token detected — answer conversationally and ask for a mint/symbol if needed.)`) +
+      `- Lead with a clear verdict in your own voice, anchored to the OVERALL RISK level. If HIGH: do NOT frame positively — warn plainly and list the flags. If LOW: "relatively cleaner, still volatile."\n` +
+      `- "Is it safe/rug?": weigh mint & freeze authority (renounced = better), LP locked %, top-holder concentration, liquidity vs market cap, age. Spell out the actual risks from the flags.\n` +
+      `- "Is it an OG?": judge from age, holder count, liquidity depth, LP lock, renounced authorities, and REAL (non-spam) social presence. State clearly: established OG vs fresh pump.fun launch.\n` +
+      `- "Why viral?": use NEWS + X_BUZZ + the token's socials for the narrative. If X is mostlySpam / low real engagement, call it manufactured bot hype — a RED FLAG, not momentum. NEVER amplify "vote/airdrop/claim/connect wallet/presale/100x" bait or social links.\n` +
+      `- If INTENT is VAGUE_HYPE (no contract address): refuse to shill. Reply that there's no reliable "next gem" in ~98% scam territory, vague social picks are adversarial by design, and ask for a specific mint/symbol so you can run the full on-chain check.\n` +
+      `- Be concise, elegant, opinionated. Use only the few numbers that matter. State confidence ("High confidence based on X, Y, Z"). Acknowledge unknowns.\n` +
+      `- End with a concrete next step (what to verify) + a one-line "not financial advice" note ONLY when leaning bull/bear.\n` +
+      `FORBIDDEN: shilling, urgency/FOMO language, recommending clicking social links, presenting unverified hype as fact, engaging positively with drainers/impersonators. Also NEVER mention internal field names (OVERALL RISK, LIVE DATA, X_BUZZ, ACTIVITY, mostlySpam, TOKEN, SAFETY, etc.) or that data was "provided" to you — just speak naturally as if you looked it up yourself.\n` +
+      (dataBlock ? `\n=== LIVE DATA ===\n${dataBlock}` : `\n(No specific token or contract detected — answer conversationally; if they want a token analysis, ask for the mint or symbol.)`) +
       (context ? `\nUSER CONTEXT: ${context}` : "");
 
     const convo: any[] = [{ role: "system", content: systemPrompt }, ...messages];
