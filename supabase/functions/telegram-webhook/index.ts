@@ -523,28 +523,110 @@ function formatScan(s: any): string {
 
 // Conversational reply for normal chat. Talks naturally; only goes into crypto
 // analysis if the user gives a CA/wallet or explicitly asks about a token/project.
-async function chatReply(userText: string, identity = "", knowledge = "", model = ""): Promise<string> {
-  const NVIDIA_API_KEY = Deno.env.get("NVIDIA_API_KEY") || "";
-  const NVIDIA_BASE = Deno.env.get("NVIDIA_BASE_URL") || "https://integrate.api.nvidia.com/v1";
-  const MODEL = resolveModel(model || Deno.env.get("NVIDIA_CHAT_MODEL"));
-  const sys =
-    (identity || "You are a friendly, helpful assistant for OG Scan, a Solana analytics bot.") +
+function buildChatSys(identity: string, knowledge: string): string {
+  return (identity || "You are a friendly, helpful assistant for OG Scan, a Solana analytics bot.") +
     `\n\nYou are chatting on Telegram. Reply naturally and conversationally, matching the user's tone and length. Keep it human and brief.\n` +
     `RULES:\n` +
     `- For greetings, small talk, jokes, or general questions, just reply normally (e.g. if they say "gm", say gm back). Do NOT output token analysis, prices, market data, risk flags, or score breakdowns unless the user gives a contract address or explicitly asks about a specific token, wallet, or project.\n` +
     `- Never invent token prices or stats. If they want data on a token/wallet, tell them to paste the contract address or use /scan, /wallet, or /report.\n` +
     `- Stay in character if a persona is set, but don't force crypto talk into casual conversation.` +
     (knowledge ? `\n\nReference info from the bot owner (use only if relevant to the user's message):\n${knowledge}` : "");
+}
+
+// Parse an OpenAI-compatible SSE body, yielding only the text deltas.
+async function* parseOpenAiSSE(body: ReadableStream<Uint8Array>): AsyncGenerator<string> {
+  const reader = body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop() || "";
+    for (const line of lines) {
+      const t = line.trim();
+      if (!t.startsWith("data:")) continue;
+      const data = t.slice(5).trim();
+      if (!data || data === "[DONE]") continue;
+      try { const j = JSON.parse(data); const d = j.choices?.[0]?.delta?.content; if (d) yield d; } catch { /* partial */ }
+    }
+  }
+}
+
+// Streaming casual chat: yields deltas straight from NVIDIA.
+async function* chatReplyStream(userText: string, identity = "", knowledge = "", model = ""): AsyncGenerator<string> {
+  const NVIDIA_API_KEY = Deno.env.get("NVIDIA_API_KEY") || "";
+  const NVIDIA_BASE = Deno.env.get("NVIDIA_BASE_URL") || "https://integrate.api.nvidia.com/v1";
+  const MODEL = resolveModel(model || Deno.env.get("NVIDIA_CHAT_MODEL"));
+  const sys = buildChatSys(identity, knowledge);
+  let r: Response;
   try {
-    const r = await fetch(`${NVIDIA_BASE}/chat/completions`, {
+    r = await fetch(`${NVIDIA_BASE}/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${NVIDIA_API_KEY}` },
-      body: JSON.stringify({ model: MODEL, messages: [{ role: "system", content: sys }, { role: "user", content: userText }], temperature: 0.7, max_tokens: 500 }),
-      signal: AbortSignal.timeout(30000),
+      body: JSON.stringify({ model: MODEL, messages: [{ role: "system", content: sys }, { role: "user", content: userText }], temperature: 0.7, max_tokens: 500, stream: true }),
+      signal: AbortSignal.timeout(60000),
     });
-    const j = await r.json();
-    return String(j.choices?.[0]?.message?.content || "").trim() || "gm";
-  } catch { return "gm"; }
+  } catch { yield "gm"; return; }
+  if (!r.ok || !r.body) { yield "gm"; return; }
+  yield* parseOpenAiSSE(r.body);
+}
+
+async function chatReply(userText: string, identity = "", knowledge = "", model = ""): Promise<string> {
+  let out = "";
+  try { for await (const d of chatReplyStream(userText, identity, knowledge, model)) out += d; } catch { /* ignore */ }
+  return out.trim() || "gm";
+}
+
+// ── Live "typing" streamer ──────────────────────────────────────────────────
+// Posts a placeholder then edits it as deltas arrive, so users watch the bot
+// type in real time, while ALSO keeping the Telegram "typing…" indicator on.
+// Edits are throttled (Telegram rate limits) and it falls back to chunked
+// messages for anything beyond a single message's length cap.
+async function streamToTelegram(
+  botToken: string,
+  chatId: number,
+  deltas: AsyncIterable<string>,
+  opts: { replyTo?: number } = {},
+): Promise<string> {
+  const EDIT_MS = 1200;
+  const CAP = 3500;
+  const replyExtra = opts.replyTo ? { reply_to_message_id: opts.replyTo } : {};
+  const sent = await tg(botToken, "sendMessage", { chat_id: chatId, text: "\uD83D\uDC80 \u2026", ...replyExtra });
+  const msgId = sent?.result?.message_id as number | undefined;
+  let full = "", shown = "", lastEdit = 0, capped = false, typing = true;
+  // Keep the "typing…" status alive alongside the live edits.
+  (async () => {
+    while (typing) {
+      await tg(botToken, "sendChatAction", { chat_id: chatId, action: "typing" });
+      await new Promise((res) => setTimeout(res, 4000));
+    }
+  })();
+  const edit = (txt: string) => tg(botToken, "editMessageText", { chat_id: chatId, message_id: msgId, text: txt, disable_web_page_preview: true });
+  try {
+    for await (const d of deltas) {
+      if (!d) continue;
+      full += d;
+      if (!msgId || capped) continue;
+      if (full.length <= CAP) {
+        const now = Date.now();
+        if (now - lastEdit >= EDIT_MS && full.trim() && full !== shown) { shown = full; lastEdit = now; await edit(full + " \u258C"); }
+      } else {
+        capped = true;
+        const cut = full.slice(0, CAP);
+        const nl = cut.lastIndexOf("\n");
+        shown = nl > CAP * 0.6 ? cut.slice(0, nl) : cut;
+        await edit(shown);
+      }
+    }
+  } catch { /* finalize below */ }
+  typing = false;
+  const finalText = full.trim() || "\u2026";
+  if (!msgId) { await sendLong(botToken, chatId, finalText, replyExtra); return full; }
+  if (!capped) { if (finalText !== shown) await edit(finalText); }
+  else { const rest = full.slice(shown.length).trim(); if (rest) await sendLong(botToken, chatId, rest, replyExtra); }
+  return full;
 }
 
 async function askGrim(text: string, knowledge = "", identity = "", model = "") {
@@ -563,6 +645,39 @@ async function askGrim(text: string, knowledge = "", identity = "", model = "") 
     return j.content || j.error || "Couldn't read the chain right now, try again.";
   } catch (e) {
     return "Grim's RPC hiccuped. Try again in a sec.";
+  }
+}
+
+// Streaming Grim analysis: reads enhanced-intelligence SSE deltas.
+async function* askGrimStream(text: string, knowledge = "", identity = "", model = ""): AsyncGenerator<string> {
+  const context = "Source: Telegram bot"
+    + (identity ? `\n\n${identity}` : "")
+    + (knowledge ? `\n\nThe bot owner trained you with these reference docs — use them when relevant, and prefer them over generic knowledge:\n${knowledge}` : "");
+  let r: Response;
+  try {
+    r = await fetch(`${SUPABASE_URL}/functions/v1/enhanced-intelligence`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
+      body: JSON.stringify({ messages: [{ role: "user", content: text }], context, model: resolveModel(model), stream: true }),
+    });
+  } catch { yield "Grim's RPC hiccuped. Try again in a sec."; return; }
+  if (!r.ok || !r.body) { yield "Couldn't read the chain right now, try again."; return; }
+  const reader = r.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop() || "";
+    for (const line of lines) {
+      const t = line.trim();
+      if (!t.startsWith("data:")) continue;
+      const data = t.slice(5).trim();
+      if (!data) continue;
+      try { const j = JSON.parse(data); if (j.type === "delta" && j.text) yield j.text; } catch { /* partial */ }
+    }
   }
 }
 
@@ -835,8 +950,7 @@ Deno.serve(async (req) => {
       if (bot.ai_enabled) {
         const scanPrompt = `Run a full OG Scan token analysis of: ${arg}. Cover liquidity, holder concentration, LP/contract risk, dev history, and finish with a clear verdict.`;
         const knowledge = await retrieveKnowledge(bot.id, arg);
-        const answer = await askGrim(scanPrompt, knowledge, identity, bot.ai_model);
-        await sendLong(token, chatId, answer, isGroup ? { reply_to_message_id: msg.message_id } : {});
+        await streamToTelegram(token, chatId, askGrimStream(scanPrompt, knowledge, identity, bot.ai_model), isGroup ? { replyTo: msg.message_id } : {});
       } else {
         await tg(token, "sendMessage", { chat_id: chatId, text: scan?.error || "Couldn't find that token." });
       }
@@ -878,8 +992,7 @@ Deno.serve(async (req) => {
         if (scan && scan.ok) { await sendLong(token, chatId, formatScan(scan), { parse_mode: "HTML", ...(isGroup ? { reply_to_message_id: msg.message_id } : {}) }); return ok(); }
       }
       const knowledge = await retrieveKnowledge(bot.id, prompt);
-      const answer = await chatReply(prompt, identity, knowledge, bot.ai_model);
-      await sendLong(token, chatId, answer, isGroup ? { reply_to_message_id: msg.message_id } : {});
+      await streamToTelegram(token, chatId, chatReplyStream(prompt, identity, knowledge, bot.ai_model), isGroup ? { replyTo: msg.message_id } : {});
       return ok();
     }
 
@@ -927,8 +1040,7 @@ Deno.serve(async (req) => {
           await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
           const prompt = `${custom.content}\n\nUser input: ${arg || "(none)"}`;
           const knowledge = await retrieveKnowledge(bot.id, arg || custom.content);
-          const answer = await askGrim(prompt, knowledge, identity, bot.ai_model);
-          await sendLong(token, chatId, answer, isGroup ? { reply_to_message_id: msg.message_id } : {});
+          await streamToTelegram(token, chatId, askGrimStream(prompt, knowledge, identity, bot.ai_model), isGroup ? { replyTo: msg.message_id } : {});
         } else {
           const uname = msg.from?.username ? "@" + msg.from.username : (msg.from?.first_name || "there");
           const out = (custom.content || "").replace(/\{arg\}/g, arg).replace(/\{user\}/g, uname);
@@ -969,8 +1081,7 @@ Deno.serve(async (req) => {
       const prompt = cleanText || "gm";
       await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
       const knowledge = await retrieveKnowledge(bot.id, prompt);
-      const answer = await chatReply(prompt, identity, knowledge, bot.ai_model);
-      await sendLong(token, chatId, answer, isGroup ? { reply_to_message_id: msg.message_id } : {});
+      await streamToTelegram(token, chatId, chatReplyStream(prompt, identity, knowledge, bot.ai_model), isGroup ? { replyTo: msg.message_id } : {});
     }
     return ok();
   } catch (e) {
