@@ -40,7 +40,9 @@ const safe = (b: any) => b && ({
 const RESERVED_COMMANDS = new Set([
   "start", "help", "chat", "ask", "grim", "c", "scan", "analyze",
   "news", "alpha", "calls", "callouts", "migrations", "migrated",
-  "graduations", "alerts",
+  "graduations", "alerts", "digest",
+  "price", "p", "btc", "eth", "sol", "global", "market", "fear", "fng", "feargreed", "tvl",
+  "trending", "trend", "wallet", "portfolio", "pnl", "holders", "watch", "watchlist", "unwatch", "report", "pdf",
 ]);
 
 function normalizeCommand(raw: string): string {
@@ -59,6 +61,13 @@ async function refreshCommandMenu(admin: any, botToken: string, botRowId: string
     { command: "watch", description: "Watch a token for price moves" },
     { command: "watchlist", description: "Show your watchlist" },
     { command: "trending", description: "Top trending tokens (24h)" },
+    { command: "price", description: "Price + stats for any coin" },
+    { command: "btc", description: "Bitcoin price" },
+    { command: "eth", description: "Ethereum price" },
+    { command: "sol", description: "Solana price" },
+    { command: "global", description: "Global market cap + dominance" },
+    { command: "fear", description: "Crypto Fear & Greed index" },
+    { command: "tvl", description: "DeFi TVL by chain" },
     { command: "news", description: "Latest crypto headlines" },
     { command: "alpha", description: "Community alpha callouts" },
     { command: "migrations", description: "Pump.fun graduations (last 24h)" },

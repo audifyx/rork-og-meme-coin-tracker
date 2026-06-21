@@ -78,6 +78,79 @@ function migrationsText(migs: any[], hours: number) {
 
 // Retrieve the bot owner's uploaded training knowledge most relevant to the
 // query (Postgres full-text search) so Grim can use it as extra context.
+// ── Free multi-chain market data (no API key needed) ────────────────────────
+async function cgJson(path: string): Promise<any | null> {
+  try {
+    const r = await fetch(`https://api.coingecko.com/api/v3${path}`, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(8000) });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
+function arrow(n: any) { const v = Number(n); return isFinite(v) && v < 0 ? "\uD83D\uDD3B" : "\uD83D\uDFE2"; }
+
+async function cgResolveId(q: string): Promise<{ id: string; symbol: string; name: string } | null> {
+  const known: Record<string, string> = { btc:"bitcoin", eth:"ethereum", sol:"solana", bnb:"binancecoin", xrp:"ripple", ada:"cardano", doge:"dogecoin", avax:"avalanche-2", matic:"matic-network", ton:"the-open-network", trx:"tron", link:"chainlink", dot:"polkadot", shib:"shiba-inu", pepe:"pepe", wif:"dogwifcoin", bonk:"bonk" };
+  const key = q.toLowerCase().replace(/^\$/, "").trim();
+  if (known[key]) return { id: known[key], symbol: key, name: key };
+  const sr = await cgJson(`/search?query=${encodeURIComponent(key)}`);
+  const c = sr?.coins?.[0];
+  return c ? { id: c.id, symbol: c.symbol, name: c.name } : null;
+}
+
+async function priceText(query: string): Promise<string> {
+  const r = await cgResolveId(query);
+  if (!r) return `Couldn't find a coin matching "${escHtml(query)}".`;
+  const d = await cgJson(`/coins/${r.id}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`);
+  const m = d?.market_data;
+  if (!m) return `Couldn't pull market data for ${escHtml(r.name)} right now.`;
+  const price = m.current_price?.usd;
+  const ch24 = m.price_change_percentage_24h;
+  const priceStr = price != null ? price.toLocaleString(undefined, { maximumFractionDigits: price < 1 ? 6 : 2 }) : "?";
+  return `${arrow(ch24)} <b>${escHtml(d.name)}</b> (${escHtml(String(r.symbol || "").toUpperCase())})${d.market_cap_rank ? ` \u00B7 #${d.market_cap_rank}` : ""}\n`
+    + `Price: <b>$${priceStr}</b> (${pctStr(ch24)} 24h)\n`
+    + `MC: ${fmtUsd(m.market_cap?.usd)} \u00B7 Vol: ${fmtUsd(m.total_volume?.usd)} \u00B7 ATH: $${m.ath?.usd?.toLocaleString?.() ?? "?"}\n`
+    + `7d: ${pctStr(m.price_change_percentage_7d)} \u00B7 30d: ${pctStr(m.price_change_percentage_30d)}`;
+}
+
+async function globalText(): Promise<string> {
+  const g = await cgJson(`/global`);
+  const d = g?.data;
+  if (!d) return "Couldn't pull global market data right now.";
+  return `\uD83C\uDF10 <b>Global Crypto Market</b>\n`
+    + `Total MC: <b>${fmtUsd(d.total_market_cap?.usd)}</b> (${pctStr(d.market_cap_change_percentage_24h_usd)} 24h)\n`
+    + `24h Vol: ${fmtUsd(d.total_volume?.usd)}\n`
+    + `BTC dominance: ${d.market_cap_percentage?.btc?.toFixed(1)}% \u00B7 ETH: ${d.market_cap_percentage?.eth?.toFixed(1)}%\n`
+    + `Active coins: ${(d.active_cryptocurrencies ?? "?").toLocaleString?.() ?? d.active_cryptocurrencies}`;
+}
+
+async function fearGreedText(): Promise<string> {
+  try {
+    const r = await fetch("https://api.alternative.me/fng/?limit=1", { signal: AbortSignal.timeout(8000) });
+    const j = await r.json();
+    const d = j?.data?.[0];
+    if (!d) return "Couldn't pull the Fear & Greed index right now.";
+    const v = Number(d.value);
+    const e = v >= 75 ? "\uD83E\uDD11" : v >= 55 ? "\uD83D\uDE42" : v >= 45 ? "\uD83D\uDE10" : v >= 25 ? "\uD83D\uDE28" : "\uD83D\uDE31";
+    return `${e} <b>Crypto Fear & Greed Index</b>\n<b>${escHtml(String(d.value))}/100</b> \u2014 ${escHtml(d.value_classification)}`;
+  } catch { return "Couldn't pull the Fear & Greed index right now."; }
+}
+
+async function tvlText(query: string): Promise<string> {
+  try {
+    const r = await fetch("https://api.llama.fi/v2/chains", { signal: AbortSignal.timeout(8000) });
+    const arr = await r.json();
+    if (!Array.isArray(arr)) return "Couldn't pull TVL right now.";
+    if (query) {
+      const q = query.toLowerCase();
+      const c = arr.find((x: any) => String(x.name || "").toLowerCase() === q) || arr.find((x: any) => String(x.name || "").toLowerCase().includes(q));
+      if (!c) return `No TVL data for "${escHtml(query)}".`;
+      return `\uD83D\uDD17 <b>${escHtml(c.name)} TVL</b>: ${fmtUsd(c.tvl)}`;
+    }
+    const top = arr.slice().sort((a: any, b: any) => (b.tvl || 0) - (a.tvl || 0)).slice(0, 10);
+    return `\uD83D\uDD17 <b>Top chains by TVL</b>\n` + top.map((c: any, i: number) => `${i + 1}. ${escHtml(c.name)} \u2014 ${fmtUsd(c.tvl)}`).join("\n");
+  } catch { return "Couldn't pull TVL right now."; }
+}
+
 async function retrieveKnowledge(botRowId: string, query: string): Promise<string> {
   try {
     const { data } = await admin
@@ -578,6 +651,10 @@ Deno.serve(async (req) => {
           `/chat — ask Grim anything (works in groups too)\n` +
           `/scan <token> — full token risk report (same as the site)\n` +
           `/trending — top trending tokens (24h)\n` +
+          `/price <coin> — price + stats, any chain (/btc /eth /sol)\n` +
+          `/global — total market cap + BTC dominance\n` +
+          `/fear — crypto Fear & Greed index\n` +
+          `/tvl [chain] — DeFi TVL by chain\n` +
           `/report <token> — PDF intelligence report\n` +
           `/wallet <address> — wallet portfolio snapshot\n` +
           `/pnl <address> — wallet PnL (last 100 txns)\n` +
@@ -617,6 +694,39 @@ Deno.serve(async (req) => {
     if (cmd === "/trending" || cmd === "/trend") {
       await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
       await sendLong(token, chatId, await getTrendingText(10), { parse_mode: "HTML" });
+      return ok();
+    }
+
+    if (cmd === "/price" || cmd === "/p") {
+      const arg = text.replace(/^\S+\s*/, "").trim();
+      if (!arg) { await tg(token, "sendMessage", { chat_id: chatId, text: "Usage: /price <coin> — e.g. /price btc, /price solana, /price pepe" }); return ok(); }
+      await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
+      await sendLong(token, chatId, await priceText(arg), { parse_mode: "HTML" });
+      return ok();
+    }
+
+    if (cmd === "/btc" || cmd === "/eth" || cmd === "/sol") {
+      await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
+      await sendLong(token, chatId, await priceText(cmd.slice(1)), { parse_mode: "HTML" });
+      return ok();
+    }
+
+    if (cmd === "/global" || cmd === "/market") {
+      await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
+      await sendLong(token, chatId, await globalText(), { parse_mode: "HTML" });
+      return ok();
+    }
+
+    if (cmd === "/fear" || cmd === "/fng" || cmd === "/feargreed") {
+      await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
+      await sendLong(token, chatId, await fearGreedText(), { parse_mode: "HTML" });
+      return ok();
+    }
+
+    if (cmd === "/tvl") {
+      const arg = text.replace(/^\S+\s*/, "").trim();
+      await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
+      await sendLong(token, chatId, await tvlText(arg), { parse_mode: "HTML" });
       return ok();
     }
 
