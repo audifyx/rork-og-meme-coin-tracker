@@ -36,6 +36,7 @@ import {
   Check, Loader2, KeyRound, Mail, Link, Twitter, MessageSquare, Globe,
   Wallet, Star, Copy, Flame, Trophy, Zap, Clock, ChevronRight, Users, Gift, Share2,
   Code2, Radio, Maximize2, ExternalLink, Plug, AlertTriangle, Trash2,
+  Rocket, RefreshCw, Bot, Send,
 } from "lucide-react";
 import {
   ccGetStoredUser,
@@ -1362,6 +1363,12 @@ function ConnectionsTab() {
         </div>
       </Card>
 
+      {/* Card 3: Telegram Bot (multi-tenant — user brings their own bot) */}
+      <TelegramBotCard />
+
+      {/* Pump.fun migrations (24h) — powers the Telegram alerts + on-demand view */}
+      <MigrationsPanel />
+
       {/* More integrations coming soon */}
       <Card className="p-5 glass-card border-white/[0.04] opacity-60">
         <div className="flex items-center gap-3">
@@ -1378,6 +1385,198 @@ function ConnectionsTab() {
         </div>
       </Card>
     </div>
+  );
+}
+
+
+/* ──────────────────────────────────────────────────────────────────
+   Telegram Bot — connect your OWN bot for pump.fun migration alerts +
+   Grim AI chat (same models + APIs as the in-app intelligence chat).
+   ────────────────────────────────────────────────────────────────── */
+function TelegramBotCard() {
+  const [bot, setBot] = useState<any>(null);
+  const [tokenInput, setTokenInput] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    try {
+      const { data } = await supabase.functions.invoke("telegram-connect", { body: { action: "status" } });
+      setBot(data?.bot || null);
+    } catch { /* ignore */ } finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, []);
+
+  const connect = async () => {
+    if (!tokenInput.trim()) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("telegram-connect", { body: { action: "connect", botToken: tokenInput.trim() } });
+      if (error || data?.error) throw new Error(data?.error || error?.message);
+      setBot(data.bot); setTokenInput("");
+      toast.success(`@${data.bot.bot_username} connected!`);
+    } catch (e: any) { toast.error(e.message || "Failed to connect bot"); } finally { setBusy(false); }
+  };
+  const disconnect = async () => {
+    setBusy(true);
+    try {
+      await supabase.functions.invoke("telegram-connect", { body: { action: "disconnect" } });
+      setBot(null); toast.success("Bot disconnected");
+    } catch (e: any) { toast.error(e.message || "Failed"); } finally { setBusy(false); }
+  };
+  const setSetting = async (patch: any) => {
+    const prev = bot; setBot({ ...bot, ...patch });
+    try {
+      const { data, error } = await supabase.functions.invoke("telegram-connect", { body: { action: "settings", ...patch } });
+      if (error || data?.error) throw new Error(data?.error || error?.message);
+      setBot(data.bot);
+    } catch (e: any) { setBot(prev); toast.error(e.message || "Failed to save"); }
+  };
+
+  return (
+    <Card className="p-5 glass-card">
+      <div className="flex items-start gap-4">
+        <div className="h-11 w-11 rounded-2xl bg-[#229ED9]/15 border border-[#229ED9]/30 flex items-center justify-center shrink-0">
+          <Send className="w-5 h-5 text-[#229ED9]" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3 className="font-bold text-white text-[15px]">Telegram Bot</h3>
+            {bot ? (
+              <span className="rounded-full bg-og-lime/15 border border-og-lime/25 px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-og-lime">Connected</span>
+            ) : (
+              <span className="rounded-full bg-[#229ED9]/[0.12] px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-[#229ED9]/70">Alerts + AI</span>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="flex items-center gap-2 text-white/40 text-[13px] mt-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
+          ) : bot ? (
+            <>
+              <div className="flex items-center gap-2.5 mt-2">
+                <div className="h-8 w-8 rounded-full bg-[#229ED9]/15 flex items-center justify-center"><Bot className="h-4 w-4 text-[#229ED9]" /></div>
+                <div>
+                  <div className="text-white/80 text-[13px] font-semibold">@{bot.bot_username}</div>
+                  <div className="text-white/30 text-[10px]">Open Telegram, message your bot, send /start</div>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-white/80 text-[13px] font-semibold flex items-center gap-1.5"><Rocket className="h-3.5 w-3.5 text-og-lime" /> Migration alerts</div>
+                    <div className="text-white/35 text-[11px]">Instant ping on every pump.fun graduation</div>
+                  </div>
+                  <Switch checked={!!bot.alerts_migrations} onCheckedChange={(v) => setSetting({ alerts_migrations: v })} />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-white/80 text-[13px] font-semibold flex items-center gap-1.5">💀 Grim AI chat</div>
+                    <div className="text-white/35 text-[11px]">Reply to any message with live on-chain analysis</div>
+                  </div>
+                  <Switch checked={!!bot.ai_enabled} onCheckedChange={(v) => setSetting({ ai_enabled: v })} />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mt-4">
+                <Button variant="outline" size="sm" onClick={disconnect} disabled={busy}
+                  className="text-red-400 border-red-400/20 hover:bg-red-400/10 hover:text-red-300 rounded-xl">
+                  {busy ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5 mr-1.5" />} Disconnect
+                </Button>
+                <a href={`https://t.me/${bot.bot_username}`} target="_blank" rel="noreferrer"
+                  className="text-[12px] text-[#229ED9] hover:underline flex items-center gap-1">Open bot <ExternalLink className="h-3 w-3" /></a>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-white/45 text-[13px] leading-relaxed mt-1">
+                Bring your own Telegram bot for instant pump.fun migration alerts and full Grim AI chat — same models and live data as the in-app intelligence chat. No API setup, it uses ours.
+              </p>
+              <ol className="mt-3 space-y-1 text-white/40 text-[12px] list-decimal list-inside">
+                <li>Open <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" className="text-[#229ED9] hover:underline">@BotFather</a> and send <code className="text-white/60">/newbot</code></li>
+                <li>Copy the token it gives you</li>
+                <li>Paste it below and hit Connect</li>
+              </ol>
+              <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                <Input value={tokenInput} onChange={(e) => setTokenInput(e.target.value)} placeholder="123456:ABC-DEF…  (BotFather token)"
+                  className="bg-white/5 border-white/10 text-sm font-mono" type="password" />
+                <Button onClick={connect} disabled={busy || !tokenInput.trim()}
+                  className="rounded-xl bg-[#229ED9] hover:bg-[#229ED9]/90 text-white font-bold shrink-0">
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Send className="h-4 w-4 mr-1.5" />} Connect
+                </Button>
+              </div>
+              <ul className="mt-4 space-y-1.5">
+                {["Instant alerts on every migrated token", "/migrations — last 24h graduations on demand", "Chat Grim from Telegram, powered by our APIs", "Add it to your group or channel"].map(t => (
+                  <li key={t} className="flex items-center gap-2 text-white/35 text-[12px]"><Zap className="h-3 w-3 text-og-lime/50 shrink-0" />{t}</li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/* Recent pump.fun migrations (last 24h) — live from Bitquery via our edge fn. */
+function MigrationsPanel() {
+  const [migs, setMigs] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const fmtUsd = (n: any) => {
+    const v = Number(n); if (!isFinite(v) || !v) return "—";
+    if (v >= 1e9) return "$" + (v / 1e9).toFixed(2) + "B";
+    if (v >= 1e6) return "$" + (v / 1e6).toFixed(2) + "M";
+    if (v >= 1e3) return "$" + (v / 1e3).toFixed(1) + "K";
+    return "$" + v.toFixed(0);
+  };
+  const ago = (iso: string) => {
+    const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (m < 60) return m + "m"; const h = Math.floor(m / 60); return h < 24 ? h + "h" : Math.floor(h / 24) + "d";
+  };
+  const load = async () => {
+    setLoading(true);
+    try {
+      const { data } = await supabase.functions.invoke("pumpfun-migrations", { body: { hours: 24, limit: 30 } });
+      setMigs(data?.migrations || []);
+    } catch { setMigs([]); } finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, []);
+
+  return (
+    <Card className="p-5 glass-card">
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2">
+          <Rocket className="h-4 w-4 text-og-lime" />
+          <h3 className="font-bold text-white text-[15px]">Pump.fun migrations</h3>
+          <span className="rounded-full bg-white/[0.06] px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-white/40">Last 24h</span>
+        </div>
+        <button onClick={load} disabled={loading} className="text-white/40 hover:text-white transition" title="Refresh">
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+        </button>
+      </div>
+      {loading && !migs ? (
+        <div className="flex items-center gap-2 text-white/40 text-[13px] py-6 justify-center"><Loader2 className="h-4 w-4 animate-spin" /> Reading the chain…</div>
+      ) : !migs?.length ? (
+        <p className="text-white/30 text-[13px] py-4 text-center">No migrations found in the last 24h.</p>
+      ) : (
+        <div className="space-y-1 max-h-80 overflow-y-auto">
+          {migs.map((m) => (
+            <a key={m.mint} href={m.dexUrl} target="_blank" rel="noreferrer"
+              className="flex items-center gap-3 rounded-lg px-2.5 py-2 hover:bg-white/[0.04] transition">
+              {m.image ? <img src={m.image} alt="" className="h-7 w-7 rounded-full bg-white/5 object-cover" /> : <div className="h-7 w-7 rounded-full bg-white/5 flex items-center justify-center text-white/30 text-[10px]">{(m.symbol || "?").slice(0, 2)}</div>}
+              <div className="flex-1 min-w-0">
+                <div className="text-white/85 text-[13px] font-semibold truncate">{m.symbol || m.mint.slice(0, 6)}</div>
+                <div className="text-white/30 text-[10px]">{ago(m.migratedAt)} ago</div>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="text-white/70 text-[12px]">{fmtUsd(m.marketCap)}</div>
+                <div className="text-white/30 text-[10px]">liq {fmtUsd(m.liquidityUsd)}</div>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 
