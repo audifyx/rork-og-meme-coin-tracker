@@ -6,7 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Send, Brain, Zap, Users, FileDown, ExternalLink } from "lucide-react";
+import { Loader2, Send, Brain, Zap, Users, FileDown, ExternalLink, Sparkles, SlidersHorizontal, Plus, Wallet, MessageSquare, ChevronDown, Skull } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase, SUPABASE_ANON_KEY } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -324,14 +326,14 @@ export const EnhancedAdvancedIntelligence = () => {
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!input.trim()) return;
+  const handleSendMessage = async (override?: string) => {
+    const userMessage = (override ?? input).trim();
+    if (!userMessage) return;
     if (!selectedTeam) {
       toast.error("Select a model team");
       return;
     }
 
-    const userMessage = input;
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: userMessage, timestamp: new Date() }]);
     setLoading(true);
@@ -446,338 +448,316 @@ Current Token Being Analyzed:
     }
   };
 
+  const SUGGESTIONS = [
+    { icon: Sparkles, label: "Analyze $BONK", prompt: "Analyze $BONK" },
+    { icon: Sparkles, label: "Analyze $WIF", prompt: "Analyze $WIF" },
+    { icon: Wallet, label: "Read a trader wallet", prompt: "Analyze wallet 6L1Pjevc9FgWKDr6MaZEntBYPpjVync7xXxoJAb749rv" },
+    { icon: Skull, label: "Biggest rug red flags?", prompt: "What are the biggest rug pull red flags I should watch for?" },
+  ];
+
+  const seg = (active: boolean) =>
+    `flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
+      active ? "bg-[#22d3ee]/20 text-white border border-[#22d3ee]/40" : "text-white/50 hover:text-white/80 border border-transparent"
+    }`;
+
   return (
     <AppLayout>
-      <PageHeader
-        title="ADVANCED INTELLIGENCE"
-        description="Deep analysis with 40+ model teams, ensemble voting, and blockchain integration"
-      />
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 gap-2 bg-white/5 p-1 max-w-md">
-          <TabsTrigger value="intelligence" className="gap-1">
-            <Brain className="h-4 w-4" />
-            AI Intelligence
-          </TabsTrigger>
-          <TabsTrigger value="analysis" className="gap-1">
-            <Zap className="h-4 w-4" />
-            Token Analysis
-          </TabsTrigger>
-        </TabsList>
-
-        {/* AI Intelligence Tab */}
-        <TabsContent value="intelligence" className="mt-6">
-          <div className="max-w-5xl mx-auto space-y-4">
-            {/* Model Team Selector */}
-            <Card className="p-4 glass-card border-white/10">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <Users className="h-5 w-5 text-[#22d3ee]" />
-                Select Model Team ({MODEL_TEAMS.length} Teams, 40+ Models)
-              </h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-4">
-                {MODEL_TEAMS.map((team) => (
-                  <button
-                    key={team.id}
-                    onClick={() => setSelectedTeam(team)}
-                    className={`p-3 rounded-lg border transition text-left ${
-                      selectedTeam?.id === team.id
-                        ? "border-[#22d3ee] bg-[#22d3ee]/10 text-white"
-                        : "border-white/10 bg-white/5 text-white/60 hover:border-white/20"
-                    }`}
-                  >
-                    <p className="font-semibold text-sm">{team.name}</p>
-                    <p className="text-xs text-white/40 mt-1">{team.specialty}</p>
-                    <p className="text-xs text-white/30 mt-1">{team.models.length} models in team</p>
-                  </button>
-                ))}
+      <div className="flex flex-col h-[calc(100dvh-68px)] lg:h-[100dvh]">
+        {/* ── Top bar ─────────────────────────────────────────────── */}
+        <header className="shrink-0 sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-white/[0.07]">
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 lg:px-6">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="h-9 w-9 rounded-lg bg-[#22d3ee]/15 border border-[#22d3ee]/30 flex items-center justify-center shrink-0">
+                <Skull className="h-5 w-5 text-[#22d3ee]" />
               </div>
-
-              {selectedTeam && (
-                <div className="bg-white/[0.02] border border-white/[0.05] rounded p-3 mb-4">
-                  <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Team Models</p>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedTeam.models.map((model) => (
-                      <Badge
-                        key={model.id}
-                        variant="outline"
-                        className="text-[10px] bg-white/5 border-white/10 text-white/70"
-                      >
-                        {model.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 mb-3">
-                <input
-                  type="checkbox"
-                  id="ensemble"
-                  checked={useEnsemble}
-                  onChange={(e) => setUseEnsemble(e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <label htmlFor="ensemble" className="text-xs text-white/60">
-                  Use ensemble voting (multiple models vote on answer for higher accuracy)
-                </label>
+              <div className="min-w-0 hidden sm:block">
+                <h1 className="text-sm font-bold leading-tight truncate">Grim Intelligence</h1>
+                <p className="text-[11px] text-white/40 leading-tight truncate">The chain reaper · live on-chain analysis</p>
               </div>
+            </div>
 
-              <div>
-                <label className="text-xs text-white/40 uppercase tracking-wider block mb-2">
-                  Analysis Context
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., 'meme coin security audit', 'dev reputation check'"
-                  value={context}
-                  onChange={(e) => setContext(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded text-sm text-white placeholder-white/30"
-                />
-              </div>
-            </Card>
+            {/* Segmented tab switch */}
+            <div className="flex items-center gap-1 rounded-lg bg-white/5 p-1 border border-white/10">
+              <button onClick={() => setActiveTab("intelligence")} className={seg(activeTab === "intelligence")}>
+                <Brain className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">AI Chat</span>
+              </button>
+              <button onClick={() => setActiveTab("analysis")} className={seg(activeTab === "analysis")}>
+                <Zap className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Token Analysis</span>
+              </button>
+            </div>
 
-            {/* Chat Messages */}
-            <Card className="flex-1 glass-card border-white/10 overflow-y-auto p-4 space-y-4 h-96">
-              {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center">
-                  <Brain className="h-12 w-12 text-white/20 mb-4" />
-                  <p className="text-white/40">No messages yet</p>
-                  <p className="text-xs text-white/30 mt-2 max-w-sm">
-                    Select a model team and ask questions about tokens, wallets, or contracts
-                  </p>
-                </div>
-              ) : (
-                messages.map((msg, idx) => (
-                  <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-2xl px-4 py-3 rounded-lg ${
-                        msg.role === "user"
-                          ? "bg-[#22d3ee]/20 border border-[#22d3ee]/30 text-white"
-                          : "bg-white/5 border border-white/10 text-white/80"
-                      }`}
-                    >
-                      {msg.role === "assistant"
-                        ? <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}{streaming && idx === messages.length - 1 && msg.content !== "" ? <span className="inline-block w-1.5 h-4 ml-0.5 bg-white/50 align-middle animate-pulse" /> : null}</p>
-                        : <p className="text-sm whitespace-pre-wrap">{msg.content}</p>}
-                      {msg.tokenCard && <TokenCardView t={msg.tokenCard} />}
-                      {msg.chart?.embedUrl && <ChartEmbed url={msg.chart.embedUrl} />}
-                      {msg.wallet && <WalletView w={msg.wallet} />}
-                      {msg.metadata && (
-                        <div className="text-xs text-white/40 mt-2 space-y-1">
-                          {msg.metadata.team && <p>Team: {msg.metadata.team}</p>}
-                          {msg.metadata.consensus && (
-                            <p>Consensus: {(msg.metadata.consensus * 100).toFixed(0)}%</p>
-                          )}
-                          {msg.metadata.toolsUsed && msg.metadata.toolsUsed.length > 0 && (
-                            <p>Tools: {msg.metadata.toolsUsed.join(", ")}</p>
-                          )}
+            {/* Right controls */}
+            <div className="flex items-center gap-2 min-w-0 justify-end">
+              {activeTab === "intelligence" && (
+                <>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-1.5 border-white/10 bg-white/5 h-8 px-2.5">
+                        <SlidersHorizontal className="h-3.5 w-3.5" />
+                        <span className="hidden md:inline text-xs max-w-[120px] truncate">{selectedTeam?.name?.replace(/^[^\sA-Za-z]+\s*/, "") || "Settings"}</span>
+                        <ChevronDown className="h-3 w-3 opacity-60" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-80 max-h-[70vh] overflow-y-auto bg-[#0b0b0f] border-white/10 p-3">
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-[11px] font-semibold text-white/70 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                            <Users className="h-3.5 w-3.5 text-[#22d3ee]" /> Model Team ({MODEL_TEAMS.length})
+                          </p>
+                          <div className="grid grid-cols-1 gap-1.5">
+                            {MODEL_TEAMS.map((team) => (
+                              <button
+                                key={team.id}
+                                onClick={() => setSelectedTeam(team)}
+                                className={`p-2 rounded-md border text-left transition ${
+                                  selectedTeam?.id === team.id
+                                    ? "border-[#22d3ee] bg-[#22d3ee]/10 text-white"
+                                    : "border-white/10 bg-white/[0.03] text-white/60 hover:border-white/20"
+                                }`}
+                              >
+                                <p className="font-semibold text-xs">{team.name}</p>
+                                <p className="text-[10px] text-white/40 mt-0.5 line-clamp-1">{team.specialty}</p>
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-              {loading && (
-                <div className="flex justify-start">
-                  <div className="bg-white/5 border border-white/10 px-4 py-3 rounded-lg flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-white/30" />
-                    <span className="text-xs text-white/40">Grim is reading the chain<span className="animate-pulse">...</span></span>
-                  </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </Card>
 
-            {/* Input */}
-            <Card className="p-4 glass-card border-white/10">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Ask your question..."
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                  disabled={loading || !selectedTeam}
-                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-sm text-white placeholder-white/30 disabled:opacity-50"
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={loading || !input.trim() || !selectedTeam}
-                  className="btn-3d gap-2"
-                >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  Send
-                </Button>
-              </div>
-            </Card>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={useEnsemble} onChange={(e) => setUseEnsemble(e.target.checked)} className="w-3.5 h-3.5" />
+                          <span className="text-[11px] text-white/60">Ensemble voting (higher accuracy)</span>
+                        </label>
+
+                        <div>
+                          <label className="text-[10px] text-white/40 uppercase tracking-wider block mb-1.5">Analysis Context</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 'security audit', 'dev check'"
+                            value={context}
+                            onChange={(e) => setContext(e.target.value)}
+                            className="w-full px-2.5 py-1.5 bg-white/5 border border-white/10 rounded text-xs text-white placeholder-white/30"
+                          />
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setMessages([]); setStreaming(false); setLoading(false); }}
+                    disabled={messages.length === 0}
+                    className="gap-1.5 border-white/10 bg-white/5 h-8 px-2.5"
+                    title="New chat"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span className="hidden md:inline text-xs">New</span>
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
-        </TabsContent>
+        </header>
 
-        {/* Token Analysis Tab */}
-        <TabsContent value="analysis" className="mt-6">
-          <div className="max-w-4xl mx-auto space-y-4">
-            {/* Token Search */}
-            <Card className="p-4 glass-card border-white/10">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter mint address or token name..."
-                  value={tokenInput}
-                  onChange={(e) => setTokenInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearchToken(tokenInput)}
-                  className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-sm text-white placeholder-white/30"
-                />
-                <Button
-                  onClick={() => handleSearchToken(tokenInput)}
-                  disabled={tokenSearching}
-                  className="btn-3d"
-                >
-                  {tokenSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                  Analyze
-                </Button>
-              </div>
-            </Card>
-
-            {tokenSearching ? (
-              <Card className="p-12 text-center glass-card">
-                <Loader2 className="h-6 w-6 animate-spin text-white/30 mx-auto" />
-              </Card>
-            ) : !token ? (
-              <Card className="p-12 text-center glass-card">
-                <Zap className="h-12 w-12 text-white/20 mx-auto mb-4" />
-                <p className="text-white/40">No token selected</p>
-              </Card>
-            ) : (
-              <>
-                {/* Token Header */}
-                <Card className="p-6 glass-card border-white/10">
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div className="flex items-start gap-4">
-                      {token.image_url && (
-                        <img src={token.image_url} alt={token.symbol} className="h-16 w-16 rounded-lg" />
-                      )}
-                      <div>
-                        <h2 className="text-2xl font-bold text-white">{token.name}</h2>
-                        <p className="text-white/40 font-mono text-sm">{token.mint}</p>
+        {/* ── Body ────────────────────────────────────────────────── */}
+        <div className="flex-1 min-h-0">
+          {activeTab === "intelligence" ? (
+            <div className="flex flex-col h-full">
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto px-4 py-6 lg:px-6">
+                <div className="max-w-3xl mx-auto space-y-4">
+                  {messages.length === 0 && !loading ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center pt-10 pb-6">
+                      <div className="h-16 w-16 rounded-2xl bg-[#22d3ee]/10 border border-[#22d3ee]/20 flex items-center justify-center mb-4">
+                        <Skull className="h-8 w-8 text-[#22d3ee]" />
+                      </div>
+                      <h2 className="text-lg font-bold text-white">Ask Grim anything</h2>
+                      <p className="text-sm text-white/40 mt-1.5 max-w-md">
+                        Drop a contract address, a wallet, or a token ticker. Grim reads the chain and rips it apart — no sugarcoating.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-6 w-full max-w-lg">
+                        {SUGGESTIONS.map((sg) => (
+                          <button
+                            key={sg.label}
+                            onClick={() => handleSendMessage(sg.prompt)}
+                            disabled={!selectedTeam}
+                            className="flex items-center gap-2.5 p-3 rounded-lg border border-white/10 bg-white/[0.03] hover:border-[#22d3ee]/40 hover:bg-[#22d3ee]/[0.06] transition text-left disabled:opacity-50"
+                          >
+                            <sg.icon className="h-4 w-4 text-[#22d3ee] shrink-0" />
+                            <span className="text-xs text-white/70">{sg.label}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => handleGenerateReport("open")}
-                        disabled={reportLoading !== null}
-                        className="btn-3d gap-2"
-                      >
-                        {reportLoading === "open" ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <ExternalLink className="h-4 w-4" />
-                        )}
-                        AI Report
-                      </Button>
-                      <Button
-                        onClick={() => handleGenerateReport("download")}
-                        disabled={reportLoading !== null}
-                        variant="outline"
-                        className="gap-2 border-white/10"
-                      >
-                        {reportLoading === "download" ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <FileDown className="h-4 w-4" />
-                        )}
-                        Download
-                      </Button>
+                  ) : (
+                    messages.map((msg, idx) => (
+                      <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                        <div
+                          className={`px-4 py-3 rounded-2xl ${
+                            msg.role === "user"
+                              ? "max-w-2xl bg-[#22d3ee]/20 border border-[#22d3ee]/30 text-white rounded-br-md"
+                              : "w-full max-w-2xl bg-white/5 border border-white/10 text-white/85 rounded-bl-md"
+                          }`}
+                        >
+                          {msg.role === "assistant" && (
+                            <div className="flex items-center gap-1.5 mb-1.5 text-[11px] font-semibold text-[#22d3ee]/80">
+                              <Skull className="h-3.5 w-3.5" /> Grim
+                            </div>
+                          )}
+                          {msg.role === "assistant"
+                            ? <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}{streaming && idx === messages.length - 1 && msg.content !== "" ? <span className="inline-block w-1.5 h-4 ml-0.5 bg-white/50 align-middle animate-pulse" /> : null}</p>
+                            : <p className="text-sm whitespace-pre-wrap">{msg.content}</p>}
+                          {msg.tokenCard && <TokenCardView t={msg.tokenCard} />}
+                          {msg.chart?.embedUrl && <ChartEmbed url={msg.chart.embedUrl} />}
+                          {msg.wallet && <WalletView w={msg.wallet} />}
+                          {msg.metadata && (
+                            <div className="text-[11px] text-white/30 mt-2 flex flex-wrap gap-x-3 gap-y-0.5">
+                              {msg.metadata.team && <span>Team: {msg.metadata.team}</span>}
+                              {msg.metadata.consensus ? <span>Consensus: {(msg.metadata.consensus * 100).toFixed(0)}%</span> : null}
+                              {msg.metadata.toolsUsed && msg.metadata.toolsUsed.length > 0 && (
+                                <span>Tools: {msg.metadata.toolsUsed.join(", ")}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  {loading && (
+                    <div className="flex justify-start">
+                      <div className="bg-white/5 border border-white/10 px-4 py-3 rounded-2xl rounded-bl-md flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-[#22d3ee]/70" />
+                        <span className="text-xs text-white/40">Grim is reading the chain<span className="animate-pulse">...</span></span>
+                      </div>
                     </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              </div>
+
+              {/* Input bar */}
+              <div className="shrink-0 border-t border-white/[0.07] bg-background/80 backdrop-blur-xl px-4 py-3 lg:px-6">
+                <div className="max-w-3xl mx-auto">
+                  <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 focus-within:border-[#22d3ee]/40 transition">
+                    <Textarea
+                      placeholder="Drop a CA, wallet, or ticker… ask Grim anything"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      disabled={loading || !selectedTeam}
+                      rows={1}
+                      className="flex-1 min-h-[24px] max-h-32 resize-none border-0 bg-transparent p-0 text-sm text-white placeholder-white/30 focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50"
+                    />
+                    <Button
+                      onClick={() => handleSendMessage()}
+                      disabled={loading || !input.trim() || !selectedTeam}
+                      size="icon"
+                      className="btn-3d h-9 w-9 shrink-0 rounded-xl"
+                    >
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-white/25 mt-1.5 px-1 text-center">
+                    Grim reads live chain data. Always DYOR — NFA. Enter to send, Shift+Enter for newline.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* ── Token Analysis Tab ── */
+            <div className="h-full overflow-y-auto px-4 py-6 lg:px-6">
+              <div className="max-w-5xl mx-auto space-y-4">
+                {/* Token Search */}
+                <Card className="p-4 glass-card border-white/10">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter mint address or token name..."
+                      value={tokenInput}
+                      onChange={(e) => setTokenInput(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleSearchToken(tokenInput)}
+                      className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded text-sm text-white placeholder-white/30"
+                    />
+                    <Button onClick={() => handleSearchToken(tokenInput)} disabled={tokenSearching} className="btn-3d">
+                      {tokenSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                      Analyze
+                    </Button>
                   </div>
                 </Card>
 
-                {/* Analysis Tabs */}
-                <Tabs defaultValue="signals" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 gap-2 bg-white/5 p-1">
-                    <TabsTrigger value="signals" className="text-xs lg:text-sm">
-                      Signals
-                    </TabsTrigger>
-                    <TabsTrigger value="maturity" className="text-xs lg:text-sm">
-                      Maturity
-                    </TabsTrigger>
-                    <TabsTrigger value="dev" className="text-xs lg:text-sm">
-                      Dev
-                    </TabsTrigger>
-                    <TabsTrigger value="contract" className="text-xs lg:text-sm">
-                      Contract
-                    </TabsTrigger>
-                    <TabsTrigger value="holders" className="text-xs lg:text-sm">
-                      Holders
-                    </TabsTrigger>
-                    <TabsTrigger value="timeline" className="text-xs lg:text-sm">
-                      Timeline
-                    </TabsTrigger>
-                    <TabsTrigger value="ecosystem" className="text-xs lg:text-sm">
-                      Map
-                    </TabsTrigger>
-                    <TabsTrigger value="research" className="text-xs lg:text-sm">
-                      Notes
-                    </TabsTrigger>
-                  </TabsList>
+                {tokenSearching ? (
+                  <Card className="p-12 text-center glass-card">
+                    <Loader2 className="h-6 w-6 animate-spin text-white/30 mx-auto" />
+                  </Card>
+                ) : !token ? (
+                  <Card className="p-12 text-center glass-card">
+                    <Zap className="h-12 w-12 text-white/20 mx-auto mb-4" />
+                    <p className="text-white/40">No token selected</p>
+                  </Card>
+                ) : (
+                  <>
+                    {/* Token Header */}
+                    <Card className="p-6 glass-card border-white/10">
+                      <div className="flex items-start justify-between gap-4 flex-wrap">
+                        <div className="flex items-start gap-4">
+                          {token.image_url && <img src={token.image_url} alt={token.symbol} className="h-16 w-16 rounded-lg" />}
+                          <div>
+                            <h2 className="text-2xl font-bold text-white">{token.name}</h2>
+                            <p className="text-white/40 font-mono text-sm break-all">{token.mint}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button onClick={() => handleGenerateReport("open")} disabled={reportLoading !== null} className="btn-3d gap-2">
+                            {reportLoading === "open" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+                            AI Report
+                          </Button>
+                          <Button onClick={() => handleGenerateReport("download")} disabled={reportLoading !== null} variant="outline" className="gap-2 border-white/10">
+                            {reportLoading === "download" ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
+                            Download
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
 
-                  <div className="mt-6">
-                    <TabsContent value="signals">
-                      <SmartSignals mint={mint} token={token} />
-                    </TabsContent>
-                    <TabsContent value="maturity">
-                      <TokenMaturityScore mint={mint} token={token} />
-                    </TabsContent>
-                    <TabsContent value="dev">
-                      <DevHistoryDashboard mint={mint} token={token} />
-                    </TabsContent>
-                    <TabsContent value="contract">
-                      <ContractAnalyzer mint={mint} token={token} />
-                    </TabsContent>
-                    <TabsContent value="holders">
-                      <HolderConcentrationTimeline mint={mint} token={token} />
-                    </TabsContent>
-                    <TabsContent value="timeline">
-                      <TokenTimelineFeed mint={mint} token={token} />
-                    </TabsContent>
-                    <TabsContent value="ecosystem">
-                      <EcosystemMapper mint={mint} token={token} />
-                    </TabsContent>
-                    <TabsContent value="research">
-                      <ResearchNotes mint={mint} token={token} user={user} />
-                    </TabsContent>
-                  </div>
-                </Tabs>
-              </>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Connected Systems */}
-      <div className="max-w-5xl mx-auto mt-8 text-xs text-white/40 flex flex-wrap items-center gap-4 px-4">
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-green-500"></span>
-          {MODEL_TEAMS.length} Model Teams
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-green-500"></span>
-          40+ AI Models
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-green-500"></span>
-          Ensemble Voting
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-green-500"></span>
-          Supabase
-        </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-green-500"></span>
-          Blockchain
-        </span>
+                    {/* Analysis Sub-tabs */}
+                    <Tabs defaultValue="signals" className="w-full">
+                      <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 gap-2 bg-white/5 p-1">
+                        <TabsTrigger value="signals" className="text-xs lg:text-sm">Signals</TabsTrigger>
+                        <TabsTrigger value="maturity" className="text-xs lg:text-sm">Maturity</TabsTrigger>
+                        <TabsTrigger value="dev" className="text-xs lg:text-sm">Dev</TabsTrigger>
+                        <TabsTrigger value="contract" className="text-xs lg:text-sm">Contract</TabsTrigger>
+                        <TabsTrigger value="holders" className="text-xs lg:text-sm">Holders</TabsTrigger>
+                        <TabsTrigger value="timeline" className="text-xs lg:text-sm">Timeline</TabsTrigger>
+                        <TabsTrigger value="ecosystem" className="text-xs lg:text-sm">Map</TabsTrigger>
+                        <TabsTrigger value="research" className="text-xs lg:text-sm">Notes</TabsTrigger>
+                      </TabsList>
+                      <div className="mt-6">
+                        <TabsContent value="signals"><SmartSignals mint={mint} token={token} /></TabsContent>
+                        <TabsContent value="maturity"><TokenMaturityScore mint={mint} token={token} /></TabsContent>
+                        <TabsContent value="dev"><DevHistoryDashboard mint={mint} token={token} /></TabsContent>
+                        <TabsContent value="contract"><ContractAnalyzer mint={mint} token={token} /></TabsContent>
+                        <TabsContent value="holders"><HolderConcentrationTimeline mint={mint} token={token} /></TabsContent>
+                        <TabsContent value="timeline"><TokenTimelineFeed mint={mint} token={token} /></TabsContent>
+                        <TabsContent value="ecosystem"><EcosystemMapper mint={mint} token={token} /></TabsContent>
+                        <TabsContent value="research"><ResearchNotes mint={mint} token={token} user={user} /></TabsContent>
+                      </div>
+                    </Tabs>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </AppLayout>
   );
+
 };
 
 export default EnhancedAdvancedIntelligence;
