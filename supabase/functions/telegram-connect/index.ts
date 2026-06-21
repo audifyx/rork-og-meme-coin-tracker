@@ -30,6 +30,7 @@ const safe = (b: any) => b && ({
   id: b.id, bot_username: b.bot_username, bot_id: b.bot_id,
   bot_name: b.bot_name, persona: b.persona,
   alerts_migrations: b.alerts_migrations, ai_enabled: b.ai_enabled,
+  auto_scan: b.auto_scan, digest_enabled: b.digest_enabled,
   min_marketcap: b.min_marketcap, created_at: b.created_at,
 });
 
@@ -60,6 +61,7 @@ async function refreshCommandMenu(admin: any, botToken: string, botRowId: string
     { command: "alpha", description: "Community alpha callouts" },
     { command: "migrations", description: "Pump.fun graduations (last 24h)" },
     { command: "alerts", description: "Migration alerts: on | off" },
+    { command: "digest", description: "Daily digest: on | off" },
     { command: "help", description: "Show commands" },
   ];
   const { data: customs } = await admin
@@ -104,6 +106,8 @@ Deno.serve(async (req) => {
       if (typeof body.alerts_migrations === "boolean") patch.alerts_migrations = body.alerts_migrations;
       if (typeof body.ai_enabled === "boolean") patch.ai_enabled = body.ai_enabled;
       if (body.min_marketcap != null) patch.min_marketcap = Number(body.min_marketcap) || 0;
+      if (typeof body.auto_scan === "boolean") patch.auto_scan = body.auto_scan;
+      if (typeof body.digest_enabled === "boolean") patch.digest_enabled = body.digest_enabled;
       const { data, error } = await admin.from("telegram_bots").update(patch).eq("user_id", user.id).select().maybeSingle();
       if (error) return json({ error: error.message }, 400);
       return json({ bot: safe(data) });
@@ -164,22 +168,8 @@ Deno.serve(async (req) => {
       const setJson = await setRes.json();
       if (!setJson.ok) return json({ error: "Connected, but failed to set webhook: " + (setJson.description || "unknown") }, 400);
 
-      // Register the command menu so /chat, /migrations, etc. show in Telegram's UI.
-      await fetch(`https://api.telegram.org/bot${botToken}/setMyCommands`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          commands: [
-            { command: "chat", description: "Chat with Grim (AI analyst)" },
-            { command: "scan", description: "Full token risk report" },
-            { command: "news", description: "Latest crypto headlines" },
-            { command: "alpha", description: "Community alpha callouts" },
-            { command: "migrations", description: "Pump.fun graduations (last 24h)" },
-            { command: "alerts", description: "Migration alerts: on | off" },
-            { command: "help", description: "Show commands" },
-          ],
-        }),
-      }).catch(() => {});
+      // Register the full command menu so every command is pre-installed.
+      await refreshCommandMenu(admin, botToken, saved.id);
 
       return json({ ok: true, bot: safe(saved) });
     }

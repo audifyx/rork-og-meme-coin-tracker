@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.watch-checker]
 verify_jwt = false
+
+[functions.sync-bot-commands]
+verify_jwt = false
