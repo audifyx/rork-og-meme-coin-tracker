@@ -121,6 +121,9 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           commands: [
             { command: "chat", description: "Chat with Grim (AI analyst)" },
+            { command: "scan", description: "Full token risk report" },
+            { command: "news", description: "Latest crypto headlines" },
+            { command: "alpha", description: "Community alpha callouts" },
             { command: "migrations", description: "Pump.fun graduations (last 24h)" },
             { command: "alerts", description: "Migration alerts: on | off" },
             { command: "help", description: "Show commands" },

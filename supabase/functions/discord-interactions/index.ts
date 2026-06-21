@@ -92,6 +92,50 @@ async function migrationsText(): Promise<string> {
   }
 }
 
+function sentimentEmoji(s: string) {
+  const t = (s || "").toLowerCase();
+  if (t.includes("bull")) return "🟢";
+  if (t.includes("bear")) return "🔴";
+  return "⚪";
+}
+function decodeEntities(s: string) {
+  return (s || "")
+    .replace(/&#(\d+);/g, (_m, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_m, n) => String.fromCharCode(parseInt(n, 16)))
+    .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&apos;/g, "'");
+}
+
+// Query PostgREST directly (no supabase-js needed) with the service role key.
+async function rest(path: string): Promise<any[]> {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${SERVICE_ROLE}` },
+    });
+    return await r.json();
+  } catch {
+    return [];
+  }
+}
+
+async function newsText(): Promise<string> {
+  const rows = await rest("crypto_news?select=title,source,sentiment,source_url,published_at&order=published_at.desc.nullslast&limit=6");
+  if (!rows.length) return "No news right now.";
+  return "📰 **Latest crypto news**\n" + rows.map((n: any, i: number) => {
+    const title = decodeEntities(n.title || "");
+    return `${i + 1}. ${sentimentEmoji(n.sentiment)} ${n.source_url ? `[${title}](<${n.source_url}>)` : title} — *${n.source || ""}*`;
+  }).join("\n");
+}
+
+async function alphaText(): Promise<string> {
+  const rows = await rest("alpha_callouts?select=username,token_symbol,direction,target_multiplier,upvotes,created_at&order=created_at.desc&limit=6");
+  if (!rows.length) return "No alpha callouts yet.";
+  return "🧠 **Latest alpha callouts**\n" + rows.map((a: any, i: number) => {
+    const dir = (a.direction || "").toLowerCase() === "short" ? "🔻 SHORT" : "🚀 LONG";
+    const tgt = a.target_multiplier ? ` · 🎯 ${a.target_multiplier}x` : "";
+    return `${i + 1}. **$${a.token_symbol || "?"}** ${dir}${tgt} · 👍 ${a.upvotes || 0} · by @${a.username || "anon"}`;
+  }).join("\n");
+}
+
 // Edit the original (deferred) interaction message with the final content.
 // Discord caps message content at 2000 chars.
 async function editOriginal(token: string, content: string) {
@@ -140,6 +184,16 @@ Deno.serve(async (req) => {
 
     if (name === "migrations") {
       runAfterAck(migrationsText().then((t) => editOriginal(token, t)));
+      return Response.json({ type: R.DEFERRED_CHANNEL_MESSAGE });
+    }
+
+    if (name === "news") {
+      runAfterAck(newsText().then((t) => editOriginal(token, t)));
+      return Response.json({ type: R.DEFERRED_CHANNEL_MESSAGE });
+    }
+
+    if (name === "alpha") {
+      runAfterAck(alphaText().then((t) => editOriginal(token, t)));
       return Response.json({ type: R.DEFERRED_CHANNEL_MESSAGE });
     }
 

@@ -1,6 +1,6 @@
 // telegram-webhook — receives updates for ALL user-connected bots (multi-tenant).
 // Routed by ?bot=<uuid>; authenticated by per-bot secret_token header.
-// Commands: /start /help /chat /migrations /alerts on|off. Any other text -> Grim AI
+// Commands: /start /help /chat /scan /news /alpha /migrations /alerts on|off. Any other text -> Grim AI
 // (reuses our enhanced-intelligence fn = same NVIDIA models + our live APIs).
 // No JWT (Telegram calls it). Deploy with --no-verify-jwt.
 
@@ -90,6 +90,55 @@ async function retrieveKnowledge(botRowId: string, query: string): Promise<strin
   } catch { return ""; }
 }
 
+function sentimentEmoji(s: string) {
+  const t = (s || "").toLowerCase();
+  if (t.includes("bull")) return "\uD83D\uDFE2";
+  if (t.includes("bear")) return "\uD83D\uDD34";
+  return "\u26AA";
+}
+
+// News/alpha titles often arrive with HTML entities (&#038; &#8216; etc.).
+function decodeEntities(s: string) {
+  return (s || "")
+    .replace(/&#(\d+);/g, (_m, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_m, n) => String.fromCharCode(parseInt(n, 16)))
+    .replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+}
+
+async function getNewsText(limit = 6): Promise<string> {
+  const { data } = await admin
+    .from("crypto_news")
+    .select("title, source, sentiment, source_url, published_at")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (!data || !data.length) return "No news right now \u2014 check back soon.";
+  const lines = data.map((n: any, i: number) => {
+    const title = escHtml(decodeEntities(n.title || ""));
+    const head = n.source_url ? `<a href="${n.source_url}">${title}</a>` : title;
+    const meta = `${escHtml(n.source || "")}${n.published_at ? " \u00B7 " + ago(n.published_at) + " ago" : ""}`;
+    return `${i + 1}. ${sentimentEmoji(n.sentiment)} ${head}\n<i>${meta}</i>`;
+  });
+  return `\uD83D\uDCF0 <b>Latest crypto news</b>\n\n` + lines.join("\n\n");
+}
+
+async function getAlphaText(limit = 6): Promise<string> {
+  const { data } = await admin
+    .from("alpha_callouts")
+    .select("username, token_symbol, direction, conviction, target_multiplier, reasoning, upvotes, status, created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (!data || !data.length) return "No alpha callouts yet. Be the first to drop one in the app.";
+  const lines = data.map((a: any, i: number) => {
+    const dir = (a.direction || "").toLowerCase() === "short" ? "\uD83D\uDD3B SHORT" : "\uD83D\uDE80 LONG";
+    const tgt = a.target_multiplier ? ` \u00B7 \uD83C\uDFAF ${a.target_multiplier}x` : "";
+    const conv = a.conviction ? ` \u00B7 conviction ${escHtml(String(a.conviction))}` : "";
+    const why = a.reasoning ? `\n<i>${escHtml(decodeEntities(a.reasoning)).slice(0, 220)}</i>` : "";
+    return `${i + 1}. <b>$${escHtml(a.token_symbol || "?")}</b> ${dir}${tgt}${conv} \u00B7 \uD83D\uDC4D ${a.upvotes || 0}\nby @${escHtml(a.username || "anon")} \u00B7 ${ago(a.created_at)} ago${why}`;
+  });
+  return `\uD83E\uDDE0 <b>Latest alpha callouts</b>\n\n` + lines.join("\n\n");
+}
+
 async function askGrim(text: string, knowledge = "") {
   try {
     const context = "Source: Telegram bot" + (knowledge
@@ -169,6 +218,9 @@ Deno.serve(async (req) => {
           `💀 <b>Grim is online.</b>\n\nI read the Solana chain and rip tokens apart — no hopium.\n\n` +
           `<b>Commands</b>\n` +
           `/chat — ask Grim anything (works in groups too)\n` +
+          `/scan <token> — full token risk report\n` +
+          `/news — latest crypto headlines\n` +
+          `/alpha — community alpha callouts\n` +
           `/migrations — pump.fun graduations (last 24h)\n` +
           `/alerts on|off — instant migration alerts in this chat\n` +
           `/help — this menu\n\n` +
@@ -182,6 +234,36 @@ Deno.serve(async (req) => {
       await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
       const migs = await getMigrations(24, 15);
       await sendLong(token, chatId, migrationsText(migs, 24), { parse_mode: "HTML" });
+      return ok();
+    }
+
+    if (cmd === "/news") {
+      await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
+      await sendLong(token, chatId, await getNewsText(6), { parse_mode: "HTML" });
+      return ok();
+    }
+
+    if (cmd === "/alpha" || cmd === "/calls" || cmd === "/callouts") {
+      await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
+      await sendLong(token, chatId, await getAlphaText(6), { parse_mode: "HTML" });
+      return ok();
+    }
+
+    if (cmd === "/scan" || cmd === "/analyze") {
+      if (!bot.ai_enabled) {
+        await tg(token, "sendMessage", { chat_id: chatId, text: "AI is off for this bot. The owner can enable it in OG Scan settings." });
+        return ok();
+      }
+      const arg = text.replace(/^\S+\s*/, "").trim();
+      if (!arg) {
+        await tg(token, "sendMessage", { chat_id: chatId, text: "Send a token to scan: /scan <mint address or $TICKER>" });
+        return ok();
+      }
+      await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
+      const scanPrompt = `Run a full OG Scan token analysis of: ${arg}. Cover liquidity, holder concentration, LP/contract risk, dev history, and finish with a clear verdict (ape / watch / avoid).`;
+      const knowledge = await retrieveKnowledge(bot.id, arg);
+      const answer = await askGrim(scanPrompt, knowledge);
+      await sendLong(token, chatId, answer, isGroup ? { reply_to_message_id: msg.message_id } : {});
       return ok();
     }
 

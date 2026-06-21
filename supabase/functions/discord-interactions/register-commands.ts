@@ -22,6 +22,8 @@ const commands = [
     ],
   },
   { name: "migrations", description: "Pump.fun graduations (last 24h)" },
+  { name: "news", description: "Latest crypto headlines" },
+  { name: "alpha", description: "Community alpha callouts" },
 ];
 
 const url = GUILD_ID
