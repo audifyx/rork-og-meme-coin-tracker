@@ -1374,6 +1374,12 @@ function ConnectionsTab() {
       {/* Discord migration alerts (incoming webhook) */}
       <DiscordCard />
 
+      {/* Full BYO Discord bot (slash commands) */}
+      <DiscordBotCard />
+
+      {/* X / Twitter auto-poster (per-user OAuth 1.0a) */}
+      <XAutoPosterCard />
+
       {/* Wallet connect */}
       <WalletCard />
 
@@ -1962,3 +1968,248 @@ function PushCard() {
 
 
 export default Settings;
+
+
+/* DiscordBotCard — bring your own full Discord bot (slash commands), multi-tenant. */
+function DiscordBotCard() {
+  const [bot, setBot] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [appId, setAppId] = useState("");
+  const [pubKey, setPubKey] = useState("");
+  const [botToken, setBotToken] = useState("");
+  const [endpoint, setEndpoint] = useState("");
+
+  const fn = async (body: any) => {
+    const { data, error } = await supabase.functions.invoke("discord-bot-connect", { body });
+    if (error || data?.error) throw new Error(data?.error || error?.message);
+    return data;
+  };
+  const load = async () => { try { const d = await fn({ action: "status" }); setBot(d.bot); } catch { /* ignore */ } finally { setLoading(false); } };
+  useEffect(() => { load(); }, []);
+
+  const connect = async () => {
+    if (!appId.trim() || !pubKey.trim() || !botToken.trim()) { toast.error("Application ID, Public Key and Bot Token are all required"); return; }
+    setBusy(true);
+    try {
+      const d = await fn({ action: "connect", application_id: appId.trim(), public_key: pubKey.trim(), bot_token: botToken.trim() });
+      setBot(d.bot); setEndpoint(d.interactions_url || ""); setBotToken("");
+      toast.success("Discord bot connected — slash commands registered");
+    } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
+  };
+  const setSetting = async (patch: any) => {
+    const prev = bot; setBot({ ...bot, ...patch });
+    try { const d = await fn({ action: "settings", ...patch }); setBot(d.bot); }
+    catch (e: any) { setBot(prev); toast.error(e.message); }
+  };
+  const disconnect = async () => { setBusy(true); try { await fn({ action: "disconnect" }); setBot(null); setEndpoint(""); toast.success("Discord bot disconnected"); } catch (e: any) { toast.error(e.message); } finally { setBusy(false); } };
+  const fnBase = () => { const u = (import.meta as any).env?.VITE_SUPABASE_URL || ""; return u ? `${u}/functions/v1` : "/functions/v1"; };
+  const epUrl = endpoint || `${fnBase()}/discord-interactions`;
+  const copy = (t: string) => { navigator.clipboard.writeText(t); toast.success("Copied"); };
+
+  return (
+    <Card className="p-5 glass-card">
+      <div className="flex items-start gap-4">
+        <div className="h-11 w-11 rounded-2xl bg-[#5865F2]/15 border border-[#5865F2]/30 flex items-center justify-center shrink-0">
+          <Bot className="w-5 h-5 text-[#5865F2]" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3 className="font-bold text-white text-[15px]">Discord Bot</h3>
+            {bot ? (
+              <span className="rounded-full bg-og-lime/15 border border-og-lime/25 px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-og-lime">Connected</span>
+            ) : (
+              <span className="rounded-full bg-[#5865F2]/[0.12] px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-[#5865F2]/80">Slash commands</span>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="flex items-center gap-2 text-white/40 text-[13px] mt-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
+          ) : bot ? (
+            <>
+              <div className="flex items-center gap-2.5 mt-2">
+                <div className="h-8 w-8 rounded-full bg-[#5865F2]/15 flex items-center justify-center"><Bot className="h-4 w-4 text-[#5865F2]" /></div>
+                <div>
+                  <div className="text-white/80 text-[13px] font-semibold">{bot.bot_username || bot.application_id}</div>
+                  <div className="text-white/30 text-[10px]">Bot token {bot.token_hint} · /chat /migrations /news /alpha</div>
+                </div>
+              </div>
+
+              <div className="mt-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="text-white/45 text-[11px] mb-1">Interactions Endpoint URL — paste into your app at discord.com/developers → General Information</div>
+                <div className="flex items-center gap-2">
+                  <code className="text-white/70 text-[11px] truncate flex-1">{epUrl}</code>
+                  <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => copy(epUrl)}><Copy className="h-3.5 w-3.5" /></Button>
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-white/80 text-[13px] font-semibold flex items-center gap-1.5"><Power className="h-3.5 w-3.5 text-og-lime" /> Bot enabled</div>
+                    <div className="text-white/35 text-[11px]">Serve slash commands for this bot</div>
+                  </div>
+                  <Switch checked={!!bot.enabled} onCheckedChange={(v) => setSetting({ enabled: v })} />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-white/80 text-[13px] font-semibold flex items-center gap-1.5">💀 Grim AI chat (/chat)</div>
+                    <div className="text-white/35 text-[11px]">Answer /chat with live on-chain analysis</div>
+                  </div>
+                  <Switch checked={!!bot.ai_enabled} onCheckedChange={(v) => setSetting({ ai_enabled: v })} />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mt-4">
+                <Button variant="outline" size="sm" onClick={disconnect} disabled={busy}
+                  className="text-red-400 border-red-400/20 hover:bg-red-400/10 hover:text-red-300 rounded-xl">
+                  {busy ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5 mr-1.5" />} Disconnect
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-white/45 text-[13px] leading-relaxed mt-1">
+                Run a full branded Discord bot (slash commands <code className="text-white/60">/chat /migrations /news /alpha</code>), powered by our APIs. Different from the webhook above, which is alerts-only.
+              </p>
+              <ol className="mt-3 space-y-1 text-white/40 text-[12px] list-decimal list-inside">
+                <li>Create an app at <a href="https://discord.com/developers/applications" target="_blank" rel="noreferrer" className="text-[#5865F2] hover:underline">discord.com/developers</a>, add a Bot</li>
+                <li>Copy the Application ID, Public Key (General Info) and Bot Token (Bot tab)</li>
+                <li>Paste below, Connect, then copy the Interactions Endpoint URL back into the portal</li>
+              </ol>
+              <div className="flex flex-col gap-2 mt-3">
+                <Input value={appId} onChange={(e) => setAppId(e.target.value)} placeholder="Application ID" className="bg-white/5 border-white/10 text-sm font-mono" />
+                <Input value={pubKey} onChange={(e) => setPubKey(e.target.value)} placeholder="Public Key" className="bg-white/5 border-white/10 text-sm font-mono" />
+                <Input value={botToken} onChange={(e) => setBotToken(e.target.value)} type="password" placeholder="Bot Token" className="bg-white/5 border-white/10 text-sm font-mono" />
+                <Button onClick={connect} disabled={busy} className="rounded-xl bg-[#5865F2] hover:bg-[#5865F2]/90 text-white font-bold">
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Bot className="h-4 w-4 mr-1.5" />} Connect bot
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+/* XAutoPosterCard — bring your own X account (OAuth 1.0a) to auto-post. */
+function XAutoPosterCard() {
+  const [acct, setAcct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [k1, setK1] = useState(""); const [k2, setK2] = useState(""); const [k3, setK3] = useState(""); const [k4, setK4] = useState("");
+
+  const fn = async (body: any) => {
+    const { data, error } = await supabase.functions.invoke("x-poster", { body });
+    if (error || data?.error) throw new Error(data?.error || error?.message);
+    return data;
+  };
+  const load = async () => { try { const d = await fn({ action: "status" }); setAcct(d.account); } catch { /* ignore */ } finally { setLoading(false); } };
+  useEffect(() => { load(); }, []);
+
+  const connect = async () => {
+    if (!k1.trim() || !k2.trim() || !k3.trim() || !k4.trim()) { toast.error("All four keys are required"); return; }
+    setBusy(true);
+    try {
+      const d = await fn({ action: "connect", api_key: k1.trim(), api_secret: k2.trim(), access_token: k3.trim(), access_secret: k4.trim() });
+      setAcct(d.account); setK1(""); setK2(""); setK3(""); setK4("");
+      toast.success("X account connected");
+    } catch (e: any) { toast.error(e.message); } finally { setBusy(false); }
+  };
+  const setSetting = async (patch: any) => {
+    const prev = acct; setAcct({ ...acct, ...patch });
+    try { const d = await fn({ action: "settings", ...patch }); setAcct(d.account); }
+    catch (e: any) { setAcct(prev); toast.error(e.message); }
+  };
+  const testTweet = async () => { setBusy(true); try { const d = await fn({ action: "test" }); toast[d.ok ? "success" : "error"](d.ok ? "Test tweet posted" : (d.error || "Failed")); } catch (e: any) { toast.error(e.message); } finally { setBusy(false); } };
+  const disconnect = async () => { setBusy(true); try { await fn({ action: "disconnect" }); setAcct(null); toast.success("X account disconnected"); } catch (e: any) { toast.error(e.message); } finally { setBusy(false); } };
+
+  return (
+    <Card className="p-5 glass-card">
+      <div className="flex items-start gap-4">
+        <div className="h-11 w-11 rounded-2xl bg-og-cyan/10 border border-og-cyan/20 flex items-center justify-center shrink-0">
+          <Twitter className="w-5 h-5 text-og-cyan" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3 className="font-bold text-white text-[15px]">X Auto-Poster</h3>
+            {acct ? (
+              <span className="rounded-full bg-og-lime/15 border border-og-lime/25 px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-og-lime">Connected</span>
+            ) : (
+              <span className="rounded-full bg-og-cyan/[0.10] px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-og-cyan/70">OAuth 1.0a</span>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="flex items-center gap-2 text-white/40 text-[13px] mt-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</div>
+          ) : acct ? (
+            <>
+              <div className="flex items-center gap-2.5 mt-2">
+                <div className="h-8 w-8 rounded-full bg-og-cyan/15 flex items-center justify-center"><Twitter className="h-4 w-4 text-og-cyan" /></div>
+                <div>
+                  <div className="text-white/80 text-[13px] font-semibold">{acct.handle || "Your X account"}</div>
+                  <div className="text-white/30 text-[10px]">API key {acct.key_hint}</div>
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-white/80 text-[13px] font-semibold flex items-center gap-1.5"><Power className="h-3.5 w-3.5 text-og-lime" /> Enabled</div>
+                    <div className="text-white/35 text-[11px]">Allow auto-posting from this account</div>
+                  </div>
+                  <Switch checked={!!acct.enabled} onCheckedChange={(v) => setSetting({ enabled: v })} />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-white/80 text-[13px] font-semibold flex items-center gap-1.5"><Rocket className="h-3.5 w-3.5 text-og-lime" /> Auto-post migrations</div>
+                    <div className="text-white/35 text-[11px]">Tweet pump.fun graduations as they happen</div>
+                  </div>
+                  <Switch checked={!!acct.auto_migrations} onCheckedChange={(v) => setSetting({ auto_migrations: v })} />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-white/80 text-[13px] font-semibold flex items-center gap-1.5">📄 Auto-post reports</div>
+                    <div className="text-white/35 text-[11px]">Tweet a link when you generate a token report</div>
+                  </div>
+                  <Switch checked={!!acct.auto_reports} onCheckedChange={(v) => setSetting({ auto_reports: v })} />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mt-4">
+                <Button variant="outline" size="sm" onClick={testTweet} disabled={busy} className="rounded-xl">
+                  <Send className="h-3.5 w-3.5 mr-1.5" /> Test tweet
+                </Button>
+                <Button variant="outline" size="sm" onClick={disconnect} disabled={busy}
+                  className="text-red-400 border-red-400/20 hover:bg-red-400/10 hover:text-red-300 rounded-xl">
+                  {busy ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <LogOut className="h-3.5 w-3.5 mr-1.5" />} Disconnect
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-white/45 text-[13px] leading-relaxed mt-1">
+                Auto-post migrations and reports to your own X account. Uses your app's OAuth 1.0a keys (Read + Write).
+              </p>
+              <ol className="mt-3 space-y-1 text-white/40 text-[12px] list-decimal list-inside">
+                <li>Create a project/app at <a href="https://developer.x.com" target="_blank" rel="noreferrer" className="text-og-cyan hover:underline">developer.x.com</a> with Read + Write</li>
+                <li>Generate API Key/Secret and Access Token/Secret</li>
+                <li>Paste all four below and Connect</li>
+              </ol>
+              <div className="flex flex-col gap-2 mt-3">
+                <Input value={k1} onChange={(e) => setK1(e.target.value)} placeholder="API Key (consumer key)" className="bg-white/5 border-white/10 text-sm font-mono" />
+                <Input value={k2} onChange={(e) => setK2(e.target.value)} type="password" placeholder="API Secret" className="bg-white/5 border-white/10 text-sm font-mono" />
+                <Input value={k3} onChange={(e) => setK3(e.target.value)} placeholder="Access Token" className="bg-white/5 border-white/10 text-sm font-mono" />
+                <Input value={k4} onChange={(e) => setK4(e.target.value)} type="password" placeholder="Access Token Secret" className="bg-white/5 border-white/10 text-sm font-mono" />
+                <Button onClick={connect} disabled={busy} className="rounded-xl bg-og-cyan hover:bg-og-cyan/90 text-black font-bold">
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Twitter className="h-4 w-4 mr-1.5" />} Connect X
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
