@@ -139,6 +139,64 @@ async function getAlphaText(limit = 6): Promise<string> {
   return `\uD83E\uDDE0 <b>Latest alpha callouts</b>\n\n` + lines.join("\n\n");
 }
 
+async function getTrendingText(limit = 10): Promise<string> {
+  try {
+    const r = await fetch(`https://lite-api.jup.ag/tokens/v2/toptrending/24h?limit=${limit}`);
+    const arr = await r.json();
+    if (!Array.isArray(arr) || !arr.length) return "No trending tokens right now.";
+    const lines = arr.slice(0, limit).map((t: any, i: number) => {
+      const ch = t.stats24h?.priceChange;
+      const chStr = ch == null ? "" : ` \u00B7 ${ch >= 0 ? "+" : ""}${Number(ch).toFixed(1)}%`;
+      return `${i + 1}. <b>$${escHtml(t.symbol || "?")}</b> \u00B7 MC ${fmtUsd(t.mcap)} \u00B7 Liq ${fmtUsd(t.liquidity)}${chStr}\n<code>${escHtml(t.id)}</code>`;
+    });
+    return `\uD83D\uDD25 <b>Trending (24h)</b>\n\n` + lines.join("\n\n");
+  } catch { return "Couldn't fetch trending right now."; }
+}
+
+async function ogScan(query: string): Promise<any> {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/og-scan-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${SERVICE_ROLE}`, apikey: SERVICE_ROLE },
+      body: JSON.stringify({ query }),
+    });
+    return await r.json();
+  } catch { return { ok: false, error: "scan failed" }; }
+}
+
+function pctStr(n: any): string {
+  if (n == null || !isFinite(Number(n))) return "?";
+  const v = Number(n); return (v >= 0 ? "+" : "") + v.toFixed(1) + "%";
+}
+
+function authStr(disabled: boolean | null): string {
+  if (disabled === true) return "off \u2705";
+  if (disabled === false) return "ON \u26A0\uFE0F";
+  return "?";
+}
+
+// Site-identical scan card (same data + OG score as ogscan.fun).
+function formatScan(s: any): string {
+  const t = s.token, sig = s.score.signals, f = s.flags;
+  const price = t.priceUsd != null ? "$" + Number(t.priceUsd).toPrecision(4) : "?";
+  const pump = f.isPumpFun ? (f.migratedFromPumpFun ? "pump.fun (migrated)" : "pump.fun bonding curve") : "non-pump.fun";
+  const created = t.createdAt ? new Date(t.createdAt).toISOString().slice(0, 10) : "?";
+  return [
+    `\uD83D\uDC80 <b>OG Scan \u2014 ${escHtml(t.name || "?")} ($${escHtml(t.symbol || "?")})</b>`,
+    `Verdict: <b>${escHtml(s.verdict)}</b> \u00B7 OG Score <b>${s.score.total}/100</b>`,
+    ``,
+    `\uD83D\uDCB0 Price ${price} \u00B7 MC ${fmtUsd(t.mcap)} \u00B7 FDV ${fmtUsd(t.fdv)}`,
+    `\uD83D\uDCA7 Liquidity ${fmtUsd(t.liquidity)} \u00B7 \uD83D\uDC65 Holders ${t.holderCount != null ? Number(t.holderCount).toLocaleString() : "?"}${t.topHoldersPct != null ? " (top " + Number(t.topHoldersPct).toFixed(1) + "%)" : ""}`,
+    `\uD83D\uDCC8 24h ${pctStr(t.priceChange24h)} \u00B7 Vol ${fmtUsd((t.buyVolume24h || 0) + (t.sellVolume24h || 0))}`,
+    `\uD83C\uDF31 Organic ${t.organicScore != null ? Math.round(t.organicScore) : "?"}${t.organicScoreLabel ? " (" + escHtml(t.organicScoreLabel) + ")" : ""} \u00B7 \uD83C\uDFD4 ATH MC ${fmtUsd(t.athMcap)}`,
+    `\uD83D\uDEE1 Mint auth ${authStr(f.mintAuthorityDisabled)} \u00B7 Freeze ${authStr(f.freezeAuthorityDisabled)} \u00B7 ${f.isVerified ? "Verified \u2705" : "Unverified"}`,
+    `\uD83D\uDD27 ${pump}${f.lpPulled ? " \u00B7 \u26D4 LP pulled/dead" : ""} \u00B7 \uD83D\uDCC5 ${created}`,
+    ``,
+    `<i>Signals \u2014 Age ${sig.age} \u00B7 ATH ${sig.athMcap} \u00B7 Holders ${sig.holderProfile} \u00B7 Deploy ${sig.deployPattern} \u00B7 Pool ${sig.poolAge}</i>`,
+    `<a href="${t.dexUrl}">chart</a> \u00B7 <code>${escHtml(t.mint)}</code>`,
+  ].join("\n");
+}
+
 async function askGrim(text: string, knowledge = "", identity = "") {
   try {
     const context = "Source: Telegram bot"
@@ -241,7 +299,8 @@ Deno.serve(async (req) => {
           `💀 <b>${displayName} is online.</b>\n\n${intro}\n\n` +
           `<b>Commands</b>\n` +
           `/chat — ask Grim anything (works in groups too)\n` +
-          `/scan <token> — full token risk report\n` +
+          `/scan <token> — full token risk report (same as the site)\n` +
+          `/trending — top trending tokens (24h)\n` +
           `/news — latest crypto headlines\n` +
           `/alpha — community alpha callouts\n` +
           `/migrations — pump.fun graduations (last 24h)\n` +
@@ -273,21 +332,41 @@ Deno.serve(async (req) => {
       return ok();
     }
 
+    if (cmd === "/trending" || cmd === "/trend") {
+      await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
+      await sendLong(token, chatId, await getTrendingText(10), { parse_mode: "HTML" });
+      return ok();
+    }
+
     if (cmd === "/scan" || cmd === "/analyze") {
-      if (!bot.ai_enabled) {
-        await tg(token, "sendMessage", { chat_id: chatId, text: "AI is off for this bot. The owner can enable it in OG Scan settings." });
-        return ok();
-      }
-      const arg = text.replace(/^\S+\s*/, "").trim();
+      const arg = (text.replace(/^\S+\s*/, "").trim()) || cleanText.replace(/^\/(scan|analyze)\b/i, "").trim();
       if (!arg) {
         await tg(token, "sendMessage", { chat_id: chatId, text: "Send a token to scan: /scan <mint address or $TICKER>" });
         return ok();
       }
       await tg(token, "sendChatAction", { chat_id: chatId, action: "typing" });
-      const scanPrompt = `Run a full OG Scan token analysis of: ${arg}. Cover liquidity, holder concentration, LP/contract risk, dev history, and finish with a clear verdict (ape / watch / avoid).`;
-      const knowledge = await retrieveKnowledge(bot.id, arg);
-      const answer = await askGrim(scanPrompt, knowledge, identity);
-      await sendLong(token, chatId, answer, isGroup ? { reply_to_message_id: msg.message_id } : {});
+      const scan = await ogScan(arg);
+      if (scan && scan.ok) {
+        await sendLong(token, chatId, formatScan(scan), { parse_mode: "HTML", ...(isGroup ? { reply_to_message_id: msg.message_id } : {}) });
+        // Optional grounded one-paragraph take, in character, using the scan data.
+        if (bot.ai_enabled) {
+          const take = await askGrim(
+            `Give a sharp 2-3 sentence verdict on this token based ONLY on this OG Scan data. No preamble.\n\n${JSON.stringify(scan)}`,
+            "", identity,
+          );
+          if (take) await sendLong(token, chatId, take, isGroup ? { reply_to_message_id: msg.message_id } : {});
+        }
+        return ok();
+      }
+      // Fallback: if the scan engine couldn't resolve the token, let Grim try.
+      if (bot.ai_enabled) {
+        const scanPrompt = `Run a full OG Scan token analysis of: ${arg}. Cover liquidity, holder concentration, LP/contract risk, dev history, and finish with a clear verdict.`;
+        const knowledge = await retrieveKnowledge(bot.id, arg);
+        const answer = await askGrim(scanPrompt, knowledge, identity);
+        await sendLong(token, chatId, answer, isGroup ? { reply_to_message_id: msg.message_id } : {});
+      } else {
+        await tg(token, "sendMessage", { chat_id: chatId, text: scan?.error || "Couldn't find that token." });
+      }
       return ok();
     }
 
