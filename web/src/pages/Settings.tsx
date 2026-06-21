@@ -1597,6 +1597,20 @@ function TelegramBotCard() {
                   </div>
                   <Switch checked={!!bot.ai_enabled} onCheckedChange={(v) => setSetting({ ai_enabled: v })} />
                 </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-white/80 text-[13px] font-semibold flex items-center gap-1.5">🔎 Auto-scan pasted CAs</div>
+                    <div className="text-white/35 text-[11px]">Auto-reply with a scan when a contract address is posted (DMs + groups)</div>
+                  </div>
+                  <Switch checked={bot.auto_scan !== false} onCheckedChange={(v) => setSetting({ auto_scan: v })} />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-white/80 text-[13px] font-semibold flex items-center gap-1.5">🌅 Daily digest</div>
+                    <div className="text-white/35 text-[11px]">Send a daily market digest (trending + migrations + headlines) to subscribed chats</div>
+                  </div>
+                  <Switch checked={bot.digest_enabled !== false} onCheckedChange={(v) => setSetting({ digest_enabled: v })} />
+                </div>
               </div>
 
               <BotIdentity bot={bot} onSaved={setBot} />

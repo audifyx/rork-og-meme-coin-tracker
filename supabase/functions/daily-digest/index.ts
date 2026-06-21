@@ -42,12 +42,12 @@ async function buildDigest(): Promise<string> {
 Deno.serve(async () => {
   try {
     const text = await buildDigest();
-    const { data: bots } = await admin.from("telegram_bots").select("id, bot_token");
+    const { data: bots } = await admin.from("telegram_bots").select("id, bot_token, digest_enabled");
     const botMap: Record<string, any> = {}; for (const b of bots || []) botMap[b.id] = b;
     const { data: chats } = await admin.from("telegram_alert_chats").select("bot_id, chat_id, enabled, digest_enabled").eq("enabled", true).eq("digest_enabled", true);
     let sent = 0;
     for (const c of chats || []) {
-      const b = botMap[c.bot_id]; if (!b) continue;
+      const b = botMap[c.bot_id]; if (!b || b.digest_enabled === false) continue;
       await fetch(`https://api.telegram.org/bot${b.bot_token}/sendMessage`, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ chat_id: c.chat_id, text, parse_mode:"HTML", disable_web_page_preview:true }) }).catch(()=>{});
       sent++;
     }
