@@ -1131,6 +1131,27 @@ const OverviewPage = ({
   const { user, profile } = useAuth();
   const [popupMint, setPopupMint] = useState<string | null>(null);
   const popupToken: JupTokenInfo | null = popupMint ? { id: popupMint, name: "", symbol: "", decimals: 9 } : null;
+  type HomePanel = "daily" | "watchlist" | "alpha" | "leaders" | "paper" | "calendar" | "calc";
+  const [panel, setPanel] = useState<HomePanel>("daily");
+  const quickActions: { label: string; Icon: ComponentType<{ className?: string }>; accent: TabAccent; onClick: () => void }[] = [
+    { label: "Scanner", Icon: Search, accent: "lime", onClick: () => onSwitchTab("scanner") },
+    { label: "Launches", Icon: Rocket, accent: "cyan", onClick: () => onSwitchTab("snipe-feed") },
+    { label: "Market", Icon: Flame, accent: "gold", onClick: () => onSwitchTab("feed") },
+    { label: "Spaces", Icon: Radio, accent: "cyan", onClick: () => openCommunitySub("spaces") },
+    { label: "Chat", Icon: MessageSquare, accent: "cyan", onClick: () => openCommunitySub("social") },
+    { label: "Dev Radar", Icon: Crosshair, accent: "gold", onClick: () => onSwitchTab("dev-wallet-radar") },
+    { label: "Tools", Icon: Wrench, accent: "white", onClick: () => onSwitchTab("tools") },
+    { label: "Profile", Icon: User, accent: "lime", onClick: () => onSwitchTab("profile") },
+  ];
+  const homePanels: { id: HomePanel; label: string }[] = [
+    { id: "daily", label: "OG Daily" },
+    { id: "watchlist", label: "Watchlist" },
+    { id: "alpha", label: "Alpha" },
+    { id: "leaders", label: "Leaders" },
+    { id: "paper", label: "Paper Trade" },
+    { id: "calendar", label: "Calendar" },
+    { id: "calc", label: "Calc" },
+  ];
 
   const openCommunitySub = (sub: CommunitySubTab) => {
     try {
@@ -1279,43 +1300,41 @@ const OverviewPage = ({
         </div>
       </div>
 
-      {/* ── MARKET INTELLIGENCE ── */}
+      {/* QUICK ACTIONS */}
       <div>
-        <p className="text-[11px] font-black text-white/30 uppercase tracking-widest mb-3">Market Intelligence</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Suspense fallback={spinnerSm("border-primary")}>
-            <OGDaily onSelectMint={(m: string) => setPopupMint(m)} />
-          </Suspense>
-          <Suspense fallback={spinnerSm("border-secondary")}>
-            <SmartWatchlist onSelectMint={(m: string) => setPopupMint(m)} />
-          </Suspense>
+        <p className="text-[11px] font-black text-white/30 uppercase tracking-widest mb-3">Quick Actions</p>
+        <div className="grid grid-cols-4 gap-2.5">
+          {quickActions.map((a) => (
+            <button key={a.label} type="button" onClick={a.onClick}
+              className="group flex flex-col items-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-2 py-3.5 transition hover:border-white/[0.14] hover:bg-white/[0.06] active:scale-95">
+              <span className={cn("flex h-11 w-11 items-center justify-center rounded-xl border", accentIcon(a.accent))}>
+                <a.Icon className="h-5 w-5" />
+              </span>
+              <span className="text-[10.5px] font-bold text-white/70 text-center leading-tight">{a.label}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* ── ALPHA + LEADERBOARD ── */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Suspense fallback={spinnerSm("border-og-gold")}>
-          <AlphaCallouts onSelectMint={(m: string) => { onSelectMint(m); onSwitchTab("scanner"); }} />
-        </Suspense>
-        <Suspense fallback={spinnerSm("border-primary")}>
-          <PlatformLeaderboard />
-        </Suspense>
-      </div>
-
-      {/* ── UTILITIES ── */}
+      {/* SEGMENTED INSIGHTS PANEL — one view at a time to keep the home short */}
       <div>
-        <p className="text-[11px] font-black text-white/30 uppercase tracking-widest mb-3">Utilities</p>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Suspense fallback={spinnerSm("border-primary")}>
-            <PaperTrading onSelectMint={(m: string) => { onSelectMint(m); onSwitchTab("scanner"); }} />
-          </Suspense>
-          <Suspense fallback={spinnerSm("border-secondary")}>
-            <CryptoCalendar />
-          </Suspense>
+        <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          {homePanels.map((pp) => (
+            <button key={pp.id} type="button" onClick={() => setPanel(pp.id)}
+              className={cn("shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition",
+                panel === pp.id ? "bg-primary text-primary-foreground" : "border border-white/10 bg-white/[0.03] text-white/50 hover:text-white/80")}>
+              {pp.label}
+            </button>
+          ))}
         </div>
+        {panel === "daily" && <Suspense fallback={spinnerSm("border-primary")}><OGDaily onSelectMint={(m: string) => setPopupMint(m)} /></Suspense>}
+        {panel === "watchlist" && <Suspense fallback={spinnerSm("border-secondary")}><SmartWatchlist onSelectMint={(m: string) => setPopupMint(m)} /></Suspense>}
+        {panel === "alpha" && <Suspense fallback={spinnerSm("border-og-gold")}><AlphaCallouts onSelectMint={(m: string) => { onSelectMint(m); onSwitchTab("scanner"); }} /></Suspense>}
+        {panel === "leaders" && <Suspense fallback={spinnerSm("border-primary")}><PlatformLeaderboard /></Suspense>}
+        {panel === "paper" && <Suspense fallback={spinnerSm("border-primary")}><PaperTrading onSelectMint={(m: string) => { onSelectMint(m); onSwitchTab("scanner"); }} /></Suspense>}
+        {panel === "calendar" && <Suspense fallback={spinnerSm("border-secondary")}><CryptoCalendar /></Suspense>}
+        {panel === "calc" && <Suspense fallback={spinnerSm("border-primary")}><QuickCalc /></Suspense>}
       </div>
-
-      <Suspense fallback={null}><QuickCalc /></Suspense>
 
       {popupToken && (
         <TokenDetailPopupWrapper
