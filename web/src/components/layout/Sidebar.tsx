@@ -1,6 +1,6 @@
 import {
   Coins, Compass, Hash, LogOut, Mail, Pencil,
-  Settings, TrendingUp, User, Wallet, X, Shield, Menu, Wrench, Home, FileText, Bell, Trophy, Radar, LineChart} from "lucide-react";
+  Settings, TrendingUp, User, Wallet, X, Shield, Menu, Wrench, Home, FileText, Bell, Trophy, Radar, LineChart, Sparkles, Gamepad2} from "lucide-react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +24,8 @@ const primaryItems: NavItem[] = [
   { to: "/reports",       icon: FileText, label: "Reports",      eyebrow: "AI report feed" },
   { to: "/track-record",  icon: Trophy,   label: "Track Record", eyebrow: "Grim's receipts" },
   { to: "/alerts",        icon: Bell,     label: "Alerts",       eyebrow: "Watches · Discord · X" },
+  { to: "/intelligence",  icon: Sparkles, label: "AI Intelligence", eyebrow: "Grim AI · live analysis" },
+  { to: "/games",         icon: Gamepad2, label: "Partnerships", eyebrow: "Games · partner apps" },
 ];
 
 const toolsItems: NavItem[] = [

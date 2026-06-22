@@ -3,6 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import {
   Bell,
   Coins,
+  Gamepad2,
+  Sparkles,
   Compass,
   Gift,
   Hash,
@@ -177,6 +179,8 @@ export const AppSidebar = ({
     { to: "/reports", icon: FileText, label: "Reports", eyebrow: "AI report feed" },
     { to: "/track-record", icon: Trophy, label: "Track Record", eyebrow: "Grim's receipts" },
     { to: "/alerts", icon: Bell, label: "Alerts", eyebrow: "Watches · Discord · X" },
+    { to: "/intelligence", icon: Sparkles, label: "AI Intelligence", eyebrow: "Grim AI · live analysis" },
+    { to: "/games", icon: Gamepad2, label: "Partnerships", eyebrow: "Games · partner apps" },
   ];
 
   const discoverItems: NavItem[] = [

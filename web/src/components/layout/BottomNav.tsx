@@ -11,10 +11,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { to: "/app", icon: Home, label: "Home" },
   { to: "/community", icon: Users, label: "Community" },
-  { to: "/intelligence", icon: Sparkles, label: "AI" },
   { to: "/tools", icon: Wrench, label: "Tools" },
-  // { to: "/support", icon: MessageCircle, label: "Support" }, // hidden
-  { to: "/games", icon: Gamepad2, label: "Partnerships" },
   { to: "/profile", icon: User, label: "Profile" },
 ];
 
@@ -138,55 +135,32 @@ export const BottomNav = () => {
   const activeTo = getActiveItem();
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 select-none">
-      {/* Gradient fade above */}
-      <div className="absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-background to-transparent pointer-events-none" />
-
-      <div className="relative overflow-hidden glass-bottom-nav">
-        {/* Top accent line */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-og-lime/30 to-transparent" />
-
-        <div className="flex items-stretch justify-around px-1 pb-[env(safe-area-inset-bottom,0px)] pt-1.5">
-          {navItems.map((item) => {
-            const isActive = activeTo === item.to;
-            const inner = (
-              <>
-                <div className={cn(
-                  "flex items-center justify-center w-11 h-8 rounded-xl transition-all duration-200",
-                  isActive
-                    ? "bg-og-lime/15 shadow-[0_0_16px_rgba(190,242,100,0.12)]"
-                    : "bg-transparent",
-                )}>
-                  <item.icon
-                    className={cn(
-                      "h-5 w-5 transition-all duration-200",
-                      isActive && "drop-shadow-[0_0_6px_rgba(190,242,100,0.5)]",
-                    )}
-                    strokeWidth={isActive ? 2.5 : 1.5}
-                  />
-                </div>
-                <span className={cn(
-                  "text-[9px] font-bold uppercase tracking-wider leading-none transition-all duration-200",
-                  isActive ? "opacity-100" : "opacity-60",
-                )}>
-                  {item.label}
-                </span>
-              </>
-            );
-
-            const baseClass = cn(
-              "flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1.5 transition-all duration-200",
-              "active:scale-[0.88] active:opacity-80",
-              isActive ? "text-og-lime" : "text-white/35",
-            );
-
-            return (
-              <NavLink key={item.to} to={item.to} onClick={triggerHaptic} className={baseClass}>
-                {inner}
-              </NavLink>
-            );
-          })}
-        </div>
+    <nav className="lg:hidden fixed left-1/2 -translate-x-1/2 z-50 select-none bottom-[calc(env(safe-area-inset-bottom,0px)+12px)]">
+      <div className="flex items-center gap-1 rounded-[28px] border border-white/[0.12] bg-[#0a0f1c]/70 px-2 py-2 shadow-[0_10px_40px_-8px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
+        {/* subtle top sheen */}
+        <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        {navItems.map((item) => {
+          const isActive = activeTo === item.to;
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              onClick={triggerHaptic}
+              className={cn(
+                "relative flex min-w-[60px] flex-col items-center justify-center gap-1 rounded-[22px] px-3.5 py-2 transition-all duration-200 active:scale-[0.9]",
+                isActive ? "bg-og-lime/15 text-og-lime" : "text-white/45 hover:text-white/75",
+              )}
+            >
+              <item.icon
+                className={cn("h-[22px] w-[22px] transition-all duration-200", isActive && "drop-shadow-[0_0_8px_rgba(190,242,100,0.5)]")}
+                strokeWidth={isActive ? 2.4 : 1.8}
+              />
+              <span className={cn("text-[9px] font-bold uppercase tracking-wider leading-none", isActive ? "opacity-100" : "opacity-70")}>
+                {item.label}
+              </span>
+            </NavLink>
+          );
+        })}
       </div>
     </nav>
   );

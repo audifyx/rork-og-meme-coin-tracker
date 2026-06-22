@@ -15,6 +15,7 @@ import { SheetClose } from "@/components/ui/sheet";
 
 
 const mainNavItems = [
+  { to: "/intelligence", icon: Sparkles, label: "AI Intelligence" },
   { to: "/wallets", icon: Wallet, label: "Phantom Trading Terminal" },
   { to: "/games",   icon: Gamepad2, label: "Partnerships" },
   { to: "/tokens", icon: Coins, label: "Tokens" },

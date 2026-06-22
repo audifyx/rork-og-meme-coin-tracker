@@ -187,7 +187,7 @@ export const OGDaily: React.FC<Props> = ({ onSelectMint }) => {
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(SECTIONS_EXPANDED_DEFAULT);
   const mounted = useRef(true);
-  useEffect(() => () => { mounted.current = false; }, []);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   const toggleSection = (id: string) => {
     setExpanded(prev => {
@@ -201,13 +201,18 @@ export const OGDaily: React.FC<Props> = ({ onSelectMint }) => {
     setLoading(true);
     try {
       // Fetch all data sources in parallel — use large limits for better coverage
-      const [t24, t1h, traded, organic, solData] = await Promise.all([
+      const [r24, r1h, rTraded, rOrganic, rSol] = await Promise.allSettled([
         jupTrending("24h", 100),
         jupTrending("1h", 50),
         jupTopTraded("24h", 50),
         jupTopOrganic("24h", 50),
         jupPrice([SOL_MINT]),
       ]);
+      const t24 = r24.status === "fulfilled" ? r24.value : [];
+      const t1h = r1h.status === "fulfilled" ? r1h.value : [];
+      const traded = rTraded.status === "fulfilled" ? rTraded.value : [];
+      const organic = rOrganic.status === "fulfilled" ? rOrganic.value : [];
+      const solData = rSol.status === "fulfilled" ? rSol.value : ({} as Record<string, any>);
 
       if (!mounted.current) return;
 
@@ -396,7 +401,15 @@ export const OGDaily: React.FC<Props> = ({ onSelectMint }) => {
     return () => clearInterval(iv);
   }, []);
 
-  if (!brief && !loading) return null;
+  if (!brief && !loading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 rounded-[1.75rem] border border-white/[0.08] bg-[#07101e] py-12 text-center">
+        <Newspaper className="h-6 w-6 text-white/30" />
+        <p className="text-[13px] font-bold text-white/60">Daily brief unavailable</p>
+        <button type="button" onClick={generate} className="rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2 text-[12px] font-bold text-white/70 hover:text-white">Retry</button>
+      </div>
+    );
+  }
 
   const sentimentBadge = {
     bullish: { cls: "bg-og-lime/10 text-og-lime border-og-lime/20", Icon: TrendingUp, label: "Bullish" },
