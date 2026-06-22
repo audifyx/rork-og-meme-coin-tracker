@@ -30,6 +30,7 @@ export default function TokenPublic() {
   const [dex, setDex] = useState<Any | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("Overview");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     let on = true; setLoading(true); setScan(null); setHolders(null); setSafety(null); setDex(null);
@@ -60,36 +61,57 @@ export default function TokenPublic() {
   const ageDays = t.ageDays ?? ageFrom(Math.min(...pairs.map((p) => p.pairCreatedAt || Infinity)));
   const ch24 = t.priceChange24h ?? top.priceChange?.h24 ?? null;
 
-  if (loading) return <div className="min-h-screen bg-[#05070d] flex items-center justify-center"><div className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent animate-spin" /></div>;
+  // real holder concentration (LP / pools excluded by og-holders)
+  const realTop10 = holders?.top10pct ?? safety?.top10RealHolderPct ?? t.topHoldersPct ?? null;
+  const lpHolderPct = holders?.lpHolderPct ?? safety?.lpHolderPct ?? null;
+
+  const copy = () => { navigator.clipboard?.writeText(mint); setCopied(true); setTimeout(() => setCopied(false), 1500); };
+
+  if (loading) return <div className="flex min-h-screen items-center justify-center bg-[#05070d]"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>;
   if (!scan?.ok && !pairs.length) return (
-    <div className="min-h-screen bg-[#05070d] flex flex-col items-center justify-center gap-3 px-6 text-center">
-      <div className="text-white/80 text-lg font-bold">Couldn't load that token</div>
-      <div className="text-white/40 text-sm font-mono">{short(mint, 6, 6)}</div>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#05070d] px-6 text-center">
+      <div className="text-lg font-bold text-white/80">Couldn't load that token</div>
+      <div className="font-mono text-sm text-white/40">{short(mint, 6, 6)}</div>
       <a href="https://ogscan.fun" className="mt-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Go to OG Scan</a>
     </div>
   );
 
-  return (
-    <div className="min-h-screen bg-[#05070d] text-white">
-      <div className="mx-auto max-w-3xl px-3 pb-20 sm:px-5">
-        <div className="flex items-center justify-between py-4">
-          <a href="https://ogscan.fun" className="text-[15px] font-black tracking-tight">OG<span className="text-primary">SCAN</span></a>
-          <a href="https://ogscan.fun" className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-1.5 text-[11px] font-bold text-white/60 hover:text-white">Open app →</a>
-        </div>
+  const name = t.name || top.baseToken?.name || "Unknown";
+  const symbol = t.symbol || top.baseToken?.symbol || "—";
+  const image = t.image || top.info?.imageUrl;
+  const xUrl = t.socials?.x || top.info?.socials?.find((s: Any) => s.type === "twitter")?.url;
+  const tgUrl = t.socials?.telegram || top.info?.socials?.find((s: Any) => s.type === "telegram")?.url;
+  const webUrl = t.socials?.website || top.info?.websites?.[0]?.url;
 
-        {/* Hero */}
-        <div className="relative overflow-hidden rounded-3xl border border-white/[0.09] bg-[#080e1a]">
-          <div className="h-28 w-full overflow-hidden sm:h-36">
-            {banner ? <img src={banner} alt="" className="h-full w-full object-cover opacity-80" /> : <div className="h-full w-full bg-[radial-gradient(ellipse_at_30%_0%,hsl(var(--primary)/0.25),transparent_60%),radial-gradient(ellipse_at_100%_100%,hsl(var(--secondary)/0.18),transparent_60%)]" />}
-            <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-transparent to-[#080e1a] sm:h-36" />
+  return (
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#05070d] text-white">
+      {/* Sticky top bar — always reachable, solid (no blur) for smooth scroll */}
+      <div className="sticky top-0 z-30 border-b border-white/[0.06] bg-[#070b14]" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-3 py-2.5">
+          <a href="https://ogscan.fun" className="text-[15px] font-black tracking-tight">OG<span className="text-primary">SCAN</span></a>
+          <div className="flex min-w-0 items-center gap-2">
+            {image ? <img src={image} alt="" className="h-6 w-6 rounded-md object-cover" /> : null}
+            <span className="truncate text-[13px] font-bold text-white/70">${symbol}</span>
+            <span className="rounded-md px-1.5 py-0.5 text-[12px] font-black" style={{ color: scoreColor(total), background: `${scoreColor(total)}1a` }}>{total}</span>
           </div>
-          <div className="relative -mt-10 px-4 pb-4 sm:px-5">
-            <div className="flex items-end justify-between gap-3">
-              <div className="flex items-end gap-3 min-w-0">
-                {t.image || top.info?.imageUrl ? <img src={t.image || top.info?.imageUrl} alt="" className="h-16 w-16 rounded-2xl border-2 border-[#080e1a] object-cover" /> : <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-[#080e1a] bg-primary/15 text-2xl font-black text-primary">{(t.symbol || t.name || "?")[0]}</div>}
+          <a href="https://ogscan.fun" className="shrink-0 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-1.5 text-[11px] font-bold text-white/60 hover:text-white">Open app →</a>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-2xl px-3 pb-24 pt-3 sm:px-5">
+        {/* Hero */}
+        <div className="rounded-3xl border border-white/[0.09] bg-[#080e1a]">
+          <div className="relative h-24 w-full overflow-hidden rounded-t-3xl sm:h-32">
+            {banner ? <img src={banner} alt="" loading="eager" decoding="async" className="h-full w-full object-cover opacity-80" /> : <div className="h-full w-full bg-[radial-gradient(ellipse_at_30%_0%,hsl(var(--primary)/0.25),transparent_60%),radial-gradient(ellipse_at_100%_100%,hsl(var(--secondary)/0.18),transparent_60%)]" />}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#080e1a]" />
+          </div>
+          <div className="px-4 pb-4 sm:px-5">
+            <div className="-mt-9 flex items-end justify-between gap-3">
+              <div className="flex min-w-0 items-end gap-3">
+                {image ? <img src={image} alt="" className="h-16 w-16 rounded-2xl border-2 border-[#080e1a] object-cover" /> : <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-[#080e1a] bg-primary/15 text-2xl font-black text-primary">{(symbol || name || "?")[0]}</div>}
                 <div className="min-w-0 pb-1">
-                  <div className="flex items-center gap-2"><h1 className="truncate text-xl font-black">{t.name || top.baseToken?.name || "Unknown"}</h1>{t.isVerifiedJup && <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[9px] font-bold text-sky-400">VERIFIED</span>}</div>
-                  <div className="text-[13px] font-bold text-white/50">${t.symbol || top.baseToken?.symbol || "—"}</div>
+                  <div className="flex items-center gap-2"><h1 className="truncate text-xl font-black">{name}</h1>{t.isVerifiedJup && <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[9px] font-bold text-sky-400">VERIFIED</span>}</div>
+                  <div className="text-[13px] font-bold text-white/50">${symbol}</div>
                 </div>
               </div>
               <div className="shrink-0 text-center">
@@ -98,28 +120,32 @@ export default function TokenPublic() {
                 </div>
               </div>
             </div>
+
             {scan?.verdict && <div className="mt-3 rounded-2xl border px-3.5 py-2.5" style={{ borderColor: `${scoreColor(total)}40`, background: `${scoreColor(total)}12` }}><span className="text-[13px] font-black" style={{ color: scoreColor(total) }}>{scan.verdict}</span></div>}
-            {(t.socials?.x || t.socials?.telegram || t.socials?.website || top.info?.socials?.length) && (
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {(t.socials?.x || top.info?.socials?.find((s: Any) => s.type === "twitter")?.url) && <a href={t.socials?.x || top.info?.socials?.find((s: Any) => s.type === "twitter")?.url} target="_blank" rel="noreferrer" className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] font-bold text-white/70 hover:text-white">𝕏 Twitter</a>}
-                {(t.socials?.telegram || top.info?.socials?.find((s: Any) => s.type === "telegram")?.url) && <a href={t.socials?.telegram || top.info?.socials?.find((s: Any) => s.type === "telegram")?.url} target="_blank" rel="noreferrer" className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] font-bold text-white/70 hover:text-white">Telegram</a>}
-                {(t.socials?.website || top.info?.websites?.[0]?.url) && <a href={t.socials?.website || top.info?.websites?.[0]?.url} target="_blank" rel="noreferrer" className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] font-bold text-white/70 hover:text-white">Website</a>}
-              </div>
-            )}
+
             <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1">
               <span className="text-2xl font-black">{fmtUsd(priceUsd)}</span>
-              <span className={`text-sm font-bold ${pctColor(ch24)}`}>{pct(ch24)} <span className="text-white/30 font-medium">24h</span></span>
+              <span className={`text-sm font-bold ${pctColor(ch24)}`}>{pct(ch24)} <span className="font-medium text-white/30">24h</span></span>
               {safety?.riskScore != null && <span className="text-sm font-bold" style={{ color: scoreColor(100 - Number(safety.riskScore)) }}>Risk {safety.riskScore}</span>}
             </div>
+
+            {(xUrl || tgUrl || webUrl) && (
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {xUrl && <a href={xUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] font-bold text-white/70 hover:text-white">𝕏 Twitter</a>}
+                {tgUrl && <a href={tgUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] font-bold text-white/70 hover:text-white">Telegram</a>}
+                {webUrl && <a href={webUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[11px] font-bold text-white/70 hover:text-white">Website</a>}
+              </div>
+            )}
+
             <div className="mt-3 flex items-center gap-2 rounded-xl border border-white/[0.07] bg-black/20 px-3 py-2">
-              <span className="font-mono text-[11px] text-white/50 truncate flex-1">{mint}</span>
-              <button onClick={() => navigator.clipboard?.writeText(mint)} className="rounded-lg bg-white/[0.06] px-2 py-1 text-[10px] font-bold text-white/60 hover:text-white">Copy</button>
+              <span className="flex-1 truncate font-mono text-[11px] text-white/50">{mint}</span>
+              <button onClick={copy} className="rounded-lg bg-white/[0.06] px-2 py-1 text-[10px] font-bold text-white/60 hover:text-white">{copied ? "Copied" : "Copy"}</button>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-1">
+        <div className="mt-4 -mx-3 flex items-center gap-2 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TABS.map((tb) => <button key={tb} onClick={() => setTab(tb)} className={`shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition ${tab === tb ? "bg-primary text-primary-foreground" : "border border-white/10 bg-white/[0.03] text-white/50 hover:text-white/80"}`}>{tb}</button>)}
         </div>
 
@@ -149,38 +175,41 @@ export default function TokenPublic() {
             <Stat label="Freeze Auth" value={safety.freezeAuthorityRenounced ? "Renounced" : "ACTIVE ⚠"} accent={safety.freezeAuthorityRenounced ? "text-emerald-400" : "text-red-400"} />
             <Stat label="LP Locked" value={safety.lpLockedPct != null ? `${safety.lpLockedPct}%` : "--"} accent={Number(safety.lpLockedPct) >= 100 ? "text-emerald-400" : Number(safety.lpLockedPct) > 0 ? "text-yellow-400" : "text-red-400"} />
             <Stat label="Launchpad" value={safety.launchpad || "—"} />
-            <Stat label="Top 10 (real)" value={safety.top10RealHolderPct != null ? `${safety.top10RealHolderPct}%` : "--"} accent={Number(safety.top10RealHolderPct) > 40 ? "text-red-400" : "text-emerald-400"} />
-            <Stat label="LP Holds" value={safety.lpHolderPct != null ? `${safety.lpHolderPct}%` : "--"} />
+            <Stat label="Top 10 (real)" value={realTop10 != null ? `${Number(realTop10).toFixed(1)}%` : "--"} accent={Number(realTop10) > 40 ? "text-red-400" : "text-emerald-400"} />
+            <Stat label="LP Holds" value={lpHolderPct != null ? `${Number(lpHolderPct).toFixed(1)}%` : "--"} accent="text-sky-400" />
             <Stat label="Total Holders" value={fmtNum(safety.totalHolders)} />
             {Array.isArray(safety.risks) && safety.risks.length > 0 && (
-              <div className="col-span-2 sm:col-span-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-white/35 mb-2">Risk Flags</div>
+              <div className="col-span-2 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5 sm:col-span-3">
+                <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-white/35">Risk Flags</div>
                 <div className="space-y-2">
                   {safety.risks.map((r: Any, i: number) => (
                     <div key={i} className="flex items-start gap-2">
-                      <span className="mt-1 h-2 w-2 rounded-full shrink-0" style={{ background: riskLevelColor(r.level || "") }} />
+                      <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ background: riskLevelColor(r.level || "") }} />
                       <div><div className="text-[12px] font-bold text-white/85">{r.name}{r.level ? ` · ${r.level}` : ""}</div>{r.desc && <div className="text-[11px] text-white/40">{r.desc}</div>}</div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-          </>) : <div className="col-span-2 sm:col-span-3 text-white/30 text-[13px] p-4">Loading security data…</div>)}
+          </>) : <div className="col-span-2 p-4 text-[13px] text-white/30 sm:col-span-3">Loading security data…</div>)}
 
           {tab === "Holders" && (<>
             <Stat label="Holders" value={fmtNum(t.holderCount ?? safety?.totalHolders)} />
-            <Stat label="Top 10 %" value={holders?.top10pct != null ? `${Number(holders.top10pct).toFixed(1)}%` : (t.topHoldersPct != null ? `${Number(t.topHoldersPct).toFixed(1)}%` : "--")} accent={Number(holders?.top10pct ?? t.topHoldersPct) > 40 ? "text-red-400" : "text-emerald-400"} />
+            <Stat label="Top 10 (real)" value={realTop10 != null ? `${Number(realTop10).toFixed(1)}%` : "--"} accent={Number(realTop10) > 40 ? "text-red-400" : "text-emerald-400"} />
             <Stat label="Concentration" value={holders?.concentrationRisk || "--"} accent={/high/i.test(holders?.concentrationRisk || "") ? "text-red-400" : "text-emerald-400"} />
+            <Stat label="LP in Pools" value={lpHolderPct != null ? `${Number(lpHolderPct).toFixed(1)}%` : "--"} accent="text-sky-400" />
             <Stat label="Holder Δ 1h" value={pct(t.holderChange1h)} accent={pctColor(t.holderChange1h)} />
             <Stat label="Holder Δ 24h" value={pct(t.holderChange24h)} accent={pctColor(t.holderChange24h)} />
-            <Stat label="Net Buyers 24h" value={fmtNum(t.netBuyers24h)} />
+            <div className="col-span-2 -mt-1 sm:col-span-3">
+              <div className="text-[10px] text-white/30">Liquidity pools, bonding curves &amp; burn addresses are excluded from holder %.</div>
+            </div>
             {Array.isArray(holders?.holders) && holders.holders.length > 0 && (
-              <div className="col-span-2 sm:col-span-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-white/35 mb-2">Top Holders</div>
+              <div className="col-span-2 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5 sm:col-span-3">
+                <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-white/35">Top Real Holders</div>
                 <div className="space-y-1.5">
                   {holders.holders.slice(0, 12).map((h: Any, i: number) => {
                     const ins = safety?.topHolders?.find((x: Any) => x.address === (h.owner || h.tokenAccount))?.insider;
-                    return (<div key={i} className="flex items-center gap-2 text-[12px]"><span className="w-5 text-white/30 font-mono">{i + 1}</span><span className="font-mono text-white/55 truncate flex-1">{short(h.owner || h.tokenAccount || "", 4, 4)}</span>{ins && <span className="rounded px-1.5 py-0.5 text-[9px] font-bold text-red-300 bg-red-500/15">insider</span>}{h.label && <span className="rounded px-1.5 py-0.5 text-[9px] font-bold text-white/50 bg-white/[0.06]">{h.label}</span>}<span className="font-black text-white w-14 text-right">{h.pct != null ? `${Number(h.pct).toFixed(2)}%` : "--"}</span></div>);
+                    return (<div key={i} className="flex items-center gap-2 text-[12px]"><span className="w-5 font-mono text-white/30">{i + 1}</span><span className="flex-1 truncate font-mono text-white/55">{short(h.owner || h.tokenAccount || "", 4, 4)}</span>{ins && <span className="rounded bg-red-500/15 px-1.5 py-0.5 text-[9px] font-bold text-red-300">insider</span>}{h.label && <span className="rounded bg-white/[0.06] px-1.5 py-0.5 text-[9px] font-bold text-white/50">{h.label}</span>}<span className="w-14 text-right font-black text-white">{h.pct != null ? `${Number(h.pct).toFixed(2)}%` : "--"}</span></div>);
                   })}
                 </div>
               </div>
@@ -197,34 +226,32 @@ export default function TokenPublic() {
             <Stat label="Traders 24h" value={fmtNum(t.numTraders24h)} />
             <Stat label="Pairs" value={fmtNum(pairs.length)} />
             {pairs.length > 0 && (
-              <div className="col-span-2 sm:col-span-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-white/35 mb-2">DEX Pairs</div>
+              <div className="col-span-2 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5 sm:col-span-3">
+                <div className="mb-2 text-[10px] font-bold uppercase tracking-widest text-white/35">DEX Pairs</div>
                 <div className="space-y-2">
                   {pairs.slice(0, 8).map((p: Any, i: number) => (
-                    <a key={i} href={p.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[12px] hover:bg-white/[0.03] rounded-lg px-1 py-1">
-                      <span className="font-bold text-white/80 capitalize w-20 truncate">{p.dexId}</span>
-                      <span className="text-white/45 flex-1 truncate">{p.baseToken?.symbol}/{p.quoteToken?.symbol}</span>
-                      <span className="text-white/60 w-16 text-right">{fmtUsd(p.liquidity?.usd)}</span>
-                      <span className="text-white/40 w-16 text-right">{fmtUsd(p.volume?.h24)}</span>
+                    <a key={i} href={p.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 rounded-lg px-1 py-1 text-[12px] hover:bg-white/[0.03]">
+                      <span className="w-20 truncate font-bold capitalize text-white/80">{p.dexId}</span>
+                      <span className="flex-1 truncate text-white/45">{p.baseToken?.symbol}/{p.quoteToken?.symbol}</span>
+                      <span className="w-16 text-right text-white/60">{fmtUsd(p.liquidity?.usd)}</span>
+                      <span className="w-16 text-right text-white/40">{fmtUsd(p.volume?.h24)}</span>
                     </a>
                   ))}
                 </div>
               </div>
             )}
-            <div className="col-span-2 sm:col-span-3 flex flex-wrap gap-2 pt-1">
+            <div className="col-span-2 flex flex-wrap gap-2 pt-1 sm:col-span-3">
               <a href={t.dexUrl || `https://dexscreener.com/solana/${mint}`} target="_blank" rel="noreferrer" className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-[12px] font-bold text-white/70 hover:text-white">DexScreener →</a>
               <a href={t.pumpFunUrl || `https://pump.fun/coin/${mint}`} target="_blank" rel="noreferrer" className="rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-[12px] font-bold text-white/70 hover:text-white">pump.fun →</a>
             </div>
           </>)}
 
           {tab === "Socials" && (
-            <div className="col-span-2 sm:col-span-3 space-y-2.5">
-              {[["𝕏 Twitter", t.socials?.x || top.info?.socials?.find((s: Any) => s.type === "twitter")?.url],
-                ["Telegram", t.socials?.telegram || top.info?.socials?.find((s: Any) => s.type === "telegram")?.url],
-                ["Website", t.socials?.website || top.info?.websites?.[0]?.url]].map(([label, url]) => (
+            <div className="col-span-2 space-y-2.5 sm:col-span-3">
+              {[["𝕏 Twitter", xUrl], ["Telegram", tgUrl], ["Website", webUrl]].map(([label, url]) => (
                 <div key={label as string} className="flex items-center justify-between rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3.5">
                   <span className="text-[13px] font-bold text-white/70">{label}</span>
-                  {url ? <a href={url as string} target="_blank" rel="noreferrer" className="text-[12px] font-bold text-primary truncate max-w-[55%]">{String(url).replace(/^https?:\/\//, "")}</a> : <span className="text-[12px] text-white/30">Not set</span>}
+                  {url ? <a href={url as string} target="_blank" rel="noreferrer" className="max-w-[55%] truncate text-[12px] font-bold text-primary">{String(url).replace(/^https?:\/\//, "")}</a> : <span className="text-[12px] text-white/30">Not set</span>}
                 </div>
               ))}
               <Stat label="DEX" value={top.dexId || t.socials?.dexId || "--"} />

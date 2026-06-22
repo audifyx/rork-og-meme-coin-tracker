@@ -9,6 +9,7 @@ import {
   Check,
   Copy,
   Crosshair,
+  FileDown,
   ExternalLink,
   Eye,
   Flame,
@@ -31,6 +32,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { CoinDetailDialog } from "@/components/CoinDetailDialog";
+import { downloadReportPdf } from "@/lib/reportPdf";
 import { cn } from "@/lib/utils";
 import {
   fmtNum,
@@ -766,6 +768,8 @@ const LaunchRow = memo(({
   const RiskIcon = risk.Icon;
   const ageSeconds = Math.floor(launch.createdAtMs / 1000);
   const dexPaid = tokenDexPaidLabel(launch);
+  const detailToken: JupTokenInfo = launchToToken(launch);
+  const [pdfBusy, setPdfBusy] = useState(false);
   return (
     <article
       className={cn(
@@ -825,6 +829,10 @@ const LaunchRow = memo(({
           <button type="button" onClick={onScan} className="inline-flex items-center gap-1 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest text-emerald-300 transition hover:bg-emerald-500/20">
             <Target className="h-3 w-3" /> scan
           </button>
+          <button type="button" onClick={async () => { setPdfBusy(true); try { await downloadReportPdf({ token: detailToken }); } catch (e) { console.error(e); } finally { setPdfBusy(false); } }} disabled={pdfBusy} title="OG Scan PDF report" className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1 text-[9px] uppercase tracking-widest text-white/55 transition hover:border-emerald-400/40 hover:text-emerald-300 disabled:opacity-50">
+            {pdfBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileDown className="h-3 w-3" />} PDF
+          </button>
+          <CoinDetailDialog token={detailToken} onOpenScanner={() => onScan()} actionLabel="Details" className="rounded-lg border border-white/10 px-2 py-1 text-[9px] text-white/55" />
           <a href={launch.dexUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1 text-[9px] uppercase tracking-widest text-white/55 transition hover:border-emerald-400/40 hover:text-emerald-300">
             chart <ExternalLink className="h-3 w-3" />
           </a>

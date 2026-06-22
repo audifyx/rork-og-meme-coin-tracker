@@ -203,6 +203,7 @@ function score(p: DSPair): number {
 export const Migrations = ({ onSelect }: Props) => {
   const [src, setSrc] = useState<Source["id"]>("pumpfun");
   const [q, setQ] = useState<Quality>(DEFAULT_Q);
+  const [showFilters, setShowFilters] = useState(false);
 
   const source = SOURCES.find((s) => s.id === src)!;
 
@@ -222,11 +223,11 @@ export const Migrations = ({ onSelect }: Props) => {
   }, [sourceMatches, q]);
 
   const dropped = sourceMatches.length - filtered.length;
-  const intelSeed = useMemo(() => filtered.slice(0, 40).map(pairToToken), [filtered]);
+  const intelSeed = useMemo(() => filtered.slice(0, 24).map(pairToToken), [filtered]);
   const intelKey = intelSeed.map((token) => token.id).join(",");
   const { data: intelTokens } = useQuery({
     queryKey: ["migration-token-intel", intelKey],
-    queryFn: () => enrichTokensWithMarketIntel(intelSeed, { includeAth: true, maxAth: 12 }),
+    queryFn: () => enrichTokensWithMarketIntel(intelSeed, { includeAth: true, maxAth: 8 }),
     enabled: intelSeed.length > 0,
     staleTime: 60_000,
   });
@@ -276,9 +277,13 @@ export const Migrations = ({ onSelect }: Props) => {
         <MStat Icon={Sparkles} value={stats.newest ? `${timeAgo(Math.floor(stats.newest / 1000))}` : "—"} label="newest" />
         <MStat Icon={Droplets} value={fmtUsd(stats.totalLiq)} label="liquidity" />
         <MStat Icon={TrendingUp} value={fmtUsd(stats.totalVol)} label="vol 24h" />
+        <button type="button" onClick={() => setShowFilters((v) => !v)} className={cn("ml-auto inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest transition", showFilters ? "border-emerald-400/50 bg-emerald-500/10 text-emerald-300" : "border-white/10 bg-white/[0.03] text-white/55 hover:text-emerald-300")}>
+          <Filter className="h-3 w-3" /> {showFilters ? "Hide" : "Filters"}
+        </button>
       </div>
 
       {/* Filters */}
+      {showFilters && (
       <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-emerald-300"><Filter className="h-3 w-3" /> filters</span>
@@ -295,6 +300,7 @@ export const Migrations = ({ onSelect }: Props) => {
           <Range label="BUYS" value={q.minBuys} step={5} onChange={(v) => setQ({ ...q, minBuys: v })} />
         </div>
       </div>
+      )}
 
       {/* List */}
       <div className="space-y-2">
@@ -303,7 +309,7 @@ export const Migrations = ({ onSelect }: Props) => {
             {error ? "Feed error · retry" : "No matches · loosen filters"}
           </div>
         )}
-        {filtered.slice(0, 40).map((p) => (
+        {filtered.slice(0, 24).map((p) => (
           <PairRow key={p.pairAddress} p={p} token={intelByMint.get(p.baseToken.address)} onSelect={() => onSelect(p.baseToken.address)} />
         ))}
       </div>
