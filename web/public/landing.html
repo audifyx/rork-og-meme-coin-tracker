@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>OG Scan — On-chain intelligence for Solana</title>
+<meta name="description" content="OG Scan reads the Solana chain in real time: token scanners with the OG Score, whale and migration tracking, AI analysis, and trading — so you find the OGs and avoid the rugs."/>
+<meta property="og:title" content="OG Scan — Read the chain. Find the OGs."/>
+<meta property="og:description" content="Real-time Solana token intelligence: OG Score scanner, whale + pump.fun migration tracking, and an AI analyst."/>
+<style>
+:root{--bg:#05080a;--em:#10b981;--cy:#06b6d4;--ink:#e7fff6;--mut:#8ea7a0}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+#bg{position:fixed;inset:0;z-index:0}
+.wrap{position:relative;z-index:1}
+.veil{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(110% 80% at 50% -10%,rgba(6,182,212,.10),transparent 60%),radial-gradient(90% 70% at 50% 110%,rgba(16,185,129,.12),transparent 60%)}
+/* nav */
+nav{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:18px clamp(16px,4vw,48px);backdrop-filter:blur(8px)}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.5px}
+.brand img{width:34px;height:34px;border-radius:9px;box-shadow:0 0 24px rgba(16,185,129,.45)}
+.brand span{font-size:18px;background:linear-gradient(90deg,var(--em),var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent}
+.cta{padding:10px 18px;border-radius:999px;font-weight:700;font-size:14px;background:linear-gradient(90deg,var(--em),var(--cy));color:#03110c;box-shadow:0 8px 30px rgba(16,185,129,.35);transition:transform .2s}
+.cta:hover{transform:translateY(-2px)}
+/* hero */
+.hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:100px 20px 60px}
+.badge{display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--em);border:1px solid rgba(16,185,129,.3);padding:7px 14px;border-radius:999px;background:rgba(16,185,129,.06);margin-bottom:26px;opacity:0;transform:translateY(14px);animation:rise .8s .1s forwards}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--em);box-shadow:0 0 10px var(--em);animation:pulse 1.6s infinite}
+h1{font-size:clamp(40px,8vw,92px);line-height:1.02;font-weight:900;letter-spacing:-2px;opacity:0;transform:translateY(20px);animation:rise .9s .25s forwards}
+h1 .g{background:linear-gradient(90deg,var(--em),var(--cy) 70%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{max-width:680px;margin:24px auto 0;font-size:clamp(16px,2.4vw,21px);color:var(--mut);line-height:1.55;opacity:0;transform:translateY(20px);animation:rise .9s .45s forwards}
+.row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:38px;opacity:0;transform:translateY(20px);animation:rise .9s .6s forwards}
+.btn{padding:15px 30px;border-radius:14px;font-weight:800;font-size:16px}
+.btn.p{background:linear-gradient(90deg,var(--em),var(--cy));color:#03110c;box-shadow:0 12px 40px rgba(6,182,212,.35)}
+.btn.s{border:1px solid rgba(255,255,255,.16);color:var(--ink);background:rgba(255,255,255,.03)}
+.stats{display:flex;gap:clamp(20px,5vw,64px);margin-top:60px;flex-wrap:wrap;justify-content:center;opacity:0;animation:rise 1s .8s forwards}
+.stat .n{font-size:clamp(22px,4vw,34px);font-weight:900;background:linear-gradient(90deg,var(--em),var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat .l{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut);margin-top:4px}
+.scroll{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:2px;color:var(--mut);text-transform:uppercase;opacity:.7;animation:bob 2s infinite}
+/* sections */
+section.feat{max-width:1140px;margin:0 auto;padding:clamp(60px,10vw,120px) 20px}
+.eyebrow{text-align:center;color:var(--cy);font-size:12px;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px}
+.h2{text-align:center;font-size:clamp(28px,5vw,46px);font-weight:900;letter-spacing:-1px;margin-bottom:14px}
+.lead{text-align:center;color:var(--mut);max-width:640px;margin:0 auto 56px;font-size:clamp(15px,2vw,18px);line-height:1.6}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.card{border:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.01));border-radius:18px;padding:26px;transition:transform .3s,border-color .3s;opacity:0;transform:translateY(28px)}
+.card.in{opacity:1;transform:none}
+.card:hover{transform:translateY(-6px);border-color:rgba(16,185,129,.4)}
+.ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);margin-bottom:16px}
+.card h3{font-size:19px;margin-bottom:8px}
+.card p{color:var(--mut);font-size:14.5px;line-height:1.6}
+/* score band */
+.band{max-width:1140px;margin:0 auto;padding:0 20px}
+.bandin{border:1px solid rgba(6,182,212,.25);background:linear-gradient(120deg,rgba(16,185,129,.08),rgba(6,182,212,.05));border-radius:26px;padding:clamp(32px,6vw,64px);display:flex;gap:40px;align-items:center;flex-wrap:wrap;justify-content:center;text-align:center}
+.ring{--p:92;width:170px;height:170px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--em) calc(var(--p)*1%),rgba(255,255,255,.07) 0);position:relative;flex:0 0 auto}
+.ring::before{content:"";position:absolute;inset:14px;border-radius:50%;background:#06100d}
+.ring b{position:relative;font-size:44px;font-weight:900;background:linear-gradient(90deg,var(--em),var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent}
+.ring small{position:relative;display:block;text-align:center;color:var(--mut);font-size:11px;letter-spacing:2px;margin-top:2px}
+.bandtxt{max-width:480px;text-align:left}
+.bandtxt h3{font-size:clamp(22px,3.6vw,32px);font-weight:900;margin-bottom:10px}
+.bandtxt p{color:var(--mut);line-height:1.6}
+/* cta footer */
+.foot{text-align:center;padding:clamp(70px,11vw,130px) 20px 90px}
+.foot h2{font-size:clamp(30px,6vw,58px);font-weight:900;letter-spacing:-1px;margin-bottom:18px}
+.foot .g{background:linear-gradient(90deg,var(--em),var(--cy));-webkit-background-clip:text;background-clip:text;color:transparent}
+.foot p{color:var(--mut);margin-bottom:32px;font-size:17px}
+.tiny{color:#52635e;font-size:12px;margin-top:60px}
+@keyframes rise{to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(6px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div class="veil"></div>
+<div class="wrap">
+  <nav>
+    <div class="brand"><img src="/ogscan-logo.png" alt="OG Scan"/><span>OG SCAN</span></div>
+    <a class="cta" href="/app">Launch App →</a>
+  </nav>
+
+  <header class="hero">
+    <div class="badge"><span class="dot"></span> Live on Solana</div>
+    <h1>Read the chain.<br/><span class="g">Find the OGs.</span></h1>
+    <p class="sub">OG Scan is real-time on-chain intelligence for Solana — a token scanner with the <b style="color:#cfeee6">OG Score</b>, whale &amp; pump.fun migration tracking, and an AI analyst that dissects any token before you ape.</p>
+    <div class="row">
+      <a class="btn p" href="/app">Start Scanning</a>
+      <a class="btn s" href="#how">See how it works</a>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n">&lt;2s</div><div class="l">Token scan</div></div>
+      <div class="stat"><div class="n">100</div><div class="l">OG Score scale</div></div>
+      <div class="stat"><div class="n">24/7</div><div class="l">Whale + migration feed</div></div>
+      <div class="stat"><div class="n">AI</div><div class="l">On-chain analyst</div></div>
+    </div>
+    <div class="scroll">scroll ↓</div>
+  </header>
+
+  <section class="feat" id="how">
+    <div class="eyebrow">What OG Scan does</div>
+    <div class="h2">Everything you need to trade Solana with an edge</div>
+    <p class="lead">One suite for discovery, due-diligence and execution — built for degens who want signal, not noise.</p>
+    <div class="grid">
+      <div class="card"><div class="ic">🛰️</div><h3>OG Score Scanner</h3><p>Paste any mint or ticker and get a 0–100 composite score from liquidity, holders, concentration, mint authority and momentum — instantly.</p></div>
+      <div class="card"><div class="ic">🐋</div><h3>Whale &amp; Wallet Intel</h3><p>Track smart-money wallets, holder concentration and live buy/sell pressure so you see the moves before the candle.</p></div>
+      <div class="card"><div class="ic">🚀</div><h3>Migration Radar</h3><p>Real-time pump.fun graduations and new pools the moment they bond — catch fresh runners early.</p></div>
+      <div class="card"><div class="ic">🧠</div><h3>Grim — AI Analyst</h3><p>The Chain Reaper reads the data and tells you straight: risks, red flags and the verdict, in plain language.</p></div>
+      <div class="card"><div class="ic">🛡️</div><h3>Rug &amp; Safety Checks</h3><p>Mint/freeze authority, LP burn, metadata mutability and concentration risk flagged automatically on every scan.</p></div>
+      <div class="card"><div class="ic">👥</div><h3>Communities &amp; Spaces</h3><p>Live token communities, audio spaces and feeds — plus your own Telegram/Discord/X bot, built right on the platform.</p></div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="bandin">
+      <div class="ring"><div><b>92</b><small>OG SCORE</small></div></div>
+      <div class="bandtxt">
+        <h3>One number that cuts through the noise</h3>
+        <p>The OG Score fuses liquidity depth, holder distribution, authority status, LP health and momentum into a single, comparable signal — the same logic that powers the site, the bots and Grim. Higher is safer; low scores get flagged before you lose money.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="foot">
+    <div class="eyebrow">Get started</div>
+    <h2>Stop guessing. <span class="g">Start scanning.</span></h2>
+    <p>Create your account and run your first OG Scan in seconds.</p>
+    <div class="row" style="opacity:1;animation:none">
+      <a class="btn p" href="/auth?mode=signup">Create account</a>
+      <a class="btn s" href="/app">Launch app</a>
+    </div>
+    <div class="tiny">© OG Scan — on-chain intelligence for Solana. Not financial advice.</div>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// reveal-on-scroll
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.15});
+document.querySelectorAll('.card').forEach((c,i)=>{c.style.transitionDelay=(i%3*90)+'ms';io.observe(c)});
+
+// 3D scanner background: rotating wireframe globe + particle field + scan ring
+const canvas=document.getElementById('bg');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(60,1,.1,100);cam.position.z=5.2;
+function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix()}
+resize();addEventListener('resize',resize);
+const grp=new THREE.Group();scene.add(grp);
+// globe
+const geo=new THREE.IcosahedronGeometry(1.7,2);
+const mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x0a3,wireframe:true,transparent:true,opacity:.28}));
+grp.add(mesh);
+// inner glow sphere
+grp.add(new THREE.Mesh(new THREE.SphereGeometry(1.62,32,32),new THREE.MeshBasicMaterial({color:0x06222a,transparent:true,opacity:.45})));
+// particles
+const N=900,pos=new Float32Array(N*3);
+for(let i=0;i<N;i++){const r=2.4+Math.random()*4.6,t=Math.random()*Math.PI*2,p=Math.acos(2*Math.random()-1);pos[i*3]=r*Math.sin(p)*Math.cos(t);pos[i*3+1]=r*Math.sin(p)*Math.sin(t);pos[i*3+2]=r*Math.cos(p)}
+const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pos,3));
+const pts=new THREE.Points(pg,new THREE.PointsMaterial({color:0x10b981,size:.03,transparent:true,opacity:.7}));
+scene.add(pts);
+// scan rings
+const rings=[];for(let i=0;i<3;i++){const r=new THREE.Mesh(new THREE.RingGeometry(1.75,1.78,64),new THREE.MeshBasicMaterial({color:0x06b6d4,transparent:true,opacity:.4,side:THREE.DoubleSide}));r.rotation.x=Math.PI/2;grp.add(r);rings.push(r)}
+let mx=0,my=0;addEventListener('pointermove',e=>{mx=(e.clientX/innerWidth-.5);my=(e.clientY/innerHeight-.5)});
+let t=0;
+(function loop(){t+=.005;grp.rotation.y+=.0016;grp.rotation.x+=.0006;pts.rotation.y-=.0008;
+ grp.rotation.y+=(mx*.5-grp.rotation.y%6.28*0)*0; cam.position.x+=((mx*1.2)-cam.position.x)*.04;cam.position.y+=((-my*1.0)-cam.position.y)*.04;cam.lookAt(0,0,0);
+ rings.forEach((r,i)=>{const s=1+((t*0.5+i*0.33)%1)*1.7;r.scale.set(s,s,s);r.material.opacity=.45*(1-((t*0.5+i*0.33)%1))});
+ renderer.render(scene,cam);requestAnimationFrame(loop)})();
+</script>
+</body>
+</html>
