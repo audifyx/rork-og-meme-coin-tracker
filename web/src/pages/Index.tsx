@@ -1518,23 +1518,54 @@ const TruthScanSuite = ({ onSelect }: { onSelect: (m: string) => void }) => {
 
 const LaunchRadarSuite = ({ onSelect }: { onSelect: (m: string) => void }) => {
   const [active, setActive] = useState<"snipe-feed" | "migrations">("snipe-feed");
+  const launchTabs = [
+    { id: "snipe-feed" as const, label: "Snipe Feed", desc: "Fresh launches", Icon: Target },
+    { id: "migrations" as const, label: "Migrations", desc: "Pump.fun \u2192 DEX", Icon: Rocket },
+  ];
   return (
     <section className="space-y-4">
-      <ToolHeader
-        icon={Rocket}
-        title="Launch Radar"
-        subtitle="Track new token launches from Pump.fun, monitor migrations to DEX, and get early alerts on breakout potential."
-        gradient="from-amber-500 to-yellow-400"
-        glowColor="rgba(245,158,11,0.25)"
-        badge="LIVE"
-        badgeColor="gold"
-      />
-      <SuiteNav options={launchSuiteOptions} activeId={active} onChange={setActive} />
-      {active === "snipe-feed" ? <SnipeFeed onSelect={onSelect} /> : <Migrations onSelect={onSelect} />}
-      {/* 20x Features */}
-      <div className="space-y-3 mt-4">
-        <LaunchAlerts />
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.06] via-white/[0.02] to-transparent p-5">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-emerald-500/20 blur-3xl" />
+        <div className="relative flex items-start gap-3">
+          <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 to-green-400 shadow-lg shadow-emerald-500/30">
+            <Rocket className="h-6 w-6 text-white" strokeWidth={2.2} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-black tracking-tight text-white">Launch Radar</h2>
+              <span className="rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-emerald-300">Live</span>
+            </div>
+            <p className="mt-1 max-w-md text-xs leading-relaxed text-white/45">Fresh Solana launches scored in real time, dev-wallet clustering, risk flags, and Pump.fun migrations to DEX.</p>
+          </div>
+        </div>
       </div>
+
+      {/* Segmented control */}
+      <div className="flex gap-2">
+        {launchTabs.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setActive(t.id)}
+            className={cn(
+              "flex flex-1 items-center gap-2.5 rounded-2xl border p-3 text-left transition",
+              active === t.id ? "border-emerald-400/50 bg-emerald-500/[0.08]" : "border-white/10 bg-white/[0.03] hover:border-emerald-400/30 hover:bg-white/[0.05]"
+            )}
+          >
+            <span className={cn("grid h-9 w-9 flex-none place-items-center rounded-xl", active === t.id ? "bg-emerald-500/20 text-emerald-300" : "bg-white/[0.04] text-white/40")}>
+              <t.Icon className="h-4 w-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-bold text-white">{t.label}</span>
+              <span className="block font-mono text-[9px] uppercase tracking-widest text-white/35">{t.desc}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {active === "snipe-feed" ? <SnipeFeed onSelect={onSelect} /> : <Migrations onSelect={onSelect} />}
+      <LaunchAlerts />
     </section>
   );
 };

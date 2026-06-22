@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -654,126 +654,92 @@ export const SnipeFeed = ({ onSelect }: Props) => {
   }, []);
 
   return (
-    <section className="relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,hsl(var(--og-cyan)/0.18),transparent_32%),radial-gradient(circle_at_95%_18%,hsl(var(--og-lime)/0.14),transparent_30%)]" />
-      <div className="relative">
-        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <div className="mb-2 flex items-center gap-2 text-[10px] uppercase tracking-[0.4em] text-og-cyan">
-              <span className="h-px w-10 bg-og-cyan" /> /V2 · SNIPE · RADAR
+    <section className="space-y-3">
+      {/* Toolbar: compact summary chips + live controls */}
+      <div className="flex flex-wrap items-center gap-2">
+        <StatChip Icon={Radar} label="live" value={fmtNum(launches.length)} tone="cyan" />
+        <StatChip Icon={Flame} label="hot 70+" value={fmtNum(summary.hot)} tone="lime" />
+        <StatChip Icon={ShieldAlert} label="risk" value={fmtNum(summary.blocked)} tone="blood" />
+        <StatChip Icon={UserSearch} label="watched devs" value={fmtNum(watchedDevs.length)} tone="gold" />
+        <div className="ml-auto flex items-center gap-2">
+          <span className="hidden font-mono text-[9px] uppercase tracking-widest text-white/30 sm:inline">upd {dataUpdatedAt ? `${timeAgo(Math.floor(dataUpdatedAt / 1000))} ago` : "—"}</span>
+          <button
+            type="button"
+            onClick={() => setPaused((value) => !value)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-widest transition",
+              paused ? "border-red-400/50 bg-red-500/10 text-red-400" : "border-emerald-400/50 bg-emerald-500/10 text-emerald-300"
+            )}
+          >
+            {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />} {paused ? "Paused" : "Live"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-widest text-white/55 transition hover:border-emerald-400/40 hover:text-emerald-300"
+          >
+            {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />} Refresh
+          </button>
+        </div>
+      </div>
+
+      {error ? (
+        <div className="rounded-2xl border border-red-400/40 bg-red-500/10 p-4 text-sm text-red-300">
+          Snipe feed could not load right now. DexScreener or RPC may be rate-limited — tap refresh in a moment.
+        </div>
+      ) : null}
+
+      {/* Feed: single compact column, memoized rows, capped for performance */}
+      <div className="space-y-2">
+        {isFetching && launches.length === 0 ? (
+          <div className="grid min-h-[220px] place-items-center rounded-2xl border border-dashed border-white/12 text-emerald-300">
+            <div className="text-center font-mono text-[10px] uppercase tracking-[0.3em]">
+              <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin" /> Loading launch radar
             </div>
-            <h2 className="font-display text-3xl font-bold tracking-tight sm:text-5xl">
-              <span className="text-foreground">DEV WALLET</span>{" "}
-              <span className="text-og-cyan text-glow">SNIPER FEED</span>
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-              Tracks fresh Solana launches, scores the tape, flags danger signals, and groups coins by likely creator wallet. The official OGScan dev wallet and coin are pinned into watch alerts by default.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest">
-            <button
-              type="button"
-              onClick={() => setPaused((value) => !value)}
-              className={cn(
-                "inline-flex items-center gap-1.5 border px-2.5 py-1.5 transition",
-                paused ? "border-og-blood/70 text-og-blood" : "border-og-lime/70 text-og-lime"
-              )}
-            >
-              {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
-              {paused ? "Paused" : "Live"}
-            </button>
-            <button
-              type="button"
-              onClick={() => void refetch()}
-              className="inline-flex items-center gap-1.5 border border-white/10 px-2.5 py-1.5 text-foreground/70 transition hover:border-og-cyan hover:text-og-cyan"
-            >
-              {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-              Refresh
-            </button>
-          </div>
-        </div>
-
-        <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <SummaryCard Icon={Radar} label="Live launches" value={fmtNum(launches.length)} detail="Dex profiles + boosts" tone="cyan" />
-          <SummaryCard Icon={Flame} label="Hot opportunities" value={fmtNum(summary.hot)} detail="70+ launch score" tone="lime" />
-          <SummaryCard Icon={ShieldAlert} label="Risk blocked" value={fmtNum(summary.blocked)} detail="risky / danger" tone="blood" />
-          <SummaryCard Icon={UserSearch} label="Tracked devs" value={fmtNum(watchedDevs.length)} detail={`heat ${fmtNum(summary.avgHeat)}`} tone="gold" />
-        </div>
-
-        {error ? (
-          <div className="mb-4 border border-og-blood/50 bg-og-blood/10 p-4 text-sm text-og-blood">
-            Snipe feed could not load right now. DexScreener or RPC may be rate-limited — tap refresh in a moment.
           </div>
         ) : null}
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-xl">
-            <div className="flex flex-col gap-3 border-b border-white/10 bg-white/[0.04] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.32em] text-og-cyan">
-                <Crosshair className="h-3.5 w-3.5" /> Snipe feed · newest heat first
-              </div>
-              <div className="font-mono text-[9px] uppercase tracking-[0.24em] text-muted-foreground">
-                Updated {dataUpdatedAt ? timeAgo(Math.floor(dataUpdatedAt / 1000)) : "—"} ago
-              </div>
-            </div>
+        {launches.slice(0, 40).map((launch) => (
+          <LaunchRow
+            key={launch.mint}
+            launch={launch}
+            selected={selectedLaunch?.mint === launch.mint}
+            watchedMint={watchedMints.includes(launch.mint)}
+            watchedDev={launch.devWallet ? watchedDevs.includes(launch.devWallet) : false}
+            copied={copiedMint === launch.mint}
+            onSelect={() => {
+              setSelectedMint(launch.mint);
+              if (launch.devWallet) setSelectedDev(launch.devWallet);
+            }}
+            onScan={() => onSelect(launch.mint)}
+            onCopy={() => copyMint(launch.mint)}
+            onWatchMint={() => toggleWatchMint(launch.mint)}
+            onWatchDev={() => toggleWatchDev(launch.devWallet)}
+          />
+        ))}
 
-            <div className="grid gap-2 p-3">
-              {isFetching && launches.length === 0 ? (
-                <div className="grid min-h-[280px] place-items-center rounded-2xl border border-dashed border-white/12 text-og-cyan">
-                  <div className="text-center font-mono text-[10px] uppercase tracking-[0.3em]">
-                    <Loader2 className="mx-auto mb-3 h-6 w-6 animate-spin" /> Loading launch radar
-                  </div>
-                </div>
-              ) : null}
-
-              {launches.map((launch) => (
-                <LaunchRow
-                  key={launch.mint}
-                  launch={launch}
-                  selected={selectedLaunch?.mint === launch.mint}
-                  watchedMint={watchedMints.includes(launch.mint)}
-                  watchedDev={launch.devWallet ? watchedDevs.includes(launch.devWallet) : false}
-                  copied={copiedMint === launch.mint}
-                  onSelect={() => {
-                    setSelectedMint(launch.mint);
-                    if (launch.devWallet) setSelectedDev(launch.devWallet);
-                  }}
-                  onScan={() => onSelect(launch.mint)}
-                  onCopy={() => copyMint(launch.mint)}
-                  onWatchMint={() => toggleWatchMint(launch.mint)}
-                  onWatchDev={() => toggleWatchDev(launch.devWallet)}
-                />
-              ))}
-            </div>
+        {!isFetching && !error && launches.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-white/12 p-8 text-center font-mono text-xs uppercase tracking-widest text-white/40">
+            No launches on the radar right now
           </div>
-
-          <aside className="grid gap-4 content-start">
-            <LaunchAnalyzer launch={selectedLaunch} watched={selectedLaunch ? watchedMints.includes(selectedLaunch.mint) : false} onCopy={copyMint} onScan={onSelect} onWatchMint={toggleWatchMint} />
-            <DevIntelPanel dev={selectedDevIntel} launches={launches} watched={selectedDevIntel?.wallet ? watchedDevs.includes(selectedDevIntel.wallet) : false} onWatch={toggleWatchDev} onSelectDev={setSelectedDev} />
-            <AlertsPanel alerts={alerts} watchedDevs={watchedDevs} watchedMints={watchedMints} onSelect={(launch) => setSelectedMint(launch.mint)} />
-          </aside>
-        </div>
+        ) : null}
       </div>
     </section>
   );
 };
 
-const SummaryCard = ({ Icon, label, value, detail, tone }: { Icon: LucideIcon; label: string; value: string; detail: string; tone: "cyan" | "lime" | "gold" | "blood" }) => {
-  const toneClass = tone === "lime" ? "text-og-lime border-og-lime/45 bg-og-lime/10" : tone === "gold" ? "text-og-gold border-og-gold/45 bg-og-gold/10" : tone === "blood" ? "text-og-blood border-og-blood/45 bg-og-blood/10" : "text-og-cyan border-og-cyan/45 bg-og-cyan/10";
+const StatChip = ({ Icon, label, value, tone }: { Icon: LucideIcon; label: string; value: string; tone: "cyan" | "lime" | "gold" | "blood" }) => {
+  const toneText = tone === "lime" ? "text-emerald-300" : tone === "gold" ? "text-og-gold" : tone === "blood" ? "text-red-400" : "text-og-cyan";
   return (
-    <div className={cn("rounded-2xl border bg-white/[0.04] p-4 backdrop-blur-xl", toneClass)}>
-      <div className="flex items-center justify-between gap-2">
-        <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">{label}</div>
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="mt-3 font-display text-3xl font-black tracking-tight text-foreground">{value}</div>
-      <div className="mt-1 font-mono text-[10px] uppercase tracking-widest opacity-80">{detail}</div>
+    <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-1.5">
+      <Icon className={cn("h-4 w-4", toneText)} />
+      <span className={cn("font-display text-sm font-black", toneText)}>{value}</span>
+      <span className="font-mono text-[9px] uppercase tracking-widest text-white/35">{label}</span>
     </div>
   );
 };
 
-const LaunchRow = ({
+const LaunchRow = memo(({
   launch,
   selected,
   watchedMint,
@@ -800,82 +766,74 @@ const LaunchRow = ({
   const RiskIcon = risk.Icon;
   const ageSeconds = Math.floor(launch.createdAtMs / 1000);
   const dexPaid = tokenDexPaidLabel(launch);
-  const detailToken: JupTokenInfo = launchToToken(launch);
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-2xl border bg-white/[0.03] p-3.5 backdrop-blur-xl transition hover:border-og-cyan/50 hover:bg-white/[0.05]",
-        selected ? "border-og-cyan/70 shadow-[inset_4px_0_0_hsl(var(--og-cyan))]" : "border-white/10"
+        "rounded-2xl border p-3 transition hover:border-emerald-400/40 hover:bg-white/[0.05]",
+        selected ? "border-emerald-400/50 bg-emerald-500/[0.06]" : "border-white/10 bg-white/[0.03]"
       )}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-og-cyan/70 to-transparent opacity-0 transition group-hover:opacity-100" />
-      <button type="button" onClick={onSelect} className="absolute inset-0 z-0 cursor-crosshair" aria-label={`Inspect ${launch.symbol}`} />
-      <div className="pointer-events-none relative z-10 grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
-        <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.05] text-og-cyan">
-              {launch.icon ? <img src={launch.icon} alt="" className="h-full w-full object-cover" /> : <Sparkles className="h-5 w-5" />}
-            </div>
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="truncate font-display text-lg font-black uppercase tracking-tight text-foreground">${launch.symbol}</h3>
-                <span className={cn("inline-flex items-center gap-1 border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest", risk.className)}>
-                  <RiskIcon className="h-3 w-3" /> {risk.label}
-                </span>
-                {watchedMint ? <span className="border border-og-lime/50 bg-og-lime/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest text-og-lime">watched</span> : null}
-              </div>
-              <div className="mt-1 truncate text-xs text-muted-foreground">{launch.name}</div>
-              <div className="mt-2 flex flex-wrap items-center gap-2 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-                <span className="text-og-cyan">{timeAgo(ageSeconds)} old</span>
-                <span>CA {shortAddr(launch.mint, 4)}</span>
-                <span>DEV {shortAddr(launch.devWallet ?? undefined, 4)}</span>
-                <span>MIGR {shortDate(launch.migrationCreatedAt)}</span>
-                <span>DEX {dexPaid}</span>
-                {launch.dexCommunityTakeoverPaid ? <span className="text-og-gold">CTO paid</span> : null}
-                {watchedDev ? <span className="text-og-lime">dev watched</span> : null}
-              </div>
-            </div>
+      <div className="flex items-start gap-3">
+        <div className="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-emerald-300">
+          {launch.icon ? <img src={launch.icon} alt="" loading="lazy" className="h-full w-full object-cover" /> : <Sparkles className="h-4 w-4" />}
+        </div>
+        <div
+          role="button"
+          tabIndex={0}
+          onClick={onSelect}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onSelect(); }}
+          className="min-w-0 flex-1 cursor-pointer focus:outline-none"
+        >
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="truncate font-display text-base font-black tracking-tight text-white">${launch.symbol}</span>
+            <span className={cn("inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-widest", risk.className)}>
+              <RiskIcon className="h-2.5 w-2.5" /> {risk.label}
+            </span>
+            {watchedMint ? <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-widest text-emerald-300">watched</span> : null}
+          </div>
+          <div className="mt-0.5 truncate text-[11px] text-white/40">{launch.name}</div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 font-mono text-[9px] uppercase tracking-widest text-white/30">
+            <span className="text-emerald-300/80">{timeAgo(ageSeconds)} old</span>
+            <span>CA {shortAddr(launch.mint, 4)}</span>
+            <span>DEV {shortAddr(launch.devWallet ?? undefined, 4)}</span>
+            {dexPaid !== "—" ? <span className="text-emerald-300/70">DEX {dexPaid}</span> : null}
+            {watchedDev ? <span className="text-emerald-300/70">dev watched</span> : null}
           </div>
         </div>
-
-        <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
-          <Metric label="Score" value={String(launch.launchScore)} className={scoreTone(launch.launchScore)} />
-          <Metric label="ATH" value={fmtUsd(launch.allTimeHighUsd)} className="text-og-gold" />
-          <Metric label="ATH Date" value={shortDate(launch.allTimeHighAt)} className="text-og-gold" />
-          <Metric label="ATL" value={fmtUsd(launch.allTimeLowUsd)} className="text-og-cyan" />
-          <Metric label="Migr" value={shortDate(launch.migrationCreatedAt)} className="text-og-cyan" />
-          <Metric label="DEX" value={dexPaid} className={dexPaid === "—" ? "text-foreground" : "text-og-lime"} />
+        <div className="flex-none text-right">
+          <div className={cn("font-display text-2xl font-black leading-none", scoreTone(launch.launchScore))}>{launch.launchScore}</div>
+          <div className="mt-0.5 font-mono text-[9px] uppercase tracking-widest text-white/30">score</div>
         </div>
       </div>
 
-      <div className="pointer-events-none relative z-10 mt-3 flex flex-wrap items-center gap-2 border-t border-white/10 pt-3">
-        {launch.riskFlags.slice(0, 4).map((flag) => (
-          <span key={flag} className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
-            {flag}
-          </span>
-        ))}
-        <div className="pointer-events-auto ml-auto flex flex-wrap items-center gap-2">
-          <button type="button" onClick={(event) => { event.stopPropagation(); onCopy(); }} className="inline-flex min-h-9 items-center gap-1.5 border border-og-gold/55 bg-og-gold/10 px-3 py-2 font-mono text-[10px] font-bold uppercase tracking-widest text-og-gold transition hover:bg-og-gold hover:text-og-ink">
-            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} {copied ? "copied" : "copy CA"}
+      <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-white/[0.06] pt-2.5 font-mono text-[9px] uppercase tracking-widest">
+        <span className="rounded-full border border-white/10 px-2 py-0.5 text-white/45">LIQ {fmtUsd(launch.liquidity)}</span>
+        {launch.marketCap ? <span className="rounded-full border border-white/10 px-2 py-0.5 text-white/45">MC {fmtUsd(launch.marketCap)}</span> : null}
+        <span className="rounded-full border border-white/10 px-2 py-0.5 text-white/45">VOL1H {fmtUsd(launch.volume1h)}</span>
+        {launch.allTimeHighUsd ? <span className="rounded-full border border-og-gold/30 px-2 py-0.5 text-og-gold">ATH {fmtUsd(launch.allTimeHighUsd)}</span> : null}
+        {launch.holderCount ? <span className="rounded-full border border-white/10 px-2 py-0.5 text-white/45">H {fmtNum(launch.holderCount)}</span> : null}
+        <div className="ml-auto flex items-center gap-1.5">
+          <button type="button" onClick={onCopy} className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1 text-[9px] uppercase tracking-widest text-white/55 transition hover:border-emerald-400/40 hover:text-emerald-300">
+            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />} {copied ? "ok" : "CA"}
           </button>
-          <button type="button" onClick={(event) => { event.stopPropagation(); onWatchDev(); }} disabled={!launch.devWallet} className="inline-flex min-h-9 items-center gap-1 border border-white/10 px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-foreground/70 transition enabled:hover:border-og-lime enabled:hover:text-og-lime disabled:opacity-40">
-            <UserSearch className="h-3 w-3" /> {watchedDev ? "unwatch dev" : "watch dev"}
+          <button type="button" onClick={onWatchDev} disabled={!launch.devWallet} title="Watch dev wallet" className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1 text-[9px] uppercase tracking-widest text-white/55 transition enabled:hover:border-emerald-400/40 enabled:hover:text-emerald-300 disabled:opacity-40">
+            <UserSearch className="h-3 w-3" />
           </button>
-          <button type="button" onClick={(event) => { event.stopPropagation(); onWatchMint(); }} className="inline-flex min-h-9 items-center gap-1 border border-white/10 px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-foreground/70 transition hover:border-og-lime hover:text-og-lime">
+          <button type="button" onClick={onWatchMint} className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1 text-[9px] uppercase tracking-widest text-white/55 transition hover:border-emerald-400/40 hover:text-emerald-300">
             <Bell className="h-3 w-3" /> {watchedMint ? "unwatch" : "watch"}
           </button>
-          <CoinDetailDialog token={detailToken} onOpenScanner={() => onScan()} actionLabel="Scan" className="min-h-9 px-3 py-2" />
-          <button type="button" onClick={(event) => { event.stopPropagation(); onScan(); }} className="inline-flex min-h-9 items-center gap-1 border border-og-cyan/60 px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-og-cyan transition hover:bg-og-cyan hover:text-og-ink">
+          <button type="button" onClick={onScan} className="inline-flex items-center gap-1 rounded-lg border border-emerald-400/40 bg-emerald-500/10 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest text-emerald-300 transition hover:bg-emerald-500/20">
             <Target className="h-3 w-3" /> scan
           </button>
-          <a href={launch.dexUrl} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()} className="inline-flex min-h-9 items-center gap-1 border border-white/10 px-3 py-2 font-mono text-[9px] uppercase tracking-widest text-foreground/70 transition hover:border-og-cyan hover:text-og-cyan">
+          <a href={launch.dexUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-2 py-1 text-[9px] uppercase tracking-widest text-white/55 transition hover:border-emerald-400/40 hover:text-emerald-300">
             chart <ExternalLink className="h-3 w-3" />
           </a>
         </div>
       </div>
     </article>
   );
-};
+});
+LaunchRow.displayName = "LaunchRow";
 
 const Metric = ({ label, value, className }: { label: string; value: string; className?: string }) => (
   <div className="border border-white/10 bg-og-ink/80 px-2 py-1.5">
