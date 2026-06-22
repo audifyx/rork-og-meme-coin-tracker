@@ -160,12 +160,20 @@ function parseHeliusTx(tx: HeliusTx, walletAddress: string, walletLabel?: string
 
 /** Fetch new pools from GeckoTerminal for a single chain */
 async function fetchGeckoNewPools(geckoSlug: string, dexSlug: string): Promise<NewToken[]> {
+  // GeckoTerminal free tier rate-limits bursts; retry on 429 with backoff so the
+  // feed doesn't silently come back empty.
+  let json: any = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`https://api.geckoterminal.com/api/v2/networks/${geckoSlug}/new_pools?page=1&include=base_token`, { headers: { Accept: "application/json" } });
+      if (res.status === 429) { await new Promise((r) => setTimeout(r, 700 * (attempt + 1))); continue; }
+      if (!res.ok) return [];
+      json = await res.json();
+      break;
+    } catch { await new Promise((r) => setTimeout(r, 400)); }
+  }
+  if (!json) return [];
   try {
-    const res = await fetch(`https://api.geckoterminal.com/api/v2/networks/${geckoSlug}/new_pools?page=1&include=base_token`, {
-      headers: { Accept: "application/json" },
-    });
-    if (!res.ok) return [];
-    const json = await res.json();
     const pools: any[] = json?.data ?? [];
     // Build a map of included base token info (symbol, name, image)
     const tokenInfoMap = new Map<string, { symbol: string; name: string; imageUrl?: string }>();
@@ -218,7 +226,7 @@ async function fetchGeckoNewPools(geckoSlug: string, dexSlug: string): Promise<N
 /** Primary chains to fetch new launches from (ordered by popularity) */
 const LIVE_FEED_CHAINS = SUPPORTED_CHAINS
   .filter((c) => c.geckoTerminalSlug)
-  .slice(0, 10); // Top 10 chains
+  .slice(0, 5); // Top 5 chains (fewer parallel calls = fewer GeckoTerminal 429s)
 
 async function fetchNewTokensBatch(): Promise<NewToken[]> {
   // Fetch new pools from GeckoTerminal across all major chains in parallel

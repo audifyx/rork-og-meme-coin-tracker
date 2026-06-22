@@ -22,7 +22,7 @@ const TokenExplorerLazy = lazy(() =>
    Types
    ═══════════════════════════════════════════════════════════════ */
 
-type SubTab = "launchpad" | "live-feed" | "explore" | "streams";
+type SubTab = "launchpad" | "live-feed" | "explore";
 
 interface TabDef {
   id: SubTab;
@@ -34,7 +34,6 @@ const TABS: TabDef[] = [
   { id: "launchpad", label: "LaunchPad", Icon: Rocket },
   { id: "live-feed", label: "Live Feed",  Icon: Activity },
   { id: "explore",   label: "Explore",    Icon: Search },
-  { id: "streams",   label: "Streams",    Icon: Radio },
 ];
 
 const STORAGE_KEY = "og_discover_tab";
@@ -125,14 +124,6 @@ const DiscoverHub: React.FC = () => {
           </div>
         )}
 
-        {/* Streams — same as LiveFeedPage but labelled Streams */}
-        {active === "streams" && (
-          <div className="min-h-0 flex-1 overflow-hidden">
-            <Suspense fallback={<Spinner />}>
-              <LiveFeedPage />
-            </Suspense>
-          </div>
-        )}
       </div>
     </div>
   );
