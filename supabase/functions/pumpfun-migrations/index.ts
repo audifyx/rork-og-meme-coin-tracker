@@ -1,131 +1,56 @@
-// pumpfun-migrations — recent pump.fun token graduations/migrations.
-// Source: Bitquery EAP (pump.fun `migrate` instruction). Enriched with
-// DexScreener (no key) for symbol/name/price/mc/liquidity. Free fallback for
-// instant streaming is PumpPortal ws (subscribeMigration) handled elsewhere.
-//
-// GET/POST -> { migrations: [{ mint, symbol, name, priceUsd, marketCap,
-//   liquidityUsd, image, migratedAt, signature, dexUrl }], count, source }
+// pumpfun-migrations — recently graduated/migrated pump.fun tokens.
+// FREE multi-source, no API keys (replaces Bitquery EAP). Tries each source
+// until one succeeds: pump.fun frontend API -> GeckoTerminal new pools.
+// Returns { migrations: [...], count, source }.
+const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "GET, POST, OPTIONS" };
+const json = (o: unknown, status = 200) => new Response(JSON.stringify(o), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
-const PUMP_PROGRAM = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-};
-const json = (o: unknown, status = 200) =>
-  new Response(JSON.stringify(o), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-
-let cachedToken: { token: string; exp: number } | null = null;
-async function bitqueryToken(): Promise<string> {
-  const now = Date.now();
-  if (cachedToken && cachedToken.exp > now + 60_000) return cachedToken.token;
-  const id = Deno.env.get("BITQUERY_CLIENT_ID") || "";
-  const secret = Deno.env.get("BITQUERY_CLIENT_SECRET") || "";
-  const res = await fetch("https://oauth2.bitquery.io/oauth2/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `grant_type=client_credentials&client_id=${encodeURIComponent(id)}&client_secret=${encodeURIComponent(secret)}&scope=api`,
-  });
-  const raw = await res.text();
-  let j: any; try { j = JSON.parse(raw); } catch { throw new Error("Bitquery auth non-JSON: " + raw.slice(0, 150)); }
-  if (!j.access_token) throw new Error("Bitquery auth failed: " + JSON.stringify(j).slice(0, 200));
-  cachedToken = { token: j.access_token, exp: now + (j.expires_in || 600) * 1000 };
-  return j.access_token;
+// Source 1: pump.fun bonded/migrated coins (complete=true => graduated to Raydium).
+async function fromPumpfun(limit: number) {
+  const url = `https://frontend-api-v3.pump.fun/coins?offset=0&limit=${limit}&sort=last_trade_timestamp&order=DESC&includeNsfw=false&complete=true`;
+  const r = await fetch(url, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(9000) });
+  if (!r.ok) throw new Error(`pumpfun ${r.status}`);
+  const arr = await r.json();
+  const rows = Array.isArray(arr) ? arr : (arr.coins || []);
+  if (!rows.length) throw new Error("pumpfun: empty");
+  return { source: "pumpfun", migrations: rows.map((c: any) => ({
+    mint: c.mint,
+    symbol: c.symbol ?? null,
+    name: c.name ?? null,
+    marketCap: c.usd_market_cap ?? null,
+    image: c.image_uri ?? null,
+    migratedAt: c.king_of_the_hill_timestamp || c.created_timestamp || null,
+    raydiumPool: c.raydium_pool ?? null,
+    dexUrl: c.raydium_pool ? `https://dexscreener.com/solana/${c.raydium_pool}` : `https://pump.fun/${c.mint}`,
+  })) };
 }
-
-async function fetchMigrations(sinceISO: string, limit: number) {
-  const token = await bitqueryToken();
-  const query = `query ($since: DateTime, $limit: Int) {
-    Solana {
-      Instructions(
-        where: {
-          Instruction: { Program: { Address: { is: "${PUMP_PROGRAM}" }, Method: { is: "migrate" } } }
-          Transaction: { Result: { Success: true } }
-          Block: { Time: { since: $since } }
-        }
-        orderBy: { descending: Block_Time }
-        limit: { count: $limit }
-      ) {
-        Block { Time }
-        Transaction { Signature }
-        Instruction { Accounts { Address } }
-      }
-    }
-  }`;
-  const res = await fetch("https://streaming.bitquery.io/eap", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ query, variables: { since: sinceISO, limit } }),
-  });
-  const raw = await res.text();
-  let j: any; try { j = JSON.parse(raw); } catch { throw new Error("Bitquery query non-JSON (likely quota/points): " + raw.slice(0, 150)); }
-  const rows = j?.data?.Solana?.Instructions || [];
-  const seen = new Set<string>();
-  const out: any[] = [];
-  for (const r of rows) {
-    const accts: string[] = (r.Instruction?.Accounts || []).map((a: any) => a.Address);
-    // pump.fun mints always end in "pump"; fallback to the canonical mint slot.
-    const mint = accts.find((a) => a.endsWith("pump")) || accts[2];
-    if (!mint || seen.has(mint)) continue;
-    seen.add(mint);
-    out.push({ mint, migratedAt: r.Block?.Time, signature: r.Transaction?.Signature });
-  }
-  return out;
-}
-
-async function enrich(migs: any[]) {
-  // DexScreener batch endpoint accepts up to 30 comma-separated addresses.
-  for (let i = 0; i < migs.length; i += 30) {
-    const batch = migs.slice(i, i + 30);
-    try {
-      const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${batch.map((m) => m.mint).join(",")}`);
-      const j = await res.json();
-      const pairs: any[] = j?.pairs || [];
-      const byMint: Record<string, any> = {};
-      for (const p of pairs) {
-        const addr = p?.baseToken?.address;
-        if (!addr) continue;
-        const cur = byMint[addr];
-        if (!cur || (p?.liquidity?.usd || 0) > (cur?.liquidity?.usd || 0)) byMint[addr] = p;
-      }
-      for (const m of batch) {
-        const p = byMint[m.mint];
-        if (!p) continue;
-        m.symbol = p.baseToken?.symbol || null;
-        m.name = p.baseToken?.name || null;
-        m.priceUsd = p.priceUsd ? Number(p.priceUsd) : null;
-        m.marketCap = p.marketCap ?? p.fdv ?? null;
-        m.liquidityUsd = p.liquidity?.usd ?? null;
-        m.volume24h = p.volume?.h24 ?? null;
-        m.image = p.info?.imageUrl || null;
-        m.dexUrl = p.url || `https://dexscreener.com/solana/${m.mint}`;
-      }
-    } catch { /* ignore batch errors */ }
-  }
-  for (const m of migs) if (!m.dexUrl) m.dexUrl = `https://dexscreener.com/solana/${m.mint}`;
-  return migs;
+// Source 2: GeckoTerminal newest Solana pools (fresh listings, migration proxy).
+async function fromGeckoTerminal(limit: number) {
+  const r = await fetch(`https://api.geckoterminal.com/api/v2/networks/solana/new_pools?page=1`, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(9000) });
+  if (!r.ok) throw new Error(`geckoterminal ${r.status}`);
+  const data = (await r.json())?.data || [];
+  if (!data.length) throw new Error("geckoterminal: empty");
+  return { source: "geckoterminal", migrations: data.slice(0, limit).map((p: any) => {
+    const a = p.attributes || {};
+    const mint = (a.address || "").split("_").pop();
+    return { mint, symbol: null, name: a.name ?? null, marketCap: a.fdv_usd ? Number(a.fdv_usd) : null,
+      image: null, migratedAt: a.pool_created_at ? Date.parse(a.pool_created_at) : null,
+      raydiumPool: a.address ?? null, dexUrl: a.address ? `https://dexscreener.com/solana/${a.address}` : null };
+  }) };
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  let limit = 50;
   try {
-    const url = new URL(req.url);
-    let hours = 24, limit = 100;
-    if (req.method === "POST") {
-      const b = await req.json().catch(() => ({}));
-      hours = Number(b.hours) || 24;
-      limit = Math.min(Number(b.limit) || 100, 200);
-    } else {
-      hours = Number(url.searchParams.get("hours")) || 24;
-      limit = Math.min(Number(url.searchParams.get("limit")) || 100, 200);
-    }
-    const since = new Date(Date.now() - hours * 3600_000).toISOString();
-    const migs = await fetchMigrations(since, limit);
-    await enrich(migs);
-    return json({ migrations: migs, count: migs.length, hours, source: "bitquery", generatedAt: new Date().toISOString() });
-  } catch (e) {
-    // Degrade gracefully so the UI feed never hard-errors (e.g. Bitquery quota/points exhausted).
-    return json({ migrations: [], count: 0, source: "unavailable", error: e instanceof Error ? e.message : String(e), generatedAt: new Date().toISOString() }, 200);
+    if (req.method === "POST") { const b = await req.json().catch(() => ({})); limit = Math.min(Number(b.limit) || 50, 100); }
+    else { const u = new URL(req.url); limit = Math.min(Number(u.searchParams.get("limit")) || 50, 100); }
+  } catch { /* defaults */ }
+  const errors: string[] = [];
+  for (const fn of [fromPumpfun, fromGeckoTerminal]) {
+    try { const out = await fn(limit); return json({ ...out, count: out.migrations.length, generatedAt: new Date().toISOString() }); }
+    catch (e) { errors.push(e instanceof Error ? e.message : String(e)); }
   }
+  // graceful: never hard-error the feed
+  return json({ migrations: [], count: 0, source: "unavailable", tried: errors, generatedAt: new Date().toISOString() }, 200);
 });
