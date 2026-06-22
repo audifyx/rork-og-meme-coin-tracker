@@ -1,10 +1,14 @@
 import { type ComponentType, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  ArrowRight,
   BadgeDollarSign,
   BarChart3,
+  Bell,
   Calendar,
+  CheckCircle2,
   Coins,
+  Cpu,
   Crown,
   Crosshair,
   FileDown,
@@ -13,17 +17,24 @@ import {
   Fingerprint,
   Flame,
   Gauge,
+  Globe,
   Info,
   ChevronDown,
   GitBranch,
   Loader2,
+  Lock,
   RadioTower,
+  RotateCcw,
   Search,
+  Settings,
+  Shield,
   ShieldAlert,
   ShieldCheck,
+  Sparkles,
   Target,
   Users,
   Wallet,
+  Zap,
 } from "lucide-react";
 import { CoinDetailDialog } from "@/components/CoinDetailDialog";
 import { CopyMintButton } from "@/components/CopyMintButton";
@@ -52,6 +63,8 @@ import {
 import { cn } from "@/lib/utils";
 import { HelpLabel, ScoreMeter, TokenTruthLegend, labelToneClass, scoreTextClass } from "@/components/TokenTruthKit";
 import { OgVerdict } from "@/components/scanner-20x/OgVerdict";
+import { ScanHistory } from "@/components/scanner-20x/ScanHistory";
+import { ComparativeScan } from "@/components/scanner-20x/ComparativeScan";
 import { downloadReportPdf } from "@/lib/reportPdf";
 import { classifyToken, TIER_LABEL } from "@/lib/classification";
 import { forensicToInput } from "@/lib/classificationAdapter";
@@ -249,67 +262,107 @@ export const Scanner = ({ onSelect, initialQuery = "" }: Props) => {
   const firstMintToken: JupTokenInfo | undefined = report?.firstMintToken ?? filteredResults.find((token) => tokenScore(report, token)?.isFirstMintToken);
   const primaryScore: TokenForensicScores | undefined = primaryToken ? tokenScore(report, primaryToken) : undefined;
 
+  const cleanAll = filters.authoritySafeOnly && filters.hideLpPulled;
+  const moduleDefs: Array<{ key: string; label: string; desc: string; icon: ComponentType<{ className?: string }>; active: boolean; onToggle: () => void }> = [
+    { key: "primary", label: "Primary Hunt", desc: "Surface the dominant origin token", icon: Crown, active: filters.primaryOnly, onToggle: () => setFilters({ ...filters, primaryOnly: !filters.primaryOnly }) },
+    { key: "ogproof", label: "OG Proof", desc: "Hide clones & copycats", icon: Fingerprint, active: filters.hideClones, onToggle: () => setFilters({ ...filters, hideClones: !filters.hideClones }) },
+    { key: "clean", label: "Clean Only", desc: "Authority locked + LP safe", icon: ShieldCheck, active: cleanAll, onToggle: () => setFilters({ ...filters, authoritySafeOnly: !cleanAll, hideLpPulled: !cleanAll }) },
+    { key: "whale", label: "Whale / Holder", desc: "Rank by holder strength", icon: Users, active: filters.sortBy === "holders", onToggle: () => setFilters({ ...filters, sortBy: filters.sortBy === "holders" ? "dominance" : "holders" }) },
+    { key: "dexpaid", label: "Paid DEX", desc: "Only paid-boost tokens", icon: BadgeDollarSign, active: filters.dexPaidOnly, onToggle: () => setFilters({ ...filters, dexPaidOnly: !filters.dexPaidOnly }) },
+    { key: "reset", label: "Reset", desc: "Clear all modules & filters", icon: RotateCcw, active: false, onToggle: () => setFilters(DEFAULT_FILTERS) },
+  ];
+  const featureChips: Array<{ label: string; icon: ComponentType<{ className?: string }> }> = [
+    { label: "Secure", icon: Shield },
+    { label: "Private", icon: Lock },
+    { label: "Real-Time", icon: Zap },
+    { label: "Multi-Chain", icon: Globe },
+    { label: "Advanced AI", icon: Sparkles },
+  ];
+  const searching = debounced.length >= 2;
+  const runScan = () => { window.clearTimeout((window as unknown as { __og?: number }).__og); setDebounced(q.trim()); };
+
   return (
-    <section id="scanner" className="relative scroll-mt-36">
-      <div>
-        <div className="relative w-full">
-          <div className="og-search-box px-3 w-full">
-            <Search className="h-4 w-4 text-og-cyan" />
-            <input
-              value={q}
-              onChange={(e) => {
-                setQ(e.target.value);
-                window.clearTimeout((window as unknown as { __og?: number }).__og);
-                (window as unknown as { __og?: number }).__og = window.setTimeout(() => setDebounced(e.target.value.trim()), 300);
-              }}
-              placeholder="$BONK · WIF · So111…1112"
-              className="og-search-input px-1 font-mono text-sm tracking-wide"
-            />
-            {isFetching && <Loader2 className="mr-3 h-4 w-4 animate-spin text-og-lime" />}
-            <span className="mr-3 hidden text-[10px] uppercase tracking-widest text-muted-foreground sm:inline">
-              {rawResults.length ? `${filteredResults.length}/${rawResults.length} HITS` : "READY"}
-            </span>
-          </div>
-
-          {/* Scan-line shimmer on the search box itself */}
-          <div className={`pointer-events-none absolute inset-x-0 top-0 h-px overflow-hidden transition-opacity duration-300 ${isFetching ? "opacity-100" : "opacity-0"}`}>
-            <div className="scan-line h-full w-full bg-gradient-to-r from-transparent via-og-gold to-transparent" />
-          </div>
-        </div>
-
-        {/* Animated scan progress — shown while fetching, hidden once results load */}
-        <ScanProgress active={isFetching} query={debounced} className="mt-4" />
-
-        <div className={`mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl transition-opacity duration-300 ${isFetching ? "pointer-events-none opacity-40" : "opacity-100"}`}>
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowFilters((v) => !v)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/12 px-3 py-1.5 text-[11px] font-bold text-white/70 transition hover:text-white"
-            >
-              <Filter className="h-3.5 w-3.5" /> {showFilters ? "Hide filters" : "Filters"}
-            </button>
-            <div className="ml-auto flex flex-wrap gap-1.5">
-              {PRESET_FILTERS.map((preset) => (
-                <button
-                  key={preset.label}
-                  type="button"
-                  onClick={() => setFilters(preset.filters)}
-                  className="rounded-full border border-white/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white/55 transition hover:border-og-lime/50 hover:text-og-lime"
-                >
-                  {preset.label}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => setFilters(DEFAULT_FILTERS)}
-                className="rounded-full border border-white/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white/55 transition hover:border-og-cyan/50 hover:text-og-cyan"
-              >
-                RESET
-              </button>
+    <section id="scanner" className="relative scroll-mt-36 space-y-4">
+      {/* ── Header ── */}
+      <div className="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.06] via-white/[0.02] to-transparent p-5">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-emerald-500/20 blur-3xl" />
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-gradient-to-br from-emerald-500 to-green-400 shadow-lg shadow-emerald-500/30">
+              <Crosshair className="h-6 w-6 text-white" strokeWidth={2.2} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-black tracking-tight text-white">OG Scanner</h2>
+                <span className="rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-emerald-300">Forensic</span>
+              </div>
+              <p className="mt-1 max-w-md text-xs leading-relaxed text-white/45">Forensic origin attribution for any token. Verify the OG, expose clones, audit liquidity, holders &amp; risk.</p>
             </div>
           </div>
-          <div className={cn("grid gap-2 sm:grid-cols-2 lg:grid-cols-4", !showFilters && "hidden")}>
+          <div className="flex items-center gap-2">
+            <div className="hidden rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2 text-right sm:block">
+              <div className="text-[9px] uppercase tracking-widest text-white/30">Enterprise Grade</div>
+              <div className="text-xs font-bold text-emerald-300">Forensic Engine</div>
+            </div>
+            <button type="button" onClick={() => setShowFilters((v) => !v)} title="Advanced mode" className={cn("grid h-9 w-9 place-items-center rounded-xl border transition", showFilters ? "border-emerald-400/50 bg-emerald-500/15 text-emerald-300" : "border-white/10 bg-white/[0.03] text-white/50 hover:text-white")}>
+              <Settings className="h-4 w-4" />
+            </button>
+            <button type="button" className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/[0.03] text-white/50 transition hover:text-white"><Bell className="h-4 w-4" /></button>
+            <button type="button" className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/[0.03] text-white/50 transition hover:text-white"><Cpu className="h-4 w-4" /></button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Search ── */}
+      <div className="relative">
+        <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/25 bg-white/[0.03] p-2 backdrop-blur-xl focus-within:border-emerald-400/60">
+          <Search className="ml-2 h-5 w-5 flex-none text-emerald-400" />
+          <input
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value);
+              window.clearTimeout((window as unknown as { __og?: number }).__og);
+              (window as unknown as { __og?: number }).__og = window.setTimeout(() => setDebounced(e.target.value.trim()), 300);
+            }}
+            onKeyDown={(e) => { if (e.key === "Enter") runScan(); }}
+            placeholder="$BONK · WIF · So111…1112"
+            className="min-w-0 flex-1 bg-transparent px-1 font-mono text-sm tracking-wide text-white placeholder:text-white/25 focus:outline-none"
+          />
+          {isFetching && <Loader2 className="h-4 w-4 flex-none animate-spin text-emerald-400" />}
+          <span className="hidden text-[10px] uppercase tracking-widest text-white/30 sm:inline">{rawResults.length ? `${filteredResults.length}/${rawResults.length} HITS` : "READY"}</span>
+          <button type="button" onClick={runScan} className="flex flex-none items-center gap-1.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-400 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-emerald-500/30 transition hover:brightness-110">
+            Scan <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+        <div className={`pointer-events-none absolute inset-x-0 top-0 h-px overflow-hidden transition-opacity duration-300 ${isFetching ? "opacity-100" : "opacity-0"}`}>
+          <div className="scan-line h-full w-full bg-gradient-to-r from-transparent via-emerald-400 to-transparent" />
+        </div>
+      </div>
+
+      {/* ── Feature chips ── */}
+      <div className="flex flex-wrap items-center gap-2">
+        {featureChips.map((chip) => (
+          <span key={chip.label} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] font-semibold text-white/55">
+            <chip.icon className="h-3.5 w-3.5 text-emerald-400" /> {chip.label}
+          </span>
+        ))}
+      </div>
+
+      <ScanProgress active={isFetching} query={debounced} />
+
+      {/* ── Advanced mode (collapsible filters) ── */}
+      {showFilters && (
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-emerald-300"><Filter className="h-3.5 w-3.5" /> Advanced Mode</span>
+            <div className="ml-auto flex flex-wrap gap-1.5">
+              {PRESET_FILTERS.map((preset) => (
+                <button key={preset.label} type="button" onClick={() => setFilters(preset.filters)} className="rounded-full border border-white/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white/55 transition hover:border-emerald-400/50 hover:text-emerald-300">{preset.label}</button>
+              ))}
+              <button type="button" onClick={() => setFilters(DEFAULT_FILTERS)} className="rounded-full border border-white/12 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white/55 transition hover:border-emerald-400/50 hover:text-emerald-300">RESET</button>
+            </div>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <FilterNum label="MIN LIQ" value={filters.minLiq} step={1000} min={0} onChange={(v) => setFilters({ ...filters, minLiq: Math.max(0, v) })} />
             <FilterNum label="MIN MCAP" value={filters.minMcap} step={10_000} min={0} onChange={(v) => setFilters({ ...filters, minMcap: v })} />
             <FilterNum label="MIN HOLDERS" value={filters.minHolders} step={100} min={0} onChange={(v) => setFilters({ ...filters, minHolders: v })} />
@@ -327,53 +380,87 @@ export const Scanner = ({ onSelect, initialQuery = "" }: Props) => {
             <FilterToggle label="GREEN 24H" value={filters.greenOnly} onChange={(v) => setFilters({ ...filters, greenOnly: v })} />
             <FilterToggle label="DEX PAID" value={filters.dexPaidOnly} onChange={(v) => setFilters({ ...filters, dexPaidOnly: v })} />
           </div>
-          <div className={cn("mt-3 flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground", !showFilters && "hidden")}>
-            <span><span className="text-og-lime">{filteredResults.length}</span> shown</span>
-            <span>·</span>
-            <span><span className="text-og-blood">{dropped}</span> filtered</span>
-            <span>·</span>
-            <span><span className={highRiskVisible > 0 ? "text-og-blood" : "text-og-lime"}>{highRiskVisible}</span> visible risk alerts</span>
+          <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-white/40">
+            <span><span className="text-emerald-300">{filteredResults.length}</span> shown</span><span>·</span>
+            <span><span className="text-red-400">{dropped}</span> filtered</span><span>·</span>
+            <span><span className={highRiskVisible > 0 ? "text-red-400" : "text-emerald-300"}>{highRiskVisible}</span> visible risk alerts</span>
           </div>
         </div>
+      )}
 
-        {report && rawResults.length > 0 && (
-          <>
-            <div className="mt-4 grid gap-2.5 rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl sm:grid-cols-2 xl:grid-cols-6">
-              <ForensicStat icon={Fingerprint} label="Narrative ID" value={report.narrativeFingerprintId} accent="text-og-cyan" />
-              <ForensicStat icon={GitBranch} label="Cluster" value={`${report.summary.candidateCount} tokens · ${report.summary.chainCount} chain${report.summary.chainCount !== 1 ? "s" : ""}`} accent="text-og-gold" />
-              <ForensicStat icon={ShieldCheck} label="Primary" value={primaryToken ? `$${primaryToken.symbol}` : "Unknown"} accent="text-og-lime" />
-              <ForensicStat icon={Calendar} label="First Mint" value={firstMintToken ? shortDate(tokenOgCreatedAtIso(firstMintToken)) : "Unknown"} accent="text-og-gold" />
-              <ForensicStat icon={Gauge} label="Primary Score" value={report.summary.primaryDominanceScore != null ? `${report.summary.primaryDominanceScore}%` : "—"} accent="text-og-cyan" />
-              <ForensicStat icon={ShieldAlert} label="Risk Queue" value={`${report.summary.highRiskCount} flagged`} accent={report.summary.highRiskCount > 0 ? "text-og-blood" : "text-og-lime"} />
-            </div>
-            <div className="mt-3">
+      {searching ? (
+        <>
+          {report && rawResults.length > 0 && (
+            <>
+              <div className="grid gap-2.5 rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl sm:grid-cols-2 xl:grid-cols-6">
+                <ForensicStat icon={Fingerprint} label="Narrative ID" value={report.narrativeFingerprintId} accent="text-og-cyan" />
+                <ForensicStat icon={GitBranch} label="Cluster" value={`${report.summary.candidateCount} tokens · ${report.summary.chainCount} chain${report.summary.chainCount !== 1 ? "s" : ""}`} accent="text-og-gold" />
+                <ForensicStat icon={ShieldCheck} label="Primary" value={primaryToken ? `$${primaryToken.symbol}` : "Unknown"} accent="text-emerald-300" />
+                <ForensicStat icon={Calendar} label="First Mint" value={firstMintToken ? shortDate(tokenOgCreatedAtIso(firstMintToken)) : "Unknown"} accent="text-og-gold" />
+                <ForensicStat icon={Gauge} label="Primary Score" value={report.summary.primaryDominanceScore != null ? `${report.summary.primaryDominanceScore}%` : "—"} accent="text-og-cyan" />
+                <ForensicStat icon={ShieldAlert} label="Risk Queue" value={`${report.summary.highRiskCount} flagged`} accent={report.summary.highRiskCount > 0 ? "text-red-400" : "text-emerald-300"} />
+              </div>
               <LegendToggle />
-            </div>
-            {primaryToken && <OgVerdict token={primaryToken} score={primaryScore} report={report} />}
-          </>
-        )}
+              {primaryToken && <OgVerdict token={primaryToken} score={primaryScore} report={report} />}
+            </>
+          )}
+          <div className={`grid grid-cols-1 gap-2 transition-opacity duration-500 ${isFetching ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+            {filteredResults.slice(0, 18).map((t) => (
+              <ResultRow key={forensicKey(t)} t={t} score={tokenScore(report, t)} report={report} onSelect={() => onSelect(t.id)} />
+            ))}
+            {!isFetching && rawResults.length === 0 && (
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center text-xs uppercase tracking-widest text-white/40">NO MATCHES // EOF</div>
+            )}
+            {!isFetching && rawResults.length > 0 && filteredResults.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-white/12 p-8 text-center text-xs uppercase tracking-widest text-white/40">NO RESULTS PASS FILTERS · RESET OR LOWER THE BAR</div>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="rounded-3xl border border-white/10 bg-white/[0.02] p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <Target className="h-4 w-4 text-emerald-400" />
+            <h3 className="text-sm font-black uppercase tracking-widest text-white">Scan Modules</h3>
+            <span className="ml-auto text-[10px] uppercase tracking-widest text-white/30">tap to arm</span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {moduleDefs.map((m) => (
+              <button key={m.key} type="button" onClick={m.onToggle} className={cn("group flex items-start gap-3 rounded-2xl border p-4 text-left transition", m.active ? "border-emerald-400/50 bg-emerald-500/[0.08]" : "border-white/10 bg-white/[0.03] hover:border-emerald-400/30 hover:bg-white/[0.05]")}>
+                <span className={cn("mt-0.5 grid h-5 w-5 flex-none place-items-center rounded-md border transition", m.active ? "border-emerald-400 bg-emerald-400 text-black" : "border-white/20 text-transparent")}>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="flex items-center gap-1.5 text-sm font-bold text-white"><m.icon className={cn("h-4 w-4", m.active ? "text-emerald-300" : "text-white/40")} /> {m.label}</span>
+                  <span className="mt-0.5 block text-[11px] leading-snug text-white/40">{m.desc}</span>
+                </span>
+              </button>
+            ))}
+          </div>
 
-        <div className={`mt-4 grid grid-cols-1 gap-2 transition-opacity duration-500 ${isFetching ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
-          {filteredResults.slice(0, 18).map((t) => (
-            <ResultRow key={forensicKey(t)} t={t} score={tokenScore(report, t)} report={report} onSelect={() => onSelect(t.id)} />
-          ))}
-          {debounced.length >= 2 && !isFetching && rawResults.length === 0 && (
-            <div className="col-span-full rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center text-xs uppercase tracking-widest text-muted-foreground">
-              NO MATCHES // EOF
+          <button type="button" onClick={() => setShowFilters((v) => !v)} className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-emerald-500/25 bg-gradient-to-r from-emerald-500/[0.08] to-transparent p-4 text-left transition hover:border-emerald-400/40">
+            <span className="grid h-9 w-9 flex-none place-items-center rounded-xl bg-emerald-500/15 text-emerald-300"><Settings className="h-4 w-4" /></span>
+            <span className="min-w-0">
+              <span className="block text-sm font-bold text-white">Advanced Mode</span>
+              <span className="block text-[11px] text-white/40">Fine-tune liquidity, market cap, origin, risk thresholds &amp; sort order</span>
+            </span>
+            <ChevronDown className={cn("ml-auto h-4 w-4 flex-none text-white/40 transition-transform", showFilters && "rotate-180")} />
+          </button>
+
+          <div className="mt-5 grid gap-3 lg:grid-cols-2">
+            <ScanHistory onSelect={onSelect} />
+            <ComparativeScan onSelect={onSelect} />
+          </div>
+          <div className="mt-5 rounded-2xl border border-white/[0.06] bg-white/[0.01] p-4">
+            <div className="grid gap-3 text-[11px] sm:grid-cols-4">
+              <div><div className="font-bold text-emerald-300">Forensic</div><div className="mt-0.5 text-white/35">Origin attribution, clone lineage, dev wallet tracing</div></div>
+              <div><div className="font-bold text-emerald-300">Coverage</div><div className="mt-0.5 text-white/35">Solana &amp; multi-chain via Jupiter, DexScreener, Helius</div></div>
+              <div><div className="font-bold text-emerald-300">Safety</div><div className="mt-0.5 text-white/35">LP status, authority locks, holder concentration</div></div>
+              <div><div className="font-bold text-emerald-300">Reports</div><div className="mt-0.5 text-white/35">Export full intelligence reports as PDF</div></div>
             </div>
-          )}
-          {debounced.length >= 2 && !isFetching && rawResults.length > 0 && filteredResults.length === 0 && (
-            <div className="col-span-full rounded-2xl border border-dashed border-white/12 p-8 text-center text-xs uppercase tracking-widest text-muted-foreground">
-              NO RESULTS PASS FILTERS · RESET OR LOWER THE BAR
-            </div>
-          )}
-          {debounced.length < 2 && (
-            <div className="col-span-full rounded-2xl border border-dashed border-white/12 p-8 text-center text-xs uppercase tracking-widest text-muted-foreground">
-              › type 2+ chars to engage
-            </div>
-          )}
+            <div className="mt-3 border-t border-white/[0.06] pt-3 text-center text-[11px] font-semibold tracking-wide text-white/40">Built for truth. Backed by data. Secured by privacy.</div>
+          </div>
         </div>
-      </div>
+      )}
     </section>
   );
 };

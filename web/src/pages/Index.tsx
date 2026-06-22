@@ -1512,26 +1512,8 @@ const marketSuiteOptions: SuiteOption<"feed" | "trending" | "news-signal">[] = [
 ];
 
 const TruthScanSuite = ({ onSelect }: { onSelect: (m: string) => void }) => {
-  // Unified OG Scanner — Truth Scanner + OG Finder merged into a single tool.
-  return (
-    <section className="space-y-4">
-      <ToolHeader
-        icon={Crosshair}
-        title="OG Scanner"
-        subtitle="Scan any token for its OG verdict, origin proof, clone lineage, holders, liquidity, dev wallet and risk — one unified forensic scanner. Export the full report as PDF."
-        gradient="from-emerald-500 to-green-400"
-        glowColor="rgba(16,185,129,0.25)"
-        badge="FORENSIC"
-        badgeColor="lime"
-      />
-      <Scanner onSelect={onSelect} />
-      {/* 20x Features */}
-      <div className="space-y-3 mt-4">
-        <ScanHistory onSelect={onSelect} />
-        <ComparativeScan onSelect={onSelect} />
-      </div>
-    </section>
-  );
+  // Unified OG Scanner — self-contained forensic scanner (header, search, modules, history, compare).
+  return <Scanner onSelect={onSelect} />;
 };
 
 const LaunchRadarSuite = ({ onSelect }: { onSelect: (m: string) => void }) => {
