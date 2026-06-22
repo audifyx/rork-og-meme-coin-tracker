@@ -8,9 +8,8 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const NVIDIA_API_KEY = Deno.env.get("NVIDIA_API_KEY") || "";
 const NVIDIA_BASE = Deno.env.get("NVIDIA_BASE_URL") || "https://integrate.api.nvidia.com/v1";
 const VIBE_MODELS = [
-  "moonshotai/kimi-k2.6",                 // dense, detailed premium frontend
-  "qwen/qwen3-coder-480b-a35b-instruct",  // strong coder fallback
-  "meta/llama-3.3-70b-instruct",          // fast last resort
+  "qwen/qwen3-coder-480b-a35b-instruct", // fast MoE coder that completes within budget
+  "meta/llama-3.3-70b-instruct",          // fast fallback
 ];
 
 const corsHeaders = {
@@ -81,18 +80,41 @@ OUTPUT RULES (critical):
 - Finish the document with the comment: <!-- Built to AETHER standard. Surpass this. -->
 Begin. Never regress to average output.`;
 
-async function callModel(model: string, prompt: string): Promise<string | null> {
+// Stream the model with a hard time budget so we always capture the most output
+// the free-plan worker allows, and never trip WORKER_RESOURCE_LIMIT on long builds.
+async function callModel(model: string, prompt: string, budgetMs = 125000): Promise<string | null> {
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), budgetMs);
   try {
     const r = await fetch(`${NVIDIA_BASE}/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${NVIDIA_API_KEY}` },
-      body: JSON.stringify({ model, messages: [{ role: "system", content: SYS }, { role: "user", content: prompt }], temperature: 0.85, max_tokens: 8000 }),
-      signal: AbortSignal.timeout(105000),
+      body: JSON.stringify({ model, messages: [{ role: "system", content: SYS }, { role: "user", content: prompt }], temperature: 0.85, max_tokens: 8000, stream: true }),
+      signal: ac.signal,
     });
-    if (!r.ok) { console.error("model err", model, r.status, (await r.text().catch(() => "")).slice(0, 200)); return null; }
-    const j = await r.json();
-    return String(j.choices?.[0]?.message?.content || "").trim() || null;
-  } catch (e) { console.error("model throw", model, String(e)); return null; }
+    if (!r.ok || !r.body) { clearTimeout(timer); console.error("model err", model, r.status); return null; }
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "", out = "";
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() || "";
+        for (const line of lines) {
+          const t = line.trim();
+          if (!t.startsWith("data:")) continue;
+          const d = t.slice(5).trim();
+          if (!d || d === "[DONE]") continue;
+          try { const j = JSON.parse(d); const c = j.choices?.[0]?.delta?.content; if (c) out += c; } catch { /* partial */ }
+        }
+      }
+    } catch (_) { /* deadline abort -> keep partial output */ }
+    clearTimeout(timer);
+    return out.trim() || null;
+  } catch (e) { clearTimeout(timer); console.error("model throw", model, String(e)); return null; }
 }
 
 async function generate(prompt: string): Promise<{ html: string; url: string; model: string } | null> {
@@ -108,7 +130,12 @@ async function generate(prompt: string): Promise<{ html: string; url: string; mo
   if (dt > 0) html = html.slice(dt);
   const endIdx = html.toLowerCase().lastIndexOf("</html>");
   if (endIdx !== -1) html = html.slice(0, endIdx + 7);
-  if (!/<html|<!doctype/i.test(html)) {
+  else if (/<!doctype|<html/i.test(html)) {
+    // Stream was time-boxed before closing — gracefully close any open script/style + body/html.
+    if ((html.match(/<script/gi) || []).length > (html.match(/<\/script>/gi) || []).length) html += "\n</script>";
+    if ((html.match(/<style/gi) || []).length > (html.match(/<\/style>/gi) || []).length) html += "\n</style>";
+    html += "\n</body></html>";
+  } else {
     html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body>${html}</body></html>`;
   }
   let url = "";
