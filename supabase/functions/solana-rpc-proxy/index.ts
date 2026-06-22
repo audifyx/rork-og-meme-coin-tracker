@@ -1,7 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-const ALCHEMY_RPC_URL = Deno.env.get("ALCHEMY_SOLANA_RPC");
-const HELIOS_RPC_1 = Deno.env.get("HELIOS_RPC_1");
-const QUIKNODE_RPC_URL = Deno.env.get("QUIKNODE_RPC_URL");
+const _alchemy = Deno.env.get("ALCHEMY_API_KEY") || "";
+const _helius = Deno.env.get("HELIUS_API_KEY") || "";
+const _quiknode = Deno.env.get("QUICKNODE_WSS") || "";
+const ALCHEMY_RPC_URL = _alchemy ? (_alchemy.startsWith("http") ? _alchemy : `https://solana-mainnet.g.alchemy.com/v2/${_alchemy}`) : undefined;
+const HELIOS_RPC_1 = _helius ? (_helius.startsWith("http") ? _helius : `https://mainnet.helius-rpc.com/?api-key=${_helius}`) : undefined;
+const QUIKNODE_RPC_URL = _quiknode ? _quiknode.replace(/^wss:/, "https:") : undefined;
 Deno.serve(async (req)=>{
   if (req.method === "OPTIONS") {
     return new Response("ok", {

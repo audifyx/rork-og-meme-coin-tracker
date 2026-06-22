@@ -1,9 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-const ALCHEMY_RPC = Deno.env.get("ALCHEMY_SOLANA_RPC");
-const HELIOS_RPC_1 = Deno.env.get("HELIOS_RPC_1");
-const HELIOS_RPC_2 = Deno.env.get("HELIOS_RPC_2");
-const HELIOS_RPC_3 = Deno.env.get("HELIOS_RPC_3");
-const QUIKNODE_RPC = Deno.env.get("QUIKNODE_RPC_URL");
+const _alchemy = Deno.env.get("ALCHEMY_API_KEY") || "";
+const _helius = Deno.env.get("HELIUS_API_KEY") || "";
+const _quiknode = Deno.env.get("QUICKNODE_WSS") || "";
+const ALCHEMY_RPC = _alchemy ? (_alchemy.startsWith("http") ? _alchemy : `https://solana-mainnet.g.alchemy.com/v2/${_alchemy}`) : undefined;
+const HELIUS_RPC = _helius ? (_helius.startsWith("http") ? _helius : `https://mainnet.helius-rpc.com/?api-key=${_helius}`) : undefined;
+const QUIKNODE_RPC = _quiknode ? _quiknode.replace(/^wss:/, "https:") : undefined;
 Deno.serve(async (req)=>{
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -15,9 +16,7 @@ Deno.serve(async (req)=>{
   try {
     const { method, params = [], provider = 'alchemy', id = 1 } = await req.json();
     let rpcUrl = ALCHEMY_RPC;
-    if (provider === 'helios1') rpcUrl = `http://${HELIOS_RPC_1}`;
-    if (provider === 'helios2') rpcUrl = `http://${HELIOS_RPC_2}`;
-    if (provider === 'helios3') rpcUrl = `http://${HELIOS_RPC_3}`;
+    if (provider === 'helios1' || provider === 'helios2' || provider === 'helios3' || provider === 'helius') rpcUrl = HELIUS_RPC;
     if (provider === 'quiknode') rpcUrl = QUIKNODE_RPC;
     if (!rpcUrl) {
       throw new Error(`RPC provider '${provider}' not configured`);
