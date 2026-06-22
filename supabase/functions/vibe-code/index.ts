@@ -62,6 +62,18 @@ DEPTH & COMPLETENESS (this is what separates premium from amateur — do NOT ski
 - Cohesive spacing rhythm and a real responsive grid (mobile-first). Test mentally on mobile and desktop.
 - Forbidden: plain unstyled <input>/<button>, a flat hero, sparse pages, default Tailwind gray cards with no personality, broken/empty sections.
 
+REQUIRED ELEMENTS (include ALL every time; adapt to the user's request and theme):
+1. Fixed/sticky glass navbar: brand, nav links, primary CTA button.
+2. Bold hero with a LAYERED animated background (CSS gradient mesh + floating shapes or inline SVG), oversized headline, subheadline, two buttons. Never a flat color block.
+3. 4-6 substantial sections fitting the request, each with real, specific copy (no lorem ipsum).
+4. A card grid with hover lift + glow + smooth transitions (Font Awesome icons).
+5. A social-proof section (stats counters, testimonials, or logos) relevant to the topic.
+6. Scroll-reveal entrance animations via IntersectionObserver + at least one @keyframes ambient animation.
+7. A fully custom-styled form (custom inputs, focus states, working submit with a toast confirmation).
+8. A rich multi-column footer (brand blurb, link columns, social icons, copyright).
+9. Cohesive tokens (consistent radius/spacing/accent) and full mobile responsiveness.
+Aim for a complete, polished page (~350-600 lines). Do not stop early or output a thin draft.
+
 OUTPUT RULES (critical):
 - Output ONLY the raw HTML document. NO markdown, NO code fences, NO commentary before or after.
 - Start with <!DOCTYPE html> and end with </html>.
@@ -74,7 +86,7 @@ async function callModel(model: string, prompt: string): Promise<string | null> 
     const r = await fetch(`${NVIDIA_BASE}/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${NVIDIA_API_KEY}` },
-      body: JSON.stringify({ model, messages: [{ role: "system", content: SYS }, { role: "user", content: prompt }], temperature: 0.7, max_tokens: 8000 }),
+      body: JSON.stringify({ model, messages: [{ role: "system", content: SYS }, { role: "user", content: prompt }], temperature: 0.85, max_tokens: 8000 }),
       signal: AbortSignal.timeout(105000),
     });
     if (!r.ok) { console.error("model err", model, r.status, (await r.text().catch(() => "")).slice(0, 200)); return null; }
