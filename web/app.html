@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ogscan.fun — live OG coin scanner</title>
+    <meta name="description" content="ogscan.fun — live on-chain intel for OG coins, new pairs, migrations, whales, tape, and any Solana token." />
+    <meta name="theme-color" content="#050806" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://ogscan.fun/" />
+
+    <meta property="og:title" content="ogscan.fun — live OG coin scanner" />
+    <meta property="og:description" content="Live scanner for OG coins, new pairs, migrations, whales, tape, and any Solana token." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ogscan.fun/" />
+    <meta property="og:image" content="https://ogscan.fun/og-brand.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ogscan.fun — live OG coin scanner" />
+    <meta name="twitter:description" content="Live scanner for OG coins, new pairs, migrations, whales, tape, and any Solana token." />
+    <meta name="twitter:image" content="https://ogscan.fun/og-brand.jpg" />
+
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/icon-192x192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="OG Scan" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js").catch(() => {});
+        });
+      }
+    </script>
+
+    <!-- Intercom / Fin AI Chat -->
+    <script>
+      window.intercomSettings = {
+        api_base: "https://api-iam.intercom.io",
+        app_id: "wlc3xyxr",
+      };
+      (function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/wlc3xyxr';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);};if(document.readyState==='complete'){l();}else if(w.attachEvent){w.attachEvent('onDOMContentLoaded',l);w.attachEvent('onload',l);}else{w.addEventListener('DOMContentLoaded',l,false);w.addEventListener('load',l,false);}}})();
+    </script>
+  </body>
+</html>
