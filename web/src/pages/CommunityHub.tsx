@@ -37,7 +37,7 @@ const VoiceLobbiesPage = lazy(() => import("./VoiceLobbies"));
    Types & Config
    ═══════════════════════════════════════════════════════════════ */
 
-type CommTab = "channels" | "rooms" | "spaces" | "trading-lobbies" | "communities" | "og-communities" | "voice-lobbies";
+type CommTab = "channels" | "rooms" | "spaces" | "communities";
 
 interface TabDef {
   id: CommTab;
@@ -47,13 +47,10 @@ interface TabDef {
 }
 
 const TABS: TabDef[] = [
-  { id: "channels",         label: "Channels",         Icon: Hash,         eyebrow: "Chat rooms" },
-  { id: "rooms",            label: "Rooms",            Icon: MessageSquare,eyebrow: "Group chat & raids" },
-  { id: "spaces",           label: "Spaces",           Icon: Radio,        eyebrow: "Voice rooms & alpha" },
-  { id: "trading-lobbies",  label: "Trading Lobbies",  Icon: TrendingUp,   eyebrow: "Token trading chat" },
-  { id: "communities",      label: "Communities",      Icon: Globe,        eyebrow: "X & token communities" },
-  { id: "og-communities",   label: "OG Communities",   Icon: Users,        eyebrow: "Custom OG social feed" },
-  { id: "voice-lobbies",    label: "Voice Lobbies",    Icon: Headphones,   eyebrow: "Live voice hangouts" },
+  { id: "channels",    label: "Chat",        Icon: Hash,          eyebrow: "Channels & messages" },
+  { id: "rooms",       label: "Rooms",       Icon: MessageSquare, eyebrow: "Group chat & trading lobbies" },
+  { id: "spaces",      label: "Spaces",      Icon: Radio,         eyebrow: "Live voice & alpha" },
+  { id: "communities", label: "Communities", Icon: Globe,         eyebrow: "Token & OG communities" },
 ];
 
 const STORAGE_KEY = "og_comm_tab";
@@ -79,12 +76,25 @@ const Spinner = () => (
   </div>
 );
 
+const SubToggle = <T extends string,>({ options, value, onChange }: { options: [T, string][]; value: T; onChange: (v: T) => void }) => (
+  <div className="flex shrink-0 items-center gap-2 border-b border-white/[0.05] px-3 py-2">
+    {options.map(([v, l]) => (
+      <button key={v} type="button" onClick={() => onChange(v)}
+        className={cn("rounded-lg px-3 py-1.5 text-[11px] font-bold transition", value === v ? "bg-primary/15 text-primary border border-primary/25" : "border border-transparent text-white/40 hover:text-white/70")}>
+        {l}
+      </button>
+    ))}
+  </div>
+);
+
 /* ═══════════════════════════════════════════════════════════════
    CommunityHub — Main Component
    ═══════════════════════════════════════════════════════════════ */
 
 const CommunityHub: React.FC = () => {
   const [active, setActive] = useState<CommTab>(loadTab);
+  const [roomsView, setRoomsView] = useState<"rooms" | "trading">("rooms");
+  const [commView, setCommView] = useState<"token" | "og">("token");
 
   /* Persist active tab */
   useEffect(() => {
@@ -110,7 +120,7 @@ const CommunityHub: React.FC = () => {
         if (old === "social" || old === "channels") setActive("channels");
         else if (old === "rooms")    setActive("rooms");
         else if (old === "spaces")   setActive("spaces");
-        else if (old === "voice")    setActive("trading-lobbies");
+        else if (old === "voice")    setActive("rooms");
         localStorage.removeItem("og_community_sub_tab");
       } catch {}
     };
@@ -156,21 +166,26 @@ const CommunityHub: React.FC = () => {
       {/* ── Tab content ── */}
       <div className="min-h-0 flex-1 overflow-hidden flex flex-col">
 
-        {/* ═══ CHANNELS (social chat) ═══ */}
+        {/* CHAT (channels + DMs) */}
         {active === "channels" && (
           <Suspense fallback={<Spinner />}>
             <SocialHub />
           </Suspense>
         )}
 
-        {/* ═══ ROOMS ═══ */}
+        {/* ROOMS — community rooms + trading lobbies */}
         {active === "rooms" && (
-          <Suspense fallback={<Spinner />}>
-            <CommunityRoomsPage />
-          </Suspense>
+          <div className="min-h-0 flex-1 overflow-hidden flex flex-col">
+            <SubToggle options={[["rooms", "Community Rooms"], ["trading", "Trading Lobbies"]]} value={roomsView} onChange={setRoomsView} />
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <Suspense fallback={<Spinner />}>
+                {roomsView === "rooms" ? <CommunityRoomsPage /> : <TradingLobbiesPage />}
+              </Suspense>
+            </div>
+          </div>
         )}
 
-        {/* ═══ SPACES (voice rooms) ═══ */}
+        {/* SPACES — live voice */}
         {active === "spaces" && (
           <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5 lg:px-6 pb-4">
             <Suspense fallback={<Spinner />}>
@@ -179,39 +194,15 @@ const CommunityHub: React.FC = () => {
           </div>
         )}
 
-        {/* ═══ TRADING LOBBIES ═══ */}
-        {active === "trading-lobbies" && (
-          <div className="min-h-0 flex-1 overflow-hidden">
-            <Suspense fallback={<Spinner />}>
-              <TradingLobbiesPage />
-            </Suspense>
-          </div>
-        )}
-
-        {/* ═══ COMMUNITIES (X & token communities) ═══ */}
+        {/* COMMUNITIES — token + OG */}
         {active === "communities" && (
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <Suspense fallback={<Spinner />}>
-              <CoinCommunitiesPage />
-            </Suspense>
-          </div>
-        )}
-
-        {/* ═══ OG COMMUNITIES (custom social communities feed) ═══ */}
-        {active === "og-communities" && (
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <Suspense fallback={<Spinner />}>
-              <CommunitiesPage />
-            </Suspense>
-          </div>
-        )}
-
-        {/* ═══ VOICE LOBBIES (pure audio rooms) ═══ */}
-        {active === "voice-lobbies" && (
-          <div className="min-h-0 flex-1 overflow-hidden">
-            <Suspense fallback={<Spinner />}>
-              <VoiceLobbiesPage />
-            </Suspense>
+          <div className="min-h-0 flex-1 overflow-hidden flex flex-col">
+            <SubToggle options={[["token", "Token Communities"], ["og", "OG Communities"]]} value={commView} onChange={setCommView} />
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <Suspense fallback={<Spinner />}>
+                {commView === "token" ? <CoinCommunitiesPage /> : <CommunitiesPage />}
+              </Suspense>
+            </div>
           </div>
         )}
       </div>
