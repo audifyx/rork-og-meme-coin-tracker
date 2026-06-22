@@ -175,16 +175,12 @@ export const AppSidebar = ({
   const primaryItems: NavItem[] = [
     { id: "overview", icon: Home, label: "Home", eyebrow: "Command hub" },
     { id: "discover", icon: LineChart, label: "Markets", eyebrow: "Coins · Launchpads · Trending · New" },
-    { to: "/scanner", icon: Radar, label: "Scanner", eyebrow: "Scan any token · Grim score" },
-    { id: "tools", icon: Wrench, label: "Tools", eyebrow: "Scanners · Swap · Listings · utilities" },
+    { id: "tools", icon: Wrench, label: "Tools", eyebrow: "Scanner · Market Radar · Listings" },
     { id: "community", icon: Hash, label: "Community", eyebrow: "Chat · Rooms · Spaces" },
   ];
 
   const discoverItems: NavItem[] = [
-    { to: "/reports", icon: FileText, label: "Reports", eyebrow: "Scans + AI report feed" },
-    { to: "/track-record", icon: Trophy, label: "Track Record", eyebrow: "Grim's receipts" },
-    { to: "/alerts", icon: Bell, label: "Alerts", eyebrow: "Watches · Discord · X" },
-    { to: "/intelligence", icon: Sparkles, label: "AI Intelligence", eyebrow: "Grim AI · live analysis" },
+    { to: "/reports", icon: FileText, label: "Signals", eyebrow: "Reports · Track Record · Alerts · AI" },
   ];
 
   const communityItems: NavItem[] = [

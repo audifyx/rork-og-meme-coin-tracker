@@ -1160,8 +1160,8 @@ const OverviewPage = ({
   const { user, profile } = useAuth();
   const [popupMint, setPopupMint] = useState<string | null>(null);
   const popupToken: JupTokenInfo | null = popupMint ? { id: popupMint, name: "", symbol: "", decimals: 9 } : null;
-  type HomePanel = "daily" | "watchlist" | "alpha" | "leaders" | "paper" | "calendar" | "calc";
-  const [panel, setPanel] = useState<HomePanel>("daily");
+  type HomePanel = "watchlist" | "alpha" | "leaders" | "paper" | "calendar" | "calc";
+  const [panel, setPanel] = useState<HomePanel>("watchlist");
   const quickActions: { label: string; Icon: ComponentType<{ className?: string }>; accent: TabAccent; onClick: () => void }[] = [
     { label: "Scanner", Icon: Search, accent: "lime", onClick: () => onSwitchTab("scanner") },
     { label: "Launches", Icon: Rocket, accent: "cyan", onClick: () => onSwitchTab("snipe-feed") },
@@ -1173,7 +1173,6 @@ const OverviewPage = ({
     { label: "Profile", Icon: User, accent: "lime", onClick: () => onSwitchTab("profile") },
   ];
   const homePanels: { id: HomePanel; label: string }[] = [
-    { id: "daily", label: "OG Daily" },
     { id: "watchlist", label: "Watchlist" },
     { id: "alpha", label: "Alpha" },
     { id: "leaders", label: "Leaders" },
@@ -1356,7 +1355,6 @@ const OverviewPage = ({
             </button>
           ))}
         </div>
-        {panel === "daily" && <Suspense fallback={spinnerSm("border-primary")}><OGDaily onSelectMint={(m: string) => setPopupMint(m)} /></Suspense>}
         {panel === "watchlist" && <Suspense fallback={spinnerSm("border-secondary")}><SmartWatchlist onSelectMint={(m: string) => setPopupMint(m)} /></Suspense>}
         {panel === "alpha" && <Suspense fallback={spinnerSm("border-og-gold")}><AlphaCallouts onSelectMint={(m: string) => { onSelectMint(m); onSwitchTab("scanner"); }} /></Suspense>}
         {panel === "leaders" && <Suspense fallback={spinnerSm("border-primary")}><PlatformLeaderboard /></Suspense>}
