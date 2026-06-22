@@ -1115,11 +1115,10 @@ const TokenDetailPopupWrapper = ({ token, onClose, onOpenScanner }: { token: Jup
 /* ─── Overview / Dashboard ─── */
 const TOOL_TABS: { id: TabId; label: string }[] = [
   { id: "scanner", label: "Scanner" },
-  { id: "snipe-feed", label: "Launch Radar" },
-  { id: "feed", label: "Market Feed" },
+  { id: "snipe-feed", label: "Market Radar" },
   { id: "market-pulse", label: "Token Intel" },
   { id: "listings", label: "Listings" },
-  { id: "token-manager", label: "Token Manager" },
+  // Token Manager hidden from view for now (still routable directly).
 ];
 
 /* Tools — one page, top tab bar, every tool suite in one place. */
@@ -1139,11 +1138,9 @@ const ToolsTabbed = ({ mint, onSelectMint }: { mint: string; onSelectMint: (m: s
       </div>
       <Suspense fallback={fallback}>
         {active === "scanner" && <TruthScanSuite onSelect={onSelectMint} />}
-        {active === "snipe-feed" && <LaunchRadarSuite onSelect={onSelectMint} />}
-        {active === "feed" && <MarketFeedSuite mint={mint} onSelect={onSelectMint} />}
+        {active === "snipe-feed" && <MarketRadarSuite mint={mint} onSelect={onSelectMint} />}
         {active === "market-pulse" && <TokenIntel mint={mint} onSelect={onSelectMint} initialTab="vitals" />}
         {active === "listings" && <TokenListings />}
-        {active === "token-manager" && <TokenManagerPage />}
       </Suspense>
     </div>
   );
@@ -1584,6 +1581,51 @@ const MarketFeedSuite = ({ mint, onSelect }: { mint: string; onSelect: (m: strin
         badge="Streaming"
       />
       <SegmentedTabs tabs={MARKET_TABS} active={active} onChange={setActive} />
+      {active === "feed" && <Feed onSelect={onSelect} />}
+      {active === "trending" && (
+        <div className="space-y-3">
+          <Trending onSelect={onSelect} />
+          <MomentumHeatmap onSelectMint={onSelect} />
+        </div>
+      )}
+      {active === "signals" && (
+        <div className="space-y-3">
+          <NewsSignal onSelect={onSelect} />
+          <NarrativeClusters onSelectMint={onSelect} />
+        </div>
+      )}
+    </section>
+  );
+};
+
+/* ─── Market Radar — Launch Radar + Market Feed merged into one tab ─── */
+type RadarTab = "launches" | "migrations" | "feed" | "trending" | "signals";
+const RADAR_TABS: { id: RadarTab; label: string; Icon?: ComponentType<{ className?: string }> }[] = [
+  { id: "launches", label: "Launches", Icon: Target },
+  { id: "migrations", label: "Migrations", Icon: Rocket },
+  { id: "feed", label: "Live Feed", Icon: Rss },
+  { id: "trending", label: "Trending", Icon: Flame },
+  { id: "signals", label: "Signals", Icon: Radio },
+];
+const MarketRadarSuite = ({ mint, onSelect }: { mint: string; onSelect: (m: string) => void }) => {
+  void mint;
+  const [active, setActive] = useState<RadarTab>("launches");
+  return (
+    <section className="space-y-4">
+      <EmeraldHeader
+        icon={Rocket}
+        title="Market Radar"
+        subtitle="Fresh launches, migrations, the live market tape, trending movers and narrative signals — every Solana feed in one place."
+        badge="Live"
+      />
+      <SegmentedTabs tabs={RADAR_TABS} active={active} onChange={setActive} />
+      {active === "launches" && (
+        <div className="space-y-3">
+          <SnipeFeed onSelect={onSelect} />
+          <LaunchAlerts />
+        </div>
+      )}
+      {active === "migrations" && <Migrations onSelect={onSelect} />}
       {active === "feed" && <Feed onSelect={onSelect} />}
       {active === "trending" && (
         <div className="space-y-3">
