@@ -45,5 +45,21 @@ as $func$
           'symbol', symbol, 'og_score', og_score, 'peak_multiple', round(peak_multiple::numeric,2),
           'market_cap', market_cap, 'created_at', created_at) order by created_at desc), '[]'::jsonb)
         from (select s.* from scan_log s, b where s.bot_id=b.id order by s.created_at desc limit 10) z)
+,
+    'per_group', (select coalesce(jsonb_agg(jsonb_build_object(
+          'chat_id', cid, 'chat_title', ctitle, 'enabled', cen, 'type', ctype,
+          'messages', msgs, 'messages_live', msgs_live, 'scans', scans, 'users', susers,
+          'last_scan', last_scan, 'last_message', last_msg) order by msgs desc, scans desc), '[]'::jsonb)
+      from (
+        select c.chat_id::text cid, c.chat_title ctitle, c.enabled cen,
+          case when c.chat_id::text like '-100%' then 'supergroup' when c.chat_id::text like '-%' then 'group' else 'dm' end ctype,
+          (select count(*) from telegram_bot_messages m where m.bot_id=c.bot_id and m.chat_id=c.chat_id::text) msgs,
+          (select count(*) from telegram_bot_messages m where m.bot_id=c.bot_id and m.chat_id=c.chat_id::text and m.deleted_at is null) msgs_live,
+          (select count(*) from scan_log s where s.bot_id=c.bot_id and s.chat_id=c.chat_id::text) scans,
+          (select count(distinct s.scanned_by) from scan_log s where s.bot_id=c.bot_id and s.chat_id=c.chat_id::text and s.scanned_by is not null) susers,
+          (select max(s.created_at) from scan_log s where s.bot_id=c.bot_id and s.chat_id=c.chat_id::text) last_scan,
+          (select max(m.sent_at) from telegram_bot_messages m where m.bot_id=c.bot_id and m.chat_id=c.chat_id::text) last_msg
+        from telegram_alert_chats c where c.bot_id=(select id from b)
+      ) z)
   ) end;
 $func$;

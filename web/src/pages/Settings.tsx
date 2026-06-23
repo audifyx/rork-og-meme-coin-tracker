@@ -53,6 +53,20 @@ import {
   type XUser,
 } from "@/lib/xAuth";
 
+// Pull the real error message out of a Supabase Functions error. On a non-2xx
+// response supabase-js only gives a generic "non-2xx status code" message and
+// stashes the actual Response in error.context — read its JSON body for the real reason.
+async function tcErr(error: any): Promise<string> {
+  try {
+    const ctx: any = error?.context;
+    if (ctx && typeof ctx.clone === "function") {
+      const b = await ctx.clone().json().catch(() => null);
+      if (b?.error) return b.error;
+    }
+  } catch { /* ignore */ }
+  return error?.message || "Request failed";
+}
+
 interface ProfileData {
   username?: string;
   display_name?: string;
@@ -1291,21 +1305,38 @@ function BotAnalyticsTab() {
         </div>
       </div>
 
-      {/* Top chats */}
+      {/* Per-group breakdown — all time */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
-        <div className="text-white/70 text-[13px] font-semibold mb-2.5 flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-og-lime" /> Most active chats</div>
-        <div className="space-y-1.5">
-          {(data.top_chats || []).filter((c: any) => c.messages || c.scans).slice(0, 10).map((c: any) => (
-            <div key={c.chat_id} className="flex items-center gap-3 text-[12px]">
-              <span className="flex-1 truncate text-white/70">{c.chat_title || c.chat_id}</span>
-              <span className="text-white/40 shrink-0">{c.scans} scans</span>
-              <span className="text-cyan-400/70 shrink-0 w-16 text-right">{c.messages} msgs</span>
-            </div>
-          ))}
-          {!(data.top_chats || []).some((c: any) => c.messages || c.scans) && (
-            <p className="text-white/25 text-[12px] py-2 text-center">No chat activity logged yet.</p>
-          )}
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="text-white/70 text-[13px] font-semibold flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-og-lime" /> Per-group breakdown · all time</div>
+          <div className="flex items-center gap-2 text-[9px] text-white/30"><span className="h-1.5 w-1.5 rounded-full bg-og-lime inline-block" /> alerts on</div>
         </div>
+        {(data.per_group || []).length ? (
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-white/30 pb-1 border-b border-white/[0.05]">
+              <span className="w-2 shrink-0" />
+              <span className="flex-1">Chat</span>
+              <span className="w-16 text-right">Msgs</span>
+              <span className="w-12 text-right">Scans</span>
+              <span className="w-12 text-right">Users</span>
+              <span className="w-16 text-right">Last</span>
+            </div>
+            {(data.per_group || []).map((g: any) => {
+              const last = g.last_scan || g.last_message;
+              const typ = g.type === "supergroup" ? "supergroup" : g.type === "group" ? "group" : "dm";
+              return (
+                <div key={g.chat_id} className="flex items-center gap-2 text-[12px] py-1">
+                  <span className={`w-2 h-2 shrink-0 rounded-full ${g.enabled ? "bg-og-lime" : "bg-white/15"}`} title={g.enabled ? "alerts on" : "alerts off"} />
+                  <span className="flex-1 truncate text-white/70">{g.chat_title || g.chat_id} <span className="text-white/25 text-[9px]">· {typ}</span></span>
+                  <span className="w-16 text-right text-cyan-400/70">{g.messages_live}{g.messages !== g.messages_live ? ` /${g.messages}` : ""}</span>
+                  <span className="w-12 text-right text-white/50">{g.scans}</span>
+                  <span className="w-12 text-right text-white/50">{g.users}</span>
+                  <span className="w-16 text-right text-white/25">{last ? new Date(last).toLocaleDateString() : "—"}</span>
+                </div>
+              );
+            })}
+          </div>
+        ) : <p className="text-white/25 text-[12px] py-2 text-center">No groups connected yet.</p>}
       </div>
 
       {/* Top tokens */}
@@ -1588,7 +1619,7 @@ function BotIdentity({ bot, onSaved }: { bot: any; onSaved: (b: any) => void }) 
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke("telegram-connect", { body: { action: "set_identity", bot_name: name, persona } });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
+      if (data?.error) throw new Error(data.error); if (error) throw new Error(await tcErr(error));
       onSaved(data.bot);
       toast.success("Identity saved");
     } catch (e: any) { toast.error(e.message || "Failed to save"); } finally { setBusy(false); }
@@ -1633,7 +1664,7 @@ function CustomCommands() {
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke("telegram-connect", { body: { action: "command_upsert", command, description, response_type: responseType, content } });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
+      if (data?.error) throw new Error(data.error); if (error) throw new Error(await tcErr(error));
       setCommand(""); setDescription(""); setContent(""); setResponseType("text");
       await load();
       toast.success("Command saved");
@@ -1723,7 +1754,7 @@ function TelegramBotCard() {
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke("telegram-connect", { body: { action: "connect", botToken: tokenInput.trim() } });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
+      if (data?.error) throw new Error(data.error); if (error) throw new Error(await tcErr(error));
       setBot(data.bot); setTokenInput("");
       toast.success(`@${data.bot.bot_username} connected!`);
     } catch (e: any) { toast.error(e.message || "Failed to connect bot"); } finally { setBusy(false); }
@@ -1739,7 +1770,7 @@ function TelegramBotCard() {
     const prev = bot; setBot({ ...bot, ...patch });
     try {
       const { data, error } = await supabase.functions.invoke("telegram-connect", { body: { action: "settings", ...patch } });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
+      if (data?.error) throw new Error(data.error); if (error) throw new Error(await tcErr(error));
       setBot(data.bot);
     } catch (e: any) { setBot(prev); toast.error(e.message || "Failed to save"); }
   };
@@ -2027,7 +2058,7 @@ function BotMessageManager({ bot }: { bot: any }) {
       const { data, error } = await supabase.functions.invoke("telegram-connect", {
         body: { action: "delete_message", chat_id: cid, message_id: Number(mid) },
       });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
+      if (data?.error) throw new Error(data.error); if (error) throw new Error(await tcErr(error));
       setMessages(prev => prev.filter(m => !(String(m.chat_id) === String(cid) && String(m.message_id) === String(mid))));
       toast.success("Message deleted");
     } catch (e: any) { toast.error(e.message || "Delete failed"); } finally { setDeleting(null); }
@@ -2048,7 +2079,7 @@ function BotMessageManager({ bot }: { bot: any }) {
       const { data, error } = await supabase.functions.invoke("telegram-connect", {
         body: { action: "bulk_delete", chat_id: chatId, message_ids: ids },
       });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
+      if (data?.error) throw new Error(data.error); if (error) throw new Error(await tcErr(error));
       toast.success(`Deleted ${data.deleted?.length || 0} / ${ids.length} messages`);
       setBulkIds("");
       if (mode === "logged") loadMessages();
@@ -2062,7 +2093,7 @@ function BotMessageManager({ bot }: { bot: any }) {
       const { data, error } = await supabase.functions.invoke("telegram-connect", {
         body: { action: "clear_all", ...(scopeChatId ? { chat_id: scopeChatId } : {}) },
       });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
+      if (data?.error) throw new Error(data.error); if (error) throw new Error(await tcErr(error));
       const failedNote = data.failed ? ` (${data.failed} couldn't be removed)` : "";
       toast.success(`Cleared ${data.deleted || 0} message${data.deleted === 1 ? "" : "s"}${failedNote}`);
       if (scopeChatId) setMessages(prev => prev.filter(m => String(m.chat_id) !== String(scopeChatId)));
@@ -2079,7 +2110,7 @@ function BotMessageManager({ bot }: { bot: any }) {
       const { data, error } = await supabase.functions.invoke("telegram-connect", {
         body: { action: "sweep_range", chat_id: chatId, from_id: f, to_id: t },
       });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
+      if (data?.error) throw new Error(data.error); if (error) throw new Error(await tcErr(error));
       toast.success(`Removed ${data.deleted || 0} of your bot's messages (scanned ${data.scanned} IDs)`);
       setFromId(""); setToId("");
     } catch (e: any) { toast.error(e.message || "Sweep failed"); } finally { setSweeping(false); }
@@ -2101,7 +2132,7 @@ function BotMessageManager({ bot }: { bot: any }) {
       const { data, error } = await supabase.functions.invoke("telegram-connect", {
         body: { action: "auto_clean_chat", chat, depth: d },
       });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
+      if (data?.error) throw new Error(data.error); if (error) throw new Error(await tcErr(error));
       const note = data.rateLimited ? " Telegram throttled the rest — run it again to continue." : "";
       toast.success(`Deleted ${data.deleted || 0} of your bot's messages (scanned last ${data.scanned}).${note}`);
       if (data.chat_id) setMessages(prev => prev.filter(m => String(m.chat_id) !== String(data.chat_id)));
@@ -2371,7 +2402,7 @@ function DiscordCard() {
     if (!url.trim()) return; setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke("discord-connect", { body: { action: "connect", webhookUrl: url.trim() } });
-      if (error || data?.error) throw new Error(data?.error || error?.message);
+      if (data?.error) throw new Error(data.error); if (error) throw new Error(await tcErr(error));
       setInteg(data.integration); setUrl(""); toast.success("Discord connected — check your channel!");
     } catch (e: any) { toast.error(e.message || "Failed"); } finally { setBusy(false); }
   };
@@ -2551,7 +2582,7 @@ function DiscordBotCard() {
 
   const fn = async (body: any) => {
     const { data, error } = await supabase.functions.invoke("discord-bot-connect", { body });
-    if (error || data?.error) throw new Error(data?.error || error?.message);
+    if (data?.error) throw new Error(data.error); if (error) throw new Error(await tcErr(error));
     return data;
   };
   const load = async () => { try { const d = await fn({ action: "status" }); setBot(d.bot); } catch { /* ignore */ } finally { setLoading(false); } };
@@ -2671,7 +2702,7 @@ function XAutoPosterCard() {
 
   const fn = async (body: any) => {
     const { data, error } = await supabase.functions.invoke("x-poster", { body });
-    if (error || data?.error) throw new Error(data?.error || error?.message);
+    if (data?.error) throw new Error(data.error); if (error) throw new Error(await tcErr(error));
     return data;
   };
   const load = async () => { try { const d = await fn({ action: "status" }); setAcct(d.account); } catch { /* ignore */ } finally { setLoading(false); } };

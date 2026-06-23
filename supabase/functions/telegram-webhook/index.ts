@@ -784,7 +784,23 @@ async function* askGrimStream(text: string, knowledge = "", identity = "", model
   }
 }
 
+// Ensure the chat row exists WITHOUT changing its alert state. Alerts are
+// opt-in (enabled defaults to false on first insert) so the bot never
+// auto-spams a chat, and calling this on every message can't re-enable a
+// chat the user turned off with /alerts off.
 async function registerChat(botRowId: string, chatId: number, title: string | null) {
+  const { data: existing } = await admin.from("telegram_alert_chats")
+    .select("id").eq("bot_id", botRowId).eq("chat_id", chatId).maybeSingle();
+  if (existing) {
+    if (title) await admin.from("telegram_alert_chats").update({ chat_title: title }).eq("id", existing.id);
+  } else {
+    await admin.from("telegram_alert_chats")
+      .insert({ bot_id: botRowId, chat_id: chatId, chat_title: title, enabled: false });
+  }
+}
+
+// Explicit opt-in: turn migration alerts ON for a chat (used by /alerts on).
+async function enableChatAlerts(botRowId: string, chatId: number, title: string | null) {
   await admin.from("telegram_alert_chats").upsert(
     { bot_id: botRowId, chat_id: chatId, chat_title: title, enabled: true },
     { onConflict: "bot_id,chat_id" },
@@ -814,7 +830,7 @@ Deno.serve(async (req) => {
       const status = update.my_chat_member.new_chat_member?.status;
       if (chat && ["member", "administrator", "creator"].includes(status)) {
         await registerChat(bot.id, chat.id, chat.title || chat.username || null);
-        if (bot.alerts_migrations) await tg(token, "sendMessage", { chat_id: chat.id, text: "✅ Connected. This chat will get pump.fun migration alerts. Send /migrations for the last 24h or just chat to ask Grim anything." });
+        await tg(token, "sendMessage", { chat_id: chat.id, text: "\uD83D\uDC4B Added! I won't post here on my own. Send /alerts on to enable pump.fun migration alerts, or use /scan <CA>, /migrations, or just chat with me." });
       }
       return ok();
     }
@@ -1069,7 +1085,7 @@ Deno.serve(async (req) => {
         await admin.from("telegram_alert_chats").update({ enabled: false }).eq("bot_id", bot.id).eq("chat_id", chatId);
         await tg(token, "sendMessage", { chat_id: chatId, text: "🔕 Migration alerts OFF for this chat." });
       } else {
-        await registerChat(bot.id, chatId, msg.chat.title || null);
+        await enableChatAlerts(bot.id, chatId, msg.chat.title || null);
         await tg(token, "sendMessage", { chat_id: chatId, text: "🔔 Migration alerts ON. You'll get every pump.fun graduation here instantly." });
       }
       return ok();
