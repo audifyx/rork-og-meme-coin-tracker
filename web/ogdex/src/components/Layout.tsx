@@ -4,6 +4,7 @@ import { Search, Zap, ShoppingBag, Wallet, Star, ChevronDown, Coins, Radio, Send
 import { track, getWatchlist, short } from "../lib/api";
 import { useWallet } from "../lib/wallet";
 import LiveStats from "./LiveStats";
+import InstallPWA from "./InstallPWA";
 
 const isAddr = (v: string) => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(v.trim());
 
@@ -107,6 +108,8 @@ export default function Layout() {
                 <Wallet2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{connecting ? "Connecting…" : "Connect"}</span>
               </button>
             )}
+
+            <InstallPWA />
 
             <Link to="/store" className="btn brand-gradient text-black font-bold hover:opacity-90 inline-flex items-center gap-1.5 shrink-0 shadow-lg shadow-accent/20">
               <ShoppingBag className="w-3.5 h-3.5" /> <span>Store</span>
