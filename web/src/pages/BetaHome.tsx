@@ -3,6 +3,12 @@ import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
   Bell,
+  Bot,
+  BrainCircuit,
+  FileText,
+  Newspaper,
+  Rocket,
+  ChevronRight,
   CheckCircle2,
   Copy,
   Fingerprint,
@@ -128,6 +134,26 @@ const MobilePreview = memo(() => (
   </div>
 ));
 MobilePreview.displayName = "MobilePreview";
+// ── Content ──────────────────────────────────────────────────────────────────
+const capabilities = [
+  { Icon: Search, title: "Vet any token", body: "Paste a CA — holders, liquidity, risk flags and an OG confidence score in ~1s." },
+  { Icon: Wallet, title: "X-ray any wallet", body: "Trade history, win rate and timing, then ask the AI what it actually means." },
+  { Icon: Target, title: "Catch launches early", body: "Watch mints, new pairs and liquidity adds the moment they hit the chain." },
+  { Icon: TrendingUp, title: "Screen & discover", body: "Filter trending, organic and KOL-backed tokens on the OGDEX screener." },
+  { Icon: Rocket, title: "Launch a coin", body: "Create and launch your own token on pump.fun from OGDEX in minutes." },
+  { Icon: Bell, title: "Automate alerts", body: "Get pinged on Telegram or your own webhook for launches, whales and targets." },
+];
+
+const tools = [
+  { Icon: ShieldCheck, name: "OG Scanner", desc: "Instant contract forensics & risk flags", tone: "text-og-lime border-og-lime/30 bg-og-lime/10" },
+  { Icon: Wallet, name: "Wallet Intelligence", desc: "Forensic wallet analysis & win rate", tone: "text-og-cyan border-og-cyan/30 bg-og-cyan/10" },
+  { Icon: BrainCircuit, name: "AI Analyst", desc: "Unlimited chat over on-chain data", tone: "text-[#f472b6] border-[#f472b6]/30 bg-[#f472b6]/10" },
+  { Icon: Radar, name: "Market Radar", desc: "Launches, pairs, migrations, whales", tone: "text-og-gold border-og-gold/30 bg-og-gold/10" },
+  { Icon: TrendingUp, name: "OGDEX Screener", desc: "OG Score, KOL picks & token launch", tone: "text-og-cyan border-og-cyan/30 bg-og-cyan/10" },
+  { Icon: FileText, name: "PDF Reports", desc: "Shareable charts, metrics & AI insight", tone: "text-og-lime border-og-lime/30 bg-og-lime/10" },
+  { Icon: Bot, name: "Telegram Bot", desc: "The full platform inside Telegram", tone: "text-og-cyan border-og-cyan/30 bg-og-cyan/10" },
+  { Icon: Newspaper, name: "Live Crypto News", desc: "Bullish & bearish narratives, real-time", tone: "text-[#f472b6] border-[#f472b6]/30 bg-[#f472b6]/10" },
+];
 
 const BetaHome = memo(() => {
   const [copied, setCopied] = useState(false);
@@ -153,19 +179,22 @@ const BetaHome = memo(() => {
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(34,211,238,0.16),transparent_30%),radial-gradient(circle_at_82%_10%,rgba(163,230,53,0.14),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(244,114,182,0.12),transparent_36%)]" />
       <div className="pointer-events-none fixed inset-0 grid-bg opacity-[0.12]" />
 
+      {/* NAV */}
       <nav className="relative z-20 mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-3">
           <div className="h-10 w-10 overflow-hidden rounded-2xl border border-white/15 bg-white/10">
             <img src="/icon.png" alt="OGScan" className="h-full w-full object-cover" />
           </div>
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em]">OGScan</p>
-            <p className="text-[10px] font-semibold text-white/40">mobile intel suite</p>
+            <p className="text-sm font-black uppercase tracking-[0.18em]">OG Scan</p>
+            <p className="text-[10px] font-semibold text-white/40">on-chain intelligence</p>
           </div>
         </Link>
-
         <div className="flex items-center gap-2">
-          <Link to="/auth" className="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.07] text-white/70 transition hover:text-white" aria-label="Sign in">
+          <a href="/OGDEX" className="hidden min-h-10 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.07] px-4 text-sm font-bold text-white/80 transition hover:text-white sm:inline-flex">
+            Screener
+          </a>
+          <Link to="/auth" className="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.07] text-white/70 transition hover:text-white sm:hidden" aria-label="Sign in">
             <LockKeyhole className="h-4 w-4" />
           </Link>
           <Link to="/auth?mode=signup" className="hidden min-h-10 items-center gap-2 rounded-2xl bg-white px-4 text-sm font-black text-[#07101d] transition active:scale-95 sm:inline-flex">
@@ -174,36 +203,37 @@ const BetaHome = memo(() => {
         </div>
       </nav>
 
-      <section className="relative z-10 mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl items-center gap-10 px-4 pb-28 pt-8 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:pb-16 lg:pt-10">
+      {/* HERO */}
+      <section className="relative z-10 mx-auto grid max-w-6xl items-center gap-10 px-4 pt-8 sm:px-6 lg:grid-cols-[0.92fr_1.08fr] lg:pt-10">
         <div className="order-2 lg:order-1">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-og-lime/25 bg-og-lime/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.22em] text-og-lime">
             <span className="h-2 w-2 rounded-full bg-og-lime shadow-[0_0_18px_hsl(var(--og-lime))]" />
-            Solana mainnet live
+            Solana mainnet · multi-chain intel
           </div>
 
           <h1 className="max-w-xl text-5xl font-black leading-[0.92] tracking-normal text-white sm:text-6xl lg:text-7xl">
-            Token intel that feels like an app.
+            Find the OGs. <span className="bg-gradient-to-r from-og-lime via-og-cyan to-[#f472b6] bg-clip-text text-transparent">Dodge the rugs.</span>
           </h1>
-          <p className="mt-5 max-w-lg text-base leading-7 text-white/58 sm:text-lg">
-            Scan contracts, watch launches, track wallets, and jump into Spaces from a cleaner mobile-first command screen.
+          <p className="mt-5 max-w-lg text-base leading-7 text-white/60 sm:text-lg">
+            OG Scan is the unified on-chain intelligence platform. Scan any token, x-ray any wallet, catch launches before they move, and screen or launch coins on OGDEX — all in one place, powered by AI.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2">
             <Link to="/auth?mode=signup" className="flex min-h-14 items-center justify-between rounded-2xl bg-og-lime px-5 font-black text-og-ink shadow-[0_20px_50px_-32px_hsl(var(--og-lime))] transition active:scale-[0.98]">
-              Create account
+              Create free account
               <Fingerprint className="h-5 w-5" />
             </Link>
-            <Link to="/auth" className="flex min-h-14 items-center justify-between rounded-2xl border border-white/10 bg-white/[0.08] px-5 font-black text-white transition active:scale-[0.98]">
-              Sign in
+            <a href="/OGDEX" className="flex min-h-14 items-center justify-between rounded-2xl border border-white/10 bg-white/[0.08] px-5 font-black text-white transition active:scale-[0.98]">
+              Open the screener
               <ArrowRight className="h-5 w-5" />
-            </Link>
+            </a>
           </div>
 
           <div className="mt-5 grid grid-cols-3 gap-2">
             {[
               ["30+", "tools"],
-              ["Live", "launches"],
-              ["OG", "proof"],
+              ["~1s", "token scan"],
+              ["16+", "chains"],
             ].map(([value, label]) => (
               <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.055] p-3">
                 <p className="text-xl font-black">{value}</p>
@@ -217,12 +247,7 @@ const BetaHome = memo(() => {
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-og-gold">Official CA</p>
               <p className="truncate font-mono text-xs text-white/62">{shortAddr(OGSCAN_TOKEN_MINT, 8)}</p>
             </div>
-            <button
-              type="button"
-              onClick={copyCa}
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-og-gold/30 bg-og-gold/10 text-og-gold transition active:scale-95"
-              aria-label="Copy token address"
-            >
+            <button type="button" onClick={copyCa} className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-og-gold/30 bg-og-gold/10 text-og-gold transition active:scale-95" aria-label="Copy token address">
               {copied ? <CheckCircle2 className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
             </button>
           </div>
@@ -233,6 +258,86 @@ const BetaHome = memo(() => {
         </div>
       </section>
 
+      {/* WHAT IS OG SCAN / WHY */}
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pt-20 sm:px-6">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-7 sm:p-10">
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-og-cyan">What is OG Scan · Why it exists</p>
+          <h2 className="mt-3 max-w-3xl text-3xl font-black leading-tight sm:text-4xl">
+            One platform for the entire on-chain edge.
+          </h2>
+          <div className="mt-5 grid gap-6 text-[15px] leading-7 text-white/60 lg:grid-cols-2">
+            <p>
+              We got tired of juggling ten browser tabs to make one trade — a chart here, a holder map there, a rug-checker, a wallet tracker, a launch bot. None of them talked to each other. So we built the platform we actually wanted.
+            </p>
+            <p>
+              OG Scan unifies <span className="text-white font-semibold">token forensics, wallet intelligence, a live launch radar, an on-chain screener &amp; launcher (OGDEX), and an AI analyst</span> — all in real time. The mission: find the real OGs early, avoid the traps, and move faster than the crowd.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* WHAT YOU CAN DO */}
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pt-20 sm:px-6">
+        <p className="text-[10px] font-black uppercase tracking-[0.22em] text-og-lime">What you can do</p>
+        <h2 className="mt-3 text-3xl font-black sm:text-4xl">From a contract address to a conviction call.</h2>
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {capabilities.map((c) => (
+            <div key={c.title} className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:-translate-y-1 hover:border-og-cyan/40 hover:bg-og-cyan/[0.05]">
+              <div className="mb-3 grid h-11 w-11 place-items-center rounded-2xl border border-og-cyan/30 bg-og-cyan/10 text-og-cyan">
+                <c.Icon className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-black text-white">{c.title}</h3>
+              <p className="mt-1.5 text-[13.5px] leading-6 text-white/55">{c.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* THE TOOLKIT */}
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pt-20 sm:px-6">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-og-cyan">The toolkit</p>
+            <h2 className="mt-3 text-3xl font-black sm:text-4xl">Every tool, built in.</h2>
+          </div>
+          <a href="/OGDEX" className="hidden shrink-0 items-center gap-1 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm font-bold text-white/80 transition hover:text-white sm:inline-flex">
+            Try OGDEX <ChevronRight className="h-4 w-4" />
+          </a>
+        </div>
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {tools.map((t) => (
+            <div key={t.name} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition hover:-translate-y-1 hover:border-white/25">
+              <div className={cn("mb-3 grid h-11 w-11 place-items-center rounded-2xl border", t.tone)}>
+                <t.Icon className="h-5 w-5" />
+              </div>
+              <h3 className="text-[15px] font-black text-white">{t.name}</h3>
+              <p className="mt-1 text-[12.5px] leading-5 text-white/50">{t.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-28 pt-20 sm:px-6 lg:pb-24">
+        <div className="overflow-hidden rounded-3xl border border-og-cyan/25 bg-gradient-to-br from-og-cyan/12 via-white/[0.02] to-[#f472b6]/10 p-8 text-center sm:p-14">
+          <h2 className="mx-auto max-w-2xl text-3xl font-black leading-tight sm:text-5xl">
+            Stop tab-hopping. Start scanning.
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-[15px] leading-7 text-white/60 sm:text-lg">
+            Token intel, wallet forensics, launch radar, an on-chain screener and an AI analyst — one platform that actually works. Free to start.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link to="/auth?mode=signup" className="inline-flex min-h-[52px] items-center gap-2 rounded-2xl bg-og-lime px-7 py-3.5 font-black text-og-ink transition active:scale-95">
+              Start free <ArrowRight className="h-5 w-5" />
+            </Link>
+            <a href="/OGDEX" className="inline-flex min-h-[52px] items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.06] px-7 py-3.5 font-black text-white transition hover:bg-white/10">
+              Explore the screener
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* MOBILE DOCK */}
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#07101d]/95 px-4 pb-[calc(0.9rem+env(safe-area-inset-bottom,0px))] pt-3 backdrop-blur-2xl sm:hidden">
         <div className="grid grid-cols-2 gap-2">
           {dockActions.map((action) => (

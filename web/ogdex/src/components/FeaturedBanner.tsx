@@ -14,6 +14,57 @@ interface Listing {
   links?: Record<string, string>; metadata?: any; featured?: boolean;
 }
 
+
+function FeaturedCard({ f, onClick }: { f: Listing; onClick: () => void }) {
+  const [bannerErr, setBannerErr] = useState(false);
+  const [logoErr, setLogoErr] = useState(false);
+  const banner = f.banner_url && !bannerErr ? f.banner_url : null;
+  const logo = f.logo_url && !logoErr ? f.logo_url : null;
+  const initials = (f.symbol || f.project_name || "?").slice(0, 2).toUpperCase();
+
+  return (
+    <button
+      onClick={onClick}
+      style={{ scrollSnapAlign: "start" }}
+      className="group relative w-52 h-28 shrink-0 rounded-xl overflow-hidden border border-line hover:border-yellow-500/40 transition-all hover:scale-[1.02]"
+    >
+      {/* Background layer */}
+      {banner ? (
+        <img src={banner} loading="lazy" referrerPolicy="no-referrer" onError={() => setBannerErr(true)}
+          className="absolute inset-0 w-full h-full object-cover" />
+      ) : logo ? (
+        // No banner: use the token logo as a blurred, scaled cover so the card shows the coin art
+        <img src={logo} loading="lazy" referrerPolicy="no-referrer" onError={() => setLogoErr(true)}
+          aria-hidden className="absolute inset-0 w-full h-full object-cover scale-150 blur-xl opacity-60" />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-accent2/25 via-panel2 to-accent/15" />
+      )}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.78) 100%)" }} />
+
+      {/* Token logo circle */}
+      <div className="absolute top-2.5 left-2.5 z-10">
+        {logo
+          ? <img src={logo} loading="lazy" referrerPolicy="no-referrer" onError={() => setLogoErr(true)}
+              className="w-9 h-9 rounded-full border-2 border-white/30 object-cover shadow-lg bg-panel2" />
+          : <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent2/40 to-accent/30 border-2 border-white/20 grid place-items-center text-xs font-bold text-white shadow-lg">
+              {initials}
+            </div>}
+      </div>
+
+      {/* Featured star badge */}
+      <div className="absolute top-2.5 right-2.5 z-10">
+        <span className="pill bg-yellow-500/25 text-yellow-400 text-[9px] font-bold backdrop-blur-sm">\u2605</span>
+      </div>
+
+      {/* Bottom info */}
+      <div className="absolute bottom-0 left-0 right-0 p-2.5 z-10">
+        <div className="font-bold text-white text-sm truncate leading-tight">{f.symbol || f.project_name}</div>
+        <div className="text-[10px] text-white/60 truncate leading-tight">{f.project_name || short(f.contract_address)}</div>
+      </div>
+    </button>
+  );
+}
+
 export default function FeaturedBanner() {
   const [boosts, setBoosts] = useState<Boost[]>([]);
   const [featured, setFeatured] = useState<Listing[]>([]);
@@ -104,52 +155,7 @@ export default function FeaturedBanner() {
           {/* Compact horizontal strip — consistent card size, no giant squares */}
           <div className="flex gap-2 px-3 pb-3 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
             {slots.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => handleToken(f)}
-                style={{ scrollSnapAlign: "start" }}
-                className="group relative w-52 h-28 shrink-0 rounded-xl overflow-hidden border border-line hover:border-yellow-500/40 transition-all hover:scale-[1.02]"
-              >
-                {/* Background: if banner exists use it, else blow up the token logo blurred to fill */}
-                {f.banner_url ? (
-                  <>
-                    <img
-                      src={f.banner_url}
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                    <div
-                      className="absolute inset-0"
-                      style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.72) 100%)" }}
-                    />
-                  </>
-                ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-panel2 to-panel" />
-                )}
-
-                {/* Token logo circle — sits on top of background */}
-                <div className="absolute top-2.5 left-2.5 z-10">
-                  {f.logo_url
-                    ? <img src={f.logo_url} className="w-9 h-9 rounded-full border-2 border-white/30 object-cover shadow-lg" />
-                    : <div className="w-9 h-9 rounded-full bg-panel2 border-2 border-line grid place-items-center text-xs font-bold text-muted">
-                        {(f.symbol || "?").slice(0, 2)}
-                      </div>}
-                </div>
-
-                {/* Featured star badge */}
-                <div className="absolute top-2.5 right-2.5 z-10">
-                  <span className="pill bg-yellow-500/25 text-yellow-400 text-[9px] font-bold backdrop-blur-sm">★</span>
-                </div>
-
-                {/* Bottom info */}
-                <div className="absolute bottom-0 left-0 right-0 p-2.5 z-10">
-                  <div className="font-bold text-white text-sm truncate leading-tight">
-                    {f.symbol || f.project_name}
-                  </div>
-                  <div className="text-[10px] text-white/60 truncate leading-tight">
-                    {f.project_name || short(f.contract_address)}
-                  </div>
-                </div>
-              </button>
+              <FeaturedCard key={f.id} f={f} onClick={() => handleToken(f)} />
             ))}
           </div>
         </div>
