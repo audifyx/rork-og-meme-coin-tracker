@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { fmtUsd, short } from "../lib/api";
 import { Zap, Star, ChevronRight } from "lucide-react";
 import TokenLogo from "./TokenLogo";
+import { imgProxy } from "../lib/img";
 
 interface Boost {
   id: string; mint: string; symbol?: string; name?: string; icon?: string;
@@ -18,8 +19,10 @@ interface Listing {
 function FeaturedCard({ f, onClick }: { f: Listing; onClick: () => void }) {
   const [bannerErr, setBannerErr] = useState(false);
   const [logoErr, setLogoErr] = useState(false);
-  const banner = f.banner_url && !bannerErr ? f.banner_url : null;
-  const logo = f.logo_url && !logoErr ? f.logo_url : null;
+  const bannerUrl = f.banner_url && !bannerErr ? imgProxy(f.banner_url, 416) : null;
+  const logoOk = !!f.logo_url && !logoErr;
+  const logoBig = logoOk ? imgProxy(f.logo_url, 224) : null;
+  const logoSm = logoOk ? imgProxy(f.logo_url, 96) : null;
   const initials = (f.symbol || f.project_name || "?").slice(0, 2).toUpperCase();
 
   return (
@@ -28,32 +31,34 @@ function FeaturedCard({ f, onClick }: { f: Listing; onClick: () => void }) {
       style={{ scrollSnapAlign: "start" }}
       className="group relative w-52 h-28 shrink-0 rounded-xl overflow-hidden border border-line hover:border-yellow-500/40 transition-all hover:scale-[1.02]"
     >
-      {/* Background layer */}
-      {banner ? (
-        <img src={banner} loading="lazy" referrerPolicy="no-referrer" onError={() => setBannerErr(true)}
+      {/* Always-on dark base so text stays readable even if art is blank/transparent */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#15151c] via-[#0d0d12] to-[#15151c]" />
+
+      {/* Art layer: banner if present, else the token logo blurred to fill */}
+      {bannerUrl ? (
+        <img src={bannerUrl} loading="lazy" referrerPolicy="no-referrer" onError={() => setBannerErr(true)}
           className="absolute inset-0 w-full h-full object-cover" />
-      ) : logo ? (
-        // No banner: use the token logo as a blurred, scaled cover so the card shows the coin art
-        <img src={logo} loading="lazy" referrerPolicy="no-referrer" onError={() => setLogoErr(true)}
-          aria-hidden className="absolute inset-0 w-full h-full object-cover scale-150 blur-xl opacity-60" />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-accent2/25 via-panel2 to-accent/15" />
-      )}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.78) 100%)" }} />
+      ) : logoBig ? (
+        <img src={logoBig} loading="lazy" referrerPolicy="no-referrer" onError={() => setLogoErr(true)}
+          aria-hidden className="absolute inset-0 w-full h-full object-cover scale-150 blur-xl opacity-70" />
+      ) : null}
+
+      {/* Readability overlay */}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.82) 100%)" }} />
 
       {/* Token logo circle */}
       <div className="absolute top-2.5 left-2.5 z-10">
-        {logo
-          ? <img src={logo} loading="lazy" referrerPolicy="no-referrer" onError={() => setLogoErr(true)}
-              className="w-9 h-9 rounded-full border-2 border-white/30 object-cover shadow-lg bg-panel2" />
-          : <div className="w-9 h-9 rounded-full bg-gradient-to-br from-accent2/40 to-accent/30 border-2 border-white/20 grid place-items-center text-xs font-bold text-white shadow-lg">
+        {logoSm
+          ? <img src={logoSm} loading="lazy" referrerPolicy="no-referrer" onError={() => setLogoErr(true)}
+              className="w-9 h-9 rounded-full border-2 border-white/30 object-cover shadow-lg bg-[#0d0d12]" />
+          : <div className="w-9 h-9 rounded-full bg-gradient-to-br from-white/15 to-white/5 border-2 border-white/20 grid place-items-center text-xs font-bold text-white shadow-lg">
               {initials}
             </div>}
       </div>
 
       {/* Featured star badge */}
       <div className="absolute top-2.5 right-2.5 z-10">
-        <span className="pill bg-yellow-500/25 text-yellow-400 text-[9px] font-bold backdrop-blur-sm">★</span>
+        <span className="pill bg-yellow-500/25 text-yellow-400 text-[10px] font-bold backdrop-blur-sm leading-none">★</span>
       </div>
 
       {/* Bottom info */}
