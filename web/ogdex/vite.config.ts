@@ -4,8 +4,6 @@ import { nodePolyfills } from "vite-plugin-node-polyfills";
 import path from "path";
 
 // OGDEX is mounted as a sub-app of OG Scan at ogscan.fun/OGDEX.
-// base: every asset/route is served under /OGDEX/.
-// outDir: build into the parent web app's dist so Vercel serves it at /OGDEX.
 export default defineConfig({
   base: "/OGDEX/",
   plugins: [
@@ -16,6 +14,23 @@ export default defineConfig({
   build: {
     outDir: path.resolve(__dirname, "../dist/OGDEX"),
     emptyOutDir: true,
+    target: "es2020",
+    cssCodeSplit: true,
+    rollupOptions: {
+      output: {
+        // Only split clearly leaf-level libs used on the initial load.
+        // @solana stays in the async Launch chunk (its only importer), so it
+        // never ships in the initial Discovery bundle.
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("lightweight-charts")) return "charts";
+          if (id.includes("lucide-react")) return "icons";
+          if (id.includes("react-router") || id.includes("/react/") ||
+              id.includes("react-dom") || id.includes("scheduler")) return "react";
+        },
+      },
+    },
+    chunkSizeWarningLimit: 900,
   },
   server: { port: 5173 },
 });

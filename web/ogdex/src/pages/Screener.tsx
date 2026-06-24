@@ -5,6 +5,7 @@ import TokenLogo from "../components/TokenLogo";
 import Change from "../components/Change";
 import Verified from "../components/Verified";
 import FeaturedBanner from "../components/FeaturedBanner";
+import HeroBanner from "../components/HeroBanner";
 import {
   Flame, Sprout, Sparkles, ArrowUpDown, Loader2, Droplets, TrendingUp, Crown,
   Star, Rocket, BadgeCheck, Moon, Zap, Unlink, Globe, ChevronRight, Activity,
@@ -174,16 +175,9 @@ export default function Screener() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div>
+      {!q && <HeroBanner />}
       {!q && <FeaturedBanner />}
 
-      {!q && (
-        <div className="mb-1 flex items-end justify-between">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight">Token Screener</h1>
-            <p className="text-muted text-xs mt-0.5">Solana · Multi-chain · Pump.fun · Live</p>
-          </div>
-        </div>
-      )}
       {q && <h2 className="text-lg font-semibold mb-4">Results for "{q}"</h2>}
 
       {!q && (
