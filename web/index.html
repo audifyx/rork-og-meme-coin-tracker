@@ -110,11 +110,19 @@ section{max-width:1180px;margin:0 auto;padding:clamp(64px,8vw,110px) 24px;positi
 .shot.tall{grid-row:span 1}
 @media(max-width:860px){.shots{grid-template-columns:1fr}}
 
+/* SHOWCASE (OG Scan screenshots) */
+.showcase-hero{display:grid;grid-template-columns:1.35fr 1fr;gap:26px;align-items:center;margin-top:42px}
+.showcase-copy h3{font-size:clamp(22px,3vw,30px);margin:14px 0 10px;line-height:1.15}
+.showcase-copy p{color:var(--mut);font-size:15.5px;line-height:1.7}
+.showcase-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(258px,1fr));gap:18px;margin-top:24px}
+.shot figcaption{padding:10px 6px 4px;font-size:12.5px;font-weight:700;color:var(--ink)}
+.shot figcaption span{display:block;font-weight:500;color:var(--dim);font-size:11px;margin-top:2px}
+@media(max-width:860px){.showcase-hero{grid-template-columns:1fr;gap:18px}}
 /* GRIDS */
 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:40px}
 .tile{border-radius:16px;padding:24px;transition:.3s}
 .tile:hover{transform:translateY(-6px);border-color:rgba(255,255,255,.28)}
-.tile .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;margin-bottom:14px;font-size:20px;background:rgba(255,255,255,.06);border:1px solid var(--line)}
+.tile .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;margin-bottom:14px;font-size:20px;background:rgba(255,255,255,.06);border:1px solid var(--line);filter:grayscale(1) contrast(1.05) brightness(1.25)}
 .tile h3{font-size:16px;margin-bottom:7px}
 .tile p{color:var(--mut);font-size:13.5px;line-height:1.55}
 .tile .tag{display:inline-block;margin-top:12px;padding:4px 11px;border-radius:7px;font-size:10px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;background:rgba(255,255,255,.07);border:1px solid var(--line)}
@@ -137,7 +145,7 @@ section{max-width:1180px;margin:0 auto;padding:clamp(64px,8vw,110px) 24px;positi
 /* INTEGRATIONS */
 .ints{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:13px;margin-top:36px}
 .int{display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px 14px;border-radius:14px;transition:.3s}
-.int:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.28)}.int .ic{font-size:24px}.int .nm{font-size:12px;font-weight:700}
+.int:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.28)}.int .ic{font-size:24px;filter:grayscale(1) brightness(1.25)}.int .nm{font-size:12px;font-weight:700}
 
 /* CTA */
 .cta{max-width:1180px;margin:30px auto 0;padding:clamp(46px,7vw,82px) 24px;text-align:center;border-radius:24px}
@@ -213,22 +221,47 @@ footer{border-top:1px solid var(--line);padding:46px 24px;text-align:center;colo
   </div>
 </section>
 
-<!-- SCREENSHOTS / SEE IT -->
+<!-- SHOWCASE: OG SCAN ITSELF -->
 <section>
   <div class="center">
     <div class="label glass-soft">See it in action</div>
-    <h2 class="s-title silver">A terminal that looks the part.</h2>
-    <p class="s-desc">Real-time discovery, OG scoring and deep token intel — fast, dense and built for traders.</p>
+    <h2 class="s-title silver">Far more than a screener.</h2>
+    <p class="s-desc">OG Scan is a full on-chain intelligence terminal — a deep token scanner, wallet forensics, a verified track record, an AI analyst, market radar and a native mobile app. OGDEX is just one room in the house.</p>
   </div>
-  <div class="shots">
+
+  <div class="showcase-hero">
     <div class="shot glass">
-      <div class="bar"><i></i><i></i><i></i><span>ogscan.fun/OGDEX — discovery</span></div>
+      <div class="bar"><i></i><i></i><i></i><span>ogscan.fun — token scanner</span></div>
+      <img src="/ogscan-shot-scanner.jpg" alt="OG Scan token scanner with OG Score"/>
+    </div>
+    <div class="showcase-copy">
+      <div class="label glass-soft">The OG Scanner</div>
+      <h3 class="silver">Deep token X-ray, instant OG Score.</h3>
+      <p>Paste any contract address and get a complete report in about a second — OG Score, security flags, holder breakdown, markets, socials and organic-momentum read. The same engine powers our Telegram bot and API.</p>
+    </div>
+  </div>
+
+  <div class="showcase-grid">
+    <figure class="shot glass">
+      <div class="bar"><i></i><i></i><i></i><span>ogscan.fun/track-record</span></div>
+      <img src="/ogscan-shot-track.jpg" alt="OG Scan track record"/>
+      <figcaption>Verified track record <span>Real receipts: peak multiples &amp; hit rate</span></figcaption>
+    </figure>
+    <figure class="shot glass">
+      <div class="bar"><i></i><i></i><i></i><span>ogscan.fun — command deck</span></div>
+      <img src="/ogscan-shot-deck.jpg" alt="OG Scan command deck"/>
+      <figcaption>Your full command deck <span>Scanner, wallets, radar, signals, spaces</span></figcaption>
+    </figure>
+    <figure class="shot glass">
+      <div class="bar"><i></i><i></i><i></i><span>OG Scan mobile</span></div>
+      <img src="/ogscan-shot-mobile.jpg" alt="OG Scan mobile app"/>
+      <figcaption>Native mobile app <span>The whole terminal in your pocket</span></figcaption>
+    </figure>
+    <figure class="shot glass">
+      <div class="bar"><i></i><i></i><i></i><span>ogscan.fun/OGDEX</span></div>
       <img src="/ogscan-shot-screener.jpg" alt="OGDEX screener"/>
-    </div>
-    <div class="shot glass">
-      <div class="bar"><i></i><i></i><i></i><span>ogscan.fun — token intel</span></div>
-      <img src="/ogscan-shot-token.jpg" alt="Token detail"/>
-    </div>
+      <figcaption>OGDEX live screener <span>One of many tools: discover &amp; launch</span></figcaption>
+    </figure>
   </div>
 </section>
 
