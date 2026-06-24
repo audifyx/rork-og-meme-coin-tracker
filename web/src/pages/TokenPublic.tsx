@@ -77,7 +77,7 @@ export default function TokenPublic() {
   );
 
   const name = t.name || top.baseToken?.name || "Unknown";
-  const symbol = t.symbol || top.baseToken?.symbol || "—";
+  const symbol = ((t.symbol || top.baseToken?.symbol || "") as string).replace(/^\$+/, "") || "—";
   const image = t.image || top.info?.imageUrl;
   const xUrl = t.socials?.x || top.info?.socials?.find((s: Any) => s.type === "twitter")?.url;
   const tgUrl = t.socials?.telegram || top.info?.socials?.find((s: Any) => s.type === "telegram")?.url;
@@ -91,7 +91,7 @@ export default function TokenPublic() {
           <a href="https://ogscan.fun" className="text-[15px] font-black tracking-tight">OG<span className="text-primary">SCAN</span></a>
           <div className="flex min-w-0 items-center gap-2">
             {image ? <img src={image} alt="" className="h-6 w-6 rounded-md object-cover" /> : null}
-            <span className="truncate text-[13px] font-bold text-white/70">${symbol}</span>
+            <span className="truncate text-[13px] font-bold text-white/70">{symbol === "—" ? "—" : `$${symbol}`}</span>
             <span className="rounded-md px-1.5 py-0.5 text-[12px] font-black" style={{ color: scoreColor(total), background: `${scoreColor(total)}1a` }}>{total}</span>
           </div>
           <a href="https://ogscan.fun" className="shrink-0 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-1.5 text-[11px] font-bold text-white/60 hover:text-white">Open app →</a>
@@ -111,7 +111,7 @@ export default function TokenPublic() {
                 {image ? <img src={image} alt="" className="h-16 w-16 rounded-2xl border-2 border-[#080e1a] object-cover" /> : <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-[#080e1a] bg-primary/15 text-2xl font-black text-primary">{(symbol || name || "?")[0]}</div>}
                 <div className="min-w-0 pb-1">
                   <div className="flex items-center gap-2"><h1 className="truncate text-xl font-black">{name}</h1>{t.isVerifiedJup && <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[9px] font-bold text-sky-400">VERIFIED</span>}</div>
-                  <div className="text-[13px] font-bold text-white/50">${symbol}</div>
+                  <div className="text-[13px] font-bold text-white/50">{symbol === "—" ? "—" : `$${symbol}`}</div>
                 </div>
               </div>
               <div className="shrink-0 text-center">
