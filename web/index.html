@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>OG Scan — The Unified On-Chain Intelligence Platform</title>
-<meta name="description" content="OG Scan is the all-in-one crypto intelligence platform. Scan any token, x-ray any wallet, catch launches early, screen and launch coins on OGDEX, and automate it all with AI, Telegram and webhooks. Built by traders, for traders."/>
-<meta property="og:title" content="OG Scan — The Unified On-Chain Intelligence Platform"/>
-<meta property="og:description" content="Scan tokens, x-ray wallets, catch launches early, screen and launch coins, and automate with AI. One platform. Everything crypto."/>
+<title>OG Scan — On-Chain Intelligence Terminal</title>
+<meta name="description" content="OG Scan is the unified on-chain intelligence terminal. Scan any token, x-ray any wallet, catch launches early, screen and launch coins on OGDEX, and automate it all with AI. Built by traders, for traders."/>
+<meta property="og:title" content="OG Scan — On-Chain Intelligence Terminal"/>
+<meta property="og:description" content="Scan tokens, x-ray wallets, catch launches early, screen and launch coins, automate with AI. One terminal. Everything on-chain."/>
 <meta property="og:type" content="website"/>
 <meta property="og:url" content="https://ogscan.fun/"/>
-<meta property="og:image" content="https://ogscan.fun/og-brand.jpg"/>
+<meta property="og:image" content="https://ogscan.fun/ogscan-splash-banner.jpg"/>
 <meta name="twitter:card" content="summary_large_image"/>
 <link rel="icon" type="image/png" href="/favicon.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
 <style>
 :root{
-  --bg:#04060a; --surface:#0a0e15; --em:#10b981; --cy:#22d3ee; --pu:#8b5cf6;
-  --pink:#ec4899; --gold:#fbbf24; --ink:#eafff8; --mut:#8095a8;
+  --bg:#000000; --panel:#0a0a0c; --ink:#f4f5f7; --mut:#8a8d96; --dim:#5a5d66;
+  --line:rgba(255,255,255,.10); --up:#d6d8dd;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -27,187 +27,207 @@ body{
   font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   -webkit-font-smoothing:antialiased; overflow-x:hidden; position:relative; line-height:1.5;
 }
-body::before{
-  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+/* atmospheric monochrome glows + faint grid */
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(720px at 15% 8%,rgba(34,211,238,.16),transparent 60%),
-    radial-gradient(680px at 85% 6%,rgba(139,92,246,.14),transparent 60%),
-    radial-gradient(700px at 50% 100%,rgba(16,185,129,.10),transparent 60%);
-}
+    radial-gradient(800px at 18% -5%,rgba(255,255,255,.10),transparent 60%),
+    radial-gradient(700px at 85% 0%,rgba(255,255,255,.06),transparent 60%),
+    radial-gradient(900px at 50% 120%,rgba(255,255,255,.05),transparent 60%);}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:54px 54px;mask-image:radial-gradient(circle at 50% 30%,#000,transparent 78%);-webkit-mask-image:radial-gradient(circle at 50% 30%,#000,transparent 78%);}
 .wrap{position:relative;z-index:2}
 a{text-decoration:none;color:inherit}
-h1,h2,h3{font-family:'Space Grotesk','Inter',sans-serif;letter-spacing:-.5px}
-.grad{background:linear-gradient(110deg,var(--cy),var(--em));-webkit-background-clip:text;background-clip:text;color:transparent}
-.grad2{background:linear-gradient(110deg,var(--pu),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+h1,h2,h3{letter-spacing:-.02em;font-weight:900}
+.mono{font-family:'JetBrains Mono',monospace}
+.silver{background:linear-gradient(180deg,#ffffff,#9da0a8);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* GLASS */
+.glass{background:linear-gradient(160deg,rgba(255,255,255,.075),rgba(255,255,255,.02));border:1px solid var(--line);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 24px 60px -34px rgba(0,0,0,.95)}
+.glass-soft{background:rgba(255,255,255,.035);border:1px solid var(--line);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 
 /* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:14px 28px;display:flex;justify-content:space-between;align-items:center;
-  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid rgba(34,211,238,.1);background:rgba(4,6,10,.7)}
-.nav-brand{display:flex;align-items:center;gap:11px;font-weight:900;font-size:17px;letter-spacing:1px}
-.nav-brand img{width:36px;height:36px;border-radius:9px;filter:drop-shadow(0 0 10px rgba(34,211,238,.45))}
-.nav-brand span{text-transform:uppercase}
-.nav-links{display:flex;align-items:center;gap:8px}
-.nav-ghost{padding:10px 16px;border-radius:10px;font-weight:700;font-size:13px;color:var(--ink);border:1px solid rgba(255,255,255,.12);transition:.25s}
-.nav-ghost:hover{border-color:var(--cy);background:rgba(34,211,238,.08)}
-.nav-cta{padding:10px 20px;border-radius:10px;font-weight:800;font-size:13px;background:linear-gradient(90deg,var(--em),var(--cy));color:#04060a;transition:.25s;box-shadow:0 0 20px rgba(34,211,238,.25);text-transform:uppercase;letter-spacing:.5px}
-.nav-cta:hover{transform:translateY(-2px);box-shadow:0 0 32px rgba(34,211,238,.5)}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:13px 26px;display:flex;justify-content:space-between;align-items:center;
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid var(--line);background:rgba(0,0,0,.6)}
+.brand{display:flex;align-items:center;gap:11px;font-weight:900;font-size:16px;letter-spacing:.04em}
+.brand img{width:34px;height:34px;border-radius:9px;border:1px solid rgba(255,255,255,.18)}
+.brand .t{text-transform:uppercase}
+.nav-r{display:flex;align-items:center;gap:9px}
+.ghost{padding:10px 16px;border-radius:11px;font-weight:700;font-size:13px;color:var(--ink);border:1px solid var(--line);background:rgba(255,255,255,.04);transition:.25s}
+.ghost:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25)}
+.solid{padding:10px 19px;border-radius:11px;font-weight:800;font-size:13px;background:linear-gradient(180deg,#ffffff,#d7d9de);color:#000;transition:.25s;box-shadow:0 6px 20px -8px rgba(255,255,255,.5)}
+.solid:hover{transform:translateY(-2px);box-shadow:0 10px 28px -8px rgba(255,255,255,.65)}
 
 /* HERO */
-.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:130px 24px 70px;text-align:center;gap:28px}
-.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:100px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.25);font-size:12px;font-weight:700;color:var(--cy);letter-spacing:.5px}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--em);box-shadow:0 0 10px var(--em);animation:pulse 1.8s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.badge-container{width:clamp(150px,30vw,210px);height:clamp(150px,30vw,210px);animation:float 5s ease-in-out infinite}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
-.badge-container img{width:100%;height:100%;border-radius:50%;border:3px solid rgba(34,211,238,.4);box-shadow:0 0 50px rgba(34,211,238,.35),inset 0 0 30px rgba(0,0,0,.5)}
-h1.hero-h{font-size:clamp(38px,7vw,72px);line-height:1.05;font-weight:900;max-width:900px;
-  background:linear-gradient(115deg,var(--ink) 25%,var(--cy) 55%,var(--em) 85%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero{position:relative;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:130px 24px 80px;gap:26px;overflow:hidden}
+.hero-bg{position:absolute;inset:0;z-index:0;background-image:url(/ogscan-splash-banner.jpg);background-size:cover;background-position:center;opacity:.32;
+  mask-image:linear-gradient(180deg,#000 30%,transparent 92%);-webkit-mask-image:linear-gradient(180deg,#000 30%,transparent 92%)}
+.hero-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.2) 40%,#000)}
+.hero>*{position:relative;z-index:1}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;padding:8px 16px;border-radius:100px;font-size:12px;font-weight:700;color:var(--ink);letter-spacing:.04em}
+.dot{width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 12px #fff;animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.logo-badge{width:clamp(116px,18vw,156px);height:clamp(116px,18vw,156px);border-radius:30px;padding:10px;animation:float 6s ease-in-out infinite}
+.logo-badge img{width:100%;height:100%;border-radius:22px;object-fit:cover;border:1px solid rgba(255,255,255,.16)}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+h1.hh{font-size:clamp(40px,7.5vw,80px);line-height:1.02;max-width:920px}
 .subtitle{font-size:clamp(16px,2.2vw,20px);color:var(--mut);line-height:1.65;max-width:680px}
-.ctas{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
-.btn{padding:15px 30px;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;transition:.25s;letter-spacing:.3px;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:8px}
-.btn.primary{background:linear-gradient(90deg,var(--em),var(--cy));color:#04060a;box-shadow:0 0 30px rgba(34,211,238,.3)}
-.btn.primary:hover{transform:translateY(-3px);box-shadow:0 0 46px rgba(34,211,238,.5)}
-.btn.purple{background:linear-gradient(90deg,var(--pu),var(--pink));color:#fff;box-shadow:0 0 30px rgba(139,92,246,.3)}
-.btn.purple:hover{transform:translateY(-3px);box-shadow:0 0 46px rgba(139,92,246,.5)}
-.btn.ghost{border:2px solid rgba(34,211,238,.4);color:var(--cy);background:transparent}
-.btn.ghost:hover{background:rgba(34,211,238,.1);border-color:var(--cy)}
-.trust{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;color:var(--mut);font-size:13px;font-weight:600;margin-top:4px}
-.trust span{display:inline-flex;align-items:center;gap:6px}
+.ctas{display:flex;gap:13px;flex-wrap:wrap;justify-content:center}
+.btn{padding:15px 30px;border-radius:13px;font-weight:800;font-size:15px;cursor:pointer;transition:.25s;border:none;font-family:inherit;display:inline-flex;align-items:center;gap:9px}
+.btn.primary{background:linear-gradient(180deg,#ffffff,#d7d9de);color:#000;box-shadow:0 10px 30px -12px rgba(255,255,255,.55)}
+.btn.primary:hover{transform:translateY(-3px);box-shadow:0 16px 40px -12px rgba(255,255,255,.7)}
+.btn.glassbtn{color:var(--ink);border:1px solid var(--line);background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.03));backdrop-filter:blur(14px)}
+.btn.glassbtn:hover{background:rgba(255,255,255,.12);transform:translateY(-3px)}
+.ticker{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.tk{display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:12px;font-size:13px;font-weight:600;color:var(--mut)}
+.tk b{color:var(--ink)}
 
 /* SECTIONS */
-section{max-width:1180px;margin:0 auto;padding:clamp(70px,9vw,120px) 24px;position:relative}
-.label{display:inline-block;padding:7px 15px;background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.25);border-radius:100px;font-size:11px;font-weight:800;color:var(--cy);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:20px}
-.label.pu{background:rgba(139,92,246,.08);border-color:rgba(139,92,246,.3);color:#c4b5fd}
-.s-title{font-size:clamp(30px,5vw,46px);font-weight:900;margin-bottom:16px;line-height:1.1}
-.s-desc{color:var(--mut);font-size:clamp(15px,2vw,18px);max-width:640px;line-height:1.65;margin-bottom:8px}
+section{max-width:1180px;margin:0 auto;padding:clamp(64px,8vw,110px) 24px;position:relative}
+.label{display:inline-block;padding:7px 15px;border-radius:100px;font-size:11px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.18em;margin-bottom:20px}
+.s-title{font-size:clamp(30px,5vw,46px);margin-bottom:16px;line-height:1.08}
+.s-desc{color:var(--mut);font-size:clamp(15px,2vw,18px);max-width:640px;line-height:1.65}
 .center{text-align:center}.center .s-desc{margin-left:auto;margin-right:auto}
 
 /* MANIFESTO */
-.manifesto{display:grid;grid-template-columns:1.1fr 1fr;gap:48px;align-items:center}
-.manifesto-card{border:1px solid rgba(34,211,238,.18);border-radius:18px;padding:30px;background:linear-gradient(150deg,rgba(34,211,238,.06),rgba(139,92,246,.03))}
-.problem-list{list-style:none;display:flex;flex-direction:column;gap:14px;margin-top:10px}
-.problem-list li{display:flex;gap:12px;align-items:flex-start;color:var(--ink);font-size:15px;line-height:1.5}
-.problem-list .x{color:var(--pink);font-weight:900;flex-shrink:0}
-.problem-list .c{color:var(--em);font-weight:900;flex-shrink:0}
-.who p{color:var(--mut);font-size:16px;line-height:1.75;margin-bottom:16px}
-.who b{color:var(--ink)}
+.manifesto{display:grid;grid-template-columns:1.1fr 1fr;gap:44px;align-items:center}
+.mcard{border-radius:20px;padding:30px}
+.plist{list-style:none;display:flex;flex-direction:column;gap:13px}
+.plist li{display:flex;gap:12px;align-items:flex-start;font-size:15px;line-height:1.5}
+.plist .m{color:var(--dim);font-weight:900;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+.plist .y{color:#fff;font-weight:900;flex-shrink:0;font-family:'JetBrains Mono',monospace}
+.who p{color:var(--mut);font-size:16px;line-height:1.78;margin-bottom:15px}.who b{color:var(--ink)}
 
-/* DO GRID */
-.do-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:40px}
-.do{border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:22px;background:rgba(255,255,255,.02);transition:.3s}
-.do:hover{border-color:rgba(34,211,238,.4);transform:translateY(-5px);background:rgba(34,211,238,.05)}
-.do .ic{font-size:26px;margin-bottom:10px;display:block}
-.do h3{font-size:16px;font-weight:800;margin-bottom:6px}
-.do p{color:var(--mut);font-size:13.5px;line-height:1.55}
+/* SHOWCASE / SCREENSHOTS */
+.shots{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;margin-top:44px}
+.shot{border-radius:18px;overflow:hidden;padding:8px}
+.shot .bar{display:flex;align-items:center;gap:6px;padding:8px 10px 10px}
+.shot .bar i{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.18);display:inline-block}
+.shot .bar span{margin-left:8px;font-size:11px;color:var(--dim);font-family:'JetBrains Mono',monospace}
+.shot img{width:100%;display:block;border-radius:11px;border:1px solid var(--line)}
+.shot.tall{grid-row:span 1}
+@media(max-width:860px){.shots{grid-template-columns:1fr}}
 
-/* FEATURES */
-.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px;margin-top:44px}
-.feature{border:1px solid rgba(34,211,238,.16);border-radius:16px;padding:26px 22px;background:linear-gradient(140deg,rgba(34,211,238,.05),rgba(16,185,129,.015));transition:.35s cubic-bezier(.2,.7,.2,1);position:relative;overflow:hidden}
-.feature:hover{border-color:rgba(34,211,238,.5);transform:translateY(-7px);box-shadow:0 18px 50px -28px rgba(34,211,238,.7)}
-.feature .ic{font-size:30px;margin-bottom:12px;display:block}
-.feature h3{font-size:17px;font-weight:800;margin-bottom:8px}
-.feature p{color:var(--mut);font-size:14px;line-height:1.6;margin-bottom:12px}
-.tag{display:inline-block;padding:4px 11px;background:rgba(34,211,238,.13);border-radius:7px;font-size:10px;font-weight:800;color:var(--cy);text-transform:uppercase;letter-spacing:.6px}
+/* GRIDS */
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:40px}
+.tile{border-radius:16px;padding:24px;transition:.3s}
+.tile:hover{transform:translateY(-6px);border-color:rgba(255,255,255,.28)}
+.tile .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;margin-bottom:14px;font-size:20px;background:rgba(255,255,255,.06);border:1px solid var(--line)}
+.tile h3{font-size:16px;margin-bottom:7px}
+.tile p{color:var(--mut);font-size:13.5px;line-height:1.55}
+.tile .tag{display:inline-block;margin-top:12px;padding:4px 11px;border-radius:7px;font-size:10px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;background:rgba(255,255,255,.07);border:1px solid var(--line)}
 
 /* OGDEX SPOTLIGHT */
-.spotlight{border:1px solid rgba(139,92,246,.28);border-radius:22px;padding:clamp(32px,5vw,56px);background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(34,211,238,.06));display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
-.spotlight h2{font-size:clamp(28px,4vw,40px);font-weight:900;margin-bottom:14px}
-.spotlight p{color:var(--mut);font-size:16px;line-height:1.7;margin-bottom:22px}
-.spotlight ul{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:26px}
-.spotlight li{display:flex;gap:10px;align-items:center;font-size:14.5px;color:var(--ink)}
-.spotlight li .c{color:var(--em);font-weight:900}
-.spot-visual{border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.1);box-shadow:0 30px 80px -40px rgba(139,92,246,.8)}
-.spot-visual img{width:100%;display:block}
-
-/* INTEGRATIONS */
-.int-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin-top:36px}
-.int{display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px 14px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid rgba(34,211,238,.15);transition:.3s}
-.int:hover{background:rgba(34,211,238,.08);border-color:var(--cy);transform:translateY(-4px)}
-.int .ic{font-size:26px}.int .nm{font-size:12px;font-weight:700;color:var(--ink)}
+.spot{border-radius:24px;padding:clamp(30px,5vw,52px);display:grid;grid-template-columns:1fr 1fr;gap:38px;align-items:center}
+.spot h2{font-size:clamp(28px,4vw,40px);margin-bottom:13px}
+.spot p{color:var(--mut);font-size:16px;line-height:1.7;margin-bottom:20px}
+.spot ul{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
+.spot li{display:flex;gap:11px;align-items:center;font-size:14.5px}.spot li .y{color:#fff;font-weight:900;font-family:'JetBrains Mono',monospace}
+.spot .vis{border-radius:16px;overflow:hidden;padding:8px}
+.spot .vis img{width:100%;display:block;border-radius:11px;border:1px solid var(--line)}
 
 /* STATS */
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-top:50px}
-.stat{text-align:center;padding:26px 18px;border:1px solid rgba(34,211,238,.18);border-radius:14px;background:rgba(34,211,238,.04);transition:.3s}
-.stat:hover{border-color:rgba(34,211,238,.5);transform:translateY(-4px)}
-.stat .n{font-size:clamp(26px,4vw,40px);font-weight:900;margin-bottom:6px}
-.stat .l{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:1px;font-weight:700}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:46px}
+.stat{text-align:center;padding:26px 18px;border-radius:15px}
+.stat .n{font-size:clamp(26px,4vw,40px);font-weight:900;margin-bottom:6px;font-family:'JetBrains Mono',monospace}
+.stat .l{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+
+/* INTEGRATIONS */
+.ints{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:13px;margin-top:36px}
+.int{display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px 14px;border-radius:14px;transition:.3s}
+.int:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.28)}.int .ic{font-size:24px}.int .nm{font-size:12px;font-weight:700}
 
 /* CTA */
-.cta-banner{max-width:1180px;margin:40px auto 0;padding:clamp(48px,7vw,80px) 24px;text-align:center;border:1px solid rgba(34,211,238,.3);border-radius:22px;background:linear-gradient(135deg,rgba(34,211,238,.1),rgba(139,92,246,.06))}
-.cta-banner h2{font-size:clamp(28px,5vw,46px);font-weight:900;margin-bottom:14px}
-.cta-banner p{color:var(--mut);font-size:17px;max-width:580px;margin:0 auto 28px;line-height:1.6}
+.cta{max-width:1180px;margin:30px auto 0;padding:clamp(46px,7vw,82px) 24px;text-align:center;border-radius:24px}
+.cta h2{font-size:clamp(28px,5vw,48px);margin-bottom:14px}
+.cta p{color:var(--mut);font-size:17px;max-width:580px;margin:0 auto 26px;line-height:1.6}
 
 /* FOOTER */
-footer{border-top:1px solid rgba(34,211,238,.1);padding:48px 24px;text-align:center;color:var(--mut);font-size:13px;margin-top:80px}
-.f-brand{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:900;margin-bottom:18px;font-size:16px}
-.f-brand img{width:30px;height:30px;border-radius:8px}
-.f-links{display:flex;justify-content:center;gap:22px;margin-bottom:18px;flex-wrap:wrap}
-.f-links a{color:var(--cy);transition:.2s;font-weight:600}.f-links a:hover{color:var(--em)}
+footer{border-top:1px solid var(--line);padding:46px 24px;text-align:center;color:var(--mut);font-size:13px;margin-top:80px}
+.fb{display:flex;align-items:center;justify-content:center;gap:10px;font-weight:900;margin-bottom:16px;font-size:15px}
+.fb img{width:28px;height:28px;border-radius:8px;border:1px solid rgba(255,255,255,.18)}
+.fl{display:flex;justify-content:center;gap:20px;margin-bottom:16px;flex-wrap:wrap}.fl a{color:var(--ink);opacity:.8;transition:.2s;font-weight:600}.fl a:hover{opacity:1}
 
-@media(max-width:860px){
-  .manifesto,.spotlight{grid-template-columns:1fr;gap:28px}
-  .nav-ghost{display:none}
-}
-@media(max-width:560px){
-  nav{padding:12px 16px}.hero{padding:110px 18px 50px}
-  .btn{width:100%;justify-content:center}.ctas{width:100%}
-}
+@media(max-width:860px){.manifesto,.spot{grid-template-columns:1fr;gap:26px}.ghost{display:none}}
+@media(max-width:560px){nav{padding:11px 15px}.hero{padding:108px 17px 56px}.btn{width:100%;justify-content:center}.ctas{width:100%}}
 </style>
 </head>
 <body>
 <div class="wrap">
 <nav>
-  <a href="/" class="nav-brand"><img src="/ogscan-logo-256.png" alt="OG Scan"/><span>OG <span class="grad">Scan</span></span></a>
-  <div class="nav-links">
-    <a href="/OGDEX" class="nav-ghost">Screener</a>
-    <a href="/auth?mode=signup" class="nav-cta">Launch App</a>
+  <a href="/" class="brand"><img src="/ogscan-logo-256.png" alt="OG Scan"/><span class="t">OG <span class="silver">Scan</span></span></a>
+  <div class="nav-r">
+    <a href="/OGDEX" class="ghost">Screener</a>
+    <a href="/auth?mode=signup" class="solid">Launch App</a>
   </div>
 </nav>
 
 <!-- HERO -->
 <header class="hero">
-  <div class="eyebrow"><span class="dot"></span> Live on Solana · Multi-chain intelligence</div>
-  <div class="badge-container"><img src="/ogscan-logo-256.png" alt="OG Scan"/></div>
-  <h1 class="hero-h">Find the OGs. Dodge the rugs. Move first.</h1>
-  <p class="subtitle">OG Scan is the unified on-chain intelligence platform. Scan any token, x-ray any wallet, catch launches before they move, screen and launch coins on OGDEX, and automate the whole edge with AI, Telegram and webhooks.</p>
+  <div class="hero-bg"></div>
+  <div class="eyebrow glass-soft"><span class="dot"></span> Live on Solana · multi-chain intelligence</div>
+  <div class="logo-badge glass"><img src="/ogscan-logo-256.png" alt="OG Scan"/></div>
+  <h1 class="hh silver">Find the OGs.<br/>Dodge the rugs. Move first.</h1>
+  <p class="subtitle">OG Scan is the unified on-chain intelligence terminal. Scan any token, x-ray any wallet, catch launches before they move, and screen or launch coins on OGDEX — all in one place, powered by AI.</p>
   <div class="ctas">
     <a href="/auth?mode=signup" class="btn primary">Start Free →</a>
-    <a href="/OGDEX" class="btn purple">Open Screener</a>
-    <a href="#what" class="btn ghost">What is OG Scan?</a>
+    <a href="/OGDEX" class="btn glassbtn">Open Screener</a>
+    <a href="#what" class="btn glassbtn">What is OG Scan?</a>
   </div>
-  <div class="trust">
-    <span>⚡ 1-second token analysis</span>
-    <span>🔗 16+ chains</span>
-    <span>🤖 Built-in AI analyst</span>
-    <span>💸 No card to start</span>
+  <div class="ticker">
+    <span class="tk glass-soft"><b class="mono">~1s</b> token analysis</span>
+    <span class="tk glass-soft"><b class="mono">16+</b> chains</span>
+    <span class="tk glass-soft"><b>AI</b> analyst built in</span>
+    <span class="tk glass-soft"><b>$0</b> to start</span>
   </div>
 </header>
 
-<!-- WHO WE ARE / WHAT / WHY -->
+<!-- WHO / WHAT / WHY -->
 <section id="what">
   <div class="manifesto">
     <div class="who">
-      <div class="label pu">Who we are · Why we exist</div>
-      <h2 class="s-title">One platform for the <span class="grad">entire on-chain edge</span>.</h2>
-      <p>OG Scan is built by traders who got tired of juggling ten browser tabs to make one decision. A chart here, a holder map there, a rug-checker, a wallet tracker, a launch bot, an alert tool — none of them talking to each other.</p>
-      <p><b>So we built the platform we wanted:</b> token forensics, wallet intelligence, live launch radar, an on-chain screener and launcher (OGDEX), and an AI analyst — all under one roof, all in real time.</p>
-      <p>Our mission is simple: help you <b>find the real OGs early, avoid the traps, and act faster than the crowd</b> — without 12 subscriptions and a wall of tabs.</p>
+      <div class="label glass-soft">Who we are · Why we exist</div>
+      <h2 class="s-title silver">One terminal for the entire on-chain edge.</h2>
+      <p>OG Scan is built by traders who got tired of juggling ten browser tabs to make one decision. A chart here, a holder map there, a rug-checker, a wallet tracker, a launch bot — none of them talking to each other.</p>
+      <p><b>So we built the terminal we actually wanted:</b> token forensics, wallet intelligence, a live launch radar, an on-chain screener and launcher (OGDEX), and an AI analyst — all under one roof, all in real time.</p>
+      <p>The mission is simple: <b>find the real OGs early, avoid the traps, and act faster than the crowd</b> — without 12 subscriptions and a wall of tabs.</p>
     </div>
-    <div class="manifesto-card">
-      <div style="font-weight:800;font-size:14px;color:var(--mut);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">The old way vs OG Scan</div>
-      <ul class="problem-list">
-        <li><span class="x">✕</span> 8 tabs open just to vet one token</li>
-        <li><span class="x">✕</span> Find the launch after it already pumped</li>
-        <li><span class="x">✕</span> No idea who's really behind a wallet</li>
-        <li><span class="x">✕</span> Alerts scattered across 5 apps</li>
+    <div class="mcard glass">
+      <div style="font-weight:800;font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.16em;margin-bottom:14px">The old way vs OG Scan</div>
+      <ul class="plist">
+        <li><span class="m">[ — ]</span> 8 tabs open just to vet one token</li>
+        <li><span class="m">[ — ]</span> Find the launch after it already pumped</li>
+        <li><span class="m">[ — ]</span> No idea who's really behind a wallet</li>
+        <li><span class="m">[ — ]</span> Alerts scattered across 5 apps</li>
       </ul>
-      <div style="height:1px;background:rgba(255,255,255,.1);margin:18px 0"></div>
-      <ul class="problem-list">
-        <li><span class="c">✓</span> Paste a CA → full risk report in 1s</li>
-        <li><span class="c">✓</span> Launch radar flags mints pre-pump</li>
-        <li><span class="c">✓</span> Wallet x-ray: win rate, timing, intent</li>
-        <li><span class="c">✓</span> One feed, one AI, one platform</li>
+      <div style="height:1px;background:var(--line);margin:18px 0"></div>
+      <ul class="plist">
+        <li><span class="y">[ ✓ ]</span> Paste a CA → full risk report in ~1s</li>
+        <li><span class="y">[ ✓ ]</span> Launch radar flags mints pre-pump</li>
+        <li><span class="y">[ ✓ ]</span> Wallet x-ray: win rate, timing, intent</li>
+        <li><span class="y">[ ✓ ]</span> One feed, one AI, one terminal</li>
       </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SCREENSHOTS / SEE IT -->
+<section>
+  <div class="center">
+    <div class="label glass-soft">See it in action</div>
+    <h2 class="s-title silver">A terminal that looks the part.</h2>
+    <p class="s-desc">Real-time discovery, OG scoring and deep token intel — fast, dense and built for traders.</p>
+  </div>
+  <div class="shots">
+    <div class="shot glass">
+      <div class="bar"><i></i><i></i><i></i><span>ogscan.fun/OGDEX — discovery</span></div>
+      <img src="/ogscan-shot-screener.jpg" alt="OGDEX screener"/>
+    </div>
+    <div class="shot glass">
+      <div class="bar"><i></i><i></i><i></i><span>ogscan.fun — token intel</span></div>
+      <img src="/ogscan-shot-token.jpg" alt="Token detail"/>
     </div>
   </div>
 </section>
@@ -215,98 +235,98 @@ footer{border-top:1px solid rgba(34,211,238,.1);padding:48px 24px;text-align:cen
 <!-- WHAT YOU CAN DO -->
 <section>
   <div class="center">
-    <div class="label">What you can do</div>
-    <h2 class="s-title">From a contract address to a <span class="grad">conviction call</span></h2>
-    <p class="s-desc">Every action a degen, analyst, or fund needs to research, decide and act — in one place.</p>
+    <div class="label glass-soft">What you can do</div>
+    <h2 class="s-title silver">From a contract address to a conviction call</h2>
+    <p class="s-desc">Every action a degen, analyst or fund needs to research, decide and act — in one place.</p>
   </div>
-  <div class="do-grid">
-    <div class="do"><span class="ic">🔍</span><h3>Vet any token</h3><p>Paste a CA and instantly see holders, liquidity, contract risk flags and an OG confidence score.</p></div>
-    <div class="do"><span class="ic">🕵️</span><h3>X-ray any wallet</h3><p>Trade history, win rate, entry/exit timing and behavior — then ask the AI what it means.</p></div>
-    <div class="do"><span class="ic">🎯</span><h3>Catch launches early</h3><p>Watch mints, new pairs, migrations and liquidity adds the moment they hit the chain.</p></div>
-    <div class="do"><span class="ic">📊</span><h3>Screen &amp; discover</h3><p>Use OGDEX to filter trending, organic and KOL-backed tokens across categories.</p></div>
-    <div class="do"><span class="ic">🚀</span><h3>Launch a coin</h3><p>Create and launch your own token on pump.fun directly from OGDEX in minutes.</p></div>
-    <div class="do"><span class="ic">🔔</span><h3>Automate alerts</h3><p>Get pinged on Telegram or your own webhook for launches, whales and price targets.</p></div>
+  <div class="grid3">
+    <div class="tile glass"><div class="ic">🔍</div><h3>Vet any token</h3><p>Paste a CA and instantly see holders, liquidity, contract risk flags and an OG confidence score.</p></div>
+    <div class="tile glass"><div class="ic">🕵️</div><h3>X-ray any wallet</h3><p>Trade history, win rate, entry/exit timing and behavior — then ask the AI what it means.</p></div>
+    <div class="tile glass"><div class="ic">🎯</div><h3>Catch launches early</h3><p>Watch mints, new pairs, migrations and liquidity adds the moment they hit the chain.</p></div>
+    <div class="tile glass"><div class="ic">📊</div><h3>Screen &amp; discover</h3><p>Use OGDEX to filter trending, organic and KOL-backed tokens across categories.</p></div>
+    <div class="tile glass"><div class="ic">🚀</div><h3>Launch a coin</h3><p>Create and launch your own token on pump.fun directly from OGDEX in minutes.</p></div>
+    <div class="tile glass"><div class="ic">🔔</div><h3>Automate alerts</h3><p>Get pinged on Telegram or your own webhook for launches, whales and price targets.</p></div>
   </div>
 </section>
 
-<!-- FEATURES / TOOLS -->
+<!-- TOOLKIT -->
 <section>
   <div class="center">
-    <div class="label">The toolkit</div>
-    <h2 class="s-title">Every tool, <span class="grad">built in</span></h2>
-    <p class="s-desc">No add-ons, no five subscriptions. The full intelligence stack ships in one platform.</p>
+    <div class="label glass-soft">The toolkit</div>
+    <h2 class="s-title silver">Every tool, built in</h2>
+    <p class="s-desc">No add-ons, no five subscriptions. The full intelligence stack ships in one terminal.</p>
   </div>
-  <div class="features-grid">
-    <div class="feature"><span class="ic">🔍</span><h3>OG Scanner</h3><p>Paste a contract address, get instant analysis: holders, activity, risk flags and contract forensics.</p><span class="tag">Instant CA lookup</span></div>
-    <div class="feature"><span class="ic">💰</span><h3>Wallet Intelligence</h3><p>Deep-dive any wallet — holdings, trade history, win rate and timing. Ask AI about its behavior.</p><span class="tag">Forensic analysis</span></div>
-    <div class="feature"><span class="ic">🧠</span><h3>AI Analyst</h3><p>Share a token or wallet and get detailed analysis trained on years of on-chain data. Unlimited chat.</p><span class="tag">Unlimited AI</span></div>
-    <div class="feature"><span class="ic">📈</span><h3>Market Radar</h3><p>Track launches, new pairs, migrations, whales and tape across 16 chains. Live feeds every minute.</p><span class="tag">Multi-chain</span></div>
-    <div class="feature"><span class="ic">⚡</span><h3>Launch Detection</h3><p>Catch projects before they move — mint events, liquidity adds and token creation in real time.</p><span class="tag">Pre-pump</span></div>
-    <div class="feature"><span class="ic">📊</span><h3>OGDEX Screener</h3><p>A fast Solana screener with OG Score, organic momentum, KOL picks and one-click token launching.</p><span class="tag">Screen + launch</span></div>
-    <div class="feature"><span class="ic">📄</span><h3>PDF Reports</h3><p>Generate shareable reports with charts, metrics and AI insights. Send to your team in one click.</p><span class="tag">HTML + PDF</span></div>
-    <div class="feature"><span class="ic">🤖</span><h3>Telegram Bot</h3><p>The full platform inside Telegram — scan tokens, analyze wallets, pull reports and chat with AI.</p><span class="tag">Available now</span></div>
-    <div class="feature"><span class="ic">🔔</span><h3>Webhook Alerts</h3><p>Real-time alerts for launches, price targets and whale activity. Wire it into your own systems.</p><span class="tag">No code</span></div>
-    <div class="feature"><span class="ic">🐦</span><h3>X Integration</h3><p>Connect your X account and auto-publish community posts. We handle the API costs for you.</p><span class="tag">Scheduled posts</span></div>
-    <div class="feature"><span class="ic">⚙️</span><h3>Custom AI Bots</h3><p>Build branded Telegram or Discord bots, upload knowledge files and deploy instantly.</p><span class="tag">5+ bots free</span></div>
-    <div class="feature"><span class="ic">📰</span><h3>Live Crypto News</h3><p>Track bullish and bearish narratives and ecosystem updates so you understand every market move.</p><span class="tag">Real-time feed</span></div>
+  <div class="grid3">
+    <div class="tile glass"><div class="ic">🔍</div><h3>OG Scanner</h3><p>Paste a contract address, get instant analysis: holders, activity, risk flags and contract forensics.</p><span class="tag">Instant CA lookup</span></div>
+    <div class="tile glass"><div class="ic">💼</div><h3>Wallet Intelligence</h3><p>Deep-dive any wallet — holdings, trade history, win rate and timing. Ask AI about its behavior.</p><span class="tag">Forensic analysis</span></div>
+    <div class="tile glass"><div class="ic">🧠</div><h3>AI Analyst</h3><p>Share a token or wallet and get detailed analysis trained on years of on-chain data. Unlimited chat.</p><span class="tag">Unlimited AI</span></div>
+    <div class="tile glass"><div class="ic">📡</div><h3>Market Radar</h3><p>Track launches, new pairs, migrations, whales and tape across 16 chains. Live feeds every minute.</p><span class="tag">Multi-chain</span></div>
+    <div class="tile glass"><div class="ic">⚡</div><h3>Launch Detection</h3><p>Catch projects before they move — mint events, liquidity adds and token creation in real time.</p><span class="tag">Pre-pump</span></div>
+    <div class="tile glass"><div class="ic">📈</div><h3>OGDEX Screener</h3><p>A fast Solana screener with OG Score, organic momentum, KOL picks and one-click token launching.</p><span class="tag">Screen + launch</span></div>
+    <div class="tile glass"><div class="ic">📄</div><h3>PDF Reports</h3><p>Generate shareable reports with charts, metrics and AI insights. Send to your team in one click.</p><span class="tag">HTML + PDF</span></div>
+    <div class="tile glass"><div class="ic">🤖</div><h3>Telegram Bot</h3><p>The full platform inside Telegram — scan tokens, analyze wallets, pull reports and chat with AI.</p><span class="tag">Available now</span></div>
+    <div class="tile glass"><div class="ic">🔔</div><h3>Webhook Alerts</h3><p>Real-time alerts for launches, price targets and whale activity. Wire it into your own systems.</p><span class="tag">No code</span></div>
+    <div class="tile glass"><div class="ic">𝕏</div><h3>X Integration</h3><p>Connect your X account and auto-publish community posts. We handle the API costs for you.</p><span class="tag">Scheduled posts</span></div>
+    <div class="tile glass"><div class="ic">⚙️</div><h3>Custom AI Bots</h3><p>Build branded Telegram or Discord bots, upload knowledge files and deploy instantly.</p><span class="tag">5+ bots free</span></div>
+    <div class="tile glass"><div class="ic">📰</div><h3>Live Crypto News</h3><p>Track bullish and bearish narratives and ecosystem updates so you understand every market move.</p><span class="tag">Real-time feed</span></div>
   </div>
 </section>
 
 <!-- OGDEX SPOTLIGHT -->
 <section>
-  <div class="spotlight">
+  <div class="spot glass">
     <div>
-      <div class="label pu">Featured · OGDEX</div>
-      <h2>The screener &amp; launchpad, <span class="grad2">on-chain and open</span>.</h2>
+      <div class="label glass-soft">Featured · OGDEX</div>
+      <h2 class="silver">The screener &amp; launchpad, on-chain and open.</h2>
       <p>OGDEX is OG Scan's free public screener — no sign-in required. Discover trending and organic tokens, track KOL wallets and portfolios, and launch your own coin on pump.fun without leaving the page.</p>
       <ul>
-        <li><span class="c">✓</span> Discovery, Portfolio and KOL tracking</li>
-        <li><span class="c">✓</span> OG Score &amp; organic-momentum ranking</li>
-        <li><span class="c">✓</span> List &amp; boost your project in the Store</li>
-        <li><span class="c">✓</span> One-click token launch on pump.fun</li>
+        <li><span class="y">✓</span> Discovery, Portfolio and KOL tracking</li>
+        <li><span class="y">✓</span> OG Score &amp; organic-momentum ranking</li>
+        <li><span class="y">✓</span> List &amp; boost your project in the Store</li>
+        <li><span class="y">✓</span> One-click token launch on pump.fun</li>
       </ul>
-      <a href="/OGDEX" class="btn purple">Open OGDEX →</a>
+      <a href="/OGDEX" class="btn primary">Open OGDEX →</a>
     </div>
-    <div class="spot-visual"><img src="/og-brand.jpg" alt="OGDEX screener preview"/></div>
+    <div class="vis glass-soft"><img src="/ogscan-shot-screener.jpg" alt="OGDEX preview"/></div>
   </div>
 </section>
 
-<!-- INTEGRATIONS -->
+<!-- INTEGRATIONS + STATS -->
 <section>
   <div class="center">
-    <div class="label">Integrations</div>
-    <h2 class="s-title">Works with <span class="grad">your stack</span></h2>
+    <div class="label glass-soft">Integrations</div>
+    <h2 class="s-title silver">Works with your stack</h2>
     <p class="s-desc">Plug OG Scan into the tools your community already lives in.</p>
   </div>
-  <div class="int-grid">
-    <div class="int"><span class="ic">🤖</span><span class="nm">Telegram</span></div>
-    <div class="int"><span class="ic">🐦</span><span class="nm">X / Twitter</span></div>
-    <div class="int"><span class="ic">💬</span><span class="nm">Discord</span></div>
-    <div class="int"><span class="ic">🔗</span><span class="nm">Webhooks</span></div>
-    <div class="int"><span class="ic">📊</span><span class="nm">Developer API</span></div>
-    <div class="int"><span class="ic">🎯</span><span class="nm">Custom Bots</span></div>
+  <div class="ints">
+    <div class="int glass"><span class="ic">🤖</span><span class="nm">Telegram</span></div>
+    <div class="int glass"><span class="ic">𝕏</span><span class="nm">X / Twitter</span></div>
+    <div class="int glass"><span class="ic">💬</span><span class="nm">Discord</span></div>
+    <div class="int glass"><span class="ic">🔗</span><span class="nm">Webhooks</span></div>
+    <div class="int glass"><span class="ic">⚙️</span><span class="nm">Developer API</span></div>
+    <div class="int glass"><span class="ic">🎯</span><span class="nm">Custom Bots</span></div>
   </div>
   <div class="stats">
-    <div class="stat"><div class="n grad">16+</div><div class="l">Supported chains</div></div>
-    <div class="stat"><div class="n grad">∞</div><div class="l">AI messages</div></div>
-    <div class="stat"><div class="n grad">~1s</div><div class="l">Token analysis</div></div>
-    <div class="stat"><div class="n grad">24/7</div><div class="l">Live feeds</div></div>
+    <div class="stat glass"><div class="n silver">16+</div><div class="l">Supported chains</div></div>
+    <div class="stat glass"><div class="n silver">∞</div><div class="l">AI messages</div></div>
+    <div class="stat glass"><div class="n silver">~1s</div><div class="l">Token analysis</div></div>
+    <div class="stat glass"><div class="n silver">24/7</div><div class="l">Live feeds</div></div>
   </div>
 </section>
 
 <!-- CTA -->
-<div class="cta-banner">
-  <h2 class="grad">Stop tab-hopping. Start scanning.</h2>
-  <p>Token intel, wallet forensics, launch radar, an on-chain screener and an AI analyst — one platform that actually works. Free to start.</p>
+<div class="cta glass">
+  <h2 class="silver">Stop tab-hopping. Start scanning.</h2>
+  <p>Token intel, wallet forensics, launch radar, an on-chain screener and an AI analyst — one terminal that actually works. Free to start.</p>
   <div class="ctas" style="justify-content:center">
     <a href="/auth?mode=signup" class="btn primary">Start Free →</a>
-    <a href="/OGDEX" class="btn ghost">Explore the Screener</a>
+    <a href="/OGDEX" class="btn glassbtn">Explore the Screener</a>
   </div>
 </div>
 
 <footer>
-  <div class="f-brand"><img src="/ogscan-logo-256.png" alt="OG Scan"/> OG <span class="grad">Scan</span></div>
-  <div class="f-links">
+  <div class="fb"><img src="/ogscan-logo-256.png" alt="OG Scan"/> OG <span class="silver">Scan</span></div>
+  <div class="fl">
     <a href="/OGDEX">Screener</a>
     <a href="/auth?mode=signup">Launch App</a>
     <a href="/privacy">Privacy</a>
@@ -314,7 +334,7 @@ footer{border-top:1px solid rgba(34,211,238,.1);padding:48px 24px;text-align:cen
     <a href="https://x.com/ogscanbackup" target="_blank">X</a>
     <a href="https://t.me/ogscan_bot" target="_blank">Telegram</a>
   </div>
-  <p>© 2026 OG Scan · The unified on-chain intelligence platform.<br/>Built by traders, for traders. One platform. Everything crypto.</p>
+  <p>© 2026 OG Scan · The unified on-chain intelligence terminal.<br/>Built by traders, for traders. One terminal. Everything on-chain.</p>
 </footer>
 </div>
 </body>
