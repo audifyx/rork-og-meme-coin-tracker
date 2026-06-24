@@ -13,6 +13,7 @@ import KolWhaleActivity from "../components/KolWhaleActivity";
 import { getKolDirectory, KolDirEntry } from "../lib/kol";
 import PriceChart from "../components/PriceChart";
 import TradePanel from "../components/TradePanel";
+import TrustPanel from "../components/TrustPanel";
 import PredictiveIntel from "../components/PredictiveIntel";
 import CapitalFlow from "../components/CapitalFlow";
 import {
@@ -101,7 +102,7 @@ export default function TokenDetail() {
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-4 text-xs">
             <a href={`/api/ogdex/report?mint=${mint}`} target="_blank" rel="noreferrer" className="btn bg-accent text-black font-semibold inline-flex items-center gap-1.5"><FileDown className="w-3.5 h-3.5" /> Download Report</a>
-            <a href={meta.dexUrl || `https://jup.ag/swap/SOL-${mint}`} target="_blank" rel="noreferrer" className="btn bg-accent/15 text-accent inline-flex items-center gap-1.5">Trade <ExternalLink className="w-3 h-3" /></a>
+            <a href="#trade" className="btn bg-accent/15 text-accent inline-flex items-center gap-1.5">Buy / Sell</a>
             <a href={`https://solscan.io/token/${mint}`} target="_blank" rel="noreferrer" className="btn bg-panel2 text-muted hover:text-white inline-flex items-center gap-1.5">Solscan <ExternalLink className="w-3 h-3" /></a>
             <a href={`https://dexscreener.com/solana/${mint}`} target="_blank" rel="noreferrer" className="btn bg-panel2 text-muted hover:text-white inline-flex items-center gap-1.5">DexScreener <ExternalLink className="w-3 h-3" /></a>
             {meta.socials?.twitter && <a href={meta.socials.twitter} target="_blank" rel="noreferrer" className="btn bg-panel2 text-muted hover:text-white">X</a>}
@@ -110,13 +111,16 @@ export default function TokenDetail() {
         </div>
       </div>
 
+      {/* Trust verdict + OG Read */}
+      <TrustPanel d={d} />
+
       {/* Price chart + non-custodial trade panel */}
       <div className="mb-4 grid gap-4 lg:grid-cols-3">
         <div className={(meta.chain || "solana") === "solana" ? "lg:col-span-2" : "lg:col-span-3"}>
           <PriceChart mint={mint} symbol={symbol} chain={(meta.chain || "solana")} />
         </div>
         {(meta.chain || "solana") === "solana" && (
-          <div className="lg:col-span-1"><TradePanel mint={mint} symbol={symbol} /></div>
+          <div id="trade" className="lg:col-span-1 scroll-mt-20"><TradePanel mint={mint} symbol={symbol} /></div>
         )}
       </div>
 
