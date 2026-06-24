@@ -9,6 +9,7 @@ import Screener from "./pages/Screener";
 
 // Heavy / less-frequent routes are code-split so the Discovery page loads fast.
 const Pulse = lazy(() => import("./pages/Pulse"));
+const Metadata = lazy(() => import("./pages/Metadata"));
 const TokenDetail = lazy(() => import("./pages/TokenDetail"));
 const Submit = lazy(() => import("./pages/Submit"));
 const Store = lazy(() => import("./pages/Store"));
@@ -35,6 +36,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="pulse" element={<Suspense fallback={<PageFallback />}><Pulse /></Suspense>} />
           <Route path="token/:mint" element={<Suspense fallback={<PageFallback />}><TokenDetail /></Suspense>} />
           <Route path="store" element={<Suspense fallback={<PageFallback />}><Store /></Suspense>} />
+          <Route path="metadata" element={<Suspense fallback={<PageFallback />}><Metadata /></Suspense>} />
           <Route path="submit" element={<Suspense fallback={<PageFallback />}><Submit /></Suspense>} />
           <Route path="boost" element={<Suspense fallback={<PageFallback />}><Boost /></Suspense>} />
           <Route path="launch" element={<Suspense fallback={<PageFallback />}><Launch /></Suspense>} />

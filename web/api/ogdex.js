@@ -18,6 +18,7 @@ import kols from "./ogdex/_routes/kols.js";
 import launch from "./ogdex/_routes/launch.js";
 import launches from "./ogdex/_routes/launches.js";
 import listings from "./ogdex/_routes/listings.js";
+import metadata from "./ogdex/_routes/metadata.js";
 import report from "./ogdex/_routes/report.js";
 import screener from "./ogdex/_routes/screener.js";
 import signals from "./ogdex/_routes/signals.js";
@@ -30,7 +31,7 @@ import rpc from "./ogdex/_routes/rpc.js";
 
 const ROUTES = {
   admin, boosts, chart, config, kols, launch, launches,
-  listings, report, screener, signals, search, token, trade, track, wallet, rpc,
+  listings, metadata, report, screener, signals, search, token, trade, track, wallet, rpc,
 };
 
 export default async function handler(req, res) {
