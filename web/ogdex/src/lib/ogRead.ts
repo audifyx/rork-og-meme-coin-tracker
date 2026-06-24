@@ -39,7 +39,10 @@ export function buildOgRead(d: any): OgReadResult {
   const verdict = d?.verdict || (score != null ? (score >= 75 ? "Strong" : score >= 50 ? "Mixed" : "Risky") : "Unrated");
   let headline: string;
   if (rugged) headline = `${sym} shows rug characteristics — liquidity pulled or flagged as rugged. Treat with extreme caution.`;
-  else if (tone === "good") headline = `${sym} reads ${verdict.toLowerCase()}: clean authorities${lpLocked != null && lpLocked >= 50 ? ", locked liquidity" : ""}${momentum ? `, and ${momentum.toLowerCase()} momentum` : ""}.`;
+  else if (tone === "good") {
+    const momOk = momentum && (ch24 == null || ch24 >= -2);
+    headline = `${sym} reads ${verdict.toLowerCase()}: clean authorities${lpLocked != null && lpLocked >= 50 ? ", locked liquidity" : ""}${momOk ? `, ${momentum.toLowerCase()} momentum` : ""}${top10 != null && top10 >= 30 ? " — but watch holder concentration" : ""}.`;
+  }
   else if (tone === "bad") headline = `${sym} looks risky — weak fundamentals and unresolved red flags. Size carefully.`;
   else headline = `${sym} is mixed — some green flags, some risks worth checking before aping.`;
 
@@ -68,23 +71,34 @@ export function buildOgRead(d: any): OgReadResult {
 
   // holders / growth
   if (holders) {
+    const growing = hChange != null && hChange > 0.1;
+    const declining = hChange != null && hChange < -0.1;
     const hc = hChange != null ? ` (${hChange >= 0 ? "+" : ""}${hChange.toFixed(1)}% 24h)` : "";
-    b.push({ tone: hChange != null && hChange > 0 ? "good" : "warn", text: `${compact(Number(holders))} holders${hc} — ${hChange != null && hChange > 0 ? "growing base" : "flat/declining base"}.` });
+    b.push({ tone: growing ? "good" : declining ? "bad" : "warn", text: `${compact(Number(holders))} holders${hc} — ${growing ? "growing base" : declining ? "shrinking base" : "flat holder base"}.` });
   }
 
   // momentum / organic
   if (organic || ch24 != null) {
     const dir = ch24 != null ? `${ch24 >= 0 ? "+" : ""}${ch24.toFixed(1)}% 24h` : "";
     const org = organic ? `${organic} organic activity` : "";
-    b.push({ tone: organic === "high" || (ch24 ?? 0) > 0 ? "good" : "warn", text: [org, dir].filter(Boolean).join(" · ") + (organic === "high" ? " — real demand, not just wash volume." : "") });
+    let tail = "";
+    if (organic === "high" && (ch24 ?? 0) >= 0) tail = " — real demand, not just wash volume.";
+    else if (organic === "high" && (ch24 ?? 0) < 0) tail = " — real activity, holding up despite the dip.";
+    const up = (ch24 ?? 0) >= 0;
+    b.push({ tone: organic === "high" ? "good" : up ? "good" : "warn", text: [org, dir].filter(Boolean).join(" · ") + tail });
   }
 
   // clone
   if (clone) b.push({ tone: "bad", text: "Flagged as a likely clone of another token — verify the original before buying." });
 
-  // explicit risks from safety engine
-  for (const r of (safety.risks || []).slice(0, 3)) {
-    b.push({ tone: /danger|high|crit/i.test(r.level) ? "bad" : "warn", text: r.desc || r.name });
+  // explicit risks from the safety engine — skip ones already covered above to avoid
+  // duplicate/contradictory lines (e.g. concentration shown two different ways).
+  const covered = /hold|concentrat|top.?10|supply|mint|freeze|liquid|\blp\b|renounce/i;
+  for (const r of (safety.risks || [])) {
+    const txt = String(r.desc || r.name || "");
+    if (!txt || covered.test(txt)) continue;
+    b.push({ tone: /danger|high|crit/i.test(r.level) ? "bad" : "warn", text: txt });
+    if (b.length >= 8) break;
   }
 
   return { tone, headline, bullets: b.slice(0, 8) };
