@@ -1,7 +1,8 @@
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import { Search, Zap, ShoppingBag, Wallet, Star, ChevronDown, Coins, Radio, Send, Activity } from "lucide-react";
+import { Search, Zap, ShoppingBag, Wallet, Star, ChevronDown, Coins, Radio, Send, Activity, Wallet2, LogOut } from "lucide-react";
 import { track, getWatchlist, short } from "../lib/api";
+import { useWallet } from "../lib/wallet";
 import LiveStats from "./LiveStats";
 
 const isAddr = (v: string) => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(v.trim());
@@ -26,6 +27,7 @@ export default function Layout() {
   const [watch, setWatch] = useState<string[]>([]);
   const nav = useNavigate();
   const loc = useLocation();
+  const { address, connecting, connect, disconnect } = useWallet();
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => { track("page_view", { path: loc.pathname }); setWatch(getWatchlist()); setWatchOpen(false); }, [loc.pathname]);
   useEffect(() => {
@@ -87,6 +89,16 @@ export default function Layout() {
                 </div>
               )}
             </div>
+
+            {address ? (
+              <button onClick={disconnect} title={address} className="btn bg-accent/12 border border-accent/30 text-accent hover:bg-accent/20 inline-flex items-center gap-1.5 shrink-0 font-mono text-[12px]">
+                <Wallet2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{short(address)}</span><LogOut className="w-3 h-3 opacity-70" />
+              </button>
+            ) : (
+              <button onClick={connect} disabled={connecting} className="btn bg-white/5 border border-white/10 text-white hover:bg-white/10 inline-flex items-center gap-1.5 shrink-0 disabled:opacity-60">
+                <Wallet2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{connecting ? "Connecting…" : "Connect"}</span>
+              </button>
+            )}
 
             <Link to="/store" className="btn brand-gradient text-black font-bold hover:opacity-90 inline-flex items-center gap-1.5 shrink-0 shadow-lg shadow-accent/20">
               <ShoppingBag className="w-3.5 h-3.5" /> <span>Store</span>

@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import "./index.css";
 import Layout from "./components/Layout";
+import { WalletProvider } from "./lib/wallet";
 import Screener from "./pages/Screener";
 
 // Heavy / less-frequent routes are code-split so the Discovery page loads fast.
@@ -26,6 +27,7 @@ function PageFallback() {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
+    <WalletProvider>
     <BrowserRouter basename="/OGDEX">
       <Routes>
         <Route path="/" element={<Layout />}>
@@ -45,5 +47,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         </Route>
       </Routes>
     </BrowserRouter>
+    </WalletProvider>
   </React.StrictMode>
 );

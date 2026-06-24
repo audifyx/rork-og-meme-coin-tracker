@@ -23,13 +23,14 @@ import screener from "./ogdex/_routes/screener.js";
 import signals from "./ogdex/_routes/signals.js";
 import search from "./ogdex/_routes/search.js";
 import token from "./ogdex/_routes/token.js";
+import trade from "./ogdex/_routes/trade.js";
 import track from "./ogdex/_routes/track.js";
 import wallet from "./ogdex/_routes/wallet.js";
 import rpc from "./ogdex/_routes/rpc.js";
 
 const ROUTES = {
   admin, boosts, chart, config, kols, launch, launches,
-  listings, report, screener, signals, search, token, track, wallet, rpc,
+  listings, report, screener, signals, search, token, trade, track, wallet, rpc,
 };
 
 export default async function handler(req, res) {

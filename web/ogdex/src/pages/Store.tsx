@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Rocket, Zap, ArrowRight, ShoppingBag, Tag } from "lucide-react";
+import { Rocket, Zap, ArrowRight, ShoppingBag, Tag, Gift, Sparkles } from "lucide-react";
 
 // First 25 listing slots discount (35% off)
 const TOTAL_DISCOUNT_SLOTS = 25;
@@ -29,6 +29,34 @@ export default function Store() {
         <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-500/10 border border-yellow-500/25 text-yellow-400 text-sm font-semibold">
           <Tag className="w-3.5 h-3.5" />
           {DISCOUNT_PCT}% off listings for the first {TOTAL_DISCOUNT_SLOTS} slots — limited availability
+        </div>
+      </div>
+
+      {/* Free spotlight banner */}
+      <div className="mb-8 overflow-hidden rounded-2xl border border-accent/30 ring-brand">
+        <div className="relative bg-gradient-to-br from-accent2/15 via-panel to-accent/12 p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-accent/30 bg-accent/10 text-accent">
+              <Gift className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-extrabold tracking-tight sm:text-lg">Got a real one? We'll feature it <span className="text-brand-gradient">free</span>.</h2>
+                <span className="pill bg-accent/15 text-accent text-[10px] inline-flex items-center gap-1"><Sparkles className="h-3 w-3" /> 2 days free</span>
+              </div>
+              <p className="mt-1.5 text-sm text-muted leading-relaxed">
+                If we think your project is genuinely good — something we'd ape into ourselves — we'll <span className="text-white font-semibold">list it and boost it free for 2 days</span>. No payment, no catch. Drop it in our DMs and make your case.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a href="https://t.me/ogscanner" target="_blank" rel="noreferrer" className="btn bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 inline-flex items-center gap-1.5 text-sm font-semibold">
+                  Pitch us on Telegram <ArrowRight className="h-3.5 w-3.5" />
+                </a>
+                <a href="https://x.com/ogscanbackup" target="_blank" rel="noreferrer" className="btn bg-white/5 border border-white/10 text-white hover:bg-white/10 inline-flex items-center gap-1.5 text-sm font-semibold">
+                  DM on X
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -12,6 +12,7 @@ import KolBadge from "../components/KolBadge";
 import KolWhaleActivity from "../components/KolWhaleActivity";
 import { getKolDirectory, KolDirEntry } from "../lib/kol";
 import PriceChart from "../components/PriceChart";
+import TradePanel from "../components/TradePanel";
 import PredictiveIntel from "../components/PredictiveIntel";
 import CapitalFlow from "../components/CapitalFlow";
 import {
@@ -109,8 +110,15 @@ export default function TokenDetail() {
         </div>
       </div>
 
-      {/* Price chart */}
-      <div className="mb-4"><PriceChart mint={mint} symbol={symbol} chain={(meta.chain || "solana")} /></div>
+      {/* Price chart + non-custodial trade panel */}
+      <div className="mb-4 grid gap-4 lg:grid-cols-3">
+        <div className={(meta.chain || "solana") === "solana" ? "lg:col-span-2" : "lg:col-span-3"}>
+          <PriceChart mint={mint} symbol={symbol} chain={(meta.chain || "solana")} />
+        </div>
+        {(meta.chain || "solana") === "solana" && (
+          <div className="lg:col-span-1"><TradePanel mint={mint} symbol={symbol} /></div>
+        )}
+      </div>
 
       {/* Key metrics */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
