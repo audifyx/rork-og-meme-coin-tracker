@@ -111,14 +111,11 @@ export default function FeaturedBanner() {
                 className="group relative w-52 h-28 shrink-0 rounded-xl overflow-hidden border border-line hover:border-yellow-500/40 transition-all hover:scale-[1.02]"
               >
                 {/* Background: if banner exists use it, else blow up the token logo blurred to fill */}
-                {(f.banner_url || f.logo_url) ? (
+                {f.banner_url ? (
                   <>
                     <img
-                      src={f.banner_url || f.logo_url!}
+                      src={f.banner_url}
                       className="absolute inset-0 w-full h-full object-cover"
-                      style={f.banner_url
-                        ? {}
-                        : { objectFit: "contain", background: "var(--color-panel2)" }}
                     />
                     <div
                       className="absolute inset-0"
@@ -126,7 +123,7 @@ export default function FeaturedBanner() {
                     />
                   </>
                 ) : (
-                  <div className="absolute inset-0 bg-panel2" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-panel2 to-panel" />
                 )}
 
                 {/* Token logo circle — sits on top of background */}
