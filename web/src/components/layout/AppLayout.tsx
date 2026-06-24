@@ -55,6 +55,26 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   const { customWallpaper, themeGradient } = useTheme();
   return (
     <div className="min-h-screen bg-background text-foreground flex relative">
+      {/* Premium ambient backdrop — subtle brand glows + grid, behind everything */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          background:
+            "radial-gradient(900px 520px at 12% -8%, hsl(var(--og-lime)/0.08), transparent 60%)," +
+            "radial-gradient(820px 520px at 100% 0%, hsl(var(--og-cyan)/0.07), transparent 58%)," +
+            "radial-gradient(760px 700px at 50% 116%, hsl(var(--og-gold)/0.05), transparent 60%)",
+        }}
+      />
+      <div
+        className="pointer-events-none fixed inset-0 z-0 opacity-[0.35]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+          maskImage: "radial-gradient(circle at 50% 22%, #000, transparent 80%)",
+          WebkitMaskImage: "radial-gradient(circle at 50% 22%, #000, transparent 80%)",
+        }}
+      />
       {/* Theme gradient layer — subtle ambient glow from active theme */}
       {themeGradient && (
         <div
