@@ -75,7 +75,7 @@ async function pumpGraduating() {
         priceUsd: mcap && total ? mcap / total : null, mcap: mcap || null, liq: null,
         bondingPct: pct, ch24h: null, ageH: t.created_timestamp ? (now - t.created_timestamp) / 3.6e6 : null,
       };
-      if (!complete && pct >= 80 && mcap > 0 && mcap <= 2_000_000) {
+      if (!complete && pct >= 80 && mcap > 0 && mcap <= 40_000) {
         sigs.push({ ...base, type: "graduating", label: "Graduating Soon", strength: pct,
           metric: `${pct}% to migration`, tone: "lime" });
       }

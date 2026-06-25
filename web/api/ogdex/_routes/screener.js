@@ -219,7 +219,7 @@ export default async function handler(req, res) {
           // ~graduation cap (mislabeled/migrated coins show huge mcap with 0 reserves)
           .filter(c => !c.complete
             && ((Number(c.real_sol_reserves) || 0) > 0 || (Number(c.real_quote_reserves) || 0) > 0)
-            && (c.usd_market_cap || 0) >= 2000 && (c.usd_market_cap || 0) <= 90000)
+            && (c.usd_market_cap || 0) >= 1500 && (c.usd_market_cap || 0) <= 40000)
           .map(normPump)
           .filter(Boolean)
           .filter(r => (r.bondingPct ?? 0) > 0 && (r.bondingPct ?? 0) < 100)
