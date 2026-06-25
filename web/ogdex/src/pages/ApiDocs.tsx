@@ -18,6 +18,7 @@ const ENDPOINTS = [
   { m: "GET", path: "/ath?mint=<MINT>", desc: "True all-time high — ATH price, ATH market cap, date, % from ATH." },
   { m: "GET", path: "/chart?mint=<MINT>", desc: "OHLC candles for charting." },
   { m: "GET", path: "/wallet?address=<ADDR>", desc: "Wallet portfolio: SOL + SPL holdings, USD values, realized + unrealized PnL, win rate." },
+  { m: "GET", path: "/leaderboard", desc: "Trader PnL leaderboard — tracked KOL wallets ranked by realized PnL + win rate." },
   { m: "GET", path: "/kols", desc: "Tracked KOL / smart-money directory. Add ?feed=1 for activity, ?token=<MINT> to filter." },
   { m: "GET", path: "/search?q=<QUERY>", desc: "Search tokens by name, ticker, or mint." },
   { m: "GET", path: "/listings?featured=1", desc: "Featured / boosted listings from the Store." },

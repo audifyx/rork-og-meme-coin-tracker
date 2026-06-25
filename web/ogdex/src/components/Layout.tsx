@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
-import { Search, Zap, ShoppingBag, Wallet, Star, ChevronDown, Coins, Radio, Send, Activity, Wallet2, LogOut } from "lucide-react";
+import { Search, Zap, ShoppingBag, Wallet, Star, ChevronDown, Coins, Radio, Send, Activity, Wallet2, LogOut, Trophy } from "lucide-react";
 import { track, getWatchlist, short } from "../lib/api";
 import { useWallet } from "../lib/wallet";
 import LiveStats from "./LiveStats";
@@ -72,6 +72,7 @@ export default function Layout() {
               {navItem("/pulse", loc.pathname.startsWith("/pulse"), Activity, "Pulse")}
               {navItem("/wallet", loc.pathname.startsWith("/wallet"), Wallet, "Portfolio")}
               {navItem("/kol", loc.pathname.startsWith("/kol"), Radio, "KOL")}
+              {navItem("/leaderboard", loc.pathname.startsWith("/leaderboard"), Trophy, "Leaders")}
             </nav>
 
             <form onSubmit={go} className="order-last w-full md:order-none md:flex-1 md:max-w-xl relative">
@@ -169,6 +170,7 @@ export default function Layout() {
                 <Link to="/" className="block text-muted hover:text-accent">Discovery</Link>
                 <Link to="/wallet" className="block text-muted hover:text-accent">Portfolio</Link>
                 <Link to="/kol" className="block text-muted hover:text-accent">KOL Scanner</Link>
+                <Link to="/leaderboard" className="block text-muted hover:text-accent">Trader Leaderboard</Link>
                 <Link to="/store" className="block text-muted hover:text-accent">Store — List &amp; Boost</Link>
                 <Link to="/alerts" className="block text-muted hover:text-accent">Smart Alerts</Link>
                 <Link to="/api" className="block text-muted hover:text-accent">Public API</Link>

@@ -36,6 +36,7 @@ function spec() {
       "/forensics": G("Dev & origin forensics: creator wallet, dev sold?, first buyer (wallet + tx), DexScreener-paid status, concentration, safety.", [mintParam, { name: "first", in: "query", schema: { type: "string", enum: ["0","1"] }, required: false, description: "Set 0 to skip the first-buyer trace." }]),
       "/ath": G("True all-time high (CoinGecko + GeckoTerminal): ATH price, ATH market cap, date, and % from ATH.", [mintParam]),
       "/chart": G("OHLC candles for charting.", [mintParam, { name: "interval", in: "query", schema: { type: "string", default: "1h" }, required: false }, { name: "limit", in: "query", schema: { type: "integer", default: 200 }, required: false }]),
+      "/leaderboard": G("Trader PnL leaderboard: tracked KOL / smart-money wallets ranked by realized PnL + win rate (computed from recent swaps, cached ~1h)."),
       "/wallet": G("Wallet portfolio: SOL + SPL holdings, USD values, realized + unrealized PnL, win rate.", [{ name: "address", in: "query", required: true, schema: { type: "string" } }]),
       "/search": G("Search tokens by name, ticker, or mint.", [{ name: "q", in: "query", required: true, schema: { type: "string" } }]),
       "/kols": G("Tracked KOL / smart-money directory, profiles, and activity feed.", [

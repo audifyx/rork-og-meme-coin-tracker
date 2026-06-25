@@ -224,3 +224,9 @@ export const getXray = (mint: string) => j<XrayReport>(`/api/ogdex/xray?mint=${m
 export interface WalletTrade { txHash: string | null; side: "buy" | "sell"; mint: string; tokenAmount: number; solAmount: number; time: number; usd: number | null; name: string | null; symbol: string | null; image: string | null; }
 export interface WalletTrades { ok: boolean; address: string; solPrice: number; count: number; trades: WalletTrade[]; error?: string; }
 export const getSwaps = (address: string, limit = 25) => j<WalletTrades>(`/api/ogdex/swaps?address=${address}&limit=${limit}`);
+
+
+/* ---- Trader PnL leaderboard (computed over tracked KOL wallets) ---- */
+export interface LeaderboardEntry { rank: number; address: string; name?: string | null; twitter?: string | null; twitterUrl?: string | null; avatar?: string | null; tags?: string[]; realizedPnlUsd: number; realizedPnlSol: number; winRate: number | null; closedTrades: number; openPositions: number; totalSwaps: number; }
+export interface Leaderboard { ok: boolean; at?: number; count?: number; entries: LeaderboardEntry[]; cached?: boolean; error?: string; }
+export const getLeaderboard = () => j<Leaderboard>(`/api/ogdex/leaderboard`);

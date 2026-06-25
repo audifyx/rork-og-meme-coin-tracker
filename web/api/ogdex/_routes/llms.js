@@ -34,6 +34,7 @@ Brand: https://ogscan.fun  ·  Token page pattern: https://ogscan.fun/OGDEX/toke
 
 ## Wallets
 - GET ${BASE}/wallet?address={address} — portfolio: SOL + SPL holdings, USD values, realized + unrealized PnL, win rate.
+- GET ${BASE}/leaderboard — trader PnL leaderboard (tracked KOL wallets ranked by realized PnL + win rate, cached ~1h).
 - GET ${BASE}/swaps?address={address}&limit=25 — recent buy/sell swaps with token metadata + USD (for trade feeds / mirroring UIs).
 - GET ${BASE}/balance?owner={address}&mint={mint} — SOL + a single token balance.
 
