@@ -17,6 +17,7 @@ import PriceChart from "../components/PriceChart";
 import TradePanel from "../components/TradePanel";
 import TrustPanel from "../components/TrustPanel";
 import PredictiveIntel from "../components/PredictiveIntel";
+import ShareButton from "../components/ShareButton";
 import CoinChat from "../components/CoinChat";
 import DevOrigin from "../components/DevOrigin";
 import Collapsible from "../components/Collapsible";
@@ -120,6 +121,7 @@ export default function TokenDetail() {
             <a href={`/api/ogdex/report?mint=${mint}`} target="_blank" rel="noreferrer" className="btn bg-accent text-black font-semibold inline-flex items-center gap-1.5"><FileDown className="w-3.5 h-3.5" /> Download Report</a>
             <a href="#trade" className="btn bg-accent/15 text-accent inline-flex items-center gap-1.5">Buy / Sell</a>
             <Link to={`/alerts?mint=${mint}`} className="btn bg-panel2 text-muted hover:text-white inline-flex items-center gap-1.5">Set Alert</Link>
+            <ShareButton mint={mint} symbol={symbol} score={d.score?.total ?? meta.organicScore} mcap={t.mcap ?? meta.mcap} verdict={d.verdict} />
             <a href={`https://solscan.io/token/${mint}`} target="_blank" rel="noreferrer" className="btn bg-panel2 text-muted hover:text-white inline-flex items-center gap-1.5">Solscan <ExternalLink className="w-3 h-3" /></a>
             <a href={`https://dexscreener.com/solana/${mint}`} target="_blank" rel="noreferrer" className="btn bg-panel2 text-muted hover:text-white inline-flex items-center gap-1.5">DexScreener <ExternalLink className="w-3 h-3" /></a>
             {meta.socials?.twitter && <a href={meta.socials.twitter} target="_blank" rel="noreferrer" className="btn bg-panel2 text-muted hover:text-white">X</a>}

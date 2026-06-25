@@ -5,9 +5,10 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 // makes browsers show the HTML as code — so we proxy it first-party here.)
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const mint = String(req.query.mint || "").trim();
-  const dest = `https://www.ogscan.fun/t/${encodeURIComponent(mint)}`;
+  const app = String(req.query.app || "");
+  const dest = app === "ogdex" ? `https://www.ogscan.fun/OGDEX/token/${encodeURIComponent(mint)}` : `https://www.ogscan.fun/t/${encodeURIComponent(mint)}`;
   try {
-    const r = await fetch(`https://ffjipnkhcebjvttliptb.supabase.co/functions/v1/token-og?mint=${encodeURIComponent(mint)}`);
+    const r = await fetch(`https://ffjipnkhcebjvttliptb.supabase.co/functions/v1/token-og?mint=${encodeURIComponent(mint)}${app ? `&app=${encodeURIComponent(app)}` : ""}`);
     const html = await r.text();
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.setHeader("Cache-Control", "public, max-age=300");

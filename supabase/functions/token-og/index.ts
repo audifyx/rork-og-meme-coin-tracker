@@ -16,8 +16,10 @@ const fmtUsd = (n: any) => {
 };
 
 Deno.serve(async (req) => {
-  const mint = new URL(req.url).searchParams.get("mint") || "";
-  const dest = `${SITE}/t/${encodeURIComponent(mint)}`;
+  const _u = new URL(req.url);
+  const mint = _u.searchParams.get("mint") || "";
+  const app = _u.searchParams.get("app") || "";
+  const dest = app === "ogdex" ? `${SITE}/OGDEX/token/${encodeURIComponent(mint)}` : `${SITE}/t/${encodeURIComponent(mint)}`;
   let title = "Token Scan — OG Scan";
   let desc = "Live on-chain intelligence: rug score, holders, dev DNA and market data.";
   let image = `${SITE}/og-default.png`;
@@ -32,7 +34,7 @@ Deno.serve(async (req) => {
     if (j?.ok && j.token) {
       const t = j.token;
       const score = j.score?.total ?? "?";
-      const sym = t.symbol ? `$${t.symbol}` : (t.name || "Token");
+      const sym = t.symbol ? `$${String(t.symbol).replace(/^\$/, "")}` : (t.name || "Token");
       title = `${esc(sym)} · OG Score ${score}/100 — OG Scan`;
       desc = `${esc(j.verdict || "")} · MC ${fmtUsd(t.mcap)} · Liq ${fmtUsd(t.liquidity)} · ${Number(t.holderCount || 0).toLocaleString()} holders. Full live report on OG Scan.`;
       image = t.banner || t.openGraph || t.image || image;
