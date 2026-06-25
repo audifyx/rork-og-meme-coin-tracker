@@ -198,3 +198,22 @@ export const getBalance = (owner: string, mint: string) =>
 /* ---- Tradeability / honeypot + tax check (Jupiter round-trip) ---- */
 export interface SafetyCheck { ok: boolean; mint?: string; canBuy: boolean; canSell: boolean; roundTripLossPct: number | null; buyImpactPct: number | null; sellImpactPct: number | null; verdict: string; tone: "good" | "warn" | "bad"; note?: string; error?: string; }
 export const getSafety = (mint: string) => j<SafetyCheck>(`/api/ogdex/safety?mint=${mint}`);
+
+/* ---- Risk X-ray: snipers / same-block bundlers + holder & safety verdict ---- */
+export interface XrayFlag { level: "red" | "yellow" | "green"; text: string; }
+export interface XraySniper { wallet: string; solSpent: number; secondsAfterLaunch: number | null; txHash: string | null; bundled: boolean; }
+export interface XrayBundle { slot: number; size: number; wallets: string[]; }
+export interface XrayEarlyBuyer { rank: number; wallet: string; tokenAmount: number; solSpent: number; txHash: string | null; secondsAfterLaunch: number | null; sniper: boolean; bundled: boolean; }
+export interface XrayReport {
+  ok: boolean; mint: string;
+  verdict: string; tone: "red" | "yellow" | "green"; score: number; summary: string;
+  flags: XrayFlag[];
+  snipers: { pct: number | null; count: number | null; wallets: XraySniper[] };
+  bundles: { pct: number | null; count: number | null; clusters: XrayBundle[] };
+  earlyBuyers: XrayEarlyBuyer[];
+  concentration: { top10Pct: number | null; whales: number; totalHolders: number | null };
+  dev: { wallet: string; pct: number | null; sold: boolean | null; serial: boolean; tokensCreated: number | null } | null;
+  safety: { mintRenounced: boolean | null; freezeRenounced: boolean | null; lpLockedPct: number | null; rugged: boolean | null; riskScore: number | null };
+  traced: boolean; note: string | null; error?: string;
+}
+export const getXray = (mint: string) => j<XrayReport>(`/api/ogdex/xray?mint=${mint}`);

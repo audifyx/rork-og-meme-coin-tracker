@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getToken, getForensics, Forensics as ForensicsData, getAth, AthData, track, TokenDetailData, fmtUsd, compact, fmtNum, fmtPct, short } from "../lib/api";
+import { getToken, getForensics, Forensics as ForensicsData, getXray, XrayReport, getAth, AthData, track, TokenDetailData, fmtUsd, compact, fmtNum, fmtPct, short } from "../lib/api";
 import { timeAgo } from "../lib/format";
 import TokenLogo from "../components/TokenLogo";
 import Change from "../components/Change";
@@ -20,6 +20,7 @@ import PredictiveIntel from "../components/PredictiveIntel";
 import ShareButton from "../components/ShareButton";
 import CoinChat from "../components/CoinChat";
 import DevOrigin from "../components/DevOrigin";
+import RiskXray from "../components/RiskXray";
 import Collapsible from "../components/Collapsible";
 import ErrorBoundary from "../components/ErrorBoundary";
 import CapitalFlow from "../components/CapitalFlow";
@@ -33,9 +34,11 @@ export default function TokenDetail() {
   const [d, setD] = useState<TokenDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [tab, setTab] = useState<"overview" | "chat" | "predictive" | "smartmoney" | "kolwhale" | "holders" | "trades" | "forensics">("overview");
+  const [tab, setTab] = useState<"overview" | "chat" | "predictive" | "smartmoney" | "kolwhale" | "holders" | "trades" | "xray" | "forensics">("overview");
   const [forensics, setForensics] = useState<ForensicsData | null>(null);
   const [forLoading, setForLoading] = useState(true);
+  const [xray, setXray] = useState<XrayReport | null>(null);
+  const [xrayLoading, setXrayLoading] = useState(false);
   const [ath, setAth] = useState<AthData | null>(null);
   const [dir, setDir] = useState<Record<string, KolDirEntry>>({});
 
@@ -43,6 +46,13 @@ export default function TokenDetail() {
 
   useEffect(() => { getKolDirectory().then(setDir).catch(() => {}); }, []);
 
+  useEffect(() => {
+    if (tab !== "xray" || xray || xrayLoading) return;
+    let on = true; setXrayLoading(true);
+    getXray(mint).then((x) => { if (on) { setXray(x); setXrayLoading(false); } }).catch(() => { if (on) setXrayLoading(false); });
+    return () => { on = false; };
+  }, [tab, mint, xray, xrayLoading]);
+  useEffect(() => { setXray(null); }, [mint]);
   useEffect(() => { let on = true; setForLoading(true); setForensics(null); getForensics(mint).then((x) => { if (on) { setForensics(x); setForLoading(false); } }).catch(() => { if (on) setForLoading(false); }); return () => { on = false; }; }, [mint]);
 
   useEffect(() => { let on = true; setAth(null); getAth(mint).then((x) => { if (on && x?.ok) setAth(x); }).catch(() => {}); return () => { on = false; }; }, [mint]);
@@ -217,7 +227,7 @@ export default function TokenDetail() {
       {/* Tabs — centered slider that scrolls instead of breaking the frame */}
       <div className="mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
         <div className="flex gap-1 bg-panel border border-line rounded-xl p-1 w-max max-w-full mx-auto">
-          {[["overview", "Overview"], ["chat", "✨ Ask AI"], ["predictive", "Predictive"], ["smartmoney", "Smart Money"], ["kolwhale", "KOL & Whale"], ["holders", `Holders ${holders.length ? `(${holders.length})` : ""}`], ["trades", `Live Trades ${trades.length ? `(${trades.length})` : ""}`], ["forensics", "Forensics"]].map(([id, label]) => (
+          {[["overview", "Overview"], ["chat", "✨ Ask AI"], ["predictive", "Predictive"], ["smartmoney", "Smart Money"], ["kolwhale", "KOL & Whale"], ["holders", `Holders ${holders.length ? `(${holders.length})` : ""}`], ["trades", `Live Trades ${trades.length ? `(${trades.length})` : ""}`], ["xray", "🩻 Risk X-ray"], ["forensics", "Forensics"]].map(([id, label]) => (
             <button key={id} onClick={() => setTab(id as any)} className={`btn shrink-0 whitespace-nowrap ${tab === id ? "bg-accent/15 text-accent" : "text-muted hover:text-white"}`}>{label}</button>
           ))}
         </div>
@@ -231,6 +241,7 @@ export default function TokenDetail() {
       {tab === "kolwhale" && <KolWhaleActivity d={d} dir={dir} />}
       {tab === "holders" && <><HolderIntel holders={holders} safety={safety} dir={dir} /><HoldersTable holders={holders} price={price} dir={dir} /></>}
       {tab === "trades" && <TradesTable trades={trades} mint={mint} dir={dir} onRefresh={() => getToken(mint).then(setD)} />}
+      {tab === "xray" && <RiskXray x={xray} loading={xrayLoading} />}
       {tab === "forensics" && <><DevOrigin f={forensics} loading={forLoading} /><Forensics d={d} meta={meta} safety={safety} /></>}
       </ErrorBoundary>
     </div>

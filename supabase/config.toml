@@ -106,3 +106,6 @@ verify_jwt = false
 
 [functions.wallet-og]
 verify_jwt = false
+
+[functions.ogdex-xray]
+verify_jwt = false
