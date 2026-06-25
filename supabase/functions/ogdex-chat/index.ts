@@ -80,6 +80,7 @@ function systemPrompt(sym: string, name: string, mint: string, ctx: any, web: We
     ``,
     `For market narrative, news, sentiment and "what are people saying / why is it trending", use the LIVE WEB SEARCH RESULTS and cite them inline like [1], [2].`,
     `Be concise and skimmable: short paragraphs or tight bullets. No financial advice; flag risks honestly. Round large numbers sensibly (e.g. $1.2M, 12.3%).`,
+    `When you reference a wallet or a transaction, include its clickable Solscan link so the user does not have to search: wallets as https://solscan.io/account/<address> and transactions as https://solscan.io/tx/<signature>. Use the exact addresses/signatures from the data.`,
     ``,
     `=== LIVE ON-CHAIN DATA (JSON) ===`,
     JSON.stringify(ctx ?? {}, null, 0),

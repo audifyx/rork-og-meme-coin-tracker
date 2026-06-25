@@ -11,6 +11,18 @@ const HELIUS_API_KEY = Deno.env.get("HELIUS_API_KEY") || "";
 const CLIENT_ID = Deno.env.get("BITQUERY_CLIENT_ID") || "";
 const CLIENT_SECRET = Deno.env.get("BITQUERY_CLIENT_SECRET") || "";
 const RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+const SRK = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const KV_BUCKET = "ogdex-kv";
+async function kvGet(path: string) {
+  try { const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${KV_BUCKET}/${path}`, { headers: { apikey: SRK, Authorization: `Bearer ${SRK}` } }); return r.ok ? await r.json() : null; } catch { return null; }
+}
+async function kvPut(path: string, obj: unknown) {
+  try {
+    await fetch(`${SUPABASE_URL}/storage/v1/bucket`, { method: "POST", headers: { apikey: SRK, Authorization: `Bearer ${SRK}`, "Content-Type": "application/json" }, body: JSON.stringify({ id: KV_BUCKET, name: KV_BUCKET, public: false }) }).catch(() => {});
+    await fetch(`${SUPABASE_URL}/storage/v1/object/${KV_BUCKET}/${path}`, { method: "POST", headers: { apikey: SRK, Authorization: `Bearer ${SRK}`, "Content-Type": "application/json", "x-upsert": "true" }, body: JSON.stringify(obj) });
+  } catch { /* best effort */ }
+}
 const EAP = "https://streaming.bitquery.io/eap";
 const SOLMINTS = new Set(["So11111111111111111111111111111111111111112", "11111111111111111111111111111111"]);
 
@@ -112,6 +124,13 @@ serve(async (req) => {
     if (!mint) return json({ ok: false, error: "mint required" }, 400);
     const creatorHint = body.creator || null;
 
+    // First buy is immutable — serve from cache when available.
+    const cacheKey = `firstbuyer/${mint}.json`;
+    if (!body.debug && !body.refresh) {
+      const cached = await kvGet(cacheKey);
+      if (cached && cached.firstBuyer?.traced) return json({ ok: true, mint, firstBuyer: cached.firstBuyer, cached: true });
+    }
+
     let fb = await bitqueryFirst(mint);
     if (!fb) fb = await heliusFirst(mint);
     if (!fb) {
@@ -128,6 +147,7 @@ serve(async (req) => {
     }
     if (fb && creatorHint && fb.wallet) (fb as any).isDev = fb.wallet === creatorHint || (fb as any).isDev || false;
     if (!fb) fb = { traced: false, note: "Could not resolve first buyer." };
+    if (fb.traced) kvPut(cacheKey, { firstBuyer: fb, at: Date.now() });
 
     return json({ ok: true, mint, firstBuyer: fb, _debug: body.debug ? _dbg : undefined });
   } catch (e) {
