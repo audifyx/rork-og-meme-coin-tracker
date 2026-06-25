@@ -1,4 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { Search, Zap, ShoppingBag, Wallet, Star, ChevronDown, Coins, Radio, Send, Activity, Wallet2, LogOut } from "lucide-react";
 import { track, getWatchlist, short } from "../lib/api";
@@ -30,6 +31,8 @@ export default function Layout() {
   const loc = useLocation();
   const { address, connecting, connect, disconnect } = useWallet();
   const ref = useRef<HTMLDivElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
+  const [watchPos, setWatchPos] = useState<{ top: number; right: number } | null>(null);
   useEffect(() => { track("page_view", { path: loc.pathname }); setWatch(getWatchlist()); setWatchOpen(false); }, [loc.pathname]);
   // Throttled, fire-and-forget alert evaluation — keeps alerts ticking from real
   // traffic without a paid cron (external cron can also hit /api/ogdex/alerts-run).
@@ -40,7 +43,7 @@ export default function Layout() {
     } catch { /* noop */ }
   }, []);
   useEffect(() => {
-    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setWatchOpen(false); };
+    const h = (e: MouseEvent) => { const t = e.target as Node; if (ref.current && !ref.current.contains(t) && (!dropRef.current || !dropRef.current.contains(t))) setWatchOpen(false); };
     document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h);
   }, []);
 
@@ -86,16 +89,17 @@ export default function Layout() {
 
             {/* Watching dropdown */}
             <div className="relative ml-auto md:ml-0" ref={ref}>
-              <button onClick={() => { setWatch(getWatchlist()); setWatchOpen((o) => !o); }} className="btn bg-white/5 border border-white/10 text-muted hover:text-white inline-flex items-center gap-1.5 shrink-0">
+              <button onClick={(e) => { setWatch(getWatchlist()); const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setWatchPos({ top: r.bottom + 8, right: Math.max(8, window.innerWidth - r.right) }); setWatchOpen((o) => !o); }} className="btn bg-white/5 border border-white/10 text-muted hover:text-white inline-flex items-center gap-1.5 shrink-0">
                 <Star className="w-3.5 h-3.5" /><span className="hidden sm:inline">Watching</span>{watch.length > 0 && <span className="pill bg-accent/15 text-accent text-[10px] !px-1.5 !py-0">{watch.length}</span>}<ChevronDown className="w-3 h-3" />
               </button>
-              {watchOpen && (
-                <div className="absolute right-0 mt-2 w-64 rounded-xl border border-white/10 p-1.5 z-50 shadow-2xl" style={{ backgroundColor: "#0b0b10" }}>
+              {watchOpen && watchPos && createPortal(
+                <div ref={dropRef} style={{ position: "fixed", top: watchPos.top, right: watchPos.right, zIndex: 1000, backgroundColor: "#0b0b10" }} className="w-64 rounded-xl border border-white/10 p-1.5 shadow-2xl">
                   <div className="text-[11px] uppercase tracking-wide text-muted px-2 py-1">Watched wallets</div>
                   {watch.length ? watch.map((w) => (
                     <Link key={w} to={`/wallet/${w}`} onClick={() => setWatchOpen(false)} className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-panel2 text-sm font-mono"><Wallet className="w-3.5 h-3.5 text-accent" /> {short(w)}</Link>
                   )) : <div className="px-2 py-3 text-xs text-muted">No watched wallets yet. Open any wallet and tap <span className="text-white">Watch</span>.</div>}
-                </div>
+                </div>,
+                document.body
               )}
             </div>
 
