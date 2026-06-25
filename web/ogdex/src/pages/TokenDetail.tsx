@@ -74,10 +74,6 @@ export default function TokenDetail() {
   const icon = t.icon || meta.icon || meta.image;
   const banner = meta.banner || meta.openGraph;
   const price = t.priceUsd ?? meta.priceUsd;
-  const mcapNow = t.mcap ?? meta.mcap ?? null;
-  const athPrice = d.athPrice ?? meta?.athPrice ?? null;
-  const athMcap = d.athMcap ?? meta?.athMcap ?? null;
-  const fromAthPct = (athMcap && mcapNow) ? ((mcapNow / athMcap) - 1) * 100 : (athPrice && price ? ((price / athPrice) - 1) * 100 : null);
   const verified = t.isVerified || meta.isVerifiedJup || d.flags?.isVerified;
   const holders: any[] = intel.holders || [];
   const trades: any[] = intel.trades || [];
@@ -111,12 +107,7 @@ export default function TokenDetail() {
                 <span>5m <Change v={t.change5m} /></span><span>1h <Change v={t.change1h} /></span>
                 <span>6h <Change v={t.change6h} /></span><span>24h <Change v={t.change24h ?? meta.priceChange24h} /></span>
               </div>
-              {athMcap != null && (
-                <div className="mt-1 text-[11px] text-muted flex gap-1.5 justify-end items-center">
-                  <span>ATH {fmtUsd(athMcap, { compact: true })}</span>
-                  {fromAthPct != null && <span className={fromAthPct >= -1 ? "text-up" : "text-down"}>({fromAthPct >= 0 ? "+" : ""}{fromAthPct.toFixed(0)}%)</span>}
-                </div>
-              )}
+
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-4 text-xs">
@@ -150,8 +141,8 @@ export default function TokenDetail() {
         <Stat label="Liquidity" value={t.liquidity != null ? "$" + compact(t.liquidity) : "—"} />
         <Stat label="24h Volume" value={t.volume != null ? "$" + compact(t.volume) : "—"} />
         <Stat label="Holders" value={fmtNum(meta.holderCount ?? t.holderCount ?? safety?.totalHolders)} />
-        <Stat label="ATH MCap" value={athMcap != null ? fmtUsd(athMcap, { compact: true }) : "—"} />
-        <Stat label="From ATH" value={fromAthPct != null ? (fromAthPct >= 0 ? "+" : "") + fromAthPct.toFixed(0) + "%" : "—"} good={fromAthPct != null ? fromAthPct >= -50 : undefined} />
+        <Stat label="FDV" value={fmtUsd(t.fdv ?? meta.fdv, { compact: true })} />
+        <Stat label="ATH" soon />
       </div>
 
       <div className="space-y-3 mb-4">
@@ -159,7 +150,7 @@ export default function TokenDetail() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <Stat label="Price" value={fmtUsd(price)} />
             <Stat label="FDV" value={fmtUsd(t.fdv ?? meta.fdv, { compact: true })} />
-            <Stat label="ATH Price" value={athPrice != null ? fmtUsd(athPrice) : "—"} />
+            <Stat label="All-Time High" soon />
             <Stat label="Organic Score" value={t.organicScore != null ? Math.round(t.organicScore) + "/100" : "—"} sub={meta.organicScoreLabel} />
             <Stat label="Token Age" value={meta.ageDays != null ? meta.ageDays + "d" : "—"} />
           </div>
@@ -287,8 +278,7 @@ function Overview({ d, t, meta, safety, trades }: any) {
         <Row label="Market cap" value={fmtUsd(t.mcap ?? meta.mcap, { compact: true })} />
         <Row label="FDV" value={fmtUsd(t.fdv ?? meta.fdv, { compact: true })} />
         <Row label="Liquidity" value={t.liquidity ? "$" + compact(t.liquidity) : "—"} />
-        <Row label="ATH market cap" value={(d.athMcap || meta?.athMcap) ? fmtUsd(d.athMcap || meta.athMcap, { compact: true }) : "—"} />
-        <Row label="ATH price" value={(d.athPrice || meta?.athPrice) ? fmtUsd(d.athPrice || meta.athPrice) : "—"} />
+        <Row label="All-time high" value={<span className="pill bg-panel2 text-muted text-[10px]">Coming soon</span>} />
         <Row label="Total supply" value={compact(t.totalSupply ?? meta.totalSupply)} />
         <Row label="Circulating" value={compact(t.circSupply ?? meta.circSupply)} />
         <Row label="Created" value={meta.createdAt ? new Date(meta.createdAt).toLocaleDateString() + (meta.ageDays != null ? ` (${meta.ageDays}d)` : "") : "—"} />
@@ -445,8 +435,8 @@ function Forensics({ d, meta, safety }: any) {
 }
 
 /* ---------- shared ---------- */
-function Stat({ label, value, sub, good }: { label: string; value: string; sub?: string; good?: boolean }) {
-  return <div className="card p-3"><div className="text-[11px] uppercase tracking-wide text-muted">{label}</div><div className={`text-base font-semibold mt-0.5 ${good === true ? "text-up" : good === false ? "text-down" : ""}`}>{value}</div>{sub && <div className="text-[10px] text-muted capitalize">{sub}</div>}</div>;
+function Stat({ label, value, sub, good, soon }: { label: string; value?: string; sub?: string; good?: boolean; soon?: boolean }) {
+  return <div className="card p-3"><div className="text-[11px] uppercase tracking-wide text-muted">{label}</div>{soon ? <div className="mt-1 inline-flex items-center gap-1 pill bg-accent/10 text-accent text-[10px]">Coming soon</div> : <div className={`text-base font-semibold mt-0.5 ${good === true ? "text-up" : good === false ? "text-down" : ""}`}>{value}</div>}{sub && !soon && <div className="text-[10px] text-muted capitalize">{sub}</div>}</div>;
 }
 function MiniScore({ label, value, invert }: { label: string; value?: number | null; invert?: boolean }) {
   const v = value ?? null;

@@ -3,29 +3,64 @@ import { askCoin, ChatMsg, ChatSource, Forensics, TokenDetailData } from "../lib
 import { Sparkles, Send, Loader2, ExternalLink, Bot } from "lucide-react";
 import TokenLogo from "./TokenLogo";
 
-// Build the compact on-chain context the coin AI reasons over.
+// Build the FULL on-chain context the coin AI reasons over — everything we pull
+// from every API (Jupiter, Birdeye, GeckoTerminal, DexScreener, Rugcheck, Helius)
+// so the AI can answer almost anything without saying "I don't have that".
 function buildContext(d: TokenDetailData, forensics: Forensics | null) {
   const t: any = d.token || {};
   const meta: any = d.meta || {};
   const intel: any = (d as any).intel || {};
   const safety: any = (d as any).safety || intel.safety || {};
+  const flags: any = (d as any).flags || {};
+  const score: any = (d as any).score || {};
+  const holders: any[] = intel.holders || [];
+  const trades: any[] = intel.trades || [];
+  const stats: any = t.stats || {};
   return {
-    symbol: t.symbol || meta.symbol, name: t.name || meta.name, mint: d.mint,
-    price: t.priceUsd ?? meta.priceUsd, marketCap: t.mcap ?? meta.mcap, fdv: t.fdv ?? meta.fdv,
-    liquidity: t.liquidity, volume24h: t.volume,
-    holders: meta.holderCount ?? t.holderCount ?? safety.totalHolders,
-    change: { "5m": t.change5m, "1h": t.change1h, "6h": t.change6h, "24h": t.change24h },
-    athMcap: (d as any).athMcap, athPrice: (d as any).athPrice,
-    ageDays: meta.ageDays ?? t.ageDays, createdAt: meta.createdAt ?? t.createdAt,
-    organicScore: t.organicScore, verified: t.isVerified, tags: t.tags || [],
-    audit: t.audit || {}, socials: meta.socials || {}, verdict: (d as any).verdict,
-    safety: {
-      mintRenounced: safety.mintAuthorityRenounced, freezeRenounced: safety.freezeAuthorityRenounced,
-      lpLockedPct: safety.lpLockedPct, rugged: safety.rugged, riskScore: safety.riskScore,
-      creator: safety.creator, creatorTokens: safety.creatorTokensCount,
+    identity: { symbol: t.symbol || meta.symbol, name: t.name || meta.name, mint: d.mint, chain: meta.chain || "solana", verified: t.isVerified, tags: t.tags || [], decimals: t.decimals },
+    market: {
+      priceUsd: t.priceUsd ?? meta.priceUsd, marketCap: t.mcap ?? meta.mcap, fdv: t.fdv ?? meta.fdv,
+      liquidity: t.liquidity, volume24h: t.volume, totalSupply: t.totalSupply ?? intel.totalSupply, circSupply: t.circSupply,
+      ath: "coming soon (all-time-high data not available yet)",
+      change: { "5m": t.change5m, "1h": t.change1h, "6h": t.change6h, "24h": t.change24h },
+      organicScore: t.organicScore, organicLabel: t.organicScoreLabel, verdict: (d as any).verdict, momentum: (d as any).momentumLabel,
     },
-    topHolders: (intel.holders || []).slice(0, 12).map((h: any) => ({ rank: h.rank, owner: h.owner, pct: h.pct, label: h.label })),
-    forensics: forensics || null,
+    microstructure: {
+      buyVolume24h: t.buyVolume ?? meta.buyVolume24h, sellVolume24h: t.sellVolume ?? meta.sellVolume24h,
+      numBuys24h: t.numBuys ?? meta.numBuys24h, numSells24h: t.numSells ?? meta.numSells24h,
+      numTraders24h: t.numTraders ?? meta.numTraders24h, netBuyers24h: t.netBuyers ?? meta.netBuyers24h,
+      holderChange24h: t.holderChange24h, liquidityChange24h: t.liquidityChange24h, volumeChange24h: t.volumeChange24h,
+      windows: stats,
+    },
+    holdersInfo: {
+      totalHolders: meta.holderCount ?? t.holderCount ?? safety.totalHolders,
+      shownTop: holders.length,
+      top10PctApprox: holders.length ? holders.slice(0, 10).reduce((a, h) => a + (h.pct || 0), 0) : null,
+      topHoldersPct: t.audit?.topHoldersPercentage,
+      whaleCount: intel.whaleCount ?? holders.filter((h) => h.label === "whale").length,
+      kolHolderCount: intel.kolHolderCount ?? 0,
+      kolHolders: intel.kolHolders || [],
+      top25: holders.slice(0, 25).map((h: any) => ({ rank: h.rank, owner: h.owner, pct: h.pct, label: h.label, kol: h.kol?.name || null, publicLabel: h.publicLabel?.name || null })),
+    },
+    recentTrades: trades.slice(0, 20).map((x: any) => ({ side: x.side, usd: x.volumeUsd, tokenAmount: x.tokenAmount, owner: x.owner, kol: x.kol?.name || null, dex: x.dex, time: x.time, txHash: x.txHash })),
+    pairs: ((d as any).pairs || []).map((p: any) => ({ dex: p.dex, liquidity: p.liquidity, volume24h: p.volume24h, change24h: p.change24h, buys: p.txnsBuys, sells: p.txnsSells })),
+    audit: t.audit || {},
+    security: {
+      mintRenounced: safety.mintAuthorityRenounced ?? flags.mintAuthorityDisabled,
+      freezeRenounced: safety.freezeAuthorityRenounced ?? flags.freezeAuthorityDisabled,
+      lpLockedPct: safety.lpLockedPct, lpPulled: flags.lpPulled, rugged: safety.rugged, riskScore: safety.riskScore,
+      risks: (safety.risks || []).slice(0, 8), forensicScores: score.signals || null,
+    },
+    origin: {
+      createdAt: meta.createdAt ?? t.createdAt, ageDays: meta.ageDays ?? t.ageDays,
+      launchpad: forensics?.launchpad ?? safety.launchpad, isPumpFun: forensics?.isPumpFun ?? meta.isPumpFun,
+      bondingComplete: forensics?.bondingComplete ?? null,
+    },
+    forensics: forensics ? {
+      dev: forensics.dev, firstBuyer: forensics.firstBuyer, dexPaid: forensics.dexPaid,
+      concentration: forensics.concentration, safetyFlags: forensics.safetyFlags,
+    } : null,
+    socials: meta.socials || {},
   };
 }
 
