@@ -26,9 +26,12 @@ async function gtPools(kind, network = "solana", pages = 1) {
   const out = [];
   for (let i = 1; i <= pages; i++) {
     try {
-      const r = await fetch(`${GT}/networks/${network}/${kind}?page=${i}&include=base_token`, { headers: GT_HDR });
-      if (!r.ok) continue;
-      const j = await r.json();
+      let j = null;
+      for (let attempt = 0; attempt < 2 && !j; attempt++) {
+        try { const r = await fetch(`${GT}/networks/${network}/${kind}?page=${i}&include=base_token`, { headers: GT_HDR }); if (r.ok) j = await r.json(); else await new Promise((res) => setTimeout(res, 500)); }
+        catch { await new Promise((res) => setTimeout(res, 500)); }
+      }
+      if (!j) continue;
       const tokenMap = {};
       for (const inc of (j.included || [])) if (inc.type === "token") tokenMap[inc.id] = inc.attributes;
       for (const item of (j.data || [])) {
@@ -167,7 +170,7 @@ function computeSignals(pools) {
 }
 
 export default async function handler(req, res) {
-  cache(res, 15, 45);
+  cache(res, 30, 120);
   try {
     const [trending, fresh, pumps] = await Promise.all([
       gtPools("trending_pools", "solana", 2),

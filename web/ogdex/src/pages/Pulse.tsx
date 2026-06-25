@@ -93,15 +93,26 @@ export default function Pulse() {
   const [updated, setUpdated] = useState<string>("");
   const timer = useRef<number | null>(null);
 
-  const load = async () => {
+  const load = async (attempt = 0) => {
     try {
       const r = await fetch("/api/ogdex/signals");
-      const d = await r.json();
-      setSignals(d.signals || []);
-      setCounts(d.counts || {});
-      setUpdated(new Date().toLocaleTimeString());
-    } catch { /* keep prior */ }
-    finally { setLoading(false); }
+      const d = await r.json().catch(() => ({} as any));
+      const sig = d.signals || [];
+      const errored = !r.ok || d.ok === false;
+      if (sig.length || (!errored && attempt >= 2)) {
+        setSignals(sig);
+        setCounts(d.counts || {});
+        setUpdated(new Date().toLocaleTimeString());
+        setLoading(false);
+        return;
+      }
+      // transient empty / rate-limit: retry a few times, keep prior signals on screen
+      if (attempt < 3) { window.setTimeout(() => load(attempt + 1), 900 * (attempt + 1)); return; }
+      setLoading(false);
+    } catch {
+      if (attempt < 3) { window.setTimeout(() => load(attempt + 1), 900 * (attempt + 1)); return; }
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
