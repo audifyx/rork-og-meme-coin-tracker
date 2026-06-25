@@ -103,3 +103,6 @@ verify_jwt = false
 
 [functions.ogdex-firstbuyer]
 verify_jwt = false
+
+[functions.wallet-og]
+verify_jwt = false

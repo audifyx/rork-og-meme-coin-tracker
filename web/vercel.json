@@ -17,6 +17,10 @@
       "destination": "/api/share?mint=:mint"
     },
     {
+      "source": "/sharew/:address",
+      "destination": "/api/share-wallet?address=:address"
+    },
+    {
       "source": "/OGDEX",
       "destination": "/OGDEX/index.html"
     },

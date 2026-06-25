@@ -148,7 +148,10 @@ export default function Layout() {
             <div className="max-w-sm">
               <Brand />
               <p className="mt-3 text-xs text-muted leading-relaxed">
-                Advanced Solana token discovery, real-time OG Score, organic momentum and instant safety checks. Portfolio analytics and multi-chain intelligence.
+                OG DEX is purely a data &amp; analytics platform. We surface already-public on-chain data in a higher-quality design — our tools show you what most tools hide. Built on the recommendations of the crypto space online, it's something this space has needed for a long while.
+              </p>
+              <p className="mt-2 text-xs text-muted leading-relaxed">
+                OG DEX is updated weekly — read our <a href="https://t.me/ogupdates" target="_blank" rel="noreferrer" className="text-accent hover:underline">Updates channel</a> for changes, and message our <a href="https://t.me/ogscanner" target="_blank" rel="noreferrer" className="text-accent hover:underline">Support team</a> with any questions.
               </p>
               <div className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-muted">
                 <Zap className="w-3 h-3 text-accent" /> Advanced &amp; Designed by{" "}
@@ -177,7 +180,7 @@ export default function Layout() {
 
           {/* Legal / not-financial-advice */}
           <div className="mt-6 pt-4 border-t border-white/5 text-[11px] text-muted/70 leading-relaxed">
-            <p><b className="text-muted">Not financial advice.</b> OG DEX is an informational analytics tool. Token scores, risk flags, AI summaries, signals and all data are provided "as is" from third-party sources, may be inaccurate or delayed, and are not investment, financial, legal or tax advice. Crypto is high-risk — do your own research and never invest more than you can afford to lose. OG DEX is non-custodial and never holds your funds or keys.</p>
+            <p><b className="text-muted">Not financial advice.</b> OG DEX is purely a data &amp; analytics platform — we are not responsible for what you buy or sell. We only provide access to already-public on-chain data, presented in higher quality. Token scores, risk flags, AI summaries and signals are provided "as is" from third-party sources, may be inaccurate or delayed, and are not investment, financial, legal or tax advice. Crypto is high-risk — do your own research and never invest more than you can afford to lose. OG DEX is non-custodial and never holds your funds or keys.</p>
           </div>
           <div className="mt-3 pt-3 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-muted/60">
             <span>© {new Date().getFullYear()} OG DEX. All rights reserved.</span>

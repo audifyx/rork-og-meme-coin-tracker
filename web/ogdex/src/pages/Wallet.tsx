@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { getWallet, WalletPortfolio, WalletHolding, fmtUsd, compact, short, isWatched, toggleWatch } from "../lib/api";
 import TokenLogo from "../components/TokenLogo";
 import Copyable from "../components/Copyable";
+import WalletShareButton from "../components/WalletShareButton";
 import Change from "../components/Change";
 import { ArrowLeft, Loader2, Wallet as WalletIcon, ExternalLink, Star, RefreshCw, Eye, EyeOff, Coins, TrendingUp } from "lucide-react";
 
@@ -58,6 +59,7 @@ export default function Wallet() {
                 {d.pnl.winRate != null && <span className="pill bg-panel2 text-muted">Win rate {d.pnl.winRate}%</span>}
                 <span className="pill bg-panel2 text-muted">{d.pnl.closedTrades} closed · {d.pnl.openPositions} open</span>
                 <span className="text-[10px] text-muted/60 self-center">recent activity</span>
+                <WalletShareButton address={address} pnl={d.pnl.totalPnlUsd ?? d.pnl.realizedPnlUsd} win={d.pnl.winRate} trades={d.pnl.closedTrades} />
               </div>
             )}
           </div>
