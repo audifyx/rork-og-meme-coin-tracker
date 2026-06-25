@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getToken, getForensics, Forensics, track, TokenDetailData, fmtUsd, compact, fmtNum, fmtPct, short } from "../lib/api";
+import { getToken, getForensics, Forensics, getAth, AthData, track, TokenDetailData, fmtUsd, compact, fmtNum, fmtPct, short } from "../lib/api";
 import { timeAgo } from "../lib/format";
 import TokenLogo from "../components/TokenLogo";
 import Change from "../components/Change";
@@ -34,6 +34,7 @@ export default function TokenDetail() {
   const [tab, setTab] = useState<"overview" | "chat" | "predictive" | "smartmoney" | "kolwhale" | "holders" | "trades" | "forensics">("overview");
   const [forensics, setForensics] = useState<Forensics | null>(null);
   const [forLoading, setForLoading] = useState(true);
+  const [ath, setAth] = useState<AthData | null>(null);
   const [dir, setDir] = useState<Record<string, KolDirEntry>>({});
 
   useEffect(() => { getKolDirectory().then(setDir); }, []);
@@ -41,6 +42,8 @@ export default function TokenDetail() {
   useEffect(() => { getKolDirectory().then(setDir).catch(() => {}); }, []);
 
   useEffect(() => { let on = true; setForLoading(true); setForensics(null); getForensics(mint).then((x) => { if (on) { setForensics(x); setForLoading(false); } }).catch(() => { if (on) setForLoading(false); }); return () => { on = false; }; }, [mint]);
+
+  useEffect(() => { let on = true; setAth(null); getAth(mint).then((x) => { if (on && x?.ok) setAth(x); }).catch(() => {}); return () => { on = false; }; }, [mint]);
 
   useEffect(() => {
     let on = true; setLoading(true);
@@ -74,6 +77,9 @@ export default function TokenDetail() {
   const icon = t.icon || meta.icon || meta.image;
   const banner = meta.banner || meta.openGraph;
   const price = t.priceUsd ?? meta.priceUsd;
+  const athMcap = ath?.athMcap ?? null;
+  const athPrice = ath?.athPrice ?? null;
+  const fromAthPct = ath?.fromAthPct ?? null;
   const verified = t.isVerified || meta.isVerifiedJup || d.flags?.isVerified;
   const holders: any[] = intel.holders || [];
   const trades: any[] = intel.trades || [];
@@ -142,7 +148,7 @@ export default function TokenDetail() {
         <Stat label="24h Volume" value={t.volume != null ? "$" + compact(t.volume) : "—"} />
         <Stat label="Holders" value={fmtNum(meta.holderCount ?? t.holderCount ?? safety?.totalHolders)} />
         <Stat label="FDV" value={fmtUsd(t.fdv ?? meta.fdv, { compact: true })} />
-        <Stat label="ATH" soon />
+        {athMcap != null ? <Stat label="ATH MCap" value={fmtUsd(athMcap, { compact: true })} sub={fromAthPct != null ? (fromAthPct >= 0 ? "+" : "") + fromAthPct.toFixed(0) + "% from ATH" : undefined} /> : <Stat label="ATH" soon />}
       </div>
 
       <div className="space-y-3 mb-4">
@@ -150,7 +156,7 @@ export default function TokenDetail() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             <Stat label="Price" value={fmtUsd(price)} />
             <Stat label="FDV" value={fmtUsd(t.fdv ?? meta.fdv, { compact: true })} />
-            <Stat label="All-Time High" soon />
+            {athPrice != null ? <Stat label="ATH Price" value={fmtUsd(athPrice)} sub={ath?.source || undefined} /> : <Stat label="All-Time High" soon />}
             <Stat label="Organic Score" value={t.organicScore != null ? Math.round(t.organicScore) + "/100" : "—"} sub={meta.organicScoreLabel} />
             <Stat label="Token Age" value={meta.ageDays != null ? meta.ageDays + "d" : "—"} />
           </div>
@@ -214,8 +220,8 @@ export default function TokenDetail() {
         </div>
       </div>
 
-      {tab === "overview" && <Overview d={d} t={t} meta={meta} safety={safety} trades={trades} />}
-      {tab === "chat" && <CoinChat d={d} forensics={forensics} />}
+      {tab === "overview" && <Overview d={d} t={t} meta={meta} safety={safety} trades={trades} ath={ath} />}
+      {tab === "chat" && <CoinChat d={d} forensics={forensics} ath={ath} />}
       {tab === "predictive" && <PredictiveIntel d={d} />}
       {tab === "smartmoney" && <CapitalFlow d={d} />}
       {tab === "kolwhale" && <KolWhaleActivity d={d} dir={dir} />}
@@ -227,7 +233,7 @@ export default function TokenDetail() {
 }
 
 /* ---------- Overview ---------- */
-function Overview({ d, t, meta, safety, trades }: any) {
+function Overview({ d, t, meta, safety, trades, ath }: any) {
   const buyVol = meta.buyVolume24h ?? t.buyVolume ?? 0;
   const sellVol = meta.sellVolume24h ?? t.sellVolume ?? 0;
   const total = buyVol + sellVol || 1; const bp = (buyVol / total) * 100;
@@ -278,7 +284,8 @@ function Overview({ d, t, meta, safety, trades }: any) {
         <Row label="Market cap" value={fmtUsd(t.mcap ?? meta.mcap, { compact: true })} />
         <Row label="FDV" value={fmtUsd(t.fdv ?? meta.fdv, { compact: true })} />
         <Row label="Liquidity" value={t.liquidity ? "$" + compact(t.liquidity) : "—"} />
-        <Row label="All-time high" value={<span className="pill bg-panel2 text-muted text-[10px]">Coming soon</span>} />
+        <Row label="All-time high" value={ath?.athMcap != null ? fmtUsd(ath.athMcap, { compact: true }) + (ath.fromAthPct != null ? ` (${ath.fromAthPct >= 0 ? "+" : ""}${ath.fromAthPct.toFixed(0)}%)` : "") : <span className="pill bg-panel2 text-muted text-[10px]">Coming soon</span>} />
+        <Row label="ATH price" value={ath?.athPrice != null ? fmtUsd(ath.athPrice) : <span className="pill bg-panel2 text-muted text-[10px]">Coming soon</span>} />
         <Row label="Total supply" value={compact(t.totalSupply ?? meta.totalSupply)} />
         <Row label="Circulating" value={compact(t.circSupply ?? meta.circSupply)} />
         <Row label="Created" value={meta.createdAt ? new Date(meta.createdAt).toLocaleDateString() + (meta.ageDays != null ? ` (${meta.ageDays}d)` : "") : "—"} />

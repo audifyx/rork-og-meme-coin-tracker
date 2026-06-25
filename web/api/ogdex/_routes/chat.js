@@ -1,6 +1,7 @@
 import { callFn, send, readBody, INTEL_FN } from "../_lib.js";
 import tokenHandler from "./token.js";
 import forensicsHandler from "./forensics.js";
+import athHandler from "./ath.js";
 
 // Capture a route handler's JSON output without an HTTP round-trip.
 function capture(handler, url) {
@@ -15,7 +16,7 @@ function capture(handler, url) {
 
 // Build the FULL context from everything our APIs return, so the coin AI can
 // answer almost anything without claiming it lacks the data.
-function buildContext(d, forensics) {
+function buildContext(d, forensics, ath) {
   const t = d?.token || {}, meta = d?.meta || {}, intel = d?.intel || {};
   const safety = d?.safety || intel.safety || {}, flags = d?.flags || {}, score = d?.score || {};
   const holders = intel.holders || [], trades = intel.trades || [];
@@ -24,7 +25,7 @@ function buildContext(d, forensics) {
     market: {
       priceUsd: t.priceUsd ?? meta.priceUsd, marketCap: t.mcap ?? meta.mcap, fdv: t.fdv ?? meta.fdv,
       liquidity: t.liquidity, volume24h: t.volume, totalSupply: t.totalSupply ?? intel.totalSupply, circSupply: t.circSupply,
-      ath: "coming soon (all-time-high data not available yet)",
+      ath: ath?.athMcap != null ? { athMcap: ath.athMcap, athPrice: ath.athPrice, athDate: ath.athDate, fromAthPct: ath.fromAthPct, source: ath.source } : "coming soon (all-time-high data not available yet)",
       change: { "5m": t.change5m, "1h": t.change1h, "6h": t.change6h, "24h": t.change24h },
       organicScore: t.organicScore, organicLabel: t.organicScoreLabel, verdict: d?.verdict, momentum: d?.momentumLabel,
     },
@@ -82,11 +83,12 @@ export default async function handler(req, res) {
     // gather everything server-side so the AI is never missing data.
     let context = body.context;
     if (!context || !context.holdersInfo) {
-      const [d, f] = await Promise.all([
+      const [d, f, a] = await Promise.all([
         capture(tokenHandler, `/x?mint=${mint}`),
         capture(forensicsHandler, `/x?mint=${mint}&first=0`),
+        capture(athHandler, `/x?mint=${mint}`),
       ]);
-      context = buildContext(d, f && f.ok ? f : null);
+      context = buildContext(d, f && f.ok ? f : null, a && a.ok ? a : null);
     }
 
     const r = await callFn("ogdex-chat", {

@@ -185,3 +185,7 @@ export interface ChatSource { title: string | null; url: string | null; }
 export interface ChatReply { ok: boolean; answer: string | null; sources?: ChatSource[]; provider?: string | null; error?: string; }
 export const askCoin = (mint: string, messages: ChatMsg[], context: any) =>
   postJson(`/api/ogdex/chat`, { mint, messages, context }) as Promise<ChatReply>;
+
+/* ---- All-time high (CoinGecko true ATH + GeckoTerminal fallback, no Birdeye) ---- */
+export interface AthData { ok: boolean; mint: string; athPrice: number | null; athMcap: number | null; source: string | null; athDate?: string | null; fromAthPct?: number | null; }
+export const getAth = (mint: string) => j<AthData>(`/api/ogdex/ath?mint=${mint}`);

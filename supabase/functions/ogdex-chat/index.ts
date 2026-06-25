@@ -76,7 +76,7 @@ function systemPrompt(sym: string, name: string, mint: string, ctx: any, web: We
     `- socials: official links`,
     `Use this data directly and confidently. NEVER say you "don't have access" or "can't pull" something that is present in the JSON — read it and answer with the exact numbers, wallets and tx hashes. Only say a value is unavailable if it is genuinely null/missing in the JSON.`,
     ``,
-    `ALL-TIME HIGH: ATH data is not available yet ("coming soon"). If asked about ATH, say it's coming soon — do NOT invent or estimate an ATH.`,
+    `ALL-TIME HIGH: use market.ath — if it is an object with athMcap/athPrice, report those exact figures (and the % down from ATH and date if present). Only if market.ath is the string "coming soon" should you say ATH is coming soon. Never invent an ATH.`,
     ``,
     `For market narrative, news, sentiment and "what are people saying / why is it trending", use the LIVE WEB SEARCH RESULTS and cite them inline like [1], [2].`,
     `Be concise and skimmable: short paragraphs or tight bullets. No financial advice; flag risks honestly. Round large numbers sensibly (e.g. $1.2M, 12.3%).`,

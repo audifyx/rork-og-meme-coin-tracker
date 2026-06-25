@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { askCoin, ChatMsg, ChatSource, Forensics, TokenDetailData } from "../lib/api";
+import { askCoin, ChatMsg, ChatSource, Forensics, AthData, TokenDetailData } from "../lib/api";
 import { Sparkles, Send, Loader2, ExternalLink, Bot } from "lucide-react";
 import TokenLogo from "./TokenLogo";
 
 // Build the FULL on-chain context the coin AI reasons over — everything we pull
 // from every API (Jupiter, Birdeye, GeckoTerminal, DexScreener, Rugcheck, Helius)
 // so the AI can answer almost anything without saying "I don't have that".
-function buildContext(d: TokenDetailData, forensics: Forensics | null) {
+function buildContext(d: TokenDetailData, forensics: Forensics | null, ath?: AthData | null) {
   const t: any = d.token || {};
   const meta: any = d.meta || {};
   const intel: any = (d as any).intel || {};
@@ -21,7 +21,7 @@ function buildContext(d: TokenDetailData, forensics: Forensics | null) {
     market: {
       priceUsd: t.priceUsd ?? meta.priceUsd, marketCap: t.mcap ?? meta.mcap, fdv: t.fdv ?? meta.fdv,
       liquidity: t.liquidity, volume24h: t.volume, totalSupply: t.totalSupply ?? intel.totalSupply, circSupply: t.circSupply,
-      ath: "coming soon (all-time-high data not available yet)",
+      ath: ath?.athMcap != null ? { athMcap: ath.athMcap, athPrice: ath.athPrice, athDate: ath.athDate, fromAthPct: ath.fromAthPct, source: ath.source } : "coming soon (all-time-high data not available yet)",
       change: { "5m": t.change5m, "1h": t.change1h, "6h": t.change6h, "24h": t.change24h },
       organicScore: t.organicScore, organicLabel: t.organicScoreLabel, verdict: (d as any).verdict, momentum: (d as any).momentumLabel,
     },
@@ -73,7 +73,7 @@ const SUGGESTIONS = [
   "Is this a safe buy? Walk me through the risks.",
 ];
 
-export default function CoinChat({ d, forensics }: { d: TokenDetailData; forensics: Forensics | null }) {
+export default function CoinChat({ d, forensics, ath }: { d: TokenDetailData; forensics: Forensics | null; ath?: AthData | null }) {
   const sym = (d.token as any)?.symbol || (d.meta as any)?.symbol || "this coin";
   const icon = (d.token as any)?.icon || (d.meta as any)?.icon;
   const [msgs, setMsgs] = useState<ChatMsg[]>([]);
@@ -91,7 +91,7 @@ export default function CoinChat({ d, forensics }: { d: TokenDetailData; forensi
     const next = [...msgs, { role: "user" as const, content: q }];
     setMsgs(next); setInput(""); setLoading(true); setSources([]);
     try {
-      const r = await askCoin(d.mint, next, buildContext(d, forensics));
+      const r = await askCoin(d.mint, next, buildContext(d, forensics, ath));
       if (r.ok && r.answer) {
         setMsgs([...next, { role: "assistant", content: r.answer }]);
         setSources(r.sources || []); setProvider(r.provider || null);
