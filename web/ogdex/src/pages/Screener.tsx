@@ -124,34 +124,49 @@ export default function Screener() {
     setRows([]);
   };
 
-  // Fetch
+  // Fetch — race-safe (request-id guard) with retry-on-empty/error so a single
+  // transient upstream hiccup (429/blank) never leaves a category stuck empty
+  // until a manual page refresh.
+  const reqId = useRef(0);
+  const MAX_RETRY = 3;
   useEffect(() => {
-    let on = true;
+    const myId = ++reqId.current;
+    const alive = () => reqId.current === myId;
     setLoading(true);
-    const run = async () => {
+    const retry = (attempt: number) => window.setTimeout(() => { if (alive()) run(attempt + 1); }, 800 * (attempt + 1));
+    const run = async (attempt = 0) => {
       try {
         if (q) {
           const d = await search(q);
-          if (on) setRows(d.rows || []);
+          if (!alive()) return;
+          if (!(d.rows || []).length && attempt < MAX_RETRY) return retry(attempt);
+          setRows(d.rows || []);
         } else if (tab === "listed") {
           const d = await getListings();
-          if (on) setListings(d.rows || []);
+          if (alive()) setListings(d.rows || []); // listings may be legitimately empty
         } else if (category === "social" || tab === "social") {
           const d = await getTrendingSocial();
-          if (on) setSocialItems(d.items || []);
-        } else if (isMultichain) {
-          const d = await getScreener("trending", interval, 100, chain);
-          if (on) setRows(d.rows || []);
+          const items = d.items || [];
+          if (!alive()) return;
+          if (!items.length && attempt < MAX_RETRY) return retry(attempt);
+          setSocialItems(items);
         } else {
-          const d = await getScreener(tab, interval, 100);
-          if (on) setRows(d.rows || []);
+          const d = isMultichain ? await getScreener("trending", interval, 100, chain) : await getScreener(tab, interval, 100);
+          const rows2 = d.rows || [];
+          if (!alive()) return;
+          if (!rows2.length && attempt < MAX_RETRY) return retry(attempt);
+          setRows(rows2);
         }
-      } finally { if (on) setLoading(false); }
+        if (alive()) setLoading(false);
+      } catch {
+        if (alive() && attempt < MAX_RETRY) return retry(attempt);
+        if (alive()) setLoading(false);
+      }
     };
     run();
     const skip = q || tab === "listed" || cur?.noInterval || isMultichain || isSocial;
-    const auto = skip ? null : window.setInterval(run, 25000);
-    return () => { on = false; if (auto) clearInterval(auto); };
+    const auto = skip ? null : window.setInterval(() => run(0), 25000);
+    return () => { if (auto) clearInterval(auto); };
   }, [tab, interval, q, chain, category]);
 
   const changeKeyEff = (r: Row) => {
