@@ -215,26 +215,27 @@ export default async function handler(req, res) {
       const coins = await fetchPump("last_trade_timestamp", 200);
       rows = dedup(
         coins
-          .filter(c => !c.complete && (c.usd_market_cap || 0) >= 100)
+          // still on the bonding curve, actively reserved, real size but below the
+          // ~graduation cap (mislabeled/migrated coins show huge mcap with 0 reserves)
+          .filter(c => !c.complete
+            && ((Number(c.real_sol_reserves) || 0) > 0 || (Number(c.real_quote_reserves) || 0) > 0)
+            && (c.usd_market_cap || 0) >= 2000 && (c.usd_market_cap || 0) <= 90000)
           .map(normPump)
           .filter(Boolean)
+          .filter(r => (r.bondingPct ?? 0) > 0 && (r.bondingPct ?? 0) < 100)
           .sort((a, b) => (b.bondingPct ?? 0) - (a.bondingPct ?? 0))
       ).slice(0, limit);
 
     // ── Pump.fun: Migrated (graduated — DexScreener has real volume) ──────────
     } else if (type === "migrated") {
-      // Primary: DexScreener pumpswap/raydium (has real 24h volume)
-      const dexRows = await fetchDexMigrated(100);
-      // Supplement: GeckoTerminal Solana trending (more variety)
-      const { data: gtData, tokenMap } = await fetchGeckoTrending("solana", 3);
-      const gtRows = gtData.map(p => normGecko(p, tokenMap)).filter(Boolean).filter(r => (r.volume ?? 0) >= 500 && (r.liquidity ?? 0) >= 2000);
-      rows = dedup([...dexRows, ...gtRows]).filter(r => (r.liquidity ?? 0) >= 1500).sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0)).slice(0, limit);
-      // Last fallback: pump.fun complete coins
-      if (rows.length < 20) {
-        const pumpCoins = await fetchPump("last_trade_timestamp", 200, c => c.complete === true);
-        const pumpRows  = pumpCoins.map(normPump).filter(Boolean).filter(r => (r.mcap ?? 0) >= 1000);
-        rows = dedup([...rows, ...pumpRows]).sort((a, b) => (b.volume ?? b.mcap ?? 0) - (a.volume ?? a.mcap ?? 0)).slice(0, limit);
-      }
+      // Migrated = real graduated pools on pumpswap/raydium (DexScreener has the
+      // accurate post-migration volume + liquidity). No trending supplement —
+      // that polluted the list with non-migrated coins.
+      const dexRows = await fetchDexMigrated(150);
+      rows = dedup(dexRows)
+        .filter(r => (r.liquidity ?? 0) >= 3000 && (r.volume ?? 0) >= 1000)
+        .sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0))
+        .slice(0, limit);
 
     // ── Pump.fun: New Pairs (newest coins, no symbol spam, must have activity) ──
     } else if (type === "newpairs") {
@@ -243,7 +244,8 @@ export default async function handler(req, res) {
       const coins = await fetchPump("created_timestamp", 200);
       const todayCoins = coins.filter(c =>
         (c.created_timestamp ?? 0) >= cutoff24h &&
-        (c.usd_market_cap || 0) >= 10_000
+        (c.usd_market_cap || 0) >= 2500 &&
+        ((Number(c.real_sol_reserves) || 0) > 0 || c.complete) // active / not abandoned
       );
       const normCoins = todayCoins.map(normPump).filter(Boolean);
 
@@ -288,7 +290,7 @@ export default async function handler(req, res) {
           change24h: dx.change24h ?? c.change24h,
           liquidity: dx.liquidity ?? c.liquidity,
         };
-      }).filter(c => (c.volume ?? 0) >= 5_000 && (c.mcap ?? 0) >= 8_000);
+      }).filter(c => (c.mcap ?? 0) >= 2500);
 
       rows = dedupBySymbol(dedup(enriched))
         .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))

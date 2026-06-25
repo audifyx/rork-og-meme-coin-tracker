@@ -19,6 +19,7 @@ import { send, cache } from "../_lib.js";
 const GT = "https://api.geckoterminal.com/api/v2";
 const GT_HDR = { Accept: "application/json;version=20230302" };
 const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+const MCAP_CEIL = 30_000_000; // Pulse = fresh/actionable coins, not blue chips
 const STABLES = new Set(["USDC","USDT","SOL","WSOL","JLP","JITOSOL","MSOL","BSOL","JUPSOL","INF","USDS","USDE","PYUSD","EURC","CBBTC","WBTC","JUP","DAI","BUSD"]);
 
 async function gtPools(kind, network = "solana", pages = 1) {
@@ -74,7 +75,7 @@ async function pumpGraduating() {
         priceUsd: mcap && total ? mcap / total : null, mcap: mcap || null, liq: null,
         bondingPct: pct, ch24h: null, ageH: t.created_timestamp ? (now - t.created_timestamp) / 3.6e6 : null,
       };
-      if (!complete && pct >= 80) {
+      if (!complete && pct >= 80 && mcap > 0 && mcap <= 2_000_000) {
         sigs.push({ ...base, type: "graduating", label: "Graduating Soon", strength: pct,
           metric: `${pct}% to migration`, tone: "lime" });
       }
@@ -96,6 +97,8 @@ function freshMigrations(pools) {
     if (p.ageH == null || p.ageH > 36) continue;          // recently created pool
     const liq = p.liq || 0; const v24 = num(p.vol.h24); const v1h = num(p.vol.h1);
     if (liq < 12000) continue;                            // real liquidity floor
+    if ((p.mcap || 0) > MCAP_CEIL) continue;              // skip blue chips
+    if ((p.mcap || 0) > 80000 && liq < (p.mcap || 0) * 0.01) continue; // LP-pulled / illiquid
     if (v24 < 8000 && v1h < 2000) continue;               // must be actively traded
     const tx1h = p.tx.h1 || {}; const trades1h = num(tx1h.buys) + num(tx1h.sells);
     if (trades1h < 5 && v1h <= 0) continue;               // not dead
@@ -115,7 +118,10 @@ function computeSignals(pools) {
   const nowMs = Date.now();
   for (const p of pools) {
     const liq = p.liq || 0;
-    if (liq < 8000) continue; // filter dust/manip-prone
+    const mcap = p.mcap || 0;
+    if (liq < 10000) continue;                  // dust / manip-prone
+    if (mcap > MCAP_CEIL) continue;             // skip blue chips (millions)
+    if (mcap > 60000 && liq < mcap * 0.01) continue; // liq <1% of mcap = pulled/illiquid
     const v5 = num(p.vol.m5), v15 = num(p.vol.m15), v1h = num(p.vol.h1), v24 = num(p.vol.h24);
     // ── Liveness gate: drop dead / stale coins ──────────────────────────────
     const tx1h = p.tx.h1 || {}, tx24 = p.tx.h24 || {};
