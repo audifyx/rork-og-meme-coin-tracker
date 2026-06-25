@@ -189,3 +189,8 @@ export const askCoin = (mint: string, messages: ChatMsg[], context: any) =>
 /* ---- All-time high (CoinGecko true ATH + GeckoTerminal fallback, no Birdeye) ---- */
 export interface AthData { ok: boolean; mint: string; athPrice: number | null; athMcap: number | null; source: string | null; athDate?: string | null; fromAthPct?: number | null; }
 export const getAth = (mint: string) => j<AthData>(`/api/ogdex/ath?mint=${mint}`);
+
+/* ---- Wallet balance for the trade panel (SOL + a token holding) ---- */
+export interface TradeBalance { ok: boolean; owner?: string; sol: number; token: { uiAmount: number; decimals: number; raw: string }; error?: string; }
+export const getBalance = (owner: string, mint: string) =>
+  j<TradeBalance>(`/api/ogdex/balance?owner=${owner}&mint=${mint}`);

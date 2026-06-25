@@ -139,7 +139,7 @@ export default function TokenDetail() {
           <PriceChart mint={mint} symbol={symbol} chain={(meta.chain || "solana")} />
         </div>
         {(meta.chain || "solana") === "solana" && (
-          <div id="trade" className="lg:col-span-1 scroll-mt-20"><TradePanel mint={mint} symbol={symbol} /></div>
+          <div id="trade" className="lg:col-span-1 scroll-mt-20"><TradePanel mint={mint} symbol={symbol} price={t.priceUsd ?? meta.priceUsd} icon={icon} /></div>
         )}
       </div>
 
