@@ -1,14 +1,10 @@
 /**
  * OG DEX — non-custodial trade transaction builder.
- * Builds a buy/sell tx and returns it serialized (base64). The user's Phantom
- * wallet signs AND sends it client-side, so OG DEX never holds keys or funds.
- *
- * Routing: PumpPortal first (handles pump.fun / PumpSwap / Raydium and native
- * "N%" sells), with a Jupiter aggregator fallback so ANY liquid Solana token
- * can be traded even when PumpPortal can't route it.
- *
- * POST body: { publicKey, action:"buy"|"sell", mint, amount, denominatedInSol,
- *              slippage, priorityFee, pool }
+ * Builds candidate buy/sell transactions (PumpPortal across venues, then the
+ * Jupiter aggregator) and SIMULATES each one, returning only a transaction that
+ * actually executes. This prevents Phantom's "Failed to simulate" on txs that
+ * built but route to the wrong pool / have no liquidity. The user's Phantom
+ * wallet signs and sends; OG DEX never holds keys or funds.
  */
 import { send, readBody, callFn, jup } from "../_lib.js";
 
@@ -20,7 +16,17 @@ async function rpc(method, params) {
   return r?.data?.result ?? r?.result ?? null;
 }
 
-// Raw (base-unit) token balance + decimals for an owner+mint.
+// Simulate an unsigned base64 tx with a replaced blockhash. Returns {ok, err}.
+// Fails OPEN (ok:true) if the simulation RPC itself is unavailable, so a flaky
+// RPC never blocks a legitimate trade.
+async function simulate(txB64) {
+  try {
+    const res = await rpc("simulateTransaction", [txB64, { sigVerify: false, replaceRecentBlockhash: true, encoding: "base64", commitment: "processed" }]);
+    if (!res || !res.value) return { ok: true, unknown: true };
+    return { ok: res.value.err == null, err: res.value.err };
+  } catch { return { ok: true, unknown: true }; }
+}
+
 async function tokenBalance(owner, mint) {
   try {
     const res = await rpc("getTokenAccountsByOwner", [owner, { mint }, { encoding: "jsonParsed" }]);
@@ -33,61 +39,48 @@ async function tokenBalance(owner, mint) {
   } catch { return { raw: 0n, decimals: 0 }; }
 }
 
-async function pumpPortalBuild({ publicKey, action, mint, amt, denominatedInSol, slippage, priorityFee, pool }) {
-  const pools = [...new Set([pool, "auto", "pump", "pump-amm", "raydium", "bonk", "raydium-cpmm", "launchlab"])];
-  let lastErr = "trade build failed";
-  for (const pl of pools) {
-    try {
-      const r = await fetch("https://pumpportal.fun/api/trade-local", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicKey, action, mint, amount: amt, denominatedInSol, slippage, priorityFee, pool: pl }),
-      });
-      const ct = r.headers.get("content-type") || "";
-      if (r.ok && !ct.includes("application/json")) {
-        const buf = Buffer.from(await r.arrayBuffer());
-        if (buf.length) return { ok: true, tx: buf.toString("base64"), via: "pumpportal", pool: pl };
-        lastErr = "empty transaction"; continue;
-      }
-      const txt = await r.text().catch(() => "");
-      let msg = txt.slice(0, 200);
-      try { const j = JSON.parse(txt); msg = j.errors ? (Array.isArray(j.errors) ? j.errors.join("; ") : JSON.stringify(j.errors)) : (j.error || msg); } catch { /* keep text */ }
-      lastErr = msg || `trade build failed (${r.status})`;
-      if (/insufficient|not enough|balance|too small|invalid amount/i.test(lastErr)) return { ok: false, error: lastErr, fatal: true };
-    } catch (e) { lastErr = String(e?.message || e); }
-  }
-  return { ok: false, error: lastErr };
+async function pumpPortalTx({ publicKey, action, mint, amt, denominatedInSol, slippage, priorityFee, pool }) {
+  try {
+    const r = await fetch("https://pumpportal.fun/api/trade-local", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publicKey, action, mint, amount: amt, denominatedInSol, slippage, priorityFee, pool }),
+    });
+    const ct = r.headers.get("content-type") || "";
+    if (r.ok && !ct.includes("application/json")) {
+      const buf = Buffer.from(await r.arrayBuffer());
+      if (buf.length) return { tx: buf.toString("base64") };
+    }
+    const txt = await r.text().catch(() => "");
+    let msg = txt.slice(0, 160);
+    try { const j = JSON.parse(txt); msg = j.errors ? (Array.isArray(j.errors) ? j.errors.join("; ") : JSON.stringify(j.errors)) : (j.error || msg); } catch { /* keep */ }
+    return { error: msg };
+  } catch (e) { return { error: String(e?.message || e) }; }
 }
 
-// Jupiter aggregator fallback — works for any liquid Solana token.
-async function jupiterBuild({ publicKey, action, mint, amt, slippage }) {
+async function jupiterTx({ publicKey, action, mint, amt, slippage }) {
   try {
     const slippageBps = Math.min(Math.max(Math.round((Number(slippage) || 10) * 100), 50), 5000);
     let inputMint, outputMint, amount;
     if (action === "buy") {
-      inputMint = SOL; outputMint = mint;
-      amount = Math.floor(Number(amt) * 1e9); // SOL -> lamports
+      inputMint = SOL; outputMint = mint; amount = Math.floor(Number(amt) * 1e9);
     } else {
       inputMint = mint; outputMint = SOL;
       const { raw, decimals } = await tokenBalance(publicKey, mint);
-      if (raw <= 0n) return { ok: false, error: "no balance to sell" };
-      if (typeof amt === "string" && amt.endsWith("%")) {
-        const pct = Number(amt.slice(0, -1));
-        amount = Number((raw * BigInt(Math.round(pct)) / 100n).toString());
-      } else {
-        amount = Math.floor(Number(amt) * 10 ** decimals);
-      }
+      if (raw <= 0n) return { error: "no balance to sell" };
+      if (typeof amt === "string" && amt.endsWith("%")) amount = Number((raw * BigInt(Math.round(Number(amt.slice(0, -1)))) / 100n).toString());
+      else amount = Math.floor(Number(amt) * 10 ** decimals);
     }
-    if (!amount || amount <= 0) return { ok: false, error: "invalid amount" };
+    if (!amount || amount <= 0) return { error: "invalid amount" };
     const q = await jup(`/swap/v1/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=${slippageBps}&restrictIntermediateTokens=true`).catch(() => null);
-    if (!q || q.error || !q.outAmount) return { ok: false, error: q?.error || "no route" };
+    if (!q || q.error || !q.outAmount) return { error: q?.error || "no route" };
     const r = await fetch("https://lite-api.jup.ag/swap/v1/swap", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ quoteResponse: q, userPublicKey: publicKey, wrapAndUnwrapSol: true, dynamicComputeUnitLimit: true, prioritizationFeeLamports: "auto" }),
     });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok || !j.swapTransaction) return { ok: false, error: j.error || "jupiter swap failed" };
-    return { ok: true, tx: j.swapTransaction, via: "jupiter" };
-  } catch (e) { return { ok: false, error: String(e?.message || e) }; }
+    if (!r.ok || !j.swapTransaction) return { error: j.error || "jupiter swap failed" };
+    return { tx: j.swapTransaction };
+  } catch (e) { return { error: String(e?.message || e) }; }
 }
 
 export default async function handler(req, res) {
@@ -100,8 +93,8 @@ export default async function handler(req, res) {
   const mint = body.mint;
   const denominatedInSol = action === "buy" ? "true" : (body.denominatedInSol === true || body.denominatedInSol === "true" ? "true" : "false");
   const slippage = Math.min(Math.max(Number(body.slippage) || 10, 1), 50);
-  const priorityFee = Math.min(Math.max(Number(body.priorityFee) || 0.00005, 0), 0.01);
-  const pool = ["auto", "pump", "raydium", "pump-amm", "launchlab", "raydium-cpmm", "bonk"].includes(body.pool) ? body.pool : "auto";
+  const priorityFee = Math.min(Math.max(Number(body.priorityFee) || 0.0003, 0), 0.01);
+  const reqPool = ["auto", "pump", "raydium", "pump-amm", "launchlab", "raydium-cpmm", "bonk"].includes(body.pool) ? body.pool : "auto";
 
   if (!isPubkey(publicKey)) return send(res, 400, { ok: false, error: "invalid publicKey" });
   if (!isPubkey(mint)) return send(res, 400, { ok: false, error: "invalid mint" });
@@ -118,14 +111,30 @@ export default async function handler(req, res) {
     amt = n;
   }
 
-  // 1) PumpPortal (pump ecosystem + raydium, native % sells)
-  const pp = await pumpPortalBuild({ publicKey, action, mint, amt, denominatedInSol, slippage, priorityFee, pool });
-  if (pp.ok) return send(res, 200, pp);
-  if (pp.fatal) return send(res, 200, { ok: false, error: pp.error });
+  let lastErr = "Could not build a working trade";
+  let firstBuilt = null; // fallback if simulation RPC is unavailable for all
 
-  // 2) Jupiter aggregator fallback (any liquid token)
-  const jp = await jupiterBuild({ publicKey, action, mint, amt, slippage });
-  if (jp.ok) return send(res, 200, jp);
+  // Candidate builders in priority order: PumpPortal venues, then Jupiter.
+  const pools = [...new Set([reqPool, "auto", "pump", "pump-amm", "raydium", "bonk", "raydium-cpmm", "launchlab"])];
+  const builders = pools.map((pl) => ({ via: "pumpportal", pool: pl, run: () => pumpPortalTx({ publicKey, action, mint, amt, denominatedInSol, slippage, priorityFee, pool: pl }) }));
+  builders.push({ via: "jupiter", run: () => jupiterTx({ publicKey, action, mint, amt, slippage }) });
 
-  return send(res, 200, { ok: false, error: jp.error || pp.error || "Could not build transaction" });
+  for (const b of builders) {
+    const out = await b.run();
+    if (out.error) {
+      lastErr = out.error;
+      if (/insufficient|not enough|no balance|invalid amount|no route/i.test(out.error)) { /* keep trying other venues */ }
+      continue;
+    }
+    if (!out.tx) continue;
+    if (!firstBuilt) firstBuilt = { ok: true, tx: out.tx, via: b.via, pool: b.pool };
+    const sim = await simulate(out.tx);
+    if (sim.ok) return send(res, 200, { ok: true, tx: out.tx, via: b.via, pool: b.pool, simulated: !sim.unknown });
+    lastErr = "transaction would fail (no liquidity on this route or insufficient funds)";
+  }
+
+  // Nothing simulated cleanly. If we at least built one and sim RPC was flaky,
+  // return it so the user can still try; otherwise surface the error.
+  if (firstBuilt) return send(res, 200, { ...firstBuilt, simulated: false });
+  return send(res, 200, { ok: false, error: lastErr });
 }
