@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useWallet, getPhantom } from "../lib/wallet";
 import { getBalance, getSafety, SafetyCheck, fmtUsd, compact } from "../lib/api";
-import { Wallet2, Loader2, ArrowDownUp, ExternalLink, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, X, RefreshCw, Lock, Info } from "lucide-react";
+import { Wallet2, Loader2, ArrowDownUp, ExternalLink, CheckCircle2, AlertTriangle, ShieldCheck, ShieldAlert, X, RefreshCw, Lock, Info, Bell, BellPlus } from "lucide-react";
 
 const BUY_PRESETS = [0.1, 0.25, 0.5, 1];
 const SELL_PRESETS = [25, 50, 100];
@@ -37,6 +37,13 @@ export default function TradePanel({ mint, symbol, price, icon }: { mint: string
   const [bal, setBal] = useState<{ sol: number; uiAmount: number; decimals: number } | null>(null);
   const [loadingBal, setLoadingBal] = useState(false);
   const [safety, setSafety] = useState<SafetyCheck | null>(null);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertKind, setAlertKind] = useState<"limit" | "tp" | "stop">("limit");
+  const [alertPrice, setAlertPrice] = useState<string>("");
+  const [alertChan, setAlertChan] = useState<"telegram" | "webhook">(() => (typeof localStorage !== "undefined" && (localStorage.getItem("ogdex.alertChan") as any)) || "telegram");
+  const [alertTarget, setAlertTarget] = useState<string>(() => (typeof localStorage !== "undefined" && localStorage.getItem("ogdex.alertTarget")) || "");
+  const [alertBusy, setAlertBusy] = useState(false);
+  const [alertMsg, setAlertMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const sym = symbol || "token";
 
@@ -100,6 +107,36 @@ export default function TradePanel({ mint, symbol, price, icon }: { mint: string
       const m = e?.message || "Trade failed";
       setErr(/reject/i.test(m) ? "Transaction cancelled in Phantom" : m);
     } finally { setBusy(false); setStage(""); }
+  };
+
+  const ALERT_KINDS = {
+    limit: { label: "Limit buy", help: "Notify when price drops to or below your target — your cue to buy the dip.", type: "price_below" },
+    tp: { label: "Take profit", help: "Notify when price rises to or above your target — your cue to sell.", type: "price_above" },
+    stop: { label: "Stop loss", help: "Notify when price falls to or below your target — your cue to cut losses.", type: "price_below" },
+  } as const;
+
+  const createAlert = async () => {
+    setAlertMsg(null);
+    if (!address) { await connect(); return; }
+    const v = Number(alertPrice);
+    if (!Number.isFinite(v) || v <= 0) { setAlertMsg({ ok: false, text: "Enter a target price in USD" }); return; }
+    const tgt = alertTarget.trim();
+    if (alertChan === "telegram" ? !/^(-?\d{4,}|@[A-Za-z0-9_]{4,})$/.test(tgt) : !/^https?:\/\//i.test(tgt)) {
+      setAlertMsg({ ok: false, text: alertChan === "telegram" ? "Enter your Telegram chat ID or @channel" : "Enter a webhook URL (Discord/Slack/custom)" });
+      return;
+    }
+    setAlertBusy(true);
+    try {
+      localStorage.setItem("ogdex.alertChan", alertChan);
+      localStorage.setItem("ogdex.alertTarget", tgt);
+      const r = await fetch("/api/ogdex/alerts", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wallet: address, alert: { mint, symbol: sym, type: ALERT_KINDS[alertKind].type, value: v, channel: alertChan, target: tgt } }) });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || "Could not create alert");
+      setAlertMsg({ ok: true, text: `${ALERT_KINDS[alertKind].label} alert set at $${v}` });
+      setAlertPrice("");
+    } catch (e: any) { setAlertMsg({ ok: false, text: e?.message || "Failed to create alert" }); }
+    finally { setAlertBusy(false); }
   };
 
   return (
@@ -210,6 +247,40 @@ export default function TradePanel({ mint, symbol, price, icon }: { mint: string
           {sig && <a href={`https://solscan.io/tx/${sig}`} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 font-semibold hover:underline">Inspect tx <ExternalLink className="h-3 w-3" /></a>}
         </div>
       )}
+      {/* Limit / Stop price alerts — honest notify-only, never auto-trades */}
+      <div className="mt-3">
+        <button onClick={() => { setShowAlert((v) => !v); if (!alertPrice && price) setAlertPrice(price < 0.01 ? price.toPrecision(4) : price.toFixed(price < 1 ? 6 : 4)); }}
+          className="flex w-full items-center gap-2 rounded-xl border border-line bg-panel2/40 px-3 py-2 text-xs font-semibold text-muted hover:text-white">
+          <Bell className="h-3.5 w-3.5 text-accent" /> Set limit / stop alert
+          <span className="ml-auto text-[10px] font-normal opacity-70">notify-only</span>
+        </button>
+        {showAlert && (
+          <div className="mt-2 rounded-xl border border-line bg-panel2/30 p-3 text-xs space-y-2">
+            <div className="grid grid-cols-3 gap-1 rounded-lg bg-panel2/60 p-1">
+              {(["limit", "tp", "stop"] as const).map((k) => (
+                <button key={k} onClick={() => setAlertKind(k)} className={`rounded-md py-1.5 text-[11px] font-bold transition ${alertKind === k ? (k === "limit" ? "bg-up/20 text-up" : k === "tp" ? "bg-accent/20 text-accent" : "bg-down/20 text-down") : "text-muted hover:text-white"}`}>{ALERT_KINDS[k].label}</button>
+              ))}
+            </div>
+            <div className="text-[10px] text-muted/80">{ALERT_KINDS[alertKind].help}</div>
+            <div className="relative">
+              <input value={alertPrice} onChange={(e) => setAlertPrice(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" placeholder="Target price" className="w-full rounded-lg border border-line bg-panel pl-3 pr-12 py-2 text-sm outline-none focus:border-accent/60" />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted">USD</span>
+            </div>
+            {price ? <div className="text-[10px] text-muted">Current price ${price < 0.01 ? price.toPrecision(4) : price.toFixed(price < 1 ? 6 : 4)}</div> : null}
+            <div className="grid grid-cols-2 gap-1 rounded-lg bg-panel2/60 p-1">
+              <button onClick={() => setAlertChan("telegram")} className={`rounded-md py-1.5 text-[11px] font-semibold transition ${alertChan === "telegram" ? "bg-accent/15 text-accent" : "text-muted hover:text-white"}`}>Telegram</button>
+              <button onClick={() => setAlertChan("webhook")} className={`rounded-md py-1.5 text-[11px] font-semibold transition ${alertChan === "webhook" ? "bg-accent/15 text-accent" : "text-muted hover:text-white"}`}>Webhook</button>
+            </div>
+            <input value={alertTarget} onChange={(e) => setAlertTarget(e.target.value)} placeholder={alertChan === "telegram" ? "Telegram chat ID or @channel" : "Discord/Slack/webhook URL"} className="w-full rounded-lg border border-line bg-panel px-3 py-2 text-sm outline-none focus:border-accent/60" />
+            <button onClick={createAlert} disabled={alertBusy} className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent/90 py-2 text-sm font-bold text-black transition hover:bg-accent disabled:opacity-60">
+              {alertBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellPlus className="h-4 w-4" />} Create alert
+            </button>
+            {alertMsg && <div className={`flex items-center gap-1.5 ${alertMsg.ok ? "text-up" : "text-down"}`}>{alertMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}{alertMsg.text}</div>}
+            <p className="text-[10px] leading-relaxed text-muted/80">OGDEX alerts only notify you — we never auto-execute trades. Real non-custodial wallets require you to sign each trade, so when an alert fires you come back and place the trade yourself. Manage all alerts on the Alerts page.</p>
+          </div>
+        )}
+      </div>
+
       {/* Transparent fees + non-custodial trust */}
       <details className="group mt-3 rounded-xl border border-line bg-panel2/40 px-3 py-2 text-[11px]">
         <summary className="flex cursor-pointer list-none items-center gap-1.5 text-muted hover:text-white">

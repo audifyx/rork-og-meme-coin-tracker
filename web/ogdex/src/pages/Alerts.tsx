@@ -19,8 +19,8 @@ export default function Alerts() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(false);
   const [mint, setMint] = useState(params.get("mint") || "");
-  const [type, setType] = useState("price_above");
-  const [value, setValue] = useState("");
+  const [type, setType] = useState(params.get("type") || "price_above");
+  const [value, setValue] = useState(params.get("value") || "");
   const [channel, setChannel] = useState<"telegram" | "webhook">("telegram");
   const [target, setTarget] = useState("");
   const [busy, setBusy] = useState(false);
@@ -64,7 +64,7 @@ export default function Alerts() {
       <div className="mb-6 text-center">
         <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl border border-accent/20 bg-accent/10"><Bell className="h-7 w-7 text-accent" /></div>
         <h1 className="text-2xl font-black tracking-tight">Smart Alerts</h1>
-        <p className="mt-2 text-sm text-muted">Get pinged when a token hits your price or % target. Delivered to any webhook (Discord, Slack, Telegram-bot, or your own endpoint). Tied to your wallet, synced across devices.</p>
+        <p className="mt-2 text-sm text-muted">Get pinged when a token hits your price or % target. Delivered to any webhook (Discord, Slack, Telegram-bot, or your own endpoint). Tied to your wallet, synced across devices. Alerts notify you only — OGDEX never auto-executes trades, so you place and sign each trade yourself.</p>
       </div>
 
       <div className="card mb-4 flex items-center justify-between p-3">
