@@ -29,29 +29,47 @@ export default async function handler(req, res) {
 
   if (!isPubkey(publicKey)) return send(res, 400, { ok: false, error: "invalid publicKey" });
   if (!isPubkey(mint)) return send(res, 400, { ok: false, error: "invalid mint" });
-  const amt = Number(amount);
-  if (!Number.isFinite(amt) || amt <= 0) return send(res, 400, { ok: false, error: "invalid amount" });
-
-  try {
-    const r = await fetch("https://pumpportal.fun/api/trade-local", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ publicKey, action, mint, amount: amt, denominatedInSol, slippage, priorityFee, pool }),
-    });
-    if (!r.ok) {
-      const txt = await r.text().catch(() => "");
-      return send(res, 200, { ok: false, error: `trade build failed (${r.status})`, detail: txt.slice(0, 200) });
-    }
-    const ct = r.headers.get("content-type") || "";
-    if (ct.includes("application/json")) {
-      // PumpPortal returned an error object instead of a tx
-      const j = await r.json().catch(() => ({}));
-      return send(res, 200, { ok: false, error: j.errors ? JSON.stringify(j.errors) : "trade build error" });
-    }
-    const buf = Buffer.from(await r.arrayBuffer());
-    if (!buf.length) return send(res, 200, { ok: false, error: "empty transaction" });
-    return send(res, 200, { ok: true, tx: buf.toString("base64") });
-  } catch (e) {
-    return send(res, 200, { ok: false, error: String(e?.message || e) });
+  // Amount can be a number (SOL for buy / tokens for sell) or a "N%" string
+  // (sell a percentage of the holding). PumpPortal accepts both.
+  let amt;
+  const rawAmt = typeof amount === "string" ? amount.trim() : amount;
+  if (action === "sell" && typeof rawAmt === "string" && rawAmt.endsWith("%")) {
+    const pct = Number(rawAmt.slice(0, -1));
+    if (!Number.isFinite(pct) || pct <= 0 || pct > 100) return send(res, 400, { ok: false, error: "invalid sell percentage" });
+    amt = `${pct}%`;
+  } else {
+    const n = Number(rawAmt);
+    if (!Number.isFinite(n) || n <= 0) return send(res, 400, { ok: false, error: "invalid amount" });
+    amt = n;
   }
+
+  // PumpPortal "auto" routing can 400 for tokens on a specific venue. Try the
+  // requested pool first, then fall back across every venue until one builds.
+  const pools = [...new Set([pool, "auto", "pump", "pump-amm", "raydium", "bonk", "raydium-cpmm", "launchlab"])];
+  let lastErr = "trade build failed";
+  for (const pl of pools) {
+    try {
+      const r = await fetch("https://pumpportal.fun/api/trade-local", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publicKey, action, mint, amount: amt, denominatedInSol, slippage, priorityFee, pool: pl }),
+      });
+      const ct = r.headers.get("content-type") || "";
+      if (r.ok && !ct.includes("application/json")) {
+        const buf = Buffer.from(await r.arrayBuffer());
+        if (buf.length) return send(res, 200, { ok: true, tx: buf.toString("base64"), pool: pl });
+        lastErr = "empty transaction"; continue;
+      }
+      // error: capture detail (json or text) and try the next pool
+      const txt = await r.text().catch(() => "");
+      let msg = txt.slice(0, 200);
+      try { const j = JSON.parse(txt); msg = j.errors ? (Array.isArray(j.errors) ? j.errors.join("; ") : JSON.stringify(j.errors)) : (j.error || msg); } catch { /* keep text */ }
+      lastErr = msg || `trade build failed (${r.status})`;
+      // a wallet/balance/amount problem won't be fixed by another pool — stop early
+      if (/insufficient|not enough|balance|too small|too large|invalid amount/i.test(lastErr)) break;
+    } catch (e) {
+      lastErr = String(e?.message || e);
+    }
+  }
+  return send(res, 200, { ok: false, error: lastErr });
 }
