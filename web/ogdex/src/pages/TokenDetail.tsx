@@ -12,6 +12,7 @@ import KolBadge from "../components/KolBadge";
 import KolWhaleActivity from "../components/KolWhaleActivity";
 import { getKolDirectory, KolDirEntry } from "../lib/kol";
 import { buildHolderIntel } from "../lib/holderIntel";
+import { getWalletLabel, labelKindClass } from "../lib/labels";
 import PriceChart from "../components/PriceChart";
 import TradePanel from "../components/TradePanel";
 import TrustPanel from "../components/TrustPanel";
@@ -66,6 +67,10 @@ export default function TokenDetail() {
   const icon = t.icon || meta.icon || meta.image;
   const banner = meta.banner || meta.openGraph;
   const price = t.priceUsd ?? meta.priceUsd;
+  const mcapNow = t.mcap ?? meta.mcap ?? null;
+  const athPrice = d.athPrice ?? meta?.athPrice ?? null;
+  const athMcap = d.athMcap ?? meta?.athMcap ?? null;
+  const fromAthPct = (athMcap && mcapNow) ? ((mcapNow / athMcap) - 1) * 100 : (athPrice && price ? ((price / athPrice) - 1) * 100 : null);
   const verified = t.isVerified || meta.isVerifiedJup || d.flags?.isVerified;
   const holders: any[] = intel.holders || [];
   const trades: any[] = intel.trades || [];
@@ -99,6 +104,12 @@ export default function TokenDetail() {
                 <span>5m <Change v={t.change5m} /></span><span>1h <Change v={t.change1h} /></span>
                 <span>6h <Change v={t.change6h} /></span><span>24h <Change v={t.change24h ?? meta.priceChange24h} /></span>
               </div>
+              {athMcap != null && (
+                <div className="mt-1 text-[11px] text-muted flex gap-1.5 justify-end items-center">
+                  <span>ATH {fmtUsd(athMcap, { compact: true })}</span>
+                  {fromAthPct != null && <span className={fromAthPct >= -1 ? "text-up" : "text-down"}>({fromAthPct >= 0 ? "+" : ""}{fromAthPct.toFixed(0)}%)</span>}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-4 text-xs">
@@ -133,7 +144,9 @@ export default function TokenDetail() {
         <Stat label="Liquidity" value={t.liquidity != null ? "$" + compact(t.liquidity) : "—"} />
         <Stat label="24h Volume" value={t.volume != null ? "$" + compact(t.volume) : "—"} />
         <Stat label="Holders" value={fmtNum(meta.holderCount ?? t.holderCount ?? safety?.totalHolders)} />
-        <Stat label="ATH MCap" value={(d.athMcap || meta?.athMcap) ? fmtUsd(d.athMcap || meta.athMcap, { compact: true }) : "—"} />
+        <Stat label="ATH MCap" value={athMcap != null ? fmtUsd(athMcap, { compact: true }) : "—"} />
+        <Stat label="ATH Price" value={athPrice != null ? fmtUsd(athPrice) : "—"} />
+        <Stat label="From ATH" value={fromAthPct != null ? (fromAthPct >= 0 ? "+" : "") + fromAthPct.toFixed(0) + "%" : "—"} good={fromAthPct != null ? fromAthPct >= -50 : undefined} />
         <Stat label="Whales" value={String(whales)} sub={whales === 0 ? "healthy" : "concentration"} />
         <Stat label="Organic Score" value={t.organicScore != null ? Math.round(t.organicScore) + "/100" : "—"} sub={meta.organicScoreLabel} />
         <Stat label="Token Age" value={meta.ageDays != null ? meta.ageDays + "d" : "—"} />
@@ -175,11 +188,13 @@ export default function TokenDetail() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-panel border border-line rounded-lg p-1 mb-4 w-fit">
-        {[["overview", "Overview"], ["predictive", "Predictive"], ["smartmoney", "Smart Money"], ["kolwhale", "KOL & Whale"], ["holders", `Holders ${holders.length ? `(${holders.length})` : ""}`], ["trades", `Live Trades ${trades.length ? `(${trades.length})` : ""}`], ["forensics", "Forensics"]].map(([id, label]) => (
-          <button key={id} onClick={() => setTab(id as any)} className={`btn ${tab === id ? "bg-accent/15 text-accent" : "text-muted hover:text-white"}`}>{label}</button>
-        ))}
+      {/* Tabs — centered slider that scrolls instead of breaking the frame */}
+      <div className="mb-4 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+        <div className="flex gap-1 bg-panel border border-line rounded-xl p-1 w-max max-w-full mx-auto">
+          {[["overview", "Overview"], ["predictive", "Predictive"], ["smartmoney", "Smart Money"], ["kolwhale", "KOL & Whale"], ["holders", `Holders ${holders.length ? `(${holders.length})` : ""}`], ["trades", `Live Trades ${trades.length ? `(${trades.length})` : ""}`], ["forensics", "Forensics"]].map(([id, label]) => (
+            <button key={id} onClick={() => setTab(id as any)} className={`btn shrink-0 whitespace-nowrap ${tab === id ? "bg-accent/15 text-accent" : "text-muted hover:text-white"}`}>{label}</button>
+          ))}
+        </div>
       </div>
 
       {tab === "overview" && <Overview d={d} t={t} meta={meta} safety={safety} trades={trades} />}
@@ -246,6 +261,7 @@ function Overview({ d, t, meta, safety, trades }: any) {
         <Row label="FDV" value={fmtUsd(t.fdv ?? meta.fdv, { compact: true })} />
         <Row label="Liquidity" value={t.liquidity ? "$" + compact(t.liquidity) : "—"} />
         <Row label="ATH market cap" value={(d.athMcap || meta?.athMcap) ? fmtUsd(d.athMcap || meta.athMcap, { compact: true }) : "—"} />
+        <Row label="ATH price" value={(d.athPrice || meta?.athPrice) ? fmtUsd(d.athPrice || meta.athPrice) : "—"} />
         <Row label="Total supply" value={compact(t.totalSupply ?? meta.totalSupply)} />
         <Row label="Circulating" value={compact(t.circSupply ?? meta.circSupply)} />
         <Row label="Created" value={meta.createdAt ? new Date(meta.createdAt).toLocaleDateString() + (meta.ageDays != null ? ` (${meta.ageDays}d)` : "") : "—"} />
@@ -303,7 +319,7 @@ function HoldersTable({ holders, price, dir = {} }: { holders: any[]; price?: nu
       </div>
     )}
     <div className="card overflow-hidden">
-      <div className="px-4 py-3 border-b border-line text-sm font-semibold flex items-center gap-2"><Users className="w-4 h-4 text-accent" /> Top {holders.length} Holders <span className="text-muted font-normal text-xs ml-1">KOLs auto-labeled · click wallet to view holdings</span></div>
+      <div className="px-4 py-3 border-b border-line text-sm font-semibold flex items-center gap-2"><Users className="w-4 h-4 text-accent" /> Top {holders.length} Holders <span className="text-muted font-normal text-xs ml-1">KOLs, exchanges & pools labeled · click any wallet to view holdings</span></div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[640px]">
           <thead><tr className="text-muted text-xs border-b border-line">
@@ -314,8 +330,8 @@ function HoldersTable({ holders, price, dir = {} }: { holders: any[]; price?: nu
             {holders.map((h) => (
               <tr key={h.rank} className="border-b border-line/50 hover:bg-panel2/40">
                 <td className="px-4 py-2 text-muted">{h.rank}</td>
-                <td className="px-2 py-2">{dir[h.owner] ? <KolBadge kol={dir[h.owner]} /> : <WalletLink address={h.owner} />}</td>
-                <td className="px-2 py-2"><span className={`pill text-[10px] ${labelCls(h.label)}`}>{h.label}</span></td>
+                <td className="px-2 py-2">{(() => { const lbl = getWalletLabel(h.owner); return dir[h.owner] ? <KolBadge kol={dir[h.owner]} /> : lbl ? <span className="inline-flex items-center gap-1.5"><span className={`pill text-[10px] ${labelKindClass(lbl.kind)}`}>{lbl.name}</span><WalletLink address={h.owner} icon={false} className="text-[11px] text-muted" /></span> : <WalletLink address={h.owner} />; })()}</td>
+                <td className="px-2 py-2"><span className={`pill text-[10px] ${labelCls(h.label)}`}>{getWalletLabel(h.owner)?.kind || h.label}</span></td>
                 <td className="px-2 py-2 text-right">{compact(h.uiAmount)}</td>
                 <td className="px-2 py-2"><div className="flex items-center gap-2"><div className="flex-1 h-1.5 bg-panel2 rounded-full overflow-hidden"><div className="h-full bg-accent" style={{ width: `${((h.pct || 0) / maxPct) * 100}%` }} /></div><span className="text-xs w-12 text-right">{h.pct != null ? h.pct.toFixed(2) + "%" : "—"}</span></div></td>
                 <td className="px-4 py-2 text-right">{price && h.uiAmount ? fmtUsd(h.uiAmount * price, { compact: true }) : "—"}</td>
@@ -355,7 +371,7 @@ function TradesTable({ trades, mint, dir = {}, onRefresh }: { trades: any[]; min
                 <td className="px-2 py-2 text-right">{compact(t.tokenAmount)}</td>
                 <td className="px-2 py-2 text-right">{fmtUsd(t.volumeUsd, { compact: true })}</td>
                 <td className="px-2 py-2">{t.owner ? <WalletLink address={t.owner} icon={false} /> : "—"}</td>
-                <td className="px-2 py-2">{dir[t.owner] ? <span className="pill bg-accent/15 text-accent text-[9px]">{dir[t.owner].name}</span> : (t.volumeUsd >= 1000 ? <span className="pill bg-yellow-400/15 text-yellow-300 text-[9px]">whale</span> : <span className="text-muted/40 text-xs">—</span>)}</td>
+                <td className="px-2 py-2">{dir[t.owner] ? <span className="pill bg-accent/15 text-accent text-[9px]">{dir[t.owner].name}</span> : getWalletLabel(t.owner) ? <span className={`pill text-[9px] ${labelKindClass(getWalletLabel(t.owner)!.kind)}`}>{getWalletLabel(t.owner)!.name}</span> : (t.volumeUsd >= 1000 ? <span className="pill bg-yellow-400/15 text-yellow-300 text-[9px]">whale</span> : <span className="text-muted/40 text-xs">—</span>)}</td>
                 <td className="px-4 py-2 text-muted">{t.dex || "—"}{t.txHash && <a href={`https://solscan.io/tx/${t.txHash}`} target="_blank" rel="noreferrer" className="ml-1.5 text-accent/70 hover:text-accent"><ExternalLink className="w-3 h-3 inline" /></a>}</td>
               </tr>
             ))}

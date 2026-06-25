@@ -473,72 +473,98 @@ export default async function handler(req, res) {
     // ── Social trending (inlined — stays within 12-function Hobby limit) ──────
     } else if (type === "social") {
       cache(res, 90, 180);
-      const [gecko, cgTrend, dexBoosts] = await Promise.all([
+      const [gecko, cgTrend] = await Promise.all([
         fetch("https://api.geckoterminal.com/api/v2/networks/solana/trending_pools?page=1&include=base_token", { headers: GT_HDR })
           .then(r => r.ok ? r.json() : null).catch(() => null),
         fetch("https://api.coingecko.com/api/v3/search/trending", { headers: { Accept: "application/json" } })
           .then(r => r.ok ? r.json() : null).catch(() => null),
-        fetch("https://api.dexscreener.com/token-boosts/top/v1", { headers: { Accept: "application/json" } })
-          .then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
-      const items = []; const seen = new Set();
+      const cand = new Map();
       if (gecko) {
         const tokenMap = {};
         for (const inc of (gecko.included || [])) if (inc.type === "token") tokenMap[inc.id] = inc.attributes;
-        for (const pool of (gecko.data || []).slice(0, 15)) {
+        for (const pool of (gecko.data || []).slice(0, 20)) {
           const a = pool.attributes || {};
           const bt = tokenMap[pool.relationships?.base_token?.data?.id] || {};
           const mint = bt.address;
-          if (!mint || seen.has(mint)) continue;
-          seen.add(mint);
-          const ch1  = num(a.price_change_percentage?.h1)  || 0;
-          const ch24 = num(a.price_change_percentage?.h24) || 0;
-          const vol  = num(a.volume_usd?.h24) || 0;
-          const liq  = num(a.reserve_in_usd) || 0;
-          const reasons = [];
-          if (ch1 > 30)           reasons.push(`🚀 +${ch1.toFixed(0)}% in last 1h`);
-          else if (ch1 > 10)      reasons.push(`📈 +${ch1.toFixed(0)}% in 1h`);
-          if (ch24 > 100)         reasons.push(`🔥 +${ch24.toFixed(0)}% today`);
-          else if (ch24 > 30)     reasons.push(`📊 +${ch24.toFixed(0)}% in 24h`);
-          if (vol > 5_000_000)    reasons.push(`⚡ $${compact(vol)} volume today`);
-          else if (vol > 500_000) reasons.push(`💧 $${compact(vol)} volume`);
-          if (liq > 1_000_000)    reasons.push(`🏦 $${compact(liq)} liquidity`);
-          reasons.push("🔥 Trending on GeckoTerminal");
-          items.push({ mint, symbol: bt.symbol || (a.name||"").split(" / ")[0], name: bt.name || null,
-            icon: bt.image_url || null, priceUsd: num(a.base_token_price_usd),
-            mcap: num(a.market_cap_usd ?? a.fdv_usd), change1h: ch1, change24h: ch24,
-            volume: vol, liquidity: liq, reason: reasons[0] || "🔥 Trending",
-            reasons: reasons.slice(0, 3), source: "geckoterminal", chain: "solana", poolAddress: pool.id || null });
+          if (!mint || cand.has(mint) || STABLES.has(String(bt.symbol||"").toUpperCase())) continue;
+          cand.set(mint, { source: "geckoterminal", name: bt.name || null, symbol: bt.symbol || (a.name||"").split(" / ")[0], icon: bt.image_url || null, poolAddress: pool.id || null });
         }
       }
       if (cgTrend?.coins) {
-        for (const { item } of cgTrend.coins.slice(0, 10)) {
-          const solanaMint = item.platforms?.solana || item.data?.platforms?.solana || null;
-          if (!solanaMint || seen.has(solanaMint)) continue;
-          seen.add(solanaMint);
-          const rank = item.market_cap_rank || (item.score ?? 0) + 1 || "?";
-          const pct  = item.data?.price_change_percentage_24h?.usd;
-          const reasons = [`🏆 #${rank} trending on CoinGecko`,
-            pct > 0 ? `📈 +${Number(pct).toFixed(1)}% in 24h` : pct < 0 ? `📉 ${Number(pct).toFixed(1)}% in 24h` : "💬 Community buzz",
-            "🔎 High search volume"].filter(Boolean);
-          items.push({ mint: solanaMint, symbol: item.symbol, name: item.name,
-            icon: item.large || item.thumb || null, priceUsd: num(item.data?.price),
-            mcap: null, change24h: pct ? num(pct) : null,
-            reason: reasons[0], reasons: reasons.slice(0, 3), source: "coingecko", chain: "solana", cgId: item.id });
+        for (const { item } of cgTrend.coins.slice(0, 12)) {
+          const mint = item.platforms?.solana || item.data?.platforms?.solana || null;
+          if (!mint || cand.has(mint)) continue;
+          cand.set(mint, { source: "coingecko", name: item.name, symbol: item.symbol, icon: item.large || item.thumb || null, cgRank: item.market_cap_rank || null, cgId: item.id });
         }
       }
-      if (Array.isArray(dexBoosts)) {
-        for (const b of dexBoosts.filter(b => b.chainId === "solana").slice(0, 8)) {
-          const mint = b.tokenAddress;
-          if (!mint || seen.has(mint)) continue;
-          seen.add(mint);
-          items.push({ mint, symbol: null, name: b.description || null,
-            icon: b.icon || b.header || null, priceUsd: null, mcap: null,
-            reason: "🎯 Trending on DexScreener",
-            reasons: ["🎯 Trending on DexScreener", b.description ? `💬 "${b.description.slice(0, 60)}"` : "📢 Boosted project", "👀 High community attention"],
-            source: "dexscreener", chain: "solana", url: b.url || null });
-        }
+      const mints = [...cand.keys()];
+      const dexMap = {};
+      for (let i = 0; i < mints.length; i += 30) {
+        const chunk = mints.slice(i, i + 30);
+        try {
+          const d = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${chunk.join(",")}`, { headers: { Accept: "application/json" } })
+            .then(r => r.ok ? r.json() : null).catch(() => null);
+          for (const p of (d?.pairs || [])) {
+            const addr = p.baseToken?.address; if (!addr) continue;
+            const liq = num(p.liquidity?.usd) || 0;
+            if (!dexMap[addr] || liq > (dexMap[addr].liq || 0)) {
+              dexMap[addr] = {
+                liq, vol: num(p.volume?.h24) || 0, price: num(p.priceUsd),
+                mcap: num(p.marketCap) || num(p.fdv) || null,
+                ch1: num(p.priceChange?.h1) || 0, ch24: num(p.priceChange?.h24) || 0,
+                buys: p.txns?.h24?.buys || 0, sells: p.txns?.h24?.sells || 0,
+                icon: p.info?.imageUrl || null, name: p.baseToken?.name || null, symbol: p.baseToken?.symbol || null,
+              };
+            }
+          }
+        } catch {}
       }
+      const reasonsFor = (e) => {
+        const r = [];
+        if (e.ch1 > 20) r.push(`\u{1F680} +${e.ch1.toFixed(0)}% in the last hour`);
+        else if (e.ch1 > 5) r.push(`\u{1F4C8} +${e.ch1.toFixed(0)}% in 1h`);
+        if (e.ch24 >= 100) r.push(`\u{1F525} +${e.ch24.toFixed(0)}% in 24h`);
+        else if (e.ch24 >= 20) r.push(`\u{1F4CA} +${e.ch24.toFixed(0)}% in 24h`);
+        else if (e.ch24 <= -20) r.push(`\u{1F4C9} ${e.ch24.toFixed(0)}% in 24h`);
+        if (e.vol >= 2000000) r.push(`\u26A1 $${compact(e.vol)} traded today`);
+        else if (e.vol >= 200000) r.push(`\u{1F4A7} $${compact(e.vol)} volume`);
+        const br = e.buys / Math.max(e.sells, 1);
+        if (e.buys + e.sells > 50 && br >= 1.5) r.push(`\u{1F7E2} Buyers leading ${br.toFixed(1)}:1`);
+        else if (e.buys + e.sells > 50 && br <= 0.66) r.push(`\u{1F534} Sellers in control`);
+        if (e.liq >= 1000000) r.push(`\u{1F3E6} Deep $${compact(e.liq)} liquidity`);
+        return r;
+      };
+      const aiFor = (e, sym) => {
+        const dir = e.ch24 >= 0 ? `up ${e.ch24.toFixed(0)}%` : `down ${Math.abs(e.ch24).toFixed(0)}%`;
+        let s = `${sym || "This token"} is ${dir} over 24h`;
+        if (e.vol) s += ` on $${compact(e.vol)} of volume`;
+        const br = e.buys / Math.max(e.sells, 1);
+        if (e.buys + e.sells > 50) s += br >= 1.3 ? `, buyers outpacing sellers ${br.toFixed(1)}:1` : br <= 0.77 ? `, but sellers are dominating` : `, with balanced flow`;
+        s += e.ch1 >= 10 ? " \u2014 momentum is accelerating right now." : e.ch24 >= 50 ? " \u2014 a strong breakout is underway." : e.liq >= 500000 ? " \u2014 liquidity looks healthy." : ".";
+        return s;
+      };
+      const items = [];
+      for (const [mint, c] of cand) {
+        const e = dexMap[mint];
+        if (!e) continue;
+        if (e.liq < 15000) continue;
+        if (e.vol < 10000) continue;
+        if (e.buys + e.sells < 30) continue;
+        const sym = c.symbol || e.symbol;
+        const reasons = reasonsFor(e);
+        if (c.source === "coingecko" && c.cgRank) reasons.push(`\u{1F3C6} #${c.cgRank} trending on CoinGecko`);
+        reasons.push(c.source === "coingecko" ? "\u{1F50E} High search interest" : "\u{1F525} Trending on GeckoTerminal");
+        const score = (e.ch24 > 0 ? e.ch24 : 0) + Math.min(e.vol / 50000, 60) + (e.ch1 > 0 ? e.ch1 * 1.5 : 0);
+        items.push({
+          mint, symbol: sym, name: c.name || e.name || null, icon: c.icon || e.icon || null,
+          priceUsd: e.price, mcap: e.mcap, change1h: e.ch1, change24h: e.ch24, volume: e.vol, liquidity: e.liq,
+          reason: reasons[0] || "Trending", reasons: reasons.slice(0, 3), aiSummary: aiFor(e, sym),
+          source: c.source, chain: "solana", poolAddress: c.poolAddress || null, cgId: c.cgId || null, _score: score,
+        });
+      }
+      items.sort((a, b) => (b._score || 0) - (a._score || 0));
+      for (const it of items) delete it._score;
       return send(res, 200, { count: items.length, items, sources: ["geckoterminal","coingecko","dexscreener"] });
 
     // ── Default: Trending (Jupiter primary + GeckoTerminal fallback) ──────────

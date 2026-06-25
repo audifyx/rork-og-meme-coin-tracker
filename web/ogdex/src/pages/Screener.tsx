@@ -505,17 +505,14 @@ function SocialFeed({ items, loading }: { items: SocialItem[]; loading: boolean 
           >
             <div className="flex items-start gap-3">
               {/* Token logo */}
-              <TokenLogo src={item.icon} sym={item.symbol || "?"} />
+              <TokenLogo src={item.icon} sym={item.symbol || "?"} size={44} />
 
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="font-semibold text-sm">{item.symbol || short(item.mint || "?")}</span>
+                <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                  <span className="font-bold text-sm">{item.symbol || short(item.mint || "?")}</span>
                   {item.name && item.name !== item.symbol && (
-                    <span className="text-muted text-xs">{item.name}</span>
-                  )}
-                  {item.chain && item.chain !== "solana" && (
-                    <span className="pill bg-panel2 text-muted text-[9px] uppercase">{item.chain}</span>
+                    <span className="text-muted text-xs truncate max-w-[160px]">{item.name}</span>
                   )}
                   <span className={`pill text-[9px] uppercase ml-auto
                     ${item.source === "coingecko" ? "bg-green-500/15 text-green-400" :
@@ -527,23 +524,31 @@ function SocialFeed({ items, loading }: { items: SocialItem[]; loading: boolean 
                   </span>
                 </div>
 
-                {/* Primary reason */}
-                <p className="text-sm text-white/80 font-medium mb-1">{item.reason}</p>
+                {/* AI: why it's trending */}
+                {item.aiSummary && (
+                  <div className="flex items-start gap-1.5 rounded-lg bg-accent/[0.06] border border-accent/15 px-2.5 py-1.5 mb-2">
+                    <Sparkles className="w-3.5 h-3.5 text-accent shrink-0 mt-0.5" />
+                    <p className="text-[12.5px] text-white/85 leading-snug">{item.aiSummary}</p>
+                  </div>
+                )}
 
-                {/* Additional reasons */}
-                {item.reasons?.slice(1).map((r, j) => (
-                  <p key={j} className="text-xs text-muted">{r}</p>
-                ))}
+                {/* Reason chips */}
+                {item.reasons?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {item.reasons.slice(0, 3).map((r, j) => (
+                      <span key={j} className="pill bg-panel2 text-muted text-[10px]">{r}</span>
+                    ))}
+                  </div>
+                )}
 
-                {/* Stats */}
-                {(item.priceUsd != null || item.mcap != null || item.change24h != null) && (
-                  <div className="flex items-center gap-3 mt-2 text-xs text-muted">
-                    {item.priceUsd != null && <span>${item.priceUsd < 0.01 ? item.priceUsd.toExponential(2) : item.priceUsd.toFixed(4)}</span>}
-                    {item.mcap != null && <span>MC ${compact(item.mcap)}</span>}
-                    {item.change24h != null && (
-                      <Change v={item.change24h} className="text-xs" />
-                    )}
-                    {item.volume != null && <span>Vol ${compact(item.volume)}</span>}
+                {/* Live stats */}
+                {(item.priceUsd != null || item.mcap != null || item.change24h != null || item.liquidity != null) && (
+                  <div className="flex items-center gap-3 flex-wrap text-xs text-muted">
+                    {item.priceUsd != null && <span>{fmtUsd(item.priceUsd)}</span>}
+                    {item.mcap != null && <span>MC <span className="text-white/70">${compact(item.mcap)}</span></span>}
+                    {item.volume != null && <span>Vol <span className="text-white/70">${compact(item.volume)}</span></span>}
+                    {item.liquidity != null && <span>Liq <span className="text-white/70">${compact(item.liquidity)}</span></span>}
+                    {item.change24h != null && <Change v={item.change24h} className="text-xs" />}
                   </div>
                 )}
               </div>

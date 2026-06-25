@@ -46,6 +46,7 @@ async function gtPools(kind, network = "solana", pages = 1) {
           createdAt: a.pool_created_at || null,
           ageH: a.pool_created_at ? (Date.now() - new Date(a.pool_created_at).getTime()) / 3.6e6 : null,
           pool: a.address || item.id,
+          dex: item.relationships?.dex?.data?.id || null,
         });
       }
     } catch { /* skip page */ }
@@ -73,24 +74,57 @@ async function pumpGraduating() {
         priceUsd: mcap && total ? mcap / total : null, mcap: mcap || null, liq: null,
         bondingPct: pct, ch24h: null, ageH: t.created_timestamp ? (now - t.created_timestamp) / 3.6e6 : null,
       };
-      if (!complete && pct >= 75) {
+      if (!complete && pct >= 80) {
         sigs.push({ ...base, type: "graduating", label: "Graduating Soon", strength: pct,
           metric: `${pct}% to migration`, tone: "lime" });
-      } else if (complete && base.ageH != null && base.ageH <= 12) {
-        sigs.push({ ...base, type: "graduated", label: "Just Graduated", strength: 90,
-          metric: "Curve complete · real liquidity", tone: "cyan" });
       }
     }
   } catch { /* pump optional */ }
   return sigs.sort((a, b) => (b.strength || 0) - (a.strength || 0)).slice(0, 14);
 }
 
+// Detect coins that *just migrated* to a real AMM (pumpswap/raydium/meteora).
+// A young pool on a graduation venue with real liquidity + volume is, by
+// definition, a freshly graduated token — far more accurate than guessing from
+// pump.fun create timestamps.
+const MIGRATION_DEX = new Set(["pumpswap", "raydium", "raydium-clmm", "meteora", "meteora-dlmm", "fluxbeam"]);
+function freshMigrations(pools) {
+  const out = [];
+  for (const p of pools) {
+    const dex = (p.dex || "").toLowerCase();
+    if (!MIGRATION_DEX.has(dex)) continue;
+    if (p.ageH == null || p.ageH > 36) continue;          // recently created pool
+    const liq = p.liq || 0; const v24 = num(p.vol.h24); const v1h = num(p.vol.h1);
+    if (liq < 12000) continue;                            // real liquidity floor
+    if (v24 < 8000 && v1h < 2000) continue;               // must be actively traded
+    const tx1h = p.tx.h1 || {}; const trades1h = num(tx1h.buys) + num(tx1h.sells);
+    if (trades1h < 5 && v1h <= 0) continue;               // not dead
+    out.push({
+      mint: p.mint, symbol: p.symbol, name: p.name, icon: p.icon, chain: p.chain,
+      priceUsd: p.priceUsd, mcap: p.mcap, liq, vol1h: v1h, ch5m: num(p.ch.m5), ch1h: num(p.ch.h1), ch24h: num(p.ch.h24),
+      ageH: p.ageH, pool: p.pool, type: "graduated", label: "Just Migrated", tone: "cyan",
+      strength: Math.min(100, 50 + liq / 5000),
+      metric: `${p.ageH.toFixed(0)}h old · $${Math.round(liq / 1000)}K liq on ${dex}`,
+    });
+  }
+  return out.sort((a, b) => (b.strength || 0) - (a.strength || 0)).slice(0, 16);
+}
+
 function computeSignals(pools) {
   const sigs = [];
+  const nowMs = Date.now();
   for (const p of pools) {
     const liq = p.liq || 0;
-    if (liq < 6000) continue; // filter dust/manip-prone
-    const v5 = num(p.vol.m5), v15 = num(p.vol.m15), v1h = num(p.vol.h1);
+    if (liq < 8000) continue; // filter dust/manip-prone
+    const v5 = num(p.vol.m5), v15 = num(p.vol.m15), v1h = num(p.vol.h1), v24 = num(p.vol.h24);
+    // ── Liveness gate: drop dead / stale coins ──────────────────────────────
+    const tx1h = p.tx.h1 || {}, tx24 = p.tx.h24 || {};
+    const trades1h = num(tx1h.buys) + num(tx1h.sells);
+    const trades24 = num(tx24.buys) + num(tx24.sells);
+    if (v1h <= 0 && (p.tx.m5?.buys || 0) + (p.tx.m5?.sells || 0) <= 0) continue; // no recent trades
+    if (v24 > 0 && v24 < 3000) continue;       // negligible daily volume = dead
+    if (trades24 > 0 && trades24 < 25) continue; // almost no traders all day
+    if (num(p.ch.m5) === 0 && num(p.ch.h1) === 0 && num(p.ch.h24) === 0) continue; // flat/frozen price
     const c5 = num(p.ch.m5), c1h = num(p.ch.h1), c24 = num(p.ch.h24);
     const t5 = p.tx.m5 || {}, t1h = p.tx.h1 || {};
     const buys5 = num(t5.buys), sells5 = num(t5.sells), buyers5 = num(t5.buyers);
@@ -131,17 +165,19 @@ export default async function handler(req, res) {
   try {
     const [trending, fresh, pumps] = await Promise.all([
       gtPools("trending_pools", "solana", 2),
-      gtPools("new_pools", "solana", 1),
+      gtPools("new_pools", "solana", 2),
       pumpGraduating(),
     ]);
     // dedup pools by mint, prefer trending (richer)
     const seen = new Set();
     const pools = [...trending, ...fresh].filter((p) => { if (seen.has(p.mint)) return false; seen.add(p.mint); return true; });
     let signals = computeSignals(pools);
-    // merge pump graduation signals (dedup by mint+type)
+    // accurate just-migrated detection from real AMM pools
+    const migrated = freshMigrations(pools);
+    // merge migration + pump graduation signals (dedup by mint+type)
     const key = (s) => s.mint + ":" + s.type;
     const have = new Set(signals.map(key));
-    for (const s of pumps) if (!have.has(key(s))) signals.push(s);
+    for (const s of [...migrated, ...pumps]) if (!have.has(key(s))) { signals.push(s); have.add(key(s)); }
     // rank: graduating/graduated and high strength first
     const order = { graduating: 5, graduated: 5, volume_surge: 4, buyer_surge: 4, momentum: 3, velocity_spike: 3, fresh_runner: 2, selloff: 1 };
     signals.sort((a, b) => (order[b.type] - order[a.type]) || ((b.strength || 0) - (a.strength || 0)));

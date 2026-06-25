@@ -69,7 +69,7 @@ export interface SocialItem {
  mint: string | null; symbol?: string | null; name?: string | null; icon?: string | null;
  priceUsd?: number | null; mcap?: number | null; change1h?: number | null; change24h?: number | null;
  volume?: number | null; liquidity?: number | null;
- reason: string; reasons: string[];
+ reason: string; reasons: string[]; aiSummary?: string | null;
  source: "geckoterminal" | "coingecko" | "dexscreener" | string;
  chain?: string; url?: string | null; cgId?: string | null; poolAddress?: string | null;
 }

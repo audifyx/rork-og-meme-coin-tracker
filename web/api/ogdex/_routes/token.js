@@ -2,10 +2,63 @@ import { jup, callFn, send, cache } from "../_lib.js";
 import { normToken, num } from "../_normalize.js";
 
 const GT_HDR = { Accept: "application/json;version=20230302" };
+const GT = "https://api.geckoterminal.com/api/v2";
 const EVM_CHAIN_TO_GT = {
   ethereum: "eth", bsc: "bsc", base: "base", polygon: "polygon_pos",
   arbitrum: "arbitrum", avalanche: "avax", sui: "sui-network",
 };
+
+// Pull website / socials / banner out of a DexScreener pair's info block.
+function dexLinks(best) {
+  const info = best?.info || {};
+  const socials = {};
+  for (const s of info.socials || []) {
+    const k = String(s.type || s.platform || "").toLowerCase();
+    if (k.includes("twitter") || k === "x") socials.twitter = s.url;
+    else if (k.includes("telegram")) socials.telegram = s.url;
+    else if (k.includes("discord")) socials.discord = s.url;
+  }
+  const site = (info.websites || [])[0];
+  if (site?.url) socials.website = site.url;
+  return { socials, banner: info.header || info.openGraph || null, imageUrl: info.imageUrl || null };
+}
+
+// Compute ATH price/mcap from the *canonical* (deepest-liquidity) GeckoTerminal
+// pool for this token, then derive ATH mcap from real circulating supply.
+async function computeAth(network, mint, token, fallbackPool) {
+  let pool = fallbackPool || null;
+  try {
+    const pr = await fetch(`${GT}/networks/${network}/tokens/${mint}/pools`, { headers: GT_HDR })
+      .then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const pools = (pr?.data || [])
+      .map((p) => ({ addr: p.attributes?.address, liq: Number(p.attributes?.reserve_in_usd) || 0 }))
+      .filter((p) => p.addr)
+      .sort((a, b) => b.liq - a.liq);
+    if (pools[0]) pool = pools[0].addr;
+  } catch {}
+  if (!pool) return { athPrice: null, athMcap: null };
+  try {
+    const gt = await fetch(
+      `${GT}/networks/${network}/pools/${pool}/ohlcv/day?limit=1000&currency=usd&aggregate=1`,
+      { headers: GT_HDR }
+    ).then((r) => (r.ok ? r.json() : null));
+    const candles = gt?.data?.attributes?.ohlcv_list || [];
+    const highs = candles.map((c) => num(c[2])).filter((h) => h && h > 0);
+    if (!highs.length) return { athPrice: null, athMcap: null };
+    let athPrice = Math.max(...highs);
+    const price = num(token?.priceUsd);
+    // Guard against a single corrupt candle wick: ignore ATH that is absurdly
+    // far above current price unless the rest of the data agrees.
+    if (price && athPrice > price * 5000) athPrice = price;
+    const supply = num(token?.totalSupply) || num(token?.circSupply);
+    let athMcap = null;
+    if (athPrice && supply) athMcap = athPrice * supply;
+    else if (athPrice && price && token?.mcap) athMcap = (athPrice / price) * token.mcap;
+    // ATH can never be below the current mcap.
+    if (athMcap != null && token?.mcap) athMcap = Math.max(athMcap, token.mcap);
+    return { athPrice, athMcap };
+  } catch { return { athPrice: null, athMcap: null }; }
+}
 
 export default async function handler(req, res) {
   const url  = new URL(req.url, "http://x");
@@ -27,11 +80,12 @@ export default async function handler(req, res) {
       if (!best) return send(res, 200, { mint, token: null, pairs: [], error: "Token not found on any chain" });
 
       const chain = best.chainId || "ethereum";
+      const links = dexLinks(best);
       const token = {
         mint,
         name:     best.baseToken?.name    || null,
         symbol:   best.baseToken?.symbol  || null,
-        icon:     best.info?.imageUrl     || best.info?.header || null,
+        icon:     links.imageUrl || best.info?.header || null,
         priceUsd: num(best.priceUsd),
         mcap:     num(best.marketCap),
         fdv:      num(best.fdv),
@@ -51,14 +105,11 @@ export default async function handler(req, res) {
         stats: { "5m": {}, "1h": {}, "6h": {}, "24h": {} },
       };
 
-      // Enrich icon/name from GeckoTerminal if DexScreener missing them
       if (!token.icon || !token.name) {
         try {
           const gtNet = EVM_CHAIN_TO_GT[chain] || chain;
-          const gtTok = await fetch(
-            `https://api.geckoterminal.com/api/v2/networks/${gtNet}/tokens/${mint}`,
-            { headers: GT_HDR }
-          ).then(r => r.ok ? r.json() : null).catch(() => null);
+          const gtTok = await fetch(`${GT}/networks/${gtNet}/tokens/${mint}`, { headers: GT_HDR })
+            .then(r => r.ok ? r.json() : null).catch(() => null);
           const a = gtTok?.data?.attributes || {};
           if (!token.icon && a.image_url)  token.icon = a.image_url;
           if (!token.name && a.name)        token.name = a.name;
@@ -66,70 +117,57 @@ export default async function handler(req, res) {
         } catch {}
       }
 
-      // ATH price from GeckoTerminal OHLCV (using correct network)
-      let athPrice = null, athMcap = null;
-      try {
-        const gtNet = EVM_CHAIN_TO_GT[chain] || chain;
-        const gt = await fetch(
-          `https://api.geckoterminal.com/api/v2/networks/${gtNet}/pools/${best.pairAddress}/ohlcv/day?limit=365&currency=usd&aggregate=1`,
-          { headers: GT_HDR }
-        ).then(r => r.ok ? r.json() : null).catch(() => null);
-        const candles = gt?.data?.attributes?.ohlcv_list || [];
-        const highs = candles.map(c => num(c[2])).filter(Boolean);
-        if (highs.length) {
-          athPrice = Math.max(...highs);
-          if (athPrice && token.priceUsd && token.mcap) athMcap = (athPrice / token.priceUsd) * token.mcap;
-        }
-      } catch {}
+      const gtNet = EVM_CHAIN_TO_GT[chain] || chain;
+      const { athPrice, athMcap } = await computeAth(gtNet, mint, token, best.pairAddress);
 
       const pairsMapped = pairs.slice(0, 5).map(p => ({
-        dex:       p.dexId,
-        address:   p.pairAddress,
-        priceUsd:  num(p.priceUsd),
-        liquidity: num(p.liquidity?.usd),
-        volume24h: num(p.volume?.h24),
-        change24h: num(p.priceChange?.h24),
-        txnsBuys:  p.txns?.h24?.buys  || 0,
-        txnsSells: p.txns?.h24?.sells || 0,
-        chain:     p.chainId,
+        dex: p.dexId, address: p.pairAddress, priceUsd: num(p.priceUsd),
+        liquidity: num(p.liquidity?.usd), volume24h: num(p.volume?.h24), change24h: num(p.priceChange?.h24),
+        txnsBuys: p.txns?.h24?.buys || 0, txnsSells: p.txns?.h24?.sells || 0, chain: p.chainId,
       }));
 
-      return send(res, 200, { mint, token, athPrice, athMcap, pairs: pairsMapped, chain });
+      return send(res, 200, {
+        mint, token, athPrice, athMcap, pairs: pairsMapped, chain,
+        meta: { chain, socials: links.socials, banner: links.banner, ageDays: token.ageDays, createdAt: token.createdAt },
+      });
     } catch (e) {
       return send(res, 200, { mint, error: String(e?.message || e) });
     }
   }
 
-  // ── Solana path (original logic) ───────────────────────────────────────────
+  // ── Solana path ────────────────────────────────────────────────────────────
   try {
-    // 1. Fetch Jupiter token + DexScreener pairs + custom scan in parallel
-    const [jupRaw, dexRaw, scan, intel] = await Promise.all([
-      jup(`/tokens/v1/token/${mint}`).catch(() => null),
-      fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`, {
-        headers: { Accept: "application/json" },
-      }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    // 1. Fetch sources in parallel. Jupiter v2 search is the PRIMARY source —
+    //    it returns correct usdPrice / mcap / fdv / supply / holderCount /
+    //    decimals / per-window stats / audit, all internally consistent.
+    const [jupArr, dexRaw, scan, intel] = await Promise.all([
+      jup(`/tokens/v2/search?query=${mint}`).catch(() => null),
+      fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`, { headers: { Accept: "application/json" } })
+        .then((r) => (r.ok ? r.json() : null)).catch(() => null),
       callFn("og-scan-token", { query: mint }).catch(() => null),
       callFn("ogdex-intel", { mint }).catch(() => null),
     ]);
 
-    // 2. Normalise from Jupiter
+    const jupRaw = Array.isArray(jupArr) ? (jupArr.find((t) => (t.id || t.mint) === mint) || null) : null;
     let token = normToken(jupRaw, "24h");
+    if (token) token.chain = "solana";
 
-    // 3. Best DexScreener pair (highest liquidity)
-    const pairs = dexRaw?.pairs || [];
-    const best = [...pairs].sort(
-      (a, b) => (num(b.liquidity?.usd) || 0) - (num(a.liquidity?.usd) || 0)
-    )[0] || null;
+    // 2. DexScreener — ONLY pairs where this mint is the base token (a quote-side
+    //    pair reports the *other* token's price and corrupts mcap/ATH).
+    const pairs = (dexRaw?.pairs || []).filter((p) => p.baseToken?.address === mint);
+    const best = [...pairs].sort((a, b) => (num(b.liquidity?.usd) || 0) - (num(a.liquidity?.usd) || 0))[0] || null;
+    const links = best ? dexLinks(best) : { socials: {}, banner: null, imageUrl: null };
 
     if (best) {
+      const dexPrice = num(best.priceUsd);
       if (!token) {
-        // Build token from DexScreener if Jupiter returned nothing
+        // No Jupiter entry — build from DexScreener.
         token = {
-          mint,
+          mint, chain: "solana",
           name: best.baseToken?.name || null,
           symbol: best.baseToken?.symbol || null,
-          icon: best.info?.imageUrl || best.info?.header || null,
-          priceUsd: num(best.priceUsd),
+          icon: links.imageUrl || best.info?.header || null,
+          priceUsd: dexPrice,
           mcap: num(best.marketCap),
           fdv: num(best.fdv),
           liquidity: num(best.liquidity?.usd),
@@ -147,17 +185,22 @@ export default async function handler(req, res) {
           stats: { "5m": {}, "1h": {}, "6h": {}, "24h": {} },
         };
       } else {
-        // Enrich existing Jupiter token with DexScreener data
-        if (token.priceUsd == null) token.priceUsd = num(best.priceUsd);
-        if (!token.volume)         token.volume    = num(best.volume?.h24);
-        if (!token.liquidity)      token.liquidity = num(best.liquidity?.usd);
-        if (!token.mcap)           token.mcap      = num(best.marketCap);
+        // Enrich Jupiter token with DexScreener — but never let a divergent
+        // DexScreener price override the authoritative Jupiter price/mcap.
+        const trustDex = token.priceUsd == null ||
+          (dexPrice != null && dexPrice > 0 && token.priceUsd > 0 &&
+            dexPrice / token.priceUsd < 3 && dexPrice / token.priceUsd > 0.33);
+        if (token.priceUsd == null && dexPrice != null) token.priceUsd = dexPrice;
+        if (!token.volume)    token.volume    = num(best.volume?.h24);
+        if (!token.liquidity) token.liquidity = num(best.liquidity?.usd);
+        if (!token.mcap && trustDex) token.mcap = num(best.marketCap);
+        if (!token.fdv && trustDex)  token.fdv  = num(best.fdv);
         if (token.change24h == null) token.change24h = num(best.priceChange?.h24);
         if (token.change1h  == null) token.change1h  = num(best.priceChange?.h1);
         if (token.change6h  == null) token.change6h  = num(best.priceChange?.h6);
         if (token.change5m  == null) token.change5m  = num(best.priceChange?.m5);
-        if (!token.icon)           token.icon = best.info?.imageUrl || best.info?.header || null;
-        if (!token.firstPool?.id)  token.firstPool = { id: best.pairAddress };
+        if (!token.icon)            token.icon = links.imageUrl || best.info?.header || null;
+        if (!token.firstPool?.id)   token.firstPool = { id: best.pairAddress };
         if (!token.ageDays && best.pairCreatedAt) {
           token.ageDays = Math.round((Date.now() - best.pairCreatedAt) / 864e5);
           token.createdAt = new Date(best.pairCreatedAt).toISOString();
@@ -165,56 +208,44 @@ export default async function handler(req, res) {
       }
     }
 
-    // 4. Merge custom scan metadata (OG Scan / Soltools)
-    const meta = scan?.token ?? null;
-    if (token && meta) {
-      token.isVerified = token.isVerified || !!meta.isVerifiedJup;
-      if (!token.icon) token.icon = meta.icon || meta.image;
-      if (!token.holderCount) token.holderCount = meta.holderCount;
+    // 3. Merge custom scan metadata (OG Scan / Soltools).
+    const scanMeta = scan?.token ?? null;
+    if (token && scanMeta) {
+      token.isVerified = token.isVerified || !!scanMeta.isVerifiedJup;
+      if (!token.icon) token.icon = scanMeta.icon || scanMeta.image;
+      if (!token.holderCount) token.holderCount = scanMeta.holderCount;
     }
 
-    // 5. Compute ATH price & market cap from GeckoTerminal OHLCV
-    const poolAddr = best?.pairAddress || token?.firstPool?.id || null;
-    let athPrice = null;
-    let athMcap  = null;
-    if (poolAddr) {
-      try {
-        const gt = await fetch(
-          `https://api.geckoterminal.com/api/v2/networks/solana/pools/${poolAddr}/ohlcv/day?limit=1000&currency=usd&aggregate=1`,
-          { headers: { Accept: "application/json;version=20230302" } }
-        ).then((r) => (r.ok ? r.json() : null));
-        const candles = gt?.data?.attributes?.ohlcv_list || [];
-        const highs = candles.map((c) => num(c[2])).filter(Boolean);
-        if (highs.length) {
-          athPrice = Math.max(...highs);
-          const supply = num(token?.totalSupply) || num(token?.circSupply);
-          if (athPrice && supply) athMcap = athPrice * supply;
-          // Fallback: use ATH price * (current mcap / current price) to estimate ATH mcap
-          if (!athMcap && athPrice && token?.priceUsd && token?.mcap) {
-            athMcap = (athPrice / token.priceUsd) * token.mcap;
-          }
-        }
-      } catch {}
-    }
+    // 4. ATH via the canonical (deepest) GeckoTerminal pool + real supply.
+    let { athPrice, athMcap } = await computeAth(
+      "solana", mint, token, best?.pairAddress || token?.firstPool?.id || null
+    );
+    // Fallback to OG Scan's stored ATH mcap if GeckoTerminal had no history.
+    if (athMcap == null && scanMeta?.athMcap) athMcap = num(scanMeta.athMcap);
 
-    // Fallback: meta.athMcap from og-scan-token if GeckoTerminal didn't work
-    if (!athMcap && meta?.athMcap) athMcap = num(meta.athMcap);
+    // 5. Compose meta (frontend reads socials/banner/chain/age from here).
+    const meta = {
+      ...(scanMeta || {}),
+      chain: "solana",
+      socials: { ...(scanMeta?.socials || {}), ...links.socials },
+      banner: scanMeta?.banner || links.banner,
+      ageDays: scanMeta?.ageDays ?? token?.ageDays ?? null,
+      createdAt: scanMeta?.createdAt ?? token?.createdAt ?? null,
+      holderCount: scanMeta?.holderCount ?? token?.holderCount ?? intel?.holderCount ?? null,
+      pairDexId: best?.dexId || scanMeta?.pairDexId || null,
+      athPrice, athMcap,
+    };
 
-    // 6. Mapped pair list for detail page
+    // 6. Mapped pair list.
     const pairsMapped = pairs.slice(0, 5).map((p) => ({
-      dex:      p.dexId,
-      address:  p.pairAddress,
-      priceUsd: num(p.priceUsd),
-      liquidity: num(p.liquidity?.usd),
-      volume24h: num(p.volume?.h24),
-      change24h: num(p.priceChange?.h24),
-      txnsBuys:  p.txns?.h24?.buys  || 0,
-      txnsSells: p.txns?.h24?.sells || 0,
+      dex: p.dexId, address: p.pairAddress, priceUsd: num(p.priceUsd),
+      liquidity: num(p.liquidity?.usd), volume24h: num(p.volume?.h24), change24h: num(p.priceChange?.h24),
+      txnsBuys: p.txns?.h24?.buys || 0, txnsSells: p.txns?.h24?.sells || 0,
     }));
 
     return send(res, 200, {
       mint,
-      token: token || (meta ? normMetaToken(meta) : null),
+      token: token || (scanMeta ? normMetaToken(scanMeta) : null),
       meta,
       athPrice,
       athMcap,
@@ -222,8 +253,8 @@ export default async function handler(req, res) {
       score:         scan?.score   ?? null,
       flags:         scan?.flags   ?? null,
       verdict:       scan?.verdict ?? null,
-      momentum:      meta?.momentum      ?? null,
-      momentumLabel: meta?.momentumLabel ?? null,
+      momentum:      scanMeta?.momentum      ?? null,
+      momentumLabel: scanMeta?.momentumLabel ?? null,
       intel:  intel?.ok ? intel : null,
       safety: intel?.safety ?? null,
     });
@@ -234,7 +265,7 @@ export default async function handler(req, res) {
 
 function normMetaToken(m) {
   return {
-    mint: m.mint, name: m.name, symbol: m.symbol, icon: m.icon || m.image,
+    mint: m.mint, name: m.name, symbol: m.symbol, icon: m.icon || m.image, chain: "solana",
     priceUsd: m.priceUsd, mcap: m.mcap, fdv: m.fdv, liquidity: m.liquidity,
     holderCount: m.holderCount,
     volume: (num(m.buyVolume24h) || 0) + (num(m.sellVolume24h) || 0),
