@@ -8,8 +8,10 @@
 // No Birdeye / paid indexer. KV-cached at xray/{mint}.json (results are immutable).
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-const HELIUS_API_KEY = Deno.env.get("HELIUS_API_KEY") || "";
+const HELIUS_API_KEY  = Deno.env.get("HELIUS_API_KEY")  || "";
+const BIRDEYE_API_KEY = Deno.env.get("BIRDEYE_API_KEY") || "";
 const RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+const BE_HDR = { "X-API-KEY": BIRDEYE_API_KEY, "x-chain": "solana", accept: "application/json" };
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SRK = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const KV_BUCKET = "ogdex-kv";
@@ -157,8 +159,47 @@ async function traceFunding(wallets: string[]) {
   return { funders, clusters };
 }
 
+// ── Birdeye earliest-trades fallback ──────────────────────────────────────
+// For large tokens (TRUMP, major memecoins) the full signature history is too
+// deep to walk to genesis. Birdeye's `sort_type=asc` gives us the earliest
+// recorded trades for the token — good enough for sniper/bundle/insider work.
+async function birdeyeEarlyTrades(mint: string): Promise<any[] | null> {
+  if (!BIRDEYE_API_KEY) return null;
+  try {
+    const r = await fetch(
+      `https://public-api.birdeye.so/defi/txs/token?address=${mint}&offset=0&limit=50&tx_type=swap&sort_type=asc`,
+      { headers: BE_HDR },
+    );
+    if (!r.ok) return null;
+    const items = (await r.json())?.data?.items || [];
+    if (!items.length) return null;
+    return items
+      .filter((t: any) => t.txHash && t.owner)
+      .map((t: any) => {
+        const from = t.from || {}, to = t.to || {};
+        const isBuy = to.address === mint;
+        const tokenLeg = isBuy ? to : from;
+        const solLeg   = isBuy ? from : to;
+        // Only include buy-side (wallet acquired the token)
+        if (!isBuy) return null;
+        return {
+          wallet:      t.owner,
+          tokenAmount: Number(tokenLeg.uiAmount) || 0,
+          solSpent:    Math.abs(Number(solLeg.uiAmount) || 0),
+          txHash:      t.txHash,
+          slot:        0,          // Birdeye doesn't expose slot
+          time:        (Number(t.blockUnixTime) || 0) * 1000,
+        };
+      })
+      .filter(Boolean);
+  } catch { return null; }
+}
+
 async function walkGenesis(mint: string) {
-  const MAX_PAGES = 18, PAGE = 1000;
+  // Increase ceiling — covers tokens up to ~60k total transactions.
+  // Tokens with millions of txs (TRUMP etc.) won't reach genesis here;
+  // analyze() falls back to Birdeye for those.
+  const MAX_PAGES = 60, PAGE = 1000;
   let before: string | null = null, all: any[] = [], genesis = false;
   for (let i = 0; i < MAX_PAGES; i++) {
     const opts: any = { limit: PAGE }; if (before) opts.before = before;
@@ -174,21 +215,39 @@ async function walkGenesis(mint: string) {
 
 async function analyze(mint: string, limit = 50) {
   const { all, genesis } = await walkGenesis(mint);
-  if (!all.length) return { traced: false, genesis, note: "No signatures found." };
-  // Take the oldest signatures and resolve their full txs.
-  const oldest = all.slice(0, Math.min(80, all.length));
-  const txs: any[] = [];
-  // Resolve in small batches to be gentle on the RPC.
-  for (let i = 0; i < oldest.length; i += 10) {
-    const batch = oldest.slice(i, i + 10);
-    const resolved = await Promise.all(batch.map((s: any) => rpc("getTransaction", [s.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 }]).catch(() => null)));
-    txs.push(...resolved);
-  }
-  // Extract buys in chronological order, de-duped by first acquisition per wallet.
+  let usedBirdeye = false;
+
   const buysAll: any[] = [];
-  for (const tx of txs) { const b = buyFromTx(tx, mint); if (b) buysAll.push(b); }
-  buysAll.sort((a, b) => (a.slot - b.slot) || (a.time - b.time));
-  if (!buysAll.length) return { traced: false, genesis, note: "No buy transactions parsed near genesis." };
+
+  if (all.length) {
+    // Resolve the oldest on-chain signatures to full transactions.
+    const oldest = all.slice(0, Math.min(80, all.length));
+    const txs: any[] = [];
+    for (let i = 0; i < oldest.length; i += 10) {
+      const batch = oldest.slice(i, i + 10);
+      const resolved = await Promise.all(batch.map((s: any) => rpc("getTransaction", [s.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 }]).catch(() => null)));
+      txs.push(...resolved);
+    }
+    for (const tx of txs) { const b = buyFromTx(tx, mint); if (b) buysAll.push(b); }
+    buysAll.sort((a, b) => (a.slot - b.slot) || (a.time - b.time));
+  }
+
+  // ── Birdeye fallback for large tokens where genesis is unreachable ────────
+  // When genesis = false AND we have few/no buys, the helius walk didn't reach
+  // the launch. Use Birdeye's ascending-sorted trade history to get the actual
+  // earliest buyers instead of a random mid-history slice.
+  if (!genesis && buysAll.length < 10) {
+    const beItems = await birdeyeEarlyTrades(mint);
+    if (beItems?.length) {
+      const seen = new Set(buysAll.map((b) => b.wallet));
+      for (const b of beItems) if (!seen.has(b.wallet)) { seen.add(b.wallet); buysAll.push(b); }
+      buysAll.sort((a, b) => (a.slot - b.slot) || (a.time - b.time));
+      usedBirdeye = true;
+      _dbg.birdeye = { items: beItems.length };
+    }
+  }
+
+  if (!buysAll.length) return { traced: false, genesis, note: "No signatures found." };
 
   // The pool/bonding-curve receives the full tradeable supply at genesis with no SOL
   // spent — it is NOT a buyer. Detect and exclude it.
@@ -246,7 +305,7 @@ async function analyze(mint: string, limit = 50) {
   const snipers2 = snipers.slice(0, 30).map((b: any) => ({ ...b, ...tag(b.wallet) }));
 
   return {
-    traced: true, genesis, source: "helius",
+    traced: true, genesis, source: usedBirdeye ? "birdeye+helius" : "helius",
     launchSlot, launchTime, pool: poolWallet,
     counts: {
       earlyBuyers: firstBuys.length,
