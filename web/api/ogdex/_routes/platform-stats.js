@@ -1,7 +1,7 @@
 // Platform-wide stats endpoint — returns a mix of live and static values.
-// Live: tokenCount (from ogdex_listings), daysLive (from launch date).
-// Static fallbacks: activeUsers, telegram, xFollowers, volume.
-import { send, cache, dbSelect } from "../_lib.js";
+// Live: daysLive (auto-calculated from OGS token launch date 2026-05-07).
+// Static: tokenCount (screener is dynamic, not per-row stored), activeUsers, telegram, xFollowers, volume.
+import { send, cache } from "../_lib.js";
 
 // OGS token pair created on Dexscreener: 2026-05-07
 const LAUNCH_MS = new Date("2026-05-07T00:00:00Z").getTime();
@@ -9,12 +9,9 @@ const LAUNCH_MS = new Date("2026-05-07T00:00:00Z").getTime();
 export default async function handler(_req, res) {
   cache(res, 120, 600); // 2-min fresh, 10-min stale-while-revalidate
 
-  let tokenCount = 847;
-  try {
-    const rows = await dbSelect("ogdex_listings", "status=eq.approved&select=id");
-    if (Array.isArray(rows) && rows.length > 0) tokenCount = rows.length;
-  } catch { /* keep fallback */ }
-
+  // "Tokens Listed" = tokens surfaced through the screener (discovered dynamically
+  // from Jupiter / DexScreener, not stored per-row). Static value updated manually.
+  const tokenCount = 847;
   const daysLive = Math.max(1, Math.floor((Date.now() - LAUNCH_MS) / 86_400_000));
 
   return send(res, 200, {
