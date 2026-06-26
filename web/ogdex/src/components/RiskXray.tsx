@@ -191,6 +191,36 @@ function pctTone(p:number|null, warn=30, bad=60): "red"|"yellow"|"green" {
   return p>=bad?"red":p>=warn?"yellow":"green";
 }
 
+// ── Shared section header (consistent across every tab) ───────────────
+function SectionHeader({ icon, title, sub, color="#22d3ee", pct }:
+  { icon:React.ReactNode; title:string; sub:string; color?:string; pct?:number|null }) {
+  return (
+    <div className="flex items-center gap-3.5">
+      <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0"
+        style={{ background:`${color}14`, border:`1px solid ${color}33`, boxShadow:`0 0 18px ${color}1f` }}>
+        <span style={{ color }}>{icon}</span>
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[15px] font-bold text-white/90 leading-tight">{title}</div>
+        <div className="text-[11px] text-white/35 mt-0.5 leading-snug">{sub}</div>
+      </div>
+      {pct!=null && (
+        <div className="text-3xl font-black shrink-0 tabular-nums" style={{ color, textShadow:`0 0 24px ${color}55` }}>{pct}%</div>
+      )}
+    </div>
+  );
+}
+
+// ── Per-tab fade/slide-in wrapper ─────────────────────────────────────
+function Reveal({ k, children }: { k:string; children:React.ReactNode }) {
+  return (
+    <div key={k}>
+      <style>{`@keyframes revealUp{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}`}</style>
+      <div style={{ animation:"revealUp 0.34s cubic-bezier(0.22,1,0.36,1)" }}>{children}</div>
+    </div>
+  );
+}
+
 // ── Section Nav ───────────────────────────────────────────────────────
 type Section = "overview"|"timeline"|"map"|"snipers"|"bundles"|"insiders"|"devsafety"|"buyers";
 
@@ -354,12 +384,9 @@ function TimelineSection({ x, buyers }: { x:XrayReport; buyers:RichBuyer[] }) {
 
   return (
     <div className="space-y-4">
-      <div>
-        <div className="text-sm font-bold text-white/80">Launch Attack Timeline</div>
-        <div className="text-[11px] text-white/30 mt-0.5">
-          Each row = one early buyer · position on x-axis = slot · bar width = SOL spent or token amount
-        </div>
-      </div>
+      <SectionHeader icon={<Clock className="w-5 h-5"/>} color="#a855f7"
+        title="Launch Attack Timeline"
+        sub="Each row = one early buyer · x-position = slot · bar width = SOL / token size" />
 
       {/* Slot range header */}
       <div className="flex items-center justify-between text-[10px] text-white/20 font-mono px-1">
@@ -442,19 +469,12 @@ function SnipersSection({ x, buyers }: { x:XrayReport; buyers:RichBuyer[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl p-4 flex items-center gap-4"
-        style={{ background:"rgba(234,179,8,0.07)", border:"1px solid rgba(234,179,8,0.18)" }}>
-        <Crosshair className="w-8 h-8 text-yellow-400 shrink-0" />
-        <div className="flex-1">
-          <div className="font-bold text-yellow-300 mb-0.5">Sniper Detection</div>
-          <div className="text-sm text-white/45">
-            {snipers.length>0
-              ? `${snipers.length} wallets sniped this token at launch or within the first few blocks`
-              : x.traced ? "No snipers detected." : "Trace unavailable."}
-          </div>
-        </div>
-        {x.snipers.pct!=null && <div className="text-3xl font-black text-yellow-300 shrink-0">{x.snipers.pct}%</div>}
-      </div>
+      <SectionHeader icon={<Crosshair className="w-5 h-5"/>} color="#eab308"
+        title="Sniper Detection"
+        sub={snipers.length>0
+          ? `${snipers.length} wallets sniped at launch or within the first few blocks`
+          : x.traced ? "No snipers detected." : "Trace unavailable."}
+        pct={x.snipers.pct ?? null} />
 
       <div className="space-y-2">
         {snipers.map((b, i) => {
@@ -489,19 +509,12 @@ function BundlesSection({ x, buyers }: { x:XrayReport; buyers:RichBuyer[] }) {
   const clusters = x.bundles?.clusters||[];
   return (
     <div className="space-y-4">
-      <div className="rounded-xl p-4 flex items-center gap-4"
-        style={{ background:"rgba(245,158,11,0.07)", border:"1px solid rgba(245,158,11,0.18)" }}>
-        <Boxes className="w-8 h-8 text-orange-400 shrink-0" />
-        <div className="flex-1">
-          <div className="font-bold text-orange-300 mb-0.5">Same-Block Bundle Detection</div>
-          <div className="text-sm text-white/45">
-            {clusters.length>0
-              ? `${clusters.length} bundle cluster${clusters.length>1?"s":""} — ≥3 wallets buying in the same block slot`
-              : x.traced?"No bundles detected.":"Trace unavailable."}
-          </div>
-        </div>
-        {x.bundles.pct!=null && <div className="text-3xl font-black text-orange-300 shrink-0">{x.bundles.pct}%</div>}
-      </div>
+      <SectionHeader icon={<Boxes className="w-5 h-5"/>} color="#f59e0b"
+        title="Same-Block Bundle Detection"
+        sub={clusters.length>0
+          ? `${clusters.length} bundle cluster${clusters.length>1?"s":""} — ≥3 wallets buying in the same block slot`
+          : x.traced?"No bundles detected.":"Trace unavailable."}
+        pct={x.bundles.pct ?? null} />
 
       <div className="space-y-3">
         {clusters.map((cl, i) => {
@@ -540,19 +553,12 @@ function InsidersSection({ x }: { x:XrayReport }) {
   const clusters = x.insiders?.clusters||[];
   return (
     <div className="space-y-4">
-      <div className="rounded-xl p-4 flex items-center gap-4"
-        style={{ background:"rgba(239,68,68,0.07)", border:"1px solid rgba(239,68,68,0.18)" }}>
-        <Share2 className="w-8 h-8 text-red-400 shrink-0" />
-        <div className="flex-1">
-          <div className="font-bold text-red-300 mb-0.5">Insider Cluster Detection</div>
-          <div className="text-sm text-white/45">
-            {clusters.length>0
-              ? `${clusters.length} cluster${clusters.length>1?"s":""} sharing a common funding wallet — early buyers funded from same source`
-              : x.traced?"No insider clusters detected.":"Trace unavailable."}
-          </div>
-        </div>
-        {x.insiders?.pct!=null && <div className="text-3xl font-black text-red-300 shrink-0">{x.insiders.pct}%</div>}
-      </div>
+      <SectionHeader icon={<Share2 className="w-5 h-5"/>} color="#ef4444"
+        title="Insider Cluster Detection"
+        sub={clusters.length>0
+          ? `${clusters.length} cluster${clusters.length>1?"s":""} sharing a common funding wallet`
+          : x.traced?"No insider clusters detected.":"Trace unavailable."}
+        pct={x.insiders?.pct ?? null} />
 
       {clusters.map((cl, i) => (
         <div key={i} className="rounded-xl p-4" style={{ background:"rgba(239,68,68,0.04)", border:"1px solid rgba(239,68,68,0.14)" }}>
@@ -765,7 +771,7 @@ export default function RiskXray({ x, loading }: { x: XrayReport | null; loading
     <div className="space-y-4">
       <SectionNav active={section} onChange={setSection} x={x} buyers={buyers} />
 
-      <div>
+      <Reveal k={section}>
         {section==="overview"  && <OverviewSection x={x} buyers={buyers} />}
         {section==="timeline"  && <TimelineSection x={x} buyers={buyers} />}
         {section==="map"       && (
@@ -778,7 +784,7 @@ export default function RiskXray({ x, loading }: { x: XrayReport | null; loading
         {section==="insiders"  && <InsidersSection  x={x} />}
         {section==="devsafety" && <DevSafetySection x={x} />}
         {section==="buyers"    && <BuyersSection    x={x} buyers={buyers} />}
-      </div>
+      </Reveal>
     </div>
   );
 }
