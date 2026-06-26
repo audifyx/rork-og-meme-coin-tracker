@@ -60,6 +60,15 @@ export default function RiskXray({ x, loading }: { x: XrayReport | null; loading
         <Stat icon={<Wallet className="w-3.5 h-3.5" />} label="Holders" value={x.concentration.totalHolders ?? "—"} />
       </div>
 
+      {/* Detailed counts */}
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 text-xs">
+        <div className="card p-2 text-center"><div className="text-muted mb-1">Early Buyers</div><div className="font-bold text-accent">{x.earlyBuyers?.length || 0}</div></div>
+        <div className="card p-2 text-center"><div className="text-muted mb-1">Snipers</div><div className="font-bold text-yellow-400">{x.snipers?.count || 0}</div></div>
+        <div className="card p-2 text-center"><div className="text-muted mb-1">Bundles</div><div className="font-bold text-orange-400">{x.bundles?.count || 0}</div></div>
+        <div className="card p-2 text-center"><div className="text-muted mb-1">Insider Clusters</div><div className="font-bold text-red-400">{x.insiders?.count || 0}</div></div>
+        <div className="card p-2 text-center"><div className="text-muted mb-1">Whales</div><div className="font-bold text-purple-400">{x.concentration?.whales || 0}</div></div>
+      </div>
+
       {/* Flags */}
       {(x.flags?.length ?? 0) > 0 && (
         <div className="card p-5">
