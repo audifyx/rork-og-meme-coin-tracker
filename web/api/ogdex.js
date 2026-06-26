@@ -35,12 +35,13 @@ import xray from "./ogdex/_routes/xray.js";
 import swaps from "./ogdex/_routes/swaps.js";
 import llms from "./ogdex/_routes/llms.js";
 import leaderboard from "./ogdex/_routes/leaderboard.js";
+import research from "./ogdex/_routes/research.js";
 
 const ROUTES = {
   admin, boosts, chart, kols, launch, launches,
   config: configRoute, listings, metadata, report, screener, signals, search, token, trade, track, wallet, watchlist, alerts, rpc, forensics, chat, ath, openapi,
   "openapi.json": openapi, health, balance, safety, xray, swaps, llms, "llms.txt": llms, leaderboard,
-  "alerts-run": alertsRun,
+  "alerts-run": alertsRun, research,
 };
 
 const NO_LIMIT = new Set(["openapi", "openapi.json", "health", "track", "admin", "alerts-run", "llms", "llms.txt"]);
