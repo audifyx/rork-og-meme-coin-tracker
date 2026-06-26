@@ -239,12 +239,12 @@ function SectionNav({ active, onChange, x, buyers }: { active:Section; onChange:
   ];
 
   return (
-    <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth:"none" }}>
+    <div className="grid grid-cols-4 lg:grid-cols-8 gap-2">
       {cards.map(card => {
         const on = active===card.id;
         return (
           <button key={card.id} onClick={()=>onChange(card.id)}
-            className="flex-shrink-0 flex flex-col items-center gap-1.5 px-3.5 py-2.5 rounded-xl transition-all duration-200 min-w-[80px] relative"
+            className="flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl transition-all duration-200 relative"
             style={{
               background: on ? `linear-gradient(145deg,${card.color}22,${card.color}08)` : "rgba(255,255,255,0.025)",
               border: `1px solid ${on ? card.color+"50" : "rgba(255,255,255,0.06)"}`,
@@ -252,9 +252,9 @@ function SectionNav({ active, onChange, x, buyers }: { active:Section; onChange:
               transform: on ? "translateY(-1px)" : "none",
             }}>
             <div style={{ color: on ? card.color : "rgba(255,255,255,0.3)" }}>{card.icon}</div>
-            <div className="text-center">
-              <div className="text-[10px] font-bold" style={{ color: on?card.color:"rgba(255,255,255,0.55)" }}>{card.label}</div>
-              <div className="text-[9px] mt-0.5" style={{ color:"rgba(255,255,255,0.2)" }}>{card.sub}</div>
+            <div className="text-center w-full">
+              <div className="text-[10px] font-bold leading-tight truncate" style={{ color: on?card.color:"rgba(255,255,255,0.55)" }}>{card.label}</div>
+              <div className="text-[9px] mt-0.5 leading-tight truncate" style={{ color:"rgba(255,255,255,0.22)" }}>{card.sub}</div>
             </div>
             {on && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-5 h-[2px] rounded-full" style={{ background:card.color, boxShadow:`0 0 8px ${card.color}` }} />}
           </button>
@@ -367,93 +367,94 @@ function SafeChip({ ok, label }: { ok:boolean|null; label:string }) {
   );
 }
 
-// ── TIMELINE section (WOW factor) ─────────────────────────────────────
+// ── TIMELINE section — clean even vertical timeline ───────────────────
 function TimelineSection({ x, buyers }: { x:XrayReport; buyers:RichBuyer[] }) {
   if (!buyers.length) return <EmptyState msg="No timeline data available." />;
 
-  const sorted = [...buyers].sort((a,b) => a.slot-b.slot);
+  const sorted    = [...buyers].sort((a,b) => (a.slot-b.slot) || (a.rank-b.rank));
   const firstSlot = sorted[0].slot;
   const lastSlot  = sorted[sorted.length-1].slot;
-  const span      = Math.max(lastSlot-firstSlot, 1);
-
-  const maxSol  = Math.max(...sorted.map(b=>b.solSpent),  0.001);
-  const maxTok  = Math.max(...sorted.map(b=>b.tokenAmount), 0.001);
-
-  // Bundle slot highlights
-  const bundleSlots = new Set((x.bundles?.clusters||[]).map(c=>c.slot));
+  const maxSol    = Math.max(...sorted.map(b=>b.solSpent),  0.001);
+  const maxTok    = Math.max(...sorted.map(b=>b.tokenAmount), 0.001);
+  const totalSol  = sorted.reduce((s,b)=>s+b.solSpent,0);
+  const bundleSlots = new Set((x.bundles?.clusters||[]).map(c=>String(c.slot)));
 
   return (
     <div className="space-y-4">
       <SectionHeader icon={<Clock className="w-5 h-5"/>} color="#a855f7"
         title="Launch Attack Timeline"
-        sub="Each row = one early buyer · x-position = slot · bar width = SOL / token size" />
+        sub="Chronological order of every early buy — top = first in, bottom = latest. Bar length = relative size." />
 
-      {/* Slot range header */}
-      <div className="flex items-center justify-between text-[10px] text-white/20 font-mono px-1">
-        <span>slot {firstSlot}</span>
-        <span className="text-white/15">← {sorted.length} buys over {lastSlot-firstSlot} slots →</span>
-        <span>slot {lastSlot}</span>
+      {/* Summary strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <Stat icon={<Zap        className="w-3 h-3"/>} label="First buy"   value={`slot ${firstSlot}`} tone="cyan" />
+        <Stat icon={<Clock      className="w-3 h-3"/>} label="Slot span"   value={lastSlot-firstSlot} tone="cyan" sub="blocks launch→last" />
+        <Stat icon={<Users      className="w-3 h-3"/>} label="Early buys"  value={sorted.length} tone="cyan" />
+        <Stat icon={<BarChart3  className="w-3 h-3"/>} label="Total in"    value={`${totalSol.toFixed(2)} SOL`} tone="cyan" />
       </div>
 
-      {/* Timeline rows */}
-      <div className="space-y-1.5 relative">
-        {/* Axis line */}
-        <div className="absolute left-0 right-0 top-0 bottom-0 pointer-events-none">
-          {[0,.25,.5,.75,1].map(p => (
-            <div key={p} className="absolute top-0 bottom-0 w-px" style={{ left:`${p*100}%`, background:`rgba(255,255,255,0.04)` }} />
-          ))}
-        </div>
+      {/* Vertical timeline */}
+      <div className="relative pl-7">
+        {/* Spine */}
+        <div className="absolute left-[11px] top-1 bottom-1 w-px"
+          style={{ background:"linear-gradient(180deg,rgba(168,85,247,0.5),rgba(168,85,247,0.08))" }} />
 
-        {sorted.map((b, i) => {
-          const xPct   = ((b.slot-firstSlot)/span)*100;
-          const barPct = Math.max(b.solSpent/maxSol, b.tokenAmount/maxTok) * 28;
-          const col    = TAG_COLOR[b.tag];
-          const isBundleSlot = bundleSlots.has(String(b.slot));
-          return (
-            <div key={i} className="relative h-8 rounded-lg overflow-hidden group cursor-pointer"
-              style={{ background:`rgba(255,255,255,0.025)`, border:`1px solid ${isBundleSlot?col+"30":"rgba(255,255,255,0.05)"}` }}
-              onClick={() => window.open(SS_ACCOUNT(b.wallet), "_blank")}>
+        <div className="space-y-2">
+          {sorted.map((b, i) => {
+            const col     = TAG_COLOR[b.tag];
+            const sizePct = Math.max(Math.max(b.solSpent/maxSol, b.tokenAmount/maxTok) * 100, 4);
+            const isBundle = bundleSlots.has(String(b.slot));
+            return (
+              <div key={i} className="relative group">
+                {/* Spine node */}
+                <div className="absolute -left-[23px] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full z-10 transition-transform group-hover:scale-125"
+                  style={{ background:col, boxShadow:`0 0 8px ${col}, 0 0 0 3px rgba(10,10,20,0.9)` }} />
 
-              {/* Background bar (position = slot) */}
-              <div className="absolute top-0 bottom-0 rounded-r-lg" style={{
-                left: `${Math.min(xPct, 68)}%`,
-                width: `${Math.max(barPct, 1.5)}%`,
-                background: `${col}28`,
-                borderLeft: `2px solid ${col}`,
-              }} />
+                {/* Row card — even height, consistent layout */}
+                <div className="rounded-xl px-3 py-2.5 cursor-pointer transition-all hover:translate-x-0.5 relative overflow-hidden"
+                  style={{ background:"rgba(255,255,255,0.025)", border:`1px solid ${isBundle?col+"30":"rgba(255,255,255,0.06)"}` }}
+                  onClick={() => window.open(SS_ACCOUNT(b.wallet), "_blank")}>
+                  {/* Relative-size bar (consistent left anchor — no more jagged positioning) */}
+                  <div className="absolute inset-y-0 left-0 opacity-[0.13] transition-all group-hover:opacity-20"
+                    style={{ width:`${sizePct}%`, background:`linear-gradient(90deg,${col},transparent)` }} />
 
-              {/* Row content */}
-              <div className="absolute inset-0 flex items-center px-2.5 gap-2.5">
-                {/* Rank */}
-                <span className="text-[10px] text-white/20 font-mono w-4 shrink-0">{b.rank}</span>
-                {/* Tag dot */}
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ background:col, boxShadow:`0 0 5px ${col}` }} />
-                {/* Wallet */}
-                <span className="text-[11px] font-mono text-white/60 truncate flex-1">{short(b.wallet)}</span>
-                {/* Data chips */}
-                <div className="flex items-center gap-2 shrink-0 text-[10px]">
-                  {isBundleSlot && <span className="px-1.5 py-0.5 rounded-full font-bold" style={{ background:"rgba(245,158,11,0.15)", color:"#f59e0b", fontSize:"9px" }}>BUNDLE</span>}
-                  {b.solSpent > 0 && <span className="text-white/50 font-bold tabular-nums">{b.solSpent.toFixed(3)} SOL</span>}
-                  {b.secondsAfterLaunch !== null && <span className="text-white/30">{fSecs(b.secondsAfterLaunch)}</span>}
-                  <span className="text-white/20 font-mono">s{b.slot}</span>
-                  {b.txHash && (
-                    <a href={SS_TX(b.txHash)} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
-                      className="opacity-0 group-hover:opacity-70 transition-opacity">
-                      <ExternalLink className="w-3 h-3 text-cyan-400" />
-                    </a>
-                  )}
+                  <div className="relative flex items-center gap-2.5">
+                    <span className="text-[10px] text-white/25 font-mono w-5 shrink-0 text-right">{b.rank}</span>
+                    <span className="text-[11px] font-mono text-white/70 truncate flex-1 min-w-0">{short(b.wallet)}</span>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {b.tag!=="clean" && (
+                        <span className="px-1.5 py-0.5 rounded-full font-bold capitalize" style={{ background:`${col}1f`, color:col, fontSize:"9px" }}>{b.tag}</span>
+                      )}
+                      {isBundle && b.tag!=="bundle" && (
+                        <span className="px-1.5 py-0.5 rounded-full font-bold" style={{ background:"rgba(245,158,11,0.15)", color:"#f59e0b", fontSize:"9px" }}>same-block</span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2.5 shrink-0 text-[10px] tabular-nums">
+                      {b.solSpent>0
+                        ? <span className="text-white/65 font-bold w-[68px] text-right">{b.solSpent.toFixed(3)} SOL</span>
+                        : <span className="text-white/20 w-[68px] text-right">{fTokens(b.tokenAmount)}</span>}
+                      <span className="text-white/30 w-12 text-right">{fSecs(b.secondsAfterLaunch)}</span>
+                      <span className="text-white/20 font-mono w-16 text-right hidden sm:inline">slot {b.slot}</span>
+                      {b.txHash
+                        ? <a href={SS_TX(b.txHash)} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
+                            className="opacity-0 group-hover:opacity-70 transition-opacity shrink-0"><ExternalLink className="w-3 h-3 text-cyan-400" /></a>
+                        : <span className="w-3 shrink-0" />}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      {/* Timeline legend */}
+      {/* Legend */}
       <div className="flex flex-wrap gap-3 text-[10px] text-white/35 pt-1">
         {(["insider","bundle","sniper","clean"] as RiskTag[]).map(tag => (
           <span key={tag} className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full" style={{ background:TAG_COLOR[tag] }} />
+            <span className="w-2 h-2 rounded-full" style={{ background:TAG_COLOR[tag], boxShadow:`0 0 5px ${TAG_COLOR[tag]}` }} />
             {tag} ({buyers.filter(b=>b.tag===tag).length})
           </span>
         ))}
