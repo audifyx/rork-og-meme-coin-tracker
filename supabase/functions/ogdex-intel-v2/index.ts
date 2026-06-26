@@ -128,18 +128,46 @@ async function rugcheck(mint: string) {
     const r = await fetch(`https://api.rugcheck.xyz/v1/tokens/${mint}/report`, { headers: { accept: "application/json" } });
     if (!r.ok) return null;
     const d = await r.json();
-    const market = (d.markets || [])[0] || {};
-    const lpLockedPct = num(market?.lp?.lpLockedPct) ?? num(d.lpLockedPct) ?? 0;
+
+    // ── LP lock: search ALL markets (not just markets[0]) ──────────────────
+    // Many tokens have multiple pools; the locked one may not be first.
+    // Also handle: boolean lpLocked with no numeric pct, burned LP, and
+    // pump.fun graduation (LP burned on migration → effectively 100% locked).
+    let lpLockedPct = 0;
+    for (const m of (d.markets || [])) {
+      const lp = m?.lp || {};
+      const pct = num(lp.lpLockedPct);
+      if (pct != null && pct > lpLockedPct) lpLockedPct = pct;
+      // Boolean locked without a numeric field → treat as 100%
+      if ((lp.lpLocked === true || lp.locked === true) && !pct) lpLockedPct = Math.max(lpLockedPct, 100);
+      // Burned LP amounts to permanent lock
+      if (lp.lpBurned === true) lpLockedPct = 100;
+      const burnedPct = num(lp.burnedPct) ?? num(lp.lpBurnedPct);
+      if (burnedPct != null && burnedPct > lpLockedPct) lpLockedPct = burnedPct;
+    }
+    // Fallback to top-level field (some rugcheck versions hoist it)
+    if (!lpLockedPct) lpLockedPct = num(d.lpLockedPct) ?? 0;
+    // pump.fun graduated tokens have their LP burned → fully locked
+    const launchpad: string = d.launchpad || "";
+    if (!lpLockedPct && /pump/i.test(launchpad) && !d.rugged) lpLockedPct = 100;
+
+    // ── creatorTokensCount — rugcheck does return this in some responses ─
+    const creatorTokensCount =
+      num(d.creatorTokensCount) ??
+      num(d.creator_tokens_count) ??
+      num((d as any).creator?.totalTokens) ??
+      null;
+
     return {
       riskScore: num(d.score_normalised) ?? num(d.score),
       rugged: !!d.rugged,
       mintAuthorityRenounced: d.mintAuthority == null ? true : !d.mintAuthority,
       freezeAuthorityRenounced: d.freezeAuthority == null ? true : !d.freezeAuthority,
       lpLockedPct,
-      launchpad: d.launchpad || null,
-      isPumpFun: /pump$/i.test(mint) || /pump/i.test(d.tokenProgram || ""),
+      launchpad: launchpad || null,
+      isPumpFun: /pump$/i.test(mint) || /pump/i.test(d.tokenProgram || "") || /pump/i.test(launchpad),
       creator: d.creator || null,
-      creatorTokensCount: null,
+      creatorTokensCount,
       totalHolders: num(d.totalHolders),
       risks: (d.risks || []).map((x: any) => ({ name: x.name, level: x.level, desc: x.description || x.value || "", score: num(x.score) })),
     };
