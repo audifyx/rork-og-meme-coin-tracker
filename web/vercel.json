@@ -37,6 +37,9 @@
       "destination": "/app.html"
     }
   ],
+  "functions": {
+    "api/ogdex.js": { "maxDuration": 60 }
+  },
   "headers": [
     {
       "source": "/OGDEX/assets/(.*)",
