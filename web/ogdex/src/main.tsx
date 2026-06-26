@@ -41,6 +41,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/" element={<Layout />}>
           <Route index element={<Screener />} />
           <Route path="pulse" element={<Suspense fallback={<PageFallback />}><Pulse /></Suspense>} />
+          <Route path="research" element={<Suspense fallback={<PageFallback />}><Pulse /></Suspense>} />
           <Route path="token/:mint" element={<Suspense fallback={<PageFallback />}><TokenDetail /></Suspense>} />
           <Route path="store" element={<Suspense fallback={<PageFallback />}><Store /></Suspense>} />
           <Route path="metadata" element={<Suspense fallback={<PageFallback />}><Metadata /></Suspense>} />
