@@ -34,8 +34,8 @@ function pctTone(p: number | null, warn = 30, bad = 60) {
 }
 
 export default function RiskXray({ x, loading }: { x: XrayReport | null; loading: boolean }) {
-  if (loading) return <div className="card p-10 grid place-items-center text-muted"><Loader2 className="w-5 h-5 animate-spin" /></div>;
-  if (!x || !x.ok) return <div className="card p-8 text-center text-muted text-sm">Risk X-ray unavailable</div>;
+  if (!x) return null;
+  const t = TONE[x.tone] || TONE.yellow;
 
   return (
     <div className="space-y-4">
