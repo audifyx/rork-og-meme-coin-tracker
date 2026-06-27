@@ -4,7 +4,7 @@ import { ShieldCheck, Zap, ExternalLink, Loader2 } from "lucide-react";
 import { useWallet } from "../lib/wallet";
 import { fmtUsd, compact } from "../lib/api";
 
-const OG_MINT = "HEivoBHhWT939vcaevGgZBtoArS4CAywCMjdVBTSpump";
+const OG_MINT = "EfnZmcFKMXofKA5V5ujvjqtSorvuQD2MzJPz3dxXpump";
 const PRO_THRESHOLD = 10_000; // minimum OG tokens for Pro
 
 interface ProState {
@@ -80,7 +80,7 @@ export default function ProGate({ children, feature }: ProGateProps) {
             <Zap className="w-4 h-4" /> Get OG Tokens
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
-          <Link to="/token/HEivoBHhWT939vcaevGgZBtoArS4CAywCMjdVBTSpump"
+          <Link to="/token/EfnZmcFKMXofKA5V5ujvjqtSorvuQD2MzJPz3dxXpump"
             className="btn bg-panel2 text-muted hover:text-white text-xs">
             View OG Token
           </Link>
