@@ -38,6 +38,7 @@ import leaderboard from "./ogdex/_routes/leaderboard.js";
 import research from "./ogdex/_routes/research.js";
 import platformStats from "./ogdex/_routes/platform-stats.js";
 import traders from "./ogdex/_routes/traders.js";
+import waitlist from "./ogdex/_routes/waitlist.js";
 
 const ROUTES = {
   admin, boosts, chart, kols, launch, launches,
@@ -46,6 +47,7 @@ const ROUTES = {
   "alerts-run": alertsRun, research,
   "platform-stats": platformStats,
   traders,
+  waitlist,
 };
 
 const NO_LIMIT = new Set(["openapi", "openapi.json", "health", "track", "admin", "alerts-run", "llms", "llms.txt"]);
