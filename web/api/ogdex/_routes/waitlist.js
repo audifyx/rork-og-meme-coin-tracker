@@ -36,7 +36,8 @@ export default async function handler(req, res) {
     // Send email via Resend
     if (RESEND_API_KEY) {
       try {
-        await fetch("https://api.resend.com/emails", {
+        console.log("Sending email to:", email);
+        const emailRes = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${RESEND_API_KEY}`,
@@ -68,10 +69,14 @@ export default async function handler(req, res) {
             `
           }),
         });
+        const emailData = await emailRes.json();
+        console.log("Email response:", emailData);
       } catch (emailErr) {
         console.error("Email send error:", emailErr);
         // Don't fail the request if email fails
       }
+    } else {
+      console.log("No RESEND_API_KEY set");
     }
 
     return send(res, 200, { ok: true, message: "Added to waitlist" });
