@@ -6,6 +6,7 @@ import { track, getWatchlist, short } from "../lib/api";
 import { useWallet } from "../lib/wallet";
 import LiveStats, { fetchPlatformStats } from "./LiveStats";
 import InstallPWA from "./InstallPWA";
+import GlobalSearch from "./GlobalSearch";
 
 const isAddr = (v: string) => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(v.trim());
 
@@ -64,7 +65,6 @@ const FOOTER_RESOURCES = [
 ];
 
 export default function Layout() {
-  const [q, setQ] = useState("");
   const [watchOpen, setWatchOpen] = useState(false);
   const [watch, setWatch] = useState<string[]>([]);
   const [pstats, setPstats] = useState<PlatformStats>(STAT_FALLBACK);
@@ -88,12 +88,6 @@ export default function Layout() {
     document.addEventListener("mousedown", h); return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  const addr = isAddr(q);
-  const go = (e: React.FormEvent) => {
-    e.preventDefault();
-    const v = q.trim(); if (!v) return;
-    if (addr) nav(`/token/${v}`); else nav(`/?q=${encodeURIComponent(v)}`);
-  };
 
   const isActive = (to: string, exact: boolean) => exact ? loc.pathname === to : loc.pathname.startsWith(to);
 
@@ -121,27 +115,7 @@ export default function Layout() {
             <div className="flex-1" />
 
             {/* Search */}
-            <form onSubmit={go} className="hidden md:flex relative w-56 lg:w-72">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#8497B8] pointer-events-none" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search tokens, wallets…"
-                className="w-full pl-9 pr-3 py-2 rounded-xl text-sm text-white placeholder-[#8497B8] outline-none transition-all"
-                style={{
-                  background: "rgba(47,128,255,0.06)",
-                  border: "1.5px solid rgba(47,128,255,0.18)",
-                }}
-                onFocus={e => { e.currentTarget.style.borderColor = "rgba(47,128,255,0.6)"; e.currentTarget.style.boxShadow = "0 0 16px rgba(47,128,255,0.2)"; }}
-                onBlur={e => { e.currentTarget.style.borderColor = "rgba(47,128,255,0.18)"; e.currentTarget.style.boxShadow = "none"; }}
-              />
-              {addr && (
-                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex gap-1">
-                  <button type="submit" className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: "rgba(47,128,255,0.15)", color: "#2F80FF" }}>Token</button>
-                  <button type="button" onClick={() => nav(`/wallet/${q.trim()}`)} className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: "rgba(255,255,255,0.08)", color: "#8497B8" }}>Wallet</button>
-                </div>
-              )}
-            </form>
+            <GlobalSearch />
 
             {/* Watching */}
             <div className="relative" ref={ref}>
