@@ -57,17 +57,44 @@ async function birdeyeHolders(mint: string) {
 }
 
 // Helius DAS fallback for holders.
-async function heliusHolders(mint: string, decimals: number | null) {
+// Helius RPC helper (shared with owner-resolution below).
+async function heliusRpc(method: string, params: any[]): Promise<any> {
+  const r = await fetch(`https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: "intel", method, params }),
+    signal: AbortSignal.timeout(12000),
+  });
+  return (await r.json())?.result;
+}
+
+// Use getTokenLargestAccounts — the Solana RPC pre-computes uiAmount directly
+// (same denominator Solscan / Jupiter / Explorer use), so we never need to
+// guess decimals or trust a third-party calculation.
+// Then resolve the token-account → owner wallet with getMultipleAccounts.
+async function heliusHolders(mint: string, _decimals: number | null) {
   try {
-    const r = await fetch(`https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTokenAccounts", params: { mint, limit: 100, page: 1, options: { showZeroBalance: false } } }),
-    });
-    const j = await r.json();
-    const accts = j?.result?.token_accounts || [];
-    const dec = decimals ?? 0;
-    return accts.map((a: any) => ({ owner: a.owner, tokenAccount: a.address || null, uiAmount: Number(a.amount) / 10 ** dec, decimals: dec }))
-      .sort((x: any, y: any) => (y.uiAmount || 0) - (x.uiAmount || 0)).slice(0, 100);
+    const largest = await heliusRpc("getTokenLargestAccounts", [mint, { commitment: "confirmed" }]);
+    const accounts = (largest?.value || []).slice(0, 20);
+    if (!accounts.length) return [];
+
+    // Resolve token account → owner wallet address
+    let owners: (string | null)[] = accounts.map(() => null);
+    try {
+      const mul = await heliusRpc("getMultipleAccounts", [
+        accounts.map((a: any) => a.address),
+        { encoding: "jsonParsed", commitment: "confirmed" },
+      ]);
+      owners = (mul?.value || []).map((v: any) => v?.data?.parsed?.info?.owner ?? null);
+    } catch { /* keep null owners */ }
+
+    return accounts
+      .map((a: any, i: number) => ({
+        owner: owners[i] ?? a.address,  // owner wallet (falls back to token account)
+        tokenAccount: a.address ?? null,
+        uiAmount: a.uiAmount ?? 0,      // pre-computed by Solana RPC — always correct
+        decimals: null,
+      }))
+      .sort((x: any, y: any) => (y.uiAmount || 0) - (x.uiAmount || 0));
   } catch { return []; }
 }
 
@@ -276,8 +303,22 @@ serve(async (req) => {
     ]);
 
     let holders = await birdeyeHolders(mint);
-    const sourcesHolders = holders ? "birdeye" : "helius";
-    if (!holders) holders = await heliusHolders(mint, overview.decimals);
+    let sourcesHolders = holders?.length ? "birdeye" : "helius";
+
+    // Sanity-check Birdeye uiAmount against the on-chain total supply.
+    // If any single holder exceeds total supply, or top-holders sum > 2× supply,
+    // the amounts are corrupted (wrong decimals or stale data) — fall back to Helius.
+    if (holders?.length && overview.supply && overview.supply > 0) {
+      const maxAmt = Math.max(...holders.map((h: any) => h.uiAmount || 0));
+      const sumAmt = holders.reduce((s: number, h: any) => s + (h.uiAmount || 0), 0);
+      if (maxAmt > overview.supply || sumAmt > overview.supply * 2) {
+        // Birdeye data is clearly wrong — discard it
+        holders = null;
+        sourcesHolders = "helius";
+      }
+    }
+
+    if (!holders?.length) holders = await heliusHolders(mint, overview.decimals);
     holders = holders || [];
 
     let trades = await birdeyeTrades(mint);
