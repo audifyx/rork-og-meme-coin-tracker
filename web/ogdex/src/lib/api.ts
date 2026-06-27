@@ -230,3 +230,20 @@ export const getSwaps = (address: string, limit = 25) => j<WalletTrades>(`/api/o
 export interface LeaderboardEntry { rank: number; address: string; name?: string | null; twitter?: string | null; twitterUrl?: string | null; avatar?: string | null; tags?: string[]; realizedPnlUsd: number; realizedPnlSol: number; winRate: number | null; closedTrades: number; openPositions: number; totalSwaps: number; }
 export interface Leaderboard { ok: boolean; at?: number; count?: number; entries: LeaderboardEntry[]; cached?: boolean; error?: string; }
 export const getLeaderboard = () => j<Leaderboard>(`/api/ogdex/leaderboard`);
+
+/* ---- Top holders + top traders for a token (Birdeye-sourced with PnL) ---- */
+export interface TokenHolder {
+  rank: number; owner: string; uiAmount: number; pct: number | null; usdValue: number | null;
+  buyVol?: number | null; sellVol?: number | null;
+  realizedPnl?: number | null; unrealizedPnl?: number | null; netPnl?: number | null;
+  buys?: number | null; sells?: number | null; tradeCount?: number | null;
+}
+export interface TopTrader {
+  rank: number; owner: string; buys: number | null; sells: number | null; tradeCount: number | null;
+  buyVol: number | null; sellVol: number | null; volume: number | null;
+  realizedPnl: number | null; unrealizedPnl: number | null; netPnl: number | null;
+  isHolder: boolean; holdingPct: number | null; holdingAmount: number | null; holdingUsd?: number | null;
+}
+export interface TopTradersData { ok: boolean; mint: string; holders: TokenHolder[]; traders: TopTrader[]; error?: string; }
+export const getTopTraders = (mint: string) => j<TopTradersData>(`/api/ogdex/traders?mint=${mint}`);
+

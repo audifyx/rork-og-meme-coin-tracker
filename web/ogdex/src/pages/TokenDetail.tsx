@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { getToken, getForensics, Forensics as ForensicsData, getXray, XrayReport, getAth, AthData, track, TokenDetailData, fmtUsd, compact, fmtNum, fmtPct, short } from "../lib/api";
+import { getToken, getForensics, Forensics as ForensicsData, getXray, XrayReport, getAth, AthData, track, TokenDetailData, fmtUsd, compact, fmtNum, fmtPct, short, getTopTraders, TokenHolder, TopTrader } from "../lib/api";
 import { timeAgo } from "../lib/format";
 import TokenLogo from "../components/TokenLogo";
 import Change from "../components/Change";
@@ -13,7 +13,6 @@ import { getKolDirectory, KolDirEntry } from "../lib/kol";
 import { buildHolderIntel } from "../lib/holderIntel";
 import { getWalletLabel, labelKindClass } from "../lib/labels";
 import PriceChart from "../components/PriceChart";
-import BundleSniper from "../components/BundleSniper";
 import TradePanel from "../components/TradePanel";
 import TrustPanel from "../components/TrustPanel";
 import PredictiveIntel from "../components/PredictiveIntel";
@@ -25,8 +24,8 @@ import ErrorBoundary from "../components/ErrorBoundary";
 import CapitalFlow from "../components/CapitalFlow";
 import {
   ArrowLeft, Copy, Check, ShieldCheck, ShieldAlert, ExternalLink, Loader2, Flame,
-  TrendingUp, FileDown, Users, Activity, Wallet, AlertTriangle, RefreshCw, Radio, BadgeCheck,
-  Globe, MessageCircle, Send, Bell, Zap,
+  TrendingUp, TrendingDown, FileDown, Users, Activity, Wallet, AlertTriangle, RefreshCw, Radio, BadgeCheck,
+  Globe, MessageCircle, Send, Bell, Zap, BarChart2,
 } from "lucide-react";
 
 /* ─────────────────────────────────────────────
@@ -91,17 +90,26 @@ export default function TokenDetail() {
   const [d, setD] = useState<TokenDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [tab, setTab] = useState<"overview" | "chat" | "predictive" | "smartmoney" | "kolwhale" | "bundles" | "holders" | "trades" | "xray" | "forensics">("overview");
+  const [tab, setTab] = useState<"overview" | "chat" | "predictive" | "smartmoney" | "kolwhale" | "holders" | "trades" | "xray" | "forensics">("overview");
   const [forensics, setForensics] = useState<ForensicsData | null>(null);
   const [forLoading, setForLoading] = useState(true);
   const [xray, setXray] = useState<XrayReport | null>(null);
   const [xrayLoading, setXrayLoading] = useState(false);
   const [ath, setAth] = useState<AthData | null>(null);
+  const [topData, setTopData] = useState<{ holders: TokenHolder[]; traders: TopTrader[] } | null>(null);
+  const [topLoading, setTopLoading] = useState(false);
   const [dir, setDir] = useState<Record<string, KolDirEntry>>({});
 
   useEffect(() => { getKolDirectory().then(setDir).catch(() => {}); }, []);
   useEffect(() => { let on = true; setForLoading(true); getForensics(mint).then((x) => { if (on) { setForensics(x); setForLoading(false); } }).catch(() => { if (on) setForLoading(false); }); return () => { on = false; }; }, [mint]);
   useEffect(() => { let on = true; getAth(mint).then((x) => { if (on && x?.ok) setAth(x); }).catch(() => {}); return () => { on = false; }; }, [mint]);
+  useEffect(() => {
+    if (tab !== "holders") return;
+    if (topData) return; // already loaded
+    let on = true; setTopLoading(true);
+    getTopTraders(mint).then((x) => { if (on && x?.ok) setTopData({ holders: x.holders, traders: x.traders }); }).catch(() => {}).finally(() => { if (on) setTopLoading(false); });
+    return () => { on = false; };
+  }, [mint, tab]);
   useEffect(() => { let on = true; setXrayLoading(true); getXray(mint).then((x) => { if (on) { setXray(x); setXrayLoading(false); } }).catch(() => { if (on) setXrayLoading(false); }); return () => { on = false; }; }, [mint]);
   useEffect(() => {
     let on = true; setLoading(true);
@@ -157,7 +165,6 @@ export default function TokenDetail() {
     ["predictive", "Predictive"],
     ["smartmoney", "Smart Money"],
     ["kolwhale",   "KOL & Whale"],
-    ["bundles",    "⚡ Bundles"],
     ["holders",    `Holders${holders.length ? ` (${holders.length})` : ""}`],
     ["trades",     `Live Trades${trades.length ? ` (${trades.length})` : ""}`],
     ["xray",       "🩻 Risk X-ray"],
@@ -353,8 +360,7 @@ export default function TokenDetail() {
         {tab === "predictive" && <PredictiveIntel d={d} />}
         {tab === "smartmoney" && <CapitalFlow d={d} />}
         {tab === "kolwhale"   && <KolWhaleActivity d={d} dir={dir} />}
-        {tab === "bundles"    && <BundleSniper forensics={forensics} holders={holders} trades={trades} />}
-        {tab === "holders"    && <><HolderIntel holders={holders} safety={safety} dir={dir} /><HoldersTable holders={holders} price={price} dir={dir} /></>}
+        {tab === "holders"    && <HoldersAndTraders holders={holders} topData={topData} topLoading={topLoading} price={price} dir={dir} safety={safety} />}
         {tab === "trades"     && <TradesTable trades={trades} mint={mint} dir={dir} onRefresh={() => getToken(mint).then(setD)} />}
         {tab === "xray"       && <RiskXray x={xray} loading={xrayLoading} />}
         {tab === "forensics"  && <><DevOrigin f={forensics} loading={forLoading} /><Forensics d={d} meta={meta} safety={safety} /></>}
@@ -486,7 +492,7 @@ function Overview({ d, t, meta, safety, trades, ath, score, whales }: any) {
 }
 
 /* ─────────────────────────────────────────────
-   Holder Intel
+   Holder Intel banner
 ───────────────────────────────────────────── */
 function HolderIntel({ holders, safety, dir }: { holders: any[]; safety: any; dir: Record<string, KolDirEntry> }) {
   if (!holders?.length) return null;
@@ -517,71 +523,189 @@ function HolderIntel({ holders, safety, dir }: { holders: any[]; safety: any; di
   );
 }
 
-function HoldersTable({ holders, price, dir = {} }: { holders: any[]; price?: number; dir?: Record<string, KolDirEntry> }) {
-  if (!holders.length) return <Empty text="Holder data unavailable for this token." />;
-  const maxPct = Math.max(...holders.map((h) => h.pct || 0), 1);
-  const kolHolders = holders.filter((h) => dir[h.owner]);
-  const kolPct = kolHolders.reduce((s, h) => s + (h.pct || 0), 0);
+/* ─────────────────────────────────────────────
+   PnL cell helper
+───────────────────────────────────────────── */
+function Pnl({ v, compact: isCompact }: { v: number | null | undefined; compact?: boolean }) {
+  if (v == null) return <span className="text-muted/50">—</span>;
+  const pos = v >= 0;
   return (
-    <div className="space-y-3">
-      {kolHolders.length > 0 && (
-        <div className="card p-3 px-4 flex items-center gap-2 flex-wrap text-sm">
-          <BadgeCheck className="w-4 h-4 text-accent" />
-          <span className="font-semibold">{kolHolders.length} KOL{kolHolders.length > 1 ? "s" : ""} holding {kolPct.toFixed(2)}% of supply</span>
-          <div className="flex gap-1.5 flex-wrap">{kolHolders.slice(0, 8).map((h) => <span key={h.owner} className="pill bg-accent/10 text-accent text-[10px]">{dir[h.owner].name}</span>)}</div>
-        </div>
-      )}
-      <div className="card overflow-hidden">
-        <div className="px-4 py-3 border-b border-line text-sm font-semibold flex items-center gap-2">
-          <Users className="w-4 h-4 text-accent" /> Top {holders.length} Holders
-          <span className="text-muted font-normal text-xs ml-1">KOLs & exchanges labeled · click wallet to view</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[600px]">
-            <thead><tr className="text-muted text-xs border-b border-line bg-panel2/30">
-              <th className="text-left px-4 py-2.5 w-8">#</th>
-              <th className="text-left px-2 py-2.5">Wallet</th>
-              <th className="text-left px-2 py-2.5">Type</th>
-              <th className="text-right px-2 py-2.5">Amount</th>
-              <th className="text-left px-2 py-2.5 w-36">Supply %</th>
-              <th className="text-right px-4 py-2.5">USD Value</th>
-            </tr></thead>
-            <tbody>
-              {holders.map((h) => (
-                <tr key={h.rank} className="border-b border-line/40 last:border-0 hover:bg-panel2/40 transition-colors">
-                  <td className="px-4 py-2 text-muted text-xs">{h.rank}</td>
-                  <td className="px-2 py-2">{(() => {
-                    const lbl = getWalletLabel(h.owner);
-                    return dir[h.owner]
-                      ? <KolBadge kol={dir[h.owner]} />
-                      : lbl
-                        ? <span className="inline-flex items-center gap-1.5"><span className={`pill text-[10px] ${labelKindClass(lbl.kind)}`}>{lbl.name}</span><WalletLink address={h.owner} icon={false} className="text-[11px] text-muted" /></span>
-                        : <WalletLink address={h.owner} />;
-                  })()}</td>
-                  <td className="px-2 py-2"><span className={`pill text-[10px] ${labelCls(h.label)}`}>{getWalletLabel(h.owner)?.kind || h.label}</span></td>
-                  <td className="px-2 py-2 text-right tabular-nums text-xs">{compact(h.uiAmount)}</td>
-                  <td className="px-2 py-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 bg-panel2 rounded-full overflow-hidden">
-                        <div className="h-full bg-accent rounded-full" style={{ width: `${((h.pct || 0) / maxPct) * 100}%` }} />
-                      </div>
-                      <span className="text-xs w-12 text-right tabular-nums">{h.pct != null ? h.pct.toFixed(2) + "%" : "—"}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-2 text-right tabular-nums text-xs">{price && h.uiAmount ? fmtUsd(h.uiAmount * price, { compact: true }) : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <span className={`tabular-nums font-semibold ${pos ? "text-up" : "text-down"}`}>
+      {pos ? "+" : ""}{isCompact ? fmtUsd(v, { compact: true }) : fmtUsd(v)}
+    </span>
   );
 }
 
 /* ─────────────────────────────────────────────
-   Live Trades
+   Combined Holders + Traders (tabbed)
 ───────────────────────────────────────────── */
+function HoldersAndTraders({ holders, topData, topLoading, price, dir = {}, safety }: {
+  holders: any[]; topData: { holders: TokenHolder[]; traders: TopTrader[] } | null;
+  topLoading: boolean; price?: number; dir?: Record<string, KolDirEntry>; safety: any;
+}) {
+  const [sub, setSub] = useState<"holders" | "traders">("holders");
+  const enrichedHolders: TokenHolder[] = topData?.holders?.length ? topData.holders : holders.map((h, i) => ({
+    rank: i + 1, owner: h.owner, uiAmount: h.uiAmount ?? 0,
+    pct: h.pct ?? null, usdValue: price && h.uiAmount ? h.uiAmount * price : null,
+  }));
+  const traders: TopTrader[] = topData?.traders || [];
+  const maxPct = Math.max(...enrichedHolders.map((h) => h.pct || 0), 1);
+  const kolHolders = enrichedHolders.filter((h) => dir[h.owner]);
+  const kolPct = kolHolders.reduce((s, h) => s + (h.pct || 0), 0);
+
+  return (
+    <div className="space-y-3">
+      <HolderIntel holders={holders} safety={safety} dir={dir} />
+
+      {/* Sub-tab switcher */}
+      <div className="flex gap-1 bg-panel2/60 rounded-full p-1 w-fit">
+        {([["holders", "holders", `Holders (${enrichedHolders.length})`],
+           ["traders", "traders", `Traders (${traders.length || "—"})`]] as [string, string, string][]).map(([k, , lbl]) => (
+          <button key={k} onClick={() => setSub(k as "holders" | "traders")}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all ${sub === k ? "bg-accent text-white shadow" : "text-muted hover:text-white"}`}>
+            {k === "holders" ? <Users className="w-3.5 h-3.5" /> : <BarChart2 className="w-3.5 h-3.5" />}{lbl}
+          </button>
+        ))}
+      </div>
+
+      {topLoading && !topData && (
+        <div className="flex items-center gap-2 text-muted text-sm py-4"><Loader2 className="w-4 h-4 animate-spin" /> Loading data…</div>
+      )}
+
+      {/* ── HOLDERS ── */}
+      {sub === "holders" && (
+        <div className="space-y-3">
+          {kolHolders.length > 0 && (
+            <div className="card p-3 px-4 flex items-center gap-2 flex-wrap text-sm">
+              <BadgeCheck className="w-4 h-4 text-accent" />
+              <span className="font-semibold">{kolHolders.length} KOL{kolHolders.length > 1 ? "s" : ""} holding {kolPct.toFixed(2)}% of supply</span>
+              <div className="flex gap-1.5 flex-wrap">{kolHolders.slice(0, 8).map((h) => <span key={h.owner} className="pill bg-accent/10 text-accent text-[10px]">{dir[h.owner].name}</span>)}</div>
+            </div>
+          )}
+          <div className="card overflow-hidden">
+            <div className="px-4 py-3 border-b border-line text-sm font-semibold flex items-center gap-2">
+              <Users className="w-4 h-4 text-accent" /> Top {enrichedHolders.length} Holders
+              <span className="text-muted font-normal text-xs ml-1">by balance · PnL enriched where available</span>
+            </div>
+            <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+              <table className="w-full text-sm min-w-[900px]">
+                <thead className="sticky top-0 bg-panel z-10"><tr className="text-muted text-xs border-b border-line bg-panel2/30">
+                  <th className="text-left px-4 py-2.5 w-8">#</th>
+                  <th className="text-left px-2 py-2.5">Wallet</th>
+                  <th className="text-right px-2 py-2.5">Amount</th>
+                  <th className="text-left px-2 py-2.5 w-32">Supply %</th>
+                  <th className="text-right px-2 py-2.5">USD Value</th>
+                  <th className="text-right px-2 py-2.5">Bought</th>
+                  <th className="text-right px-2 py-2.5">Sold</th>
+                  <th className="text-right px-2 py-2.5">Realized PnL</th>
+                  <th className="text-right px-2 py-2.5">Unrealized PnL</th>
+                  <th className="text-right px-4 py-2.5">Net PnL</th>
+                </tr></thead>
+                <tbody>
+                  {enrichedHolders.map((h) => {
+                    const lbl = getWalletLabel(h.owner);
+                    const walletCell = dir[h.owner]
+                      ? <KolBadge kol={dir[h.owner]} />
+                      : lbl
+                        ? <span className="inline-flex items-center gap-1.5"><span className={`pill text-[10px] ${labelKindClass(lbl.kind)}`}>{lbl.name}</span><WalletLink address={h.owner} icon={false} className="text-[11px] text-muted" /></span>
+                        : <WalletLink address={h.owner} />;
+                    return (
+                      <tr key={h.rank} className="border-b border-line/40 last:border-0 hover:bg-panel2/40 transition-colors">
+                        <td className="px-4 py-2 text-muted text-xs">{h.rank}</td>
+                        <td className="px-2 py-2">{walletCell}</td>
+                        <td className="px-2 py-2 text-right tabular-nums text-xs">{compact(h.uiAmount)}</td>
+                        <td className="px-2 py-2">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-1.5 bg-panel2 rounded-full overflow-hidden">
+                              <div className="h-full bg-accent rounded-full" style={{ width: `${((h.pct || 0) / maxPct) * 100}%` }} />
+                            </div>
+                            <span className="text-xs w-12 text-right tabular-nums">{h.pct != null ? h.pct.toFixed(2) + "%" : "—"}</span>
+                          </div>
+                        </td>
+                        <td className="px-2 py-2 text-right tabular-nums text-xs">{h.usdValue != null ? fmtUsd(h.usdValue, { compact: true }) : (price && h.uiAmount ? fmtUsd(h.uiAmount * price, { compact: true }) : "—")}</td>
+                        <td className="px-2 py-2 text-right text-xs text-up tabular-nums">{h.buyVol != null ? fmtUsd(h.buyVol, { compact: true }) : "—"}</td>
+                        <td className="px-2 py-2 text-right text-xs text-down tabular-nums">{h.sellVol != null ? fmtUsd(h.sellVol, { compact: true }) : "—"}</td>
+                        <td className="px-2 py-2 text-right text-xs"><Pnl v={h.realizedPnl} compact /></td>
+                        <td className="px-2 py-2 text-right text-xs"><Pnl v={h.unrealizedPnl} compact /></td>
+                        <td className="px-4 py-2 text-right text-xs"><Pnl v={h.netPnl} compact /></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TRADERS ── */}
+      {sub === "traders" && (
+        <div className="card overflow-hidden">
+          <div className="px-4 py-3 border-b border-line text-sm font-semibold flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-accent" /> Top {traders.length} Traders
+            <span className="text-muted font-normal text-xs ml-1">24h window · sorted by PnL · Birdeye</span>
+          </div>
+          {traders.length === 0 ? (
+            <div className="px-4 py-8 text-muted text-sm text-center">{topLoading ? "Loading…" : "Trader data unavailable — Birdeye API key not configured."}</div>
+          ) : (
+            <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+              <table className="w-full text-sm min-w-[1000px]">
+                <thead className="sticky top-0 bg-panel z-10"><tr className="text-muted text-xs border-b border-line bg-panel2/30">
+                  <th className="text-left px-4 py-2.5 w-8">#</th>
+                  <th className="text-left px-2 py-2.5">Trader</th>
+                  <th className="text-center px-2 py-2.5">Buys</th>
+                  <th className="text-center px-2 py-2.5">Sells</th>
+                  <th className="text-right px-2 py-2.5">Bought</th>
+                  <th className="text-right px-2 py-2.5">Sold</th>
+                  <th className="text-right px-2 py-2.5">Volume</th>
+                  <th className="text-right px-2 py-2.5">Realized PnL</th>
+                  <th className="text-right px-2 py-2.5">Unrealized PnL</th>
+                  <th className="text-right px-2 py-2.5">Net PnL</th>
+                  <th className="text-right px-4 py-2.5">Holding</th>
+                </tr></thead>
+                <tbody>
+                  {traders.map((t) => {
+                    const lbl = getWalletLabel(t.owner);
+                    const walletCell = dir[t.owner]
+                      ? <KolBadge kol={dir[t.owner]} />
+                      : lbl
+                        ? <span className="inline-flex items-center gap-1.5"><span className={`pill text-[10px] ${labelKindClass(lbl.kind)}`}>{lbl.name}</span><WalletLink address={t.owner} icon={false} className="text-[11px] text-muted" /></span>
+                        : <WalletLink address={t.owner} />;
+                    return (
+                      <tr key={t.rank} className="border-b border-line/40 last:border-0 hover:bg-panel2/40 transition-colors">
+                        <td className="px-4 py-2 text-muted text-xs">{t.rank}</td>
+                        <td className="px-2 py-2">
+                          <div className="flex items-center gap-1.5">
+                            {walletCell}
+                            {t.isHolder && <span className="pill bg-up/10 text-up text-[9px]">holding</span>}
+                          </div>
+                        </td>
+                        <td className="px-2 py-2 text-center tabular-nums text-xs text-up font-semibold">{t.buys ?? "—"}</td>
+                        <td className="px-2 py-2 text-center tabular-nums text-xs text-down font-semibold">{t.sells ?? "—"}</td>
+                        <td className="px-2 py-2 text-right text-xs text-up tabular-nums">{t.buyVol != null ? fmtUsd(t.buyVol, { compact: true }) : "—"}</td>
+                        <td className="px-2 py-2 text-right text-xs text-down tabular-nums">{t.sellVol != null ? fmtUsd(t.sellVol, { compact: true }) : "—"}</td>
+                        <td className="px-2 py-2 text-right tabular-nums text-xs">{t.volume != null ? fmtUsd(t.volume, { compact: true }) : "—"}</td>
+                        <td className="px-2 py-2 text-right text-xs"><Pnl v={t.realizedPnl} compact /></td>
+                        <td className="px-2 py-2 text-right text-xs"><Pnl v={t.unrealizedPnl} compact /></td>
+                        <td className="px-2 py-2 text-right text-xs"><Pnl v={t.netPnl} compact /></td>
+                        <td className="px-4 py-2 text-right text-xs tabular-nums">
+                          {t.holdingPct != null ? (
+                            <span className="text-white">{t.holdingPct.toFixed(2)}%{t.holdingUsd != null && <span className="text-muted ml-1">({fmtUsd(t.holdingUsd, { compact: true })})</span>}</span>
+                          ) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TradesTable({ trades, mint, dir = {}, onRefresh }: { trades: any[]; mint: string; dir?: Record<string, KolDirEntry>; onRefresh: () => void }) {
   const [auto, setAuto] = useState(true);
   useEffect(() => { if (!auto) return; const id = setInterval(onRefresh, 15000); return () => clearInterval(id); }, [auto, onRefresh]);
