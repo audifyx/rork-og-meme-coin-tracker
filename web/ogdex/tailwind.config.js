@@ -4,17 +4,17 @@ export default {
   theme: {
     extend: {
       colors: {
-        // ── OG SCAN · Solana blue/black/white/gold theme ──
-        bg:      "#04060E",  // near-black, blue-tinted
-        panel:   "#0A1226",
-        panel2:  "#0F1A36",
-        line:    "#1B2C52",  // blue-steel borders
+        // ── OG SCAN · Solana black/blue/white/gold theme ──
+        bg:      "#000000",  // pure black
+        panel:   "#050A18",  // near-black blue
+        panel2:  "#0A1228",  // dark blue
+        line:    "#152040",  // blue-steel borders
         accent:  "#2F80FF",  // electric blue (primary brand)
         accent2: "#9945FF",  // Solana purple (secondary)
         gold:    "#FFC53D",  // premium gold (highlight)
         up:      "#14F195",  // Solana green — gains
         down:    "#FF4D6D",  // loss
-        muted:   "#8497B8",  // blue-grey
+        muted:   "#A0B4D0",  // lighter blue-grey for better white-text contrast
       },
       fontFamily: {
         sans:    ["Plus Jakarta Sans", "Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],

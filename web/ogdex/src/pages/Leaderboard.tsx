@@ -20,7 +20,17 @@ export default function Leaderboard() {
       </div>
 
       {loading ? <div className="grid place-items-center py-16 text-muted"><Loader2 className="h-6 w-6 animate-spin" /></div>
-        : !entries || entries.length === 0 ? <div className="card p-10 text-center text-muted text-sm">Leaderboard is warming up. Check back shortly.</div>
+        : !entries || entries.length === 0 ? (
+          <div className="card p-10 text-center space-y-3">
+            <Trophy className="h-10 w-10 text-accent/40 mx-auto" />
+            <p className="text-white font-semibold">Loading trader stats…</p>
+            <p className="text-sm text-muted">PnL is computed live from on-chain swaps for {">"}35 tracked KOL wallets. This takes ~30s on the first load.</p>
+            <button onClick={() => { setLoading(true); getLeaderboard().then((d) => { setEntries(d.ok ? d.entries : []); setAt(d.at || null); setLoading(false); }); }}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold text-accent border border-accent/30 hover:bg-accent/10 transition-colors">
+              Retry
+            </button>
+          </div>
+        )
         : (
         <div className="card overflow-hidden">
           <div className="overflow-x-auto">

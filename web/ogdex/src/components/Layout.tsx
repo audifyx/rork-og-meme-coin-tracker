@@ -103,7 +103,7 @@ export default function Layout() {
       {/* ── Sticky Header ── */}
       <div className="sticky top-0 z-30">
         <div className="brand-hairline" />
-        <header className="border-b header-sheen backdrop-blur-2xl" style={{ backgroundColor: "rgba(4,6,14,0.85)", borderColor: "rgba(47,128,255,0.15)" }}>
+        <header className="border-b header-sheen backdrop-blur-2xl" style={{ backgroundColor: "rgba(0,0,0,0.88)", borderColor: "rgba(47,128,255,0.15)" }}>
           <div className="max-w-[1600px] mx-auto px-5 h-14 flex items-center gap-4">
 
             {/* Logo */}
@@ -176,7 +176,7 @@ export default function Layout() {
                 <LogOut className="w-3 h-3 opacity-70" />
               </button>
             ) : (
-              <button onClick={connect} disabled={connecting} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-[#04060E] transition-all disabled:opacity-60" style={{ background: "linear-gradient(135deg,#2F80FF,#1657C9)" }}>
+              <button onClick={connect} disabled={connecting} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-[#000000] transition-all disabled:opacity-60" style={{ background: "linear-gradient(135deg,#2F80FF,#1657C9)" }}>
                 <Wallet2 className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">{connecting ? "Connecting…" : "Connect"}</span>
               </button>
@@ -185,7 +185,7 @@ export default function Layout() {
             <InstallPWA />
 
             {/* Store button */}
-            <Link to="/store" className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-[#04060E] transition-all hover:opacity-90" style={{ background: "linear-gradient(110deg,#2F80FF,#9945FF,#FFC53D)" }}>
+            <Link to="/store" className="hidden sm:flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-[#000000] transition-all hover:opacity-90" style={{ background: "linear-gradient(110deg,#2F80FF,#9945FF,#FFC53D)" }}>
               <ShoppingBag className="w-3.5 h-3.5" />
               Store
             </Link>
@@ -194,10 +194,10 @@ export default function Layout() {
         </header>
 
         {/* ── Nav wheel: all app tabs, horizontal scroll (every breakpoint) ── */}
-        <div className="relative border-b backdrop-blur-2xl" style={{ backgroundColor: "rgba(4,6,14,0.78)", borderColor: "rgba(47,128,255,0.12)" }}>
+        <div className="relative border-b backdrop-blur-2xl" style={{ backgroundColor: "rgba(0,0,0,0.82)", borderColor: "rgba(47,128,255,0.12)" }}>
           {/* edge fades to signal scrollability */}
-          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 z-10" style={{ background: "linear-gradient(90deg, rgba(4,6,14,0.95), transparent)" }} />
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 z-10" style={{ background: "linear-gradient(270deg, rgba(4,6,14,0.95), transparent)" }} />
+          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-8 z-10" style={{ background: "linear-gradient(90deg, rgba(0,0,0,0.97), transparent)" }} />
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 z-10" style={{ background: "linear-gradient(270deg, rgba(0,0,0,0.97), transparent)" }} />
           <nav className="max-w-[1600px] mx-auto flex items-center gap-1.5 px-4 py-2 overflow-x-auto no-scrollbar">
             {NAV_LINKS.map(({ to, label, Icon, exact }) => {
               const active = isActive(to, exact);
@@ -230,7 +230,7 @@ export default function Layout() {
       <footer className="relative mt-12 overflow-hidden" style={{ borderTop: "1px solid rgba(47,128,255,0.15)" }}>
         {/* bg image */}
         <div className="absolute inset-0 bg-cover bg-center opacity-[0.10]" style={{ backgroundImage: "url(/OGDEX/ogdex-hero.jpg)" }} />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #04060E 0%, rgba(4,6,14,0.92) 60%, rgba(4,6,14,0.7) 100%)" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #000000 0%, rgba(0,0,0,0.95) 60%, rgba(0,0,0,0.75) 100%)" }} />
 
         <div className="relative max-w-[1600px] mx-auto px-5 py-12">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10">

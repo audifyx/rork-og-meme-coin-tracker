@@ -3,11 +3,14 @@
 // Heavy to compute, so the result is cached in Storage KV for ~1h.
 import { send, cache, dbSelect, kvGet, kvPut } from "../_lib.js";
 import { computePnl } from "../_pnl.js";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const STATIC_KOLS = require("../_kols.json").kols;
 
 const isAddr = (a) => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a || "");
 const CACHE_KEY = "leaderboard/kol-v1.json";
 const TTL_MS = 60 * 60 * 1000;
-const MAX_WALLETS = 16;
+const MAX_WALLETS = 50;
 
 async function mapLimit(items, limit, fn) {
   const out = []; let i = 0;
@@ -31,14 +34,35 @@ export default async function handler(req, res) {
 
   try {
     // Build the wallet set + metadata.
+    // Primary: static _kols.json (always available)
+    // Augmented by: DB ogdex_kol_directory (adds avatars, updated handles)
     let meta = {};
     let wallets = walletsParam;
     if (!wallets.length) {
-      const rows = await dbSelect("ogdex_kol_directory", "select=address,name,x_handle,x_url,image_url,tags,status&limit=200").catch(() => []);
+      // Seed from static list first (guaranteed fallback)
+      for (const k of STATIC_KOLS) {
+        if (!isAddr(k.address)) continue;
+        if (k.status === "disputed") continue;
+        meta[k.address] = {
+          name: k.name || null,
+          twitter: k.twitter ? String(k.twitter).replace(/^@/, "") : null,
+          twitterUrl: k.twitter ? `https://x.com/${String(k.twitter).replace(/^@/, "")}` : null,
+          avatar: null,
+          tags: k.tags || [],
+        };
+      }
+      // Augment with DB rows (override name/avatar if present)
+      const rows = await dbSelect("ogdex_kol_directory", "select=address,name,x_handle,x_url,image_url,tags,status&limit=300").catch(() => []);
       for (const r of rows) {
         if (!isAddr(r.address)) continue;
         if (r.status === "disputed") continue;
-        meta[r.address] = { name: r.name || null, twitter: r.x_handle || null, twitterUrl: r.x_url || (r.x_handle ? `https://x.com/${String(r.x_handle).replace(/^@/, "")}` : null), avatar: r.image_url || null, tags: r.tags || [] };
+        meta[r.address] = {
+          name: r.name || meta[r.address]?.name || null,
+          twitter: r.x_handle ? String(r.x_handle).replace(/^@/, "") : (meta[r.address]?.twitter || null),
+          twitterUrl: r.x_url || (r.x_handle ? `https://x.com/${String(r.x_handle).replace(/^@/, "")}` : meta[r.address]?.twitterUrl || null),
+          avatar: r.image_url || null,
+          tags: r.tags || meta[r.address]?.tags || [],
+        };
       }
       wallets = Object.keys(meta).slice(0, MAX_WALLETS);
     }

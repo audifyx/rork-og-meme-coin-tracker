@@ -6,9 +6,11 @@ export default function HeroBanner() {
     <div className="relative mb-4 overflow-hidden rounded-3xl border ring-brand" style={{ borderColor: "rgba(47,128,255,0.25)" }}>
       {/* Custom OG SCAN key visual */}
       <div className="absolute inset-0 bg-cover bg-center scale-105" style={{ backgroundImage: "url(/OGDEX/ogdex-hero.jpg)" }} />
-      {/* Glass legibility gradients */}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(100deg, rgba(4,6,14,0.92) 0%, rgba(4,6,14,0.62) 42%, rgba(4,6,14,0.18) 70%, rgba(4,6,14,0.45) 100%)" }} />
-      <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(4,6,14,0.95) 0%, transparent 55%)" }} />
+      {/* Glass legibility gradients — stronger left panel to kill the OGSCAN watermark */}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(100deg, rgba(0,0,0,0.97) 0%, rgba(0,0,0,0.88) 38%, rgba(0,0,0,0.45) 58%, rgba(0,0,0,0.55) 100%)" }} />
+      <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.98) 0%, transparent 50%)" }} />
+      {/* Extra local mask behind text column */}
+      <div className="absolute inset-y-0 left-0 w-2/3" style={{ background: "radial-gradient(ellipse 80% 100% at 10% 50%, rgba(0,0,0,0.75) 0%, transparent 100%)" }} />
       {/* Top sheen */}
       <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(47,128,255,0.7), rgba(255,197,61,0.5), transparent)" }} />
 
@@ -21,11 +23,13 @@ export default function HeroBanner() {
               style={{ background: "rgba(47,128,255,0.12)", border: "1px solid rgba(47,128,255,0.3)", color: "#7FB0FF" }}>
               <Sparkles className="w-3 h-3" style={{ color: "#FFC53D" }} /> Solana On-Chain Intelligence
             </div>
-            <h1 className="font-display text-2xl sm:text-4xl font-extrabold tracking-tight leading-none">
+            <h1 className="font-display text-2xl sm:text-4xl font-extrabold tracking-tight leading-none text-white"
+              style={{ textShadow: "0 2px 20px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,1)" }}>
               OG<span className="text-brand-gradient">DEX</span>
               <span className="hidden sm:inline text-muted font-bold text-lg align-middle"> · Token Screener</span>
             </h1>
-            <p className="text-[12px] sm:text-sm text-muted mt-1.5 leading-snug max-w-md">
+            <p className="text-[12px] sm:text-sm text-white mt-1.5 leading-snug max-w-md font-medium"
+              style={{ textShadow: "0 1px 12px rgba(0,0,0,1), 0 0 30px rgba(0,0,0,1)" }}>
               OG Score · organic momentum · instant safety checks · live multi-chain discovery
             </p>
             <div className="flex flex-wrap items-center gap-3 mt-2.5 text-[11px] text-muted">
