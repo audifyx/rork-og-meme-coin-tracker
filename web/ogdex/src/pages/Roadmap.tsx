@@ -47,12 +47,12 @@ const PHASES: { phase: string; title: string; items: { t: string; s: Status }[] 
     ],
   },
   {
-    phase: "Phase 4", title: "Ecosystem — In Progress",
+    phase: "Phase 4", title: "Ecosystem — Shipped",
     items: [
-      { t: "Public AI agent / MCP so any AI assistant can query OG DEX live via /api/ogdex/mcp", s: "done" },
-      { t: "Native mobile apps", s: "progress" },
-      { t: "Community-curated KOL lists and reputation scoring", s: "progress" },
-      { t: "Open analytics dashboards and embeddable widgets for projects", s: "planned" },
+      { t: "Public AI agent / MCP at /api/mcp — any AI assistant can query OG DEX live (token, screener, forensics, wallet, chart, KOLs, search)", s: "done" },
+      { t: "Community-curated KOL lists with nominations, reputation scoring, and OG verification at /kol/community", s: "done" },
+      { t: "Embeddable token widget — one script tag, live price + metrics, any site; configure at /embed", s: "done" },
+      { t: "Native mobile apps", s: "planned" },
     ],
   },
 ];

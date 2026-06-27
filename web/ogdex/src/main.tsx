@@ -30,8 +30,11 @@ const Roadmap = lazy(() => import("./pages/Roadmap"));
 const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 // Phase 2+
 const Status = lazy(() => import("./pages/Status"));
-// Phase 3
+// Phase 3: Copy tracking
 const CopyTracking = lazy(() => import("./pages/CopyTracking"));
+// Phase 4: Community KOL lists, Embed/widget page
+const CommunityKols = lazy(() => import("./pages/CommunityKols"));
+const Embed = lazy(() => import("./pages/Embed"));
 
 function PageFallback() {
   return <div className="grid place-items-center py-24 text-muted"><Loader2 className="w-5 h-5 animate-spin" /></div>;
@@ -69,6 +72,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="status" element={<Suspense fallback={<PageFallback />}><Status /></Suspense>} />
           {/* Phase 3: Copy tracking */}
           <Route path="copy-trade" element={<Suspense fallback={<PageFallback />}><CopyTracking /></Suspense>} />
+          {/* Phase 4: Community KOL lists + embed/widget */}
+          <Route path="kol/community" element={<Suspense fallback={<PageFallback />}><CommunityKols /></Suspense>} />
+          <Route path="embed" element={<Suspense fallback={<PageFallback />}><Embed /></Suspense>} />
         </Route>
       </Routes>
     </BrowserRouter>
