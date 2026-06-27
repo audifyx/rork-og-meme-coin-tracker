@@ -46,7 +46,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <PasswordGate>
       <WalletProvider>
         <BrowserRouter basename="/OGDEX">
-      <Routes>
+          <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Screener />} />
           <Route path="pulse" element={<Suspense fallback={<PageFallback />}><Pulse /></Suspense>} />
