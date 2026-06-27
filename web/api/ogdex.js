@@ -43,8 +43,8 @@ const ROUTES = {
   admin, boosts, chart, kols, launch, launches,
   config: configRoute, listings, metadata, report, screener, signals, search, token, trade, track, wallet, watchlist, alerts, rpc, forensics, chat, ath, openapi,
   "openapi.json": openapi, health, balance, safety, xray, swaps, llms, "llms.txt": llms, leaderboard,
-  "alerts-run\": alertsRun, research,
-  \"platform-stats\": platformStats,
+  "alerts-run": alertsRun, research,
+  "platform-stats": platformStats,
   traders,
 };
 
