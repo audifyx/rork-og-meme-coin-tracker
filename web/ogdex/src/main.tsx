@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import "./index.css";
 import Layout from "./components/Layout";
+import PasswordGate from "./components/PasswordGate";
 import { WalletProvider } from "./lib/wallet";
 import Screener from "./pages/Screener";
 
@@ -42,8 +43,9 @@ function PageFallback() {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <WalletProvider>
-    <BrowserRouter basename="/OGDEX">
+    <PasswordGate>
+      <WalletProvider>
+        <BrowserRouter basename="/OGDEX">
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Screener />} />
@@ -78,7 +80,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         </Route>
       </Routes>
     </BrowserRouter>
-    </WalletProvider>
+      </WalletProvider>
+    </PasswordGate>
   </React.StrictMode>
 );
 

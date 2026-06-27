@@ -90,7 +90,7 @@ export default function TokenDetail() {
   const [d, setD] = useState<TokenDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [tab, setTab] = useState<"overview" | "chat" | "predictive" | "smartmoney" | "kolwhale" | "holders" | "trades" | "xray" | "forensics">("overview");
+  const [tab, setTab] = useState<"overview" | "chat" | "predictive" | "smartmoney" | "kolwhale" | "holders" | "trades" | "xray" | "forensics" | "research">("overview");
   const [forensics, setForensics] = useState<ForensicsData | null>(null);
   const [forLoading, setForLoading] = useState(true);
   const [xray, setXray] = useState<XrayReport | null>(null);
