@@ -5,7 +5,7 @@ import { AlertTriangle } from "lucide-react";
 export default class ErrorBoundary extends Component<{ children: ReactNode; label?: string }, { err: Error | null }> {
   state = { err: null as Error | null };
   static getDerivedStateFromError(err: Error) { return { err }; }
-  componentDidCatch(err: Error) { try { console.error("OGDEX section error:", err); } catch { /* noop */ } }
+  componentDidCatch(err: Error) { try { console.error("ORBITX_DEX section error:", err); } catch { /* noop */ } }
   render() {
     if (this.state.err) {
       return (

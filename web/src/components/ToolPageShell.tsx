@@ -153,7 +153,7 @@ export const LoadingState: React.FC<{ text?: string }> = ({ text = "Loading..." 
   </div>
 );
 
-/* ─── Emerald Header (matches OG Scanner shell) ─── */
+/* ─── Emerald Header (matches OrbitX Scanner shell) ─── */
 interface EmeraldHeaderProps {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   title: string;

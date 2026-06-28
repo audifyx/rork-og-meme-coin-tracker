@@ -90,7 +90,7 @@ export default function Metadata() {
           <Pencil className="h-7 w-7 text-accent" />
         </div>
         <h1 className="text-2xl font-black tracking-tight">Edit Token Metadata</h1>
-        <p className="mt-2 text-sm text-muted">Update your token's name, symbol, image and socials — free, self-serve. Verified from your dev wallet, signed in Phantom. OGDEX never holds your funds or keys.</p>
+        <p className="mt-2 text-sm text-muted">Update your token's name, symbol, image and socials — free, self-serve. Verified from your dev wallet, signed in Phantom. ORBITX_DEX never holds your funds or keys.</p>
       </div>
 
       {/* wallet */}
@@ -171,7 +171,7 @@ export default function Metadata() {
               <a href={`https://solscan.io/tx/${sig}`} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 font-semibold hover:underline">View <ExternalLink className="h-3 w-3" /></a>
             </div>
           )}
-          <p className="mt-2 text-center text-[10px] text-muted/70">Non-custodial — Phantom signs the on-chain update. OGDEX never holds your keys.</p>
+          <p className="mt-2 text-center text-[10px] text-muted/70">Non-custodial — Phantom signs the on-chain update. ORBITX_DEX never holds your keys.</p>
         </div>
       )}
 
@@ -197,7 +197,7 @@ export default function Metadata() {
             </ul>
           </div>
         </div>
-        <p className="mt-3 text-[11px] text-muted/80">Planning a launch and want full control of your branding later? Launch a <span className="text-white">standard SPL token</span> (or use OGDEX's launcher) rather than a locked/pump.fun mint, and keep your metadata mutable.</p>
+        <p className="mt-3 text-[11px] text-muted/80">Planning a launch and want full control of your branding later? Launch a <span className="text-white">standard SPL token</span> (or use ORBITX_DEX's launcher) rather than a locked/pump.fun mint, and keep your metadata mutable.</p>
       </div>
     </div>
   );

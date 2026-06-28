@@ -40,7 +40,7 @@ const routeToNav: Record<string, string> = {
   "/tools": "/tools",
   "/scanner": "/tools",
   "/og-finder": "/tools",
-  "/og-scanner": "/tools",
+  "/orbitx-scanner": "/tools",
   "/ogscan-scanner": "/tools",
   "/snipe-feed": "/tools",
   "/dev-wallet": "/tools",

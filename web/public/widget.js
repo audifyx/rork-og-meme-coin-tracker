@@ -183,7 +183,7 @@
 
         if (addLink) {
           const a = document.createElement("a");
-          a.href = `${BASE}/OGDEX/token/${mint}`;
+          a.href = `${BASE}/ORBITX_DEX/token/${mint}`;
           a.target = "_blank";
           a.rel = "noreferrer";
           a.style.textDecoration = "none";

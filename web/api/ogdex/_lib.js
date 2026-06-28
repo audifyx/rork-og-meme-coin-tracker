@@ -8,7 +8,7 @@ export const PAY_WALLET = "CicbPxARTDrwQ4XcxWsn6SYeG4FMJHirS633cZUJeQDh";
 export const JUP = "https://lite-api.jup.ag";
 // Token holder/trade/safety intelligence function. v2 adds KOL + public-wallet
 // labeling and whale rollups. Switch back to "ogdex-intel" here to roll back.
-export const INTEL_FN = process.env.OGDEX_INTEL_FN || "ogdex-intel-v2";
+export const INTEL_FN = process.env.ORBITX_DEX_INTEL_FN || "ogdex-intel-v2";
 
 export function send(res, status, data) {
   res.setHeader("Content-Type", "application/json");

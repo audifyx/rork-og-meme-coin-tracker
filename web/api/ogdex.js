@@ -74,7 +74,7 @@ function clientIp(req) {
 }
 
 function hasSoftKey(req, u) {
-  const allow = (process.env.OGDEX_API_KEYS || "").split(",").map((s) => s.trim()).filter(Boolean);
+  const allow = (process.env.ORBITX_DEX_API_KEYS || "").split(",").map((s) => s.trim()).filter(Boolean);
   if (!allow.length) return false;
   const k = req.headers["x-ogdex-key"] || u.searchParams.get("key") || "";
   return !!k && allow.includes(String(k));

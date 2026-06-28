@@ -8,7 +8,7 @@ const TEXT = `# OG DEX
 
 Base URL: ${BASE}
 OpenAPI 3.1 spec (import this into ChatGPT/Claude Actions, Postman, or any codegen for every endpoint at once): ${BASE}/openapi.json
-Brand: https://ogscan.fun  ·  Token page pattern: https://ogscan.fun/OGDEX/token/{mint}  ·  Wallet page: https://ogscan.fun/OGDEX/wallet/{address}
+Brand: https://ogscan.fun  ·  Token page pattern: https://ogscan.fun/ORBITX_DEX/token/{mint}  ·  Wallet page: https://ogscan.fun/ORBITX_DEX/wallet/{address}
 
 ## Conventions
 - All responses are JSON with an \`ok\` boolean unless noted. On error: \`{ ok: false, error }\`.

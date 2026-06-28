@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     if (!r.ok) { res.statusCode = 502; return res.end("report unavailable"); }
     const buf = Buffer.from(await r.arrayBuffer());
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `attachment; filename="OGDEX_Report_${mint.slice(0,8)}.pdf"`);
+    res.setHeader("Content-Disposition", `attachment; filename="ORBITX_DEX_Report_${mint.slice(0,8)}.pdf"`);
     res.statusCode = 200; res.end(buf);
   } catch (e) { res.statusCode = 500; res.end("error"); }
 }

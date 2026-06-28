@@ -14,7 +14,7 @@ function Brand() {
   return (
     <span className="flex items-center gap-3 shrink-0">
       <span className="w-9 h-9 rounded-xl overflow-hidden ring-brand flex-shrink-0">
-        <img src="/OGDEX/ogdex-logo.png" alt="OrbitX" className="w-full h-full object-cover" width={36} height={36} />
+        <img src="/ORBITX_DEX/ogdex-logo.png" alt="OrbitX" className="w-full h-full object-cover" width={36} height={36} />
       </span>
       <span className="hidden sm:flex flex-col leading-none">
         <span className="font-black text-[17px] tracking-tight" style={{ fontFamily: "'Sora', 'Plus Jakarta Sans', sans-serif" }}>
@@ -221,7 +221,7 @@ export default function Layout() {
       {/* ── Footer ── */}
       <footer className="relative mt-12 overflow-hidden" style={{ borderTop: "1px solid rgba(47,128,255,0.15)" }}>
         {/* bg image */}
-        <div className="absolute inset-0 bg-cover bg-center opacity-[0.10]" style={{ backgroundImage: "url(/OGDEX/ogdex-hero.jpg)" }} />
+        <div className="absolute inset-0 bg-cover bg-center opacity-[0.10]" style={{ backgroundImage: "url(/ORBITX_DEX/ogdex-hero.jpg)" }} />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, #000000 0%, rgba(0,0,0,0.95) 60%, rgba(0,0,0,0.75) 100%)" }} />
 
         <div className="relative max-w-[1600px] mx-auto px-5 py-12">

@@ -124,7 +124,7 @@ export default function OgScanner() {
         <div className="relative flex items-start gap-3">
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-accent to-accent2 shadow-glow-blue"><Crosshair className="h-6 w-6 text-white" strokeWidth={2.2} /></div>
           <div>
-            <div className="flex items-center gap-2"><h1 className="font-display text-xl font-black text-white">OG Scanner</h1><span className="rounded-full border border-accent/40 bg-accent/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-accent">Forensic</span></div>
+            <div className="flex items-center gap-2"><h1 className="font-display text-xl font-black text-white">OrbitX Scanner</h1><span className="rounded-full border border-accent/40 bg-accent/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-accent">Forensic</span></div>
             <p className="mt-1 max-w-md text-xs leading-relaxed text-muted">Forensic origin attribution. Search the chain, find the real OG, expose every clone and flag the dangerous ones. Click any token to view its full page.</p>
           </div>
         </div>

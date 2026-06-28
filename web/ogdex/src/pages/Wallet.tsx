@@ -111,7 +111,7 @@ export default function Wallet() {
               <button onClick={createWalletAlert} disabled={nBusy || connecting} className="btn bg-accent text-black font-semibold inline-flex items-center gap-1.5">{nBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellPlus className="h-4 w-4" />}{owner ? "Create alert" : "Connect & create"}</button>
             </div>
             {nMsg && <div className={`mt-2 flex items-center gap-1.5 ${nMsg.ok ? "text-up" : "text-down"}`}>{nMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}{nMsg.text}</div>}
-            <p className="mt-2 text-[10px] text-muted/70">Notify-only — OGDEX never copies or auto-executes trades. Manage alerts on the Alerts page.</p>
+            <p className="mt-2 text-[10px] text-muted/70">Notify-only — ORBITX_DEX never copies or auto-executes trades. Manage alerts on the Alerts page.</p>
           </div>
         )}
       </div>

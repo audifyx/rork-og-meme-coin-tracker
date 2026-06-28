@@ -56,7 +56,7 @@ const TABS: { id: Tab; label: string; icon: any; cat: Cat }[] = [
   { id: "communities",  label: "Communities",    icon: Globe,          cat: "social" },
   { id: "notifications",label: "Notifications",   icon: Bell,           cat: "social" },
 ];
-const CAT_LABEL: Record<Cat, string> = { dex: "OG Dex", social: "Social" };
+const CAT_LABEL: Record<Cat, string> = { dex: "OrbitX DEX", social: "Social" };
 
 // ─── Root ──────────────────────────────────────────────────────────────────────
 export default function Admin() {
@@ -244,7 +244,7 @@ function OverviewTab({ s, health, data, act, pass }: any) {
           <div className="space-y-1.5 text-sm">
             {(s.topTokens || []).slice(0, 8).map((t: any) => (
               <div key={t.ref} className="flex justify-between">
-                <a href={`/OGDEX/token/${t.ref}`} target="_blank" rel="noreferrer"
+                <a href={`/ORBITX_DEX/token/${t.ref}`} target="_blank" rel="noreferrer"
                   className="text-muted truncate hover:text-accent text-xs font-mono">{t.ref.slice(0, 8)}…</a>
                 <span className="text-xs">{t.views}</span>
               </div>

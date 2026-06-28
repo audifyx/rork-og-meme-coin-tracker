@@ -139,17 +139,17 @@ const capabilities = [
   { Icon: Search, title: "Vet any token", body: "Paste a CA — holders, liquidity, risk flags and an OG confidence score in ~1s." },
   { Icon: Wallet, title: "X-ray any wallet", body: "Trade history, win rate and timing, then ask the AI what it actually means." },
   { Icon: Target, title: "Catch launches early", body: "Watch mints, new pairs and liquidity adds the moment they hit the chain." },
-  { Icon: TrendingUp, title: "Screen & discover", body: "Filter trending, organic and KOL-backed tokens on the OGDEX screener." },
-  { Icon: Rocket, title: "Launch a coin", body: "Create and launch your own token on pump.fun from OGDEX in minutes." },
+  { Icon: TrendingUp, title: "Screen & discover", body: "Filter trending, organic and KOL-backed tokens on the ORBITX_DEX screener." },
+  { Icon: Rocket, title: "Launch a coin", body: "Create and launch your own token on pump.fun from ORBITX_DEX in minutes." },
   { Icon: Bell, title: "Automate alerts", body: "Get pinged on Telegram or your own webhook for launches, whales and targets." },
 ];
 
 const tools = [
-  { Icon: ShieldCheck, name: "OG Scanner", desc: "Instant contract forensics & risk flags", tone: "text-og-lime border-og-lime/30 bg-og-lime/10" },
+  { Icon: ShieldCheck, name: "OrbitX Scanner", desc: "Instant contract forensics & risk flags", tone: "text-og-lime border-og-lime/30 bg-og-lime/10" },
   { Icon: Wallet, name: "Wallet Intelligence", desc: "Forensic wallet analysis & win rate", tone: "text-og-cyan border-og-cyan/30 bg-og-cyan/10" },
   { Icon: BrainCircuit, name: "AI Analyst", desc: "Unlimited chat over on-chain data", tone: "text-[#f472b6] border-[#f472b6]/30 bg-[#f472b6]/10" },
   { Icon: Radar, name: "Market Radar", desc: "Launches, pairs, migrations, whales", tone: "text-og-gold border-og-gold/30 bg-og-gold/10" },
-  { Icon: TrendingUp, name: "OGDEX Screener", desc: "OG Score, KOL picks & token launch", tone: "text-og-cyan border-og-cyan/30 bg-og-cyan/10" },
+  { Icon: TrendingUp, name: "ORBITX_DEX Screener", desc: "OG Score, KOL picks & token launch", tone: "text-og-cyan border-og-cyan/30 bg-og-cyan/10" },
   { Icon: FileText, name: "PDF Reports", desc: "Shareable charts, metrics & AI insight", tone: "text-og-lime border-og-lime/30 bg-og-lime/10" },
   { Icon: Bot, name: "Telegram Bot", desc: "The full platform inside Telegram", tone: "text-og-cyan border-og-cyan/30 bg-og-cyan/10" },
   { Icon: Newspaper, name: "Live Crypto News", desc: "Bullish & bearish narratives, real-time", tone: "text-[#f472b6] border-[#f472b6]/30 bg-[#f472b6]/10" },
@@ -191,7 +191,7 @@ const BetaHome = memo(() => {
           </div>
         </Link>
         <div className="flex items-center gap-2">
-          <a href="/OGDEX" className="hidden min-h-10 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.07] px-4 text-sm font-bold text-white/80 transition hover:text-white sm:inline-flex">
+          <a href="/ORBITX_DEX" className="hidden min-h-10 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.07] px-4 text-sm font-bold text-white/80 transition hover:text-white sm:inline-flex">
             Screener
           </a>
           <Link to="/auth" className="grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.07] text-white/70 transition hover:text-white sm:hidden" aria-label="Sign in">
@@ -215,7 +215,7 @@ const BetaHome = memo(() => {
             Find the OGs. <span className="bg-gradient-to-r from-og-lime via-og-cyan to-[#f472b6] bg-clip-text text-transparent">Dodge the rugs.</span>
           </h1>
           <p className="mt-5 max-w-lg text-base leading-7 text-white/60 sm:text-lg">
-            OG Scan is the unified on-chain intelligence platform. Scan any token, x-ray any wallet, catch launches before they move, and screen or launch coins on OGDEX — all in one place, powered by AI.
+            OG Scan is the unified on-chain intelligence platform. Scan any token, x-ray any wallet, catch launches before they move, and screen or launch coins on ORBITX_DEX — all in one place, powered by AI.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -223,7 +223,7 @@ const BetaHome = memo(() => {
               Create free account
               <Fingerprint className="h-5 w-5" />
             </Link>
-            <a href="/OGDEX" className="flex min-h-14 items-center justify-between rounded-2xl border border-white/10 bg-white/[0.08] px-5 font-black text-white transition active:scale-[0.98]">
+            <a href="/ORBITX_DEX" className="flex min-h-14 items-center justify-between rounded-2xl border border-white/10 bg-white/[0.08] px-5 font-black text-white transition active:scale-[0.98]">
               Open the screener
               <ArrowRight className="h-5 w-5" />
             </a>
@@ -270,7 +270,7 @@ const BetaHome = memo(() => {
               We got tired of juggling ten browser tabs to make one trade — a chart here, a holder map there, a rug-checker, a wallet tracker, a launch bot. None of them talked to each other. So we built the platform we actually wanted.
             </p>
             <p>
-              OG Scan unifies <span className="text-white font-semibold">token forensics, wallet intelligence, a live launch radar, an on-chain screener &amp; launcher (OGDEX), and an AI analyst</span> — all in real time. The mission: find the real OGs early, avoid the traps, and move faster than the crowd.
+              OG Scan unifies <span className="text-white font-semibold">token forensics, wallet intelligence, a live launch radar, an on-chain screener &amp; launcher (ORBITX_DEX), and an AI analyst</span> — all in real time. The mission: find the real OGs early, avoid the traps, and move faster than the crowd.
             </p>
           </div>
         </div>
@@ -300,8 +300,8 @@ const BetaHome = memo(() => {
             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-og-cyan">The toolkit</p>
             <h2 className="mt-3 text-3xl font-black sm:text-4xl">Every tool, built in.</h2>
           </div>
-          <a href="/OGDEX" className="hidden shrink-0 items-center gap-1 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm font-bold text-white/80 transition hover:text-white sm:inline-flex">
-            Try OGDEX <ChevronRight className="h-4 w-4" />
+          <a href="/ORBITX_DEX" className="hidden shrink-0 items-center gap-1 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2 text-sm font-bold text-white/80 transition hover:text-white sm:inline-flex">
+            Try ORBITX_DEX <ChevronRight className="h-4 w-4" />
           </a>
         </div>
         <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -330,7 +330,7 @@ const BetaHome = memo(() => {
             <Link to="/auth?mode=signup" className="inline-flex min-h-[52px] items-center gap-2 rounded-2xl bg-og-lime px-7 py-3.5 font-black text-og-ink transition active:scale-95">
               Start free <ArrowRight className="h-5 w-5" />
             </Link>
-            <a href="/OGDEX" className="inline-flex min-h-[52px] items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.06] px-7 py-3.5 font-black text-white transition hover:bg-white/10">
+            <a href="/ORBITX_DEX" className="inline-flex min-h-[52px] items-center gap-2 rounded-2xl border border-white/15 bg-white/[0.06] px-7 py-3.5 font-black text-white transition hover:bg-white/10">
               Explore the screener
             </a>
           </div>

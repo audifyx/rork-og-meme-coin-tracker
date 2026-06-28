@@ -167,7 +167,7 @@ export function ScanProgress({ active, query, className }: Props) {
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 text-og-gold animate-pulse" />
           <span className="font-mono text-[11px] uppercase tracking-[0.35em] text-og-gold">
-            OG Scanner — Active
+            OrbitX Scanner — Active
           </span>
         </div>
         <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/25 px-2.5 py-1 backdrop-blur">

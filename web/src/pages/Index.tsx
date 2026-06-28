@@ -691,7 +691,7 @@ const ROUTE_ALIASES: Record<string, TabId> = TABS.reduce(
     tape: "tx-feed",
     transactions: "tx-feed",
     "transaction-feed": "tx-feed",
-    "og-scanner": "scanner",
+    "orbitx-scanner": "scanner",
     "ogscan-scanner": "scanner",
     "dev-wallet": "snipe-feed",
     "dev-wallet-radar": "snipe-feed",
@@ -1491,7 +1491,7 @@ const marketSuiteOptions: SuiteOption<"feed" | "trending" | "news-signal">[] = [
 ];
 
 const TruthScanSuite = ({ onSelect }: { onSelect: (m: string) => void }) => {
-  // Unified OG Scanner — self-contained forensic scanner (header, search, modules, history, compare).
+  // Unified OrbitX Scanner — self-contained forensic scanner (header, search, modules, history, compare).
   return <Scanner onSelect={onSelect} />;
 };
 

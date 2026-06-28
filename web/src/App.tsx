@@ -113,7 +113,7 @@ const queryClient = new QueryClient({
 });
 const ArtFeedPage = lazy(() => import("./pages/ArtFeed"));
 
-// Redirect legacy crypto/tools/coin routes into the OG Dex app (/OGDEX).
+// Redirect legacy crypto/tools/coin routes into the OrbitX DEX app (/ORBITX_DEX).
 function OgdexRedirect({ to }: { to: string | ((p: Record<string, string | undefined>) => string) }) {
   const params = useParams();
   useEffect(() => {
@@ -150,8 +150,8 @@ const App = () => (
             <Route path="/setup" element={<Setup />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/r/:id" element={<ReportView />} />
-            <Route path="/t/:mint" element={<OgdexRedirect to={(p) => `/OGDEX/token/${p.mint}`} />} />
-            <Route path="/track-record" element={<OgdexRedirect to="/OGDEX" />} />
+            <Route path="/t/:mint" element={<OgdexRedirect to={(p) => `/ORBITX_DEX/token/${p.mint}`} />} />
+            <Route path="/track-record" element={<OgdexRedirect to="/ORBITX_DEX" />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/cc-callback" element={<CCCallbackPage />} />
             <Route path="/x-callback" element={<XCallbackPage />} />
@@ -164,93 +164,93 @@ const App = () => (
             <Route path="/hub" element={<ProtectedRoute><Hub /></ProtectedRoute>} />
             <Route path="/command" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/our-coin" element={<OgdexRedirect to="/OGDEX" />} />
+            <Route path="/our-coin" element={<OgdexRedirect to="/ORBITX_DEX" />} />
             <Route path="/roadmap" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/market-pulse" element={<OgdexRedirect to="/OGDEX/pulse" />} />
-            <Route path="/market" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/feed" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/live-feed" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/snipe-feed" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/dev-wallet-radar" element={<OgdexRedirect to="/OGDEX/wallet" />} />
-            <Route path="/dev-wallet" element={<OgdexRedirect to="/OGDEX/wallet" />} />
-            <Route path="/scanner" element={<OgdexRedirect to="/OGDEX/scanner" />} />
-            <Route path="/og-finder" element={<OgdexRedirect to="/OGDEX/scanner" />} />
-            <Route path="/og-scanner" element={<OgdexRedirect to="/OGDEX/scanner" />} />
-            <Route path="/ogscan-scanner" element={<OgdexRedirect to="/OGDEX/scanner" />} />
-            <Route path="/pairs" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/migrations" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/migration-tool" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/migration-tracker" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/trending" element={<OgdexRedirect to="/OGDEX" />} />
+            <Route path="/market-pulse" element={<OgdexRedirect to="/ORBITX_DEX/pulse" />} />
+            <Route path="/market" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/feed" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/live-feed" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/snipe-feed" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/dev-wallet-radar" element={<OgdexRedirect to="/ORBITX_DEX/wallet" />} />
+            <Route path="/dev-wallet" element={<OgdexRedirect to="/ORBITX_DEX/wallet" />} />
+            <Route path="/scanner" element={<OgdexRedirect to="/ORBITX_DEX/scanner" />} />
+            <Route path="/og-finder" element={<OgdexRedirect to="/ORBITX_DEX/scanner" />} />
+            <Route path="/orbitx-scanner" element={<OgdexRedirect to="/ORBITX_DEX/scanner" />} />
+            <Route path="/ogscan-scanner" element={<OgdexRedirect to="/ORBITX_DEX/scanner" />} />
+            <Route path="/pairs" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/migrations" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/migration-tool" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/migration-tracker" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/trending" element={<OgdexRedirect to="/ORBITX_DEX" />} />
             <Route path="/communities" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/discover" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/whales" element={<OgdexRedirect to="/OGDEX/kol" />} />
-            <Route path="/tx-feed" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/tape" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/transactions" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/transaction-feed" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/swap" element={<OgdexRedirect to="/OGDEX/tools" />} />
-            <Route path="/news-signal" element={<OgdexRedirect to="/OGDEX/pulse" />} />
+            <Route path="/discover" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/whales" element={<OgdexRedirect to="/ORBITX_DEX/kol" />} />
+            <Route path="/tx-feed" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/tape" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/transactions" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/transaction-feed" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/swap" element={<OgdexRedirect to="/ORBITX_DEX/tools" />} />
+            <Route path="/news-signal" element={<OgdexRedirect to="/ORBITX_DEX/pulse" />} />
             <Route path="/memes" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/art-feed" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/spaces" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/social" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/listings" element={<OgdexRedirect to="/OGDEX/store" />} />
-            <Route path="/listings/:mintAddress" element={<OgdexRedirect to={(p) => `/OGDEX/token/${p.mintAddress}`} />} />
-            <Route path="/token-manager" element={<OgdexRedirect to="/OGDEX/metadata" />} />
+            <Route path="/listings" element={<OgdexRedirect to="/ORBITX_DEX/store" />} />
+            <Route path="/listings/:mintAddress" element={<OgdexRedirect to={(p) => `/ORBITX_DEX/token/${p.mintAddress}`} />} />
+            <Route path="/token-manager" element={<OgdexRedirect to="/ORBITX_DEX/metadata" />} />
             <Route path="/social-hub" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/voice-rooms" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/tech" element={<OgdexRedirect to="/OGDEX" />} />
+            <Route path="/tech" element={<OgdexRedirect to="/ORBITX_DEX" />} />
             <Route path="/page/:pageNumber" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/page-:pageNumber" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/app/:toolSlug" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/tool/:toolSlug" element={<OgdexRedirect to="/OGDEX/tools" />} />
-            <Route path="/tools/:toolSlug" element={<OgdexRedirect to="/OGDEX/tools" />} />
+            <Route path="/tool/:toolSlug" element={<OgdexRedirect to="/ORBITX_DEX/tools" />} />
+            <Route path="/tools/:toolSlug" element={<OgdexRedirect to="/ORBITX_DEX/tools" />} />
 
             {/* ── Protected: User pages ── */}
             <Route path="/profile" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/profile/:userId" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/reports" element={<OgdexRedirect to="/OGDEX/alerts" />} />
-            <Route path="/alerts" element={<OgdexRedirect to="/OGDEX/alerts" />} />
-            <Route path="/wallets" element={<OgdexRedirect to="/OGDEX/wallet" />} />
+            <Route path="/reports" element={<OgdexRedirect to="/ORBITX_DEX/alerts" />} />
+            <Route path="/alerts" element={<OgdexRedirect to="/ORBITX_DEX/alerts" />} />
+            <Route path="/wallets" element={<OgdexRedirect to="/ORBITX_DEX/wallet" />} />
             <Route path="/games" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             {/* Credits removed */}
 
             {/* ── Protected: Tools & Features ── */}
-            <Route path="/tokens" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/tools" element={<OgdexRedirect to="/OGDEX/tools" />} />
-            <Route path="/research" element={<OgdexRedirect to="/OGDEX/research" />} />
+            <Route path="/tokens" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/tools" element={<OgdexRedirect to="/ORBITX_DEX/tools" />} />
+            <Route path="/research" element={<OgdexRedirect to="/ORBITX_DEX/research" />} />
             {/* AdvancedTools removed */}
             <Route path="/ai-chat" element={<ProtectedRoute><AlphaChat /></ProtectedRoute>} />
             <Route path="/alpha-chat" element={<ProtectedRoute><AlphaChat /></ProtectedRoute>} />
             {/* Webhooks removed */}
-            <Route path="/trading-hub" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/callouts" element={<OgdexRedirect to="/OGDEX/callouts" />} />
+            <Route path="/trading-hub" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/callouts" element={<OgdexRedirect to="/ORBITX_DEX/callouts" />} />
 
             {/* ── Protected: Community ── */}
             <Route path="/coin-communities" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/trading-lobbies" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/leaderboard" element={<OgdexRedirect to="/OGDEX/leaderboard" />} />
+            <Route path="/trading-lobbies" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/leaderboard" element={<OgdexRedirect to="/ORBITX_DEX/leaderboard" />} />
             <Route path="/invite" element={<ProtectedRoute><Invite /></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><DirectMessagesPage /></ProtectedRoute>} />
 
             {/* Premium removed */}
 
             {/* ── Protected: Market ── */}
-            <Route path="/live-trading" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/charts" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/live-feed-page" element={<OgdexRedirect to="/OGDEX" />} />
-            <Route path="/pumpv5" element={<OgdexRedirect to="/OGDEX/launch" />} />
-            <Route path="/launch" element={<OgdexRedirect to="/OGDEX/launch" />} />
+            <Route path="/live-trading" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/charts" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/live-feed-page" element={<OgdexRedirect to="/ORBITX_DEX" />} />
+            <Route path="/pumpv5" element={<OgdexRedirect to="/ORBITX_DEX/launch" />} />
+            <Route path="/launch" element={<OgdexRedirect to="/ORBITX_DEX/launch" />} />
 
             {/* ── Protected: Admin ── */}
-            <Route path="/admin" element={<OgdexRedirect to="/OGDEX/admin" />} />
+            <Route path="/admin" element={<OgdexRedirect to="/ORBITX_DEX/admin" />} />
             <Route path="/art" element={<ProtectedRoute><Suspense fallback={null}><ArtFeedPage /></Suspense></ProtectedRoute>} />
 
             {/* ── Public: Project/legal ── */}
-            <Route path="/official-token" element={<OgdexRedirect to="/OGDEX" />} />
+            <Route path="/official-token" element={<OgdexRedirect to="/ORBITX_DEX" />} />
             <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
             <Route path="/listen/:spaceId" element={<SpaceReplay />} />
             {/* ── Public: Live space listener (no auth required) ── */}
@@ -329,11 +329,11 @@ const App = () => (
             <Route path="/export-clips" element={<ProtectedRoute><ClipVideoExport /></ProtectedRoute>} />
 
             {/* ── Catch-all slug handler (must be last) ── */}
-            <Route path="/intelligence" element={<OgdexRedirect to="/OGDEX/tools" />} />
-            <Route path="/intelligence/:mint" element={<OgdexRedirect to={(p) => `/OGDEX/token/${p.mint}`} />} />
-            <Route path="/advanced/:mint" element={<OgdexRedirect to={(p) => `/OGDEX/token/${p.mint}`} />} />
+            <Route path="/intelligence" element={<OgdexRedirect to="/ORBITX_DEX/tools" />} />
+            <Route path="/intelligence/:mint" element={<OgdexRedirect to={(p) => `/ORBITX_DEX/token/${p.mint}`} />} />
+            <Route path="/advanced/:mint" element={<OgdexRedirect to={(p) => `/ORBITX_DEX/token/${p.mint}`} />} />
             <Route path="/intelligence-admin" element={<AdminRoute><IntelligenceAdmin /></AdminRoute>} />
-            <Route path="/alert-settings" element={<OgdexRedirect to="/OGDEX/alerts" />} />
+            <Route path="/alert-settings" element={<OgdexRedirect to="/ORBITX_DEX/alerts" />} />
             <Route path="/:toolSlug" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

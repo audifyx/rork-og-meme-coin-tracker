@@ -238,7 +238,7 @@ export default function CopyTracking() {
       )}
 
       <p className="text-[10px] text-muted/50 mt-4 text-center">
-        Copy tracking is informational only. OGDEX never auto-executes trades. You decide and sign every trade yourself.
+        Copy tracking is informational only. ORBITX_DEX never auto-executes trades. You decide and sign every trade yourself.
       </p>
     </div>
   );

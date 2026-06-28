@@ -64,10 +64,10 @@ const Glyph = {
 };
 
 const APPS: App[] = [
-  { key: "dex", name: "OG Dex", caption: "Scanner · Trade", href: "/OGDEX", tone: "#2F80FF", glyph: Glyph.dex },
+  { key: "dex", name: "OrbitX DEX", caption: "Scanner · Trade", href: "/ORBITX_DEX", tone: "#2F80FF", glyph: Glyph.dex },
   { key: "social", name: "Social", caption: "Spaces · Chat", href: "/social", tone: "#9945FF", glyph: Glyph.social },
   { key: "predict", name: "Prediction Markets", caption: "Provably fair", href: "https://solno.fun", external: true, tone: "#FFC53D", glyph: Glyph.predict },
-  { key: "scanner", name: "OG Scanner", caption: "Forensic scan", href: "/OGDEX/scanner", tone: "#14E0C8", glyph: Glyph.scanner },
+  { key: "scanner", name: "OrbitX Scanner", caption: "Forensic scan", href: "/ORBITX_DEX/scanner", tone: "#14E0C8", glyph: Glyph.scanner },
   { key: "tower", name: "Degen Tower", caption: "Climb · Win", href: "https://degen-tower.vercel.app", external: true, tone: "#FF5BBD", glyph: Glyph.tower },
   { key: "settings", name: "Settings", caption: "Preferences", href: "/settings", tone: "#8A93A6", glyph: Glyph.settings },
 ];

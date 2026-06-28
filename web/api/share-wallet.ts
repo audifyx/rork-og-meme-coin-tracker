@@ -7,7 +7,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const qs = new URLSearchParams();
   qs.set("address", address);
   for (const k of ["pnl", "win", "trades", "app"]) if (req.query[k] != null) qs.set(k, String(req.query[k]));
-  const dest = `https://www.ogscan.fun/OGDEX/wallet/${encodeURIComponent(address)}`;
+  const dest = `https://www.ogscan.fun/ORBITX_DEX/wallet/${encodeURIComponent(address)}`;
   try {
     const r = await fetch(`https://ffjipnkhcebjvttliptb.supabase.co/functions/v1/wallet-og?${qs.toString()}`);
     const html = await r.text();

@@ -6,7 +6,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const mint = String(req.query.mint || "").trim();
   const app = String(req.query.app || "");
-  const dest = app === "ogdex" ? `https://www.ogscan.fun/OGDEX/token/${encodeURIComponent(mint)}` : `https://www.ogscan.fun/t/${encodeURIComponent(mint)}`;
+  const dest = app === "ogdex" ? `https://www.ogscan.fun/ORBITX_DEX/token/${encodeURIComponent(mint)}` : `https://www.ogscan.fun/t/${encodeURIComponent(mint)}`;
   try {
     const r = await fetch(`https://ffjipnkhcebjvttliptb.supabase.co/functions/v1/token-og?mint=${encodeURIComponent(mint)}${app ? `&app=${encodeURIComponent(app)}` : ""}`);
     const html = await r.text();

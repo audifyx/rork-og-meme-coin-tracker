@@ -139,9 +139,9 @@ self.addEventListener("fetch", (event) => {
 
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-  // OGDEX is a separate sub-app mounted at /OGDEX with its own hashed assets.
+  // ORBITX_DEX is a separate sub-app mounted at /ORBITX_DEX with its own hashed assets.
   // Never let OrbitX's SW cache or intercept it — always go to network.
-  if (url.pathname === "/OGDEX" || url.pathname.startsWith("/OGDEX/") || url.pathname.startsWith("/api/ogdex")) {
+  if (url.pathname === "/ORBITX_DEX" || url.pathname.startsWith("/ORBITX_DEX/") || url.pathname.startsWith("/api/ogdex")) {
     return;
   }
 

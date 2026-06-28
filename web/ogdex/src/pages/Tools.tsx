@@ -11,7 +11,7 @@ import {
 
 type ToolId = "scanner" | "holders" | "liquidity" | "wallet" | "staking";
 const TOOLS: { id: ToolId; label: string; desc: string; Icon: typeof Shield; kind: "mint" | "wallet" | "calc"; ph: string }[] = [
-  { id: "scanner",  label: "OG Scanner",      desc: "Rug check + risk score",     Icon: Shield,    kind: "mint",   ph: "Paste a token contract address" },
+  { id: "scanner",  label: "OrbitX Scanner",      desc: "Rug check + risk score",     Icon: Shield,    kind: "mint",   ph: "Paste a token contract address" },
   { id: "holders",  label: "Holder Scanner",  desc: "Top holder distribution",    Icon: Users,     kind: "mint",   ph: "Paste a token contract address" },
   { id: "liquidity",label: "Liquidity Scanner",desc: "Pools & liquidity depth",   Icon: Droplets,  kind: "mint",   ph: "Paste a token contract address" },
   { id: "wallet",   label: "Wallet Profiler", desc: "Holdings & activity",        Icon: Wallet2,   kind: "wallet", ph: "Paste a wallet address" },

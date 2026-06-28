@@ -1,4 +1,4 @@
-// OG Scan tools — self-contained data layer for the OG Dex Tools page.
+// OG Scan tools — self-contained data layer for the OrbitX DEX Tools page.
 // Uses Jupiter (no key), Helius RPC (VITE_HELIUS_API_KEY), and DexScreener.
 const HELIUS = (import.meta as any).env?.VITE_HELIUS_API_KEY || "";
 const RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS}`;
@@ -24,7 +24,7 @@ async function jget(path: string): Promise<any> {
 }
 const num = (v: any) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
 
-// ── OG Scanner / Rug Checker ──────────────────────────────────────────────
+// ── OrbitX Scanner / Rug Checker ──────────────────────────────────────────────
 export interface ScanResult {
   mint: string; symbol: string; name: string; icon?: string | null;
   price: number | null; mcap: number | null; fdv: number | null; liquidity: number | null;
@@ -129,7 +129,7 @@ export async function walletProfile(addr: string): Promise<WalletProfile> {
   };
 }
 
-// ── OG Scanner — forensic origin attribution (search the chain, find the OG, expose clones) ──
+// ── OrbitX Scanner — forensic origin attribution (search the chain, find the OG, expose clones) ──
 export interface OgCandidate {
   mint: string; symbol: string; name: string; icon?: string | null;
   price: number | null; mcap: number | null; liquidity: number | null;

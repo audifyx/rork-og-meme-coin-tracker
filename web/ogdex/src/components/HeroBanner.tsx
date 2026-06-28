@@ -7,7 +7,7 @@ export default function HeroBanner() {
         boxShadow: "0 0 32px rgba(47,128,255,0.08)",
       }}>
       <img
-        src="/OGDEX/ogdex-hero.jpg"
+        src="/ORBITX_DEX/ogdex-hero.jpg"
         alt="OG DEX"
         className="w-full h-full"
         style={{ objectFit: "cover", objectPosition: "center", display: "block" }}

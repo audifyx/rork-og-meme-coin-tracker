@@ -1,9 +1,9 @@
-// OGDEX PWA service worker — scope: /OGDEX/. Separate from OrbitX root sw.js
-// (which intentionally bypasses /OGDEX). Must never cache /api/ responses long.
+// ORBITX_DEX PWA service worker — scope: /ORBITX_DEX/. Separate from OrbitX root sw.js
+// (which intentionally bypasses /ORBITX_DEX). Must never cache /api/ responses long.
 const VERSION = "ogdex-v2";
 const SHELL = "ogdex-shell-" + VERSION;
 const RUNTIME = "ogdex-rt-" + VERSION;
-const SHELL_URLS = ["/OGDEX/", "/OGDEX/index.html", "/OGDEX/manifest.webmanifest", "/OGDEX/ogdex-logo.png", "/OGDEX/pwa-192.png"];
+const SHELL_URLS = ["/ORBITX_DEX/", "/ORBITX_DEX/index.html", "/ORBITX_DEX/manifest.webmanifest", "/ORBITX_DEX/ogdex-logo.png", "/ORBITX_DEX/pwa-192.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(SHELL).then((c) => c.addAll(SHELL_URLS).catch(() => {})).then(() => self.skipWaiting()));
@@ -18,7 +18,7 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;        // skip cross-origin (jup, gecko, dexscreener, wsrv)
-  if (!url.pathname.startsWith("/OGDEX")) return;          // only manage OGDEX scope
+  if (!url.pathname.startsWith("/ORBITX_DEX")) return;          // only manage ORBITX_DEX scope
   // API: network-first, short-lived fallback cache so the app still opens offline.
   if (url.pathname.startsWith("/api/")) {
     e.respondWith(
@@ -29,7 +29,7 @@ self.addEventListener("fetch", (e) => {
   }
   // Navigations: network-first, fall back to cached app shell (SPA).
   if (req.mode === "navigate") {
-    e.respondWith(fetch(req).catch(() => caches.match("/OGDEX/index.html")));
+    e.respondWith(fetch(req).catch(() => caches.match("/ORBITX_DEX/index.html")));
     return;
   }
   // Static assets: cache-first.

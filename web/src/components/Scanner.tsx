@@ -320,7 +320,7 @@ export const Scanner = ({ onSelect, initialQuery = "" }: Props) => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-black tracking-tight text-white">OG Scanner</h2>
+                <h2 className="text-xl font-black tracking-tight text-white">OrbitX Scanner</h2>
                 <span className="rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-emerald-300">Forensic</span>
               </div>
               <p className="mt-1 max-w-md text-xs leading-relaxed text-white/45">Forensic origin attribution for any token. Verify the OG, expose clones, audit liquidity, holders &amp; risk.</p>

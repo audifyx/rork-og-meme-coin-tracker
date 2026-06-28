@@ -4,14 +4,14 @@ import { useEffect, useRef } from "react";
 const BRAND = "OrbitX";
 
 const LINKS = {
-  app: "/OGDEX",
+  app: "/ORBITX_DEX",
   auth: "/auth",
   signin: "/auth?mode=signin",
   signup: "/auth?mode=signup",
   telegram: "https://t.me/ogscan",
   x: "https://x.com/orbitx_wrldbackup",
   xSolno: "https://x.com/solnobet",
-  ogdex: "/OGDEX",
+  ogdex: "/ORBITX_DEX",
   solno: "https://solno.fun",
   degen: "https://degen-tower.vercel.app",
   privacy: "/privacy",

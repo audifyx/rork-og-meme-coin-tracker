@@ -276,7 +276,7 @@ export default function TradePanel({ mint, symbol, price, icon }: { mint: string
               {alertBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellPlus className="h-4 w-4" />} Create alert
             </button>
             {alertMsg && <div className={`flex items-center gap-1.5 ${alertMsg.ok ? "text-up" : "text-down"}`}>{alertMsg.ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}{alertMsg.text}</div>}
-            <p className="text-[10px] leading-relaxed text-muted/80">OGDEX alerts only notify you — we never auto-execute trades. Real non-custodial wallets require you to sign each trade, so when an alert fires you come back and place the trade yourself. Manage all alerts on the Alerts page.</p>
+            <p className="text-[10px] leading-relaxed text-muted/80">ORBITX_DEX alerts only notify you — we never auto-execute trades. Real non-custodial wallets require you to sign each trade, so when an alert fires you come back and place the trade yourself. Manage all alerts on the Alerts page.</p>
           </div>
         )}
       </div>
@@ -285,17 +285,17 @@ export default function TradePanel({ mint, symbol, price, icon }: { mint: string
       <details className="group mt-3 rounded-xl border border-line bg-panel2/40 px-3 py-2 text-[11px]">
         <summary className="flex cursor-pointer list-none items-center gap-1.5 text-muted hover:text-white">
           <Lock className="h-3 w-3 text-up" />
-          <span className="font-semibold text-white">No OGDEX fee</span>
+          <span className="font-semibold text-white">No ORBITX_DEX fee</span>
           <span className="opacity-70">· non-custodial</span>
           <Info className="ml-auto h-3 w-3 opacity-60 transition group-open:rotate-180" />
         </summary>
         <div className="mt-2 space-y-1.5 text-muted">
-          <div className="flex items-center justify-between"><span>OGDEX platform fee</span><span className="font-semibold text-up">0% · none</span></div>
+          <div className="flex items-center justify-between"><span>ORBITX_DEX platform fee</span><span className="font-semibold text-up">0% · none</span></div>
           <div className="flex items-center justify-between"><span>Network priority fee</span><span className="text-white">~0.0003 SOL</span></div>
           <div className="flex items-center justify-between"><span>Routing fee</span><span className="text-white">pump.fun 0.5% · or DEX swap fee</span></div>
           <div className="flex items-center justify-between"><span>Slippage cap</span><span className="text-white">{slippage}%</span></div>
           <p className="pt-1 text-[10px] leading-relaxed text-muted/80">
-            OGDEX adds no markup, no referral cut and no hidden spread. We route to PumpPortal / Jupiter at cost.
+            ORBITX_DEX adds no markup, no referral cut and no hidden spread. We route to PumpPortal / Jupiter at cost.
             Your keys and funds never touch our servers — you review and sign every transaction in Phantom.
           </p>
         </div>

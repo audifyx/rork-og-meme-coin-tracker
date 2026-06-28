@@ -89,10 +89,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   </React.StrictMode>
 );
 
-// Register the OGDEX PWA service worker (scope /OGDEX/). Kept separate from the
-// OrbitX root service worker, which intentionally bypasses /OGDEX.
+// Register the ORBITX_DEX PWA service worker (scope /ORBITX_DEX/). Kept separate from the
+// OrbitX root service worker, which intentionally bypasses /ORBITX_DEX.
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/OGDEX/sw.js", { scope: "/OGDEX/" }).catch(() => {});
+    navigator.serviceWorker.register("/ORBITX_DEX/sw.js", { scope: "/ORBITX_DEX/" }).catch(() => {});
   });
 }

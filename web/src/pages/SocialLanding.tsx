@@ -29,7 +29,7 @@ export default function SocialHub() {
 
       <header className="sh-nav">
         <a className="sh-brand" href="/app"><span className="sh-mark" />{BRAND}</a>
-        <nav className="sh-nav-links"><a href="/app">Hub</a><a href="/OGDEX">OG Dex</a><a href="/social" className="active">Social</a></nav>
+        <nav className="sh-nav-links"><a href="/app">Hub</a><a href="/ORBITX_DEX">OrbitX DEX</a><a href="/social" className="active">Social</a></nav>
         <a className="sh-nav-cta" href="/profile">Profile</a>
       </header>
 
@@ -56,7 +56,7 @@ export default function SocialHub() {
 
       <footer className="sh-foot">
         <span><span className="sh-mark" />{BRAND}</span>
-        <span className="sh-foot-links"><a href="/app">Hub</a><a href="/OGDEX">OG Dex</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></span>
+        <span className="sh-foot-links"><a href="/app">Hub</a><a href="/ORBITX_DEX">OrbitX DEX</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></span>
       </footer>
     </div>
   );
