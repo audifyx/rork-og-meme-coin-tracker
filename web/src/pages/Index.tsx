@@ -1074,8 +1074,6 @@ const Index = () => {
         )}
       </div>
 
-      {/* Shared bottom nav — consistent across all pages */}
-      <BottomNav />
     </div>
   );
 };

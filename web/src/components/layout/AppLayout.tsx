@@ -101,8 +101,6 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
         {children}
       </main>
 
-      {/* Mobile bottom navigation */}
-      <BottomNav />
     </div>
   );
 };
