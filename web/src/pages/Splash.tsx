@@ -322,7 +322,7 @@ const css = `
 .orb-c{width:520px;height:520px;bottom:-180px;left:38%;background:radial-gradient(circle,#14a0ff,transparent 70%);opacity:.3;animation:spOrbDrift 26s ease-in-out infinite;}
 @keyframes spOrbDrift{50%{transform:translate3d(calc(var(--mx,0px) + 24px),calc(var(--py,0px) + var(--my,0px) + 18px),0) scale(1.08)}}
 .grid-fade{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:56px 56px;-webkit-mask-image:radial-gradient(circle at 50% 32%,#000,transparent 70%);mask-image:radial-gradient(circle at 50% 32%,#000,transparent 70%);}
-.sp-hero-inner{position:relative;max-width:640px;opacity:var(--pf,1);text-align:left;}
+.sp-hero-inner{position:relative;max-width:640px;opacity:var(--pf,1);text-align:center;}
 @media(max-width:980px){.sp-hero-inner{text-align:center}}
 .sp-hero-badge{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
 @media(max-width:980px){.sp-hero-badge{justify-content:center}}
@@ -337,6 +337,10 @@ const css = `
 .sp-hero-ready .sp-h1::after{color:#9945FF;opacity:.45;animation:spGlitchB 4.5s steps(1) infinite;clip-path:inset(42% 0 0 0);}
 @keyframes spGlitchR{0%,93%,100%{transform:translate(0)}94%{transform:translate(-4px,1px)}96%{transform:translate(2px,-1px)}}
 @keyframes spGlitchB{0%,91%,100%{transform:translate(0)}92%{transform:translate(4px,-1px)}95%{transform:translate(-3px,1px)}}
+@media(max-width:480px){
+  .sp-hero-ready .sp-h1::before{clip-path:inset(0 0 55% 0);}
+  .sp-hero-ready .sp-h1::after{clip-path:inset(40% 0 0 0);}
+}
 .sp-lead{margin:28px 0 0;font-size:clamp(15.5px,1.7vw,19px);line-height:1.6;color:var(--muted);max-width:62ch;}
 @media(max-width:980px){.sp-lead{margin-left:auto;margin-right:auto}}
 .sp-hero-actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:36px;}
