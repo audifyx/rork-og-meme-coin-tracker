@@ -207,7 +207,7 @@ export default function Splash() {
         <h2 className="sp-h2">Already live. Already shipping.</h2>
         <div className="sp-eco">
           <a className="sp-eco-card" href={LINKS.ogdex}><h3>OG DEX</h3><p>Real-time Solana screener, scanner & trading.</p><span>Open →</span></a>
-          <a className="sp-eco-card" href={LINKS.orbitx-prediction} target="_blank" rel="noreferrer"><h3>OrbitX Prediction Market</h3><p>Prediction markets + provably-fair 1v1 games.</p><span>orbitx-prediction.fun →</span></a>
+          <a className="sp-eco-card" href={LINKS.orbitxPrediction} target="_blank" rel="noreferrer"><h3>OrbitX Prediction Market</h3><p>Prediction markets + provably-fair 1v1 games.</p><span>orbitx-prediction.fun →</span></a>
           <a className="sp-eco-card" href={LINKS.degen} target="_blank" rel="noreferrer"><h3>Degen Tower</h3><p>Tap-to-earn with real USDC payouts.</p><span>Play →</span></a>
         </div>
       </section>
@@ -227,7 +227,7 @@ export default function Splash() {
             <div>
               <h4>Product</h4>
               <a href={LINKS.app}>OG DEX</a>
-              <a href={LINKS.orbitx-prediction} target="_blank" rel="noreferrer">OrbitX Prediction Market</a>
+              <a href={LINKS.orbitxPrediction} target="_blank" rel="noreferrer">OrbitX Prediction Market</a>
               <a href={LINKS.degen} target="_blank" rel="noreferrer">Degen Tower</a>
               <a href={LINKS.signup}>Sign up</a>
             </div>
@@ -235,7 +235,7 @@ export default function Splash() {
               <h4>Community</h4>
               <a href={LINKS.telegram} target="_blank" rel="noreferrer">Telegram</a>
               <a href={LINKS.x} target="_blank" rel="noreferrer">X · @orbitx_wrld</a>
-              <a href={LINKS.xOrbitX Prediction Market} target="_blank" rel="noreferrer">X · @orbitx-predictionbet</a>
+              <a href={LINKS.xOrbitXPredictionMarket} target="_blank" rel="noreferrer">X · @orbitx-predictionbet</a>
             </div>
             <div>
               <h4>Legal</h4>
