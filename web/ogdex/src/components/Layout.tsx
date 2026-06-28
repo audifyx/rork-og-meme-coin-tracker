@@ -99,7 +99,11 @@ export default function Layout() {
       className="min-h-screen flex flex-col"
       style={{
         backgroundImage:
-          "linear-gradient(rgba(2,4,10,0.85), rgba(2,4,10,0.93)), url(/bg/bg-aurora.jpg)",
+          "radial-gradient(1000px 680px at 10% -4%, rgba(47,128,255,0.20), transparent 60%)," +
+          "radial-gradient(1000px 760px at 100% 6%, rgba(153,69,255,0.18), transparent 62%)," +
+          "radial-gradient(900px 900px at 50% 120%, rgba(20,224,200,0.10), transparent 60%)," +
+          "linear-gradient(rgba(3,5,12,0.66), rgba(3,5,12,0.82))," +
+          "url(/bg/bg-aurora.jpg)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundAttachment: "fixed",
