@@ -14,7 +14,7 @@ export default async function handler(req, res) {
 
   try {
     const [pending, approved, rejected, events, kols, boosts, launches,
-           nominations, proWallets, bannedWallets, alerts, configRows, waitlist] = await Promise.all([
+           nominations, proWallets, bannedWallets, alerts, configRows, waitlist, users, reports, auditLog] = await Promise.all([
       dbSelect("ogdex_listings",       "status=eq.pending&order=created_at.desc&limit=200"),
       dbSelect("ogdex_listings",       "status=eq.approved&order=approved_at.desc&limit=200"),
       dbSelect("ogdex_listings",       "status=eq.rejected&order=updated_at.desc&limit=100"),
@@ -28,6 +28,9 @@ export default async function handler(req, res) {
       dbSelect("ogdex_alerts",         "order=created_at.desc&limit=200").catch(() => []),
       dbSelect("ogdex_config",         "order=key.asc").catch(() => []),
       dbSelect("waitlist",             "select=id,email,created_at&order=created_at.desc&limit=1000").catch(() => []),
+      dbSelect("profiles",             "select=id,username,avatar_url,wallet_address,badge,followers_count,trades_count,created_at&order=created_at.desc&limit=500").catch(() => []),
+      dbSelect("moderation_reports",   "select=id,target_type,target_id,reason,status,priority,created_at&order=created_at.desc&limit=300").catch(() => []),
+      dbSelect("security_audit_log",   "select=id,action,created_at&order=created_at.desc&limit=200").catch(() => []),
     ]);
 
     // Build config object
@@ -88,11 +91,13 @@ export default async function handler(req, res) {
         alertsFiredToday, alertUsers,
         waitlist: waitlist.length,
         waitlist24: waitlist.filter((w) => new Date(w.created_at).getTime() >= now - 864e5).length,
+        users: users.length,
+        reportsPending: reports.filter((r) => r.status !== 'resolved' && r.status !== 'dismissed').length,
         byType, series, topTokens, topPaths, byChain, byTier,
       },
       pending, approved, rejected, kols, boosts, launches,
       nominations, proWallets, banned: bannedWallets,
-      alerts, config, waitlist,
+      alerts, config, waitlist, users, reports, auditLog,
     });
   } catch (e) {
     return send(res, 200, { ok: false, error: String(e?.message || e) });
@@ -248,6 +253,10 @@ async function action(req, res) {
       }
 
       // ── Banned wallets ──────────────────────────────────────────────────────
+      case "resolve_report": {
+        await dbUpdate("moderation_reports", q, { status: b.status || "resolved", resolved_at: now, resolution_note: b.note || null, updated_at: now });
+        break;
+      }
       case "ban_wallet": {
         const address = String(b.address || "").trim();
         if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)) return send(res, 400, { ok: false, error: "invalid address" });

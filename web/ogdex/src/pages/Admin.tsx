@@ -22,7 +22,10 @@ type Tab =
   | "banners"
   | "banned"
   | "alerts"
-  | "waitlist";
+  | "waitlist"
+  | "users"
+  | "reports"
+  | "audit";
 
 const TABS: { id: Tab; label: string; icon: any }[] = [
   { id: "overview",     label: "Overview",      icon: LayoutDashboard },
@@ -35,6 +38,9 @@ const TABS: { id: Tab; label: string; icon: any }[] = [
   { id: "banned",       label: "Banned",         icon: Ban },
   { id: "alerts",       label: "Alerts",         icon: Bell },
   { id: "waitlist",     label: "Waitlist",       icon: Mail },
+  { id: "users",        label: "Users",          icon: Users },
+  { id: "reports",      label: "Reports",        icon: Flag },
+  { id: "audit",        label: "Audit Log",      icon: Activity },
 ];
 
 // ─── Root ──────────────────────────────────────────────────────────────────────
@@ -140,6 +146,9 @@ export default function Admin() {
       {tab === "banned"    && <BannedTab data={data} act={act} pass={pass} />}
       {tab === "alerts"    && <AlertsTab data={data} act={act} pass={pass} />}
       {tab === "waitlist"  && <WaitlistTab data={data} />}
+      {tab === "users"     && <UsersTab data={data} act={act} />}
+      {tab === "reports"   && <ReportsTab data={data} act={act} />}
+      {tab === "audit"     && <AuditTab data={data} />}
     </div>
   );
 }
@@ -902,6 +911,82 @@ function Stat({ icon: Icon, label, value, accent }: any) {
   );
 }
 
+
+
+function UsersTab({ data, act }: { data: any; act: any }) {
+  const rows: any[] = data?.users || [];
+  return (
+    <div className="space-y-4">
+      <div className="text-lg font-black text-white">Users <span className="text-xs font-normal text-muted">· {rows.length}</span></div>
+      {rows.length === 0 ? <div className="rounded-xl border border-line bg-panel2/60 p-8 text-center text-sm text-muted">No users.</div> : (
+        <div className="overflow-x-auto rounded-xl border border-line">
+          <table className="w-full text-sm">
+            <thead><tr className="bg-panel2 text-left text-[11px] uppercase tracking-wider text-muted">
+              <th className="px-3 py-2.5">User</th><th className="px-3 py-2.5">Wallet</th><th className="px-3 py-2.5 text-right">Followers</th><th className="px-3 py-2.5 text-right">Trades</th><th className="px-3 py-2.5 text-right">Joined</th><th className="px-3 py-2.5"></th>
+            </tr></thead>
+            <tbody>
+              {rows.map((u) => (
+                <tr key={u.id} className="border-t border-line/60">
+                  <td className="px-3 py-2.5"><div className="flex items-center gap-2">
+                    {u.avatar_url ? <img src={u.avatar_url} alt="" className="h-7 w-7 rounded-full object-cover" /> : <div className="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-[10px] text-muted">{(u.username||"?").slice(0,2)}</div>}
+                    <span className="font-semibold text-white">{u.username || "—"}</span>
+                    {u.badge && <span className="pill bg-accent/15 text-accent text-[9px]">{u.badge}</span>}
+                  </div></td>
+                  <td className="px-3 py-2.5 font-mono text-muted">{u.wallet_address ? short(u.wallet_address) : "—"}</td>
+                  <td className="px-3 py-2.5 text-right text-white">{fmtNum(u.followers_count || 0)}</td>
+                  <td className="px-3 py-2.5 text-right text-white">{fmtNum(u.trades_count || 0)}</td>
+                  <td className="px-3 py-2.5 text-right text-muted">{u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}</td>
+                  <td className="px-3 py-2.5 text-right">{u.wallet_address && <button onClick={() => act("ban_wallet", "noop", { address: u.wallet_address, reason: "admin" })} className="rounded-lg border border-down/40 bg-down/10 px-2 py-1 text-[11px] font-bold text-down hover:bg-down/20">Ban</button>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReportsTab({ data, act }: { data: any; act: any }) {
+  const rows: any[] = data?.reports || [];
+  const tone = (s: string) => s === "resolved" ? "bg-up/15 text-up" : s === "dismissed" ? "bg-panel2 text-muted" : "bg-gold/15 text-gold";
+  return (
+    <div className="space-y-4">
+      <div className="text-lg font-black text-white">Moderation reports <span className="text-xs font-normal text-muted">· {data?.stats?.reportsPending ?? 0} open</span></div>
+      {rows.length === 0 ? <div className="rounded-xl border border-line bg-panel2/60 p-8 text-center text-sm text-muted">No reports.</div> : (
+        <div className="space-y-2">
+          {rows.map((r) => (
+            <div key={r.id} className="flex items-center gap-3 rounded-xl border border-line bg-panel2/60 p-3 text-sm">
+              <span className="pill bg-panel2 text-muted text-[10px]">{r.target_type || "?"}</span>
+              <div className="min-w-0 flex-1"><div className="truncate text-white">{r.reason || "—"}</div><div className="text-[11px] text-muted">{r.created_at ? new Date(r.created_at).toLocaleString() : ""}{r.priority ? ` · ${r.priority}` : ""}</div></div>
+              <span className={`pill text-[10px] ${tone(r.status)}`}>{r.status || "open"}</span>
+              {r.status !== "resolved" && <button onClick={() => act("resolve_report", r.id, { status: "resolved" })} className="rounded-lg border border-up/40 bg-up/10 px-2.5 py-1 text-[11px] font-bold text-up hover:bg-up/20">Resolve</button>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AuditTab({ data }: { data: any }) {
+  const rows: any[] = data?.auditLog || [];
+  return (
+    <div className="space-y-4">
+      <div className="text-lg font-black text-white">Security audit log <span className="text-xs font-normal text-muted">· {rows.length}</span></div>
+      {rows.length === 0 ? <div className="rounded-xl border border-line bg-panel2/60 p-8 text-center text-sm text-muted">No entries.</div> : (
+        <div className="space-y-1.5">
+          {rows.map((a) => (
+            <div key={a.id} className="flex items-center justify-between rounded-lg border border-line/60 bg-panel2/40 px-3 py-2 text-[13px]">
+              <span className="font-mono text-white">{a.action}</span>
+              <span className="text-muted">{a.created_at ? new Date(a.created_at).toLocaleString() : ""}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function WaitlistTab({ data }: { data: any }) {
   const rows: { id: any; email: string; created_at: string }[] = data?.waitlist || [];

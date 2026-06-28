@@ -1,36 +1,31 @@
-import { Hash, Mic, Headphones, User, Home, LayoutGrid, Wrench } from "lucide-react";
+import { Hash, Mic, Headphones, User, Mail, LayoutGrid, Wrench } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
-/** New-theme top header for the social app (replaces the side tab bar). */
-const TABS: { id: string; label: string; Icon: typeof Home }[] = [
-  { id: "overview",    label: "Home",      Icon: Home },
-  { id: "community",   label: "Community", Icon: Hash },
-  { id: "spaces",      label: "Spaces",    Icon: Mic },
-  { id: "voice-rooms", label: "Voice",     Icon: Headphones },
-  { id: "profile",     label: "Profile",   Icon: User },
+/** New-theme top header for the social app (replaces the side tab bar). Route-based. */
+const TABS: { id: string; label: string; route: string; Icon: typeof Hash }[] = [
+  { id: "community",   label: "Community", route: "/community",   Icon: Hash },
+  { id: "spaces",      label: "Spaces",    route: "/spaces",      Icon: Mic },
+  { id: "voice",       label: "Voice",     route: "/voice-rooms", Icon: Headphones },
+  { id: "messages",    label: "Messages",  route: "/messages",    Icon: Mail },
+  { id: "profile",     label: "Profile",   route: "/profile",     Icon: User },
 ];
 
-const ROUTE_FOR: Record<string, string> = { overview: "/app", community: "/community", spaces: "/spaces", "voice-rooms": "/voice-rooms", profile: "/profile" };
-
-export function SocialTopBar({ activeId, onNavigate }: { activeId?: string; onNavigate?: (id: string) => void }) {
+export function SocialTopBar(_props?: { activeId?: string; onNavigate?: (id: string) => void }) {
   const nav = useNavigate();
   const loc = useLocation();
-  const current = activeId ?? (Object.entries(ROUTE_FOR).find(([, r]) => loc.pathname === r || loc.pathname.startsWith(r + "/"))?.[0] ?? "overview");
-  const go = (id: string) => { if (onNavigate) onNavigate(id); else nav(ROUTE_FOR[id] || "/app"); };
+  const active = (route: string) => loc.pathname === route || loc.pathname.startsWith(route + "/");
+
   return (
     <header className="stb">
       <style>{css}</style>
       <a className="stb-brand" href="/app"><span className="stb-mark" />OGSCAN</a>
 
       <nav className="stb-tabs">
-        {TABS.map((t) => {
-          const active = current === t.id || (t.id === "community" && current === "social");
-          return (
-            <button key={t.id} onClick={() => go(t.id)} className={`stb-tab ${active ? "active" : ""}`}>
-              <t.Icon className="h-4 w-4" /><span>{t.label}</span>
-            </button>
-          );
-        })}
+        {TABS.map((t) => (
+          <button key={t.id} onClick={() => nav(t.route)} className={`stb-tab ${active(t.route) ? "active" : ""}`}>
+            <t.Icon className="h-4 w-4" /><span>{t.label}</span>
+          </button>
+        ))}
       </nav>
 
       <div className="stb-right">
@@ -44,7 +39,7 @@ export function SocialTopBar({ activeId, onNavigate }: { activeId?: string; onNa
 
 const css = `
 .stb{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:14px;padding:12px clamp(14px,3vw,28px);
-  background:rgba(5,6,8,.78);backdrop-filter:saturate(160%) blur(18px);border-bottom:1px solid rgba(255,255,255,.08);}
+  background:rgba(5,6,8,.82);backdrop-filter:saturate(160%) blur(18px);border-bottom:1px solid rgba(255,255,255,.08);}
 .stb-brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.16em;font-size:14px;color:#fff;text-decoration:none;flex-shrink:0;}
 .stb-mark{width:15px;height:15px;border-radius:5px;background:conic-gradient(from 140deg,#2F80FF,#9945FF,#2F80FF);box-shadow:0 4px 14px rgba(47,128,255,.5);}
 .stb-tabs{display:flex;align-items:center;gap:4px;flex:1;overflow-x:auto;scrollbar-width:none;}
