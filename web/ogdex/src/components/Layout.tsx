@@ -1,7 +1,7 @@
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
-import { Search, Zap, ShoppingBag, Wallet, Star, ChevronDown, Coins, Send, Wallet2, LogOut, Flame, Users, Sparkles, Rocket, Bell, Code, FileText } from "lucide-react";
+import { Search, Zap, ShoppingBag, Wallet, Star, ChevronDown, Coins, Send, Wallet2, LogOut, Flame, Users, Sparkles, Rocket, Bell, Code, FileText, Wrench, Megaphone } from "lucide-react";
 import { track, getWatchlist, short } from "../lib/api";
 import { useWallet } from "../lib/wallet";
 import LiveStats, { fetchPlatformStats } from "./LiveStats";
@@ -33,12 +33,14 @@ const STAT_FALLBACK: PlatformStats = { activeUsers: 55, telegram: 185, xFollower
 const NAV_LINKS = [
   { to: "/",        label: "Home",      Icon: Coins,       exact: true  },
   { to: "/pulse",   label: "Pulse",     Icon: Flame,       exact: false },
+  { to: "/tools",   label: "Tools",     Icon: Wrench,      exact: false },
   { to: "/new",     label: "New",       Icon: Sparkles,    exact: false },
   { to: "/wallet",  label: "Wallets",   Icon: Wallet2,     exact: false },
   { to: "/kol",     label: "KOL",       Icon: Users,       exact: false },
   { to: "/launch",  label: "Launch",    Icon: Rocket,      exact: false },
   { to: "/store",   label: "Store",     Icon: ShoppingBag, exact: false },
   { to: "/alerts",  label: "Alerts",    Icon: Bell,        exact: false },
+  { to: "/callouts",label: "Callouts",  Icon: Megaphone,   exact: false },
   { to: "/metadata",label: "Metadata",  Icon: FileText,    exact: false },
   { to: "/api",     label: "API",       Icon: Code,        exact: false },
 ];

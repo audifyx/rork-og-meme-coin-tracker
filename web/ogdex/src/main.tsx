@@ -4,15 +4,16 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import "./index.css";
 import Layout from "./components/Layout";
-import PasswordGate from "./components/PasswordGate";
 import { WalletProvider } from "./lib/wallet";
 import Screener from "./pages/Screener";
+import Tools from "./pages/Tools";
 
 // Heavy / less-frequent routes are code-split so the Discovery page loads fast.
 const Pulse = lazy(() => import("./pages/Pulse"));
 const Metadata = lazy(() => import("./pages/Metadata"));
 const ApiDocs = lazy(() => import("./pages/ApiDocs"));
 const Alerts = lazy(() => import("./pages/Alerts"));
+const Callouts = lazy(() => import("./pages/Callouts"));
 const TokenDetail = lazy(() => import("./pages/TokenDetail"));
 const Submit = lazy(() => import("./pages/Submit"));
 const Store = lazy(() => import("./pages/Store"));
@@ -43,12 +44,12 @@ function PageFallback() {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <PasswordGate>
       <WalletProvider>
         <BrowserRouter basename="/OGDEX">
           <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Screener />} />
+          <Route path="tools" element={<Tools />} />
           <Route path="pulse" element={<Suspense fallback={<PageFallback />}><Pulse /></Suspense>} />
           <Route path="research" element={<Suspense fallback={<PageFallback />}><Pulse /></Suspense>} />
           <Route path="token/:mint" element={<Suspense fallback={<PageFallback />}><TokenDetail /></Suspense>} />
@@ -56,6 +57,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="metadata" element={<Suspense fallback={<PageFallback />}><Metadata /></Suspense>} />
           <Route path="api" element={<Suspense fallback={<PageFallback />}><ApiDocs /></Suspense>} />
           <Route path="alerts" element={<Suspense fallback={<PageFallback />}><Alerts /></Suspense>} />
+          <Route path="callouts" element={<Suspense fallback={<PageFallback />}><Callouts /></Suspense>} />
           <Route path="submit" element={<Suspense fallback={<PageFallback />}><Submit /></Suspense>} />
           <Route path="boost" element={<Suspense fallback={<PageFallback />}><Boost /></Suspense>} />
           <Route path="launch" element={<Suspense fallback={<PageFallback />}><Launch /></Suspense>} />
@@ -81,7 +83,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       </Routes>
     </BrowserRouter>
       </WalletProvider>
-    </PasswordGate>
   </React.StrictMode>
 );
 
