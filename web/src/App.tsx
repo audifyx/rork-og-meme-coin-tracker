@@ -15,7 +15,6 @@ import BetaHome from "./pages/BetaHome";
 import Index from "./pages/Index";
 import Splash from "./pages/Splash";
 import Hub from "./pages/Hub";
-import Waitlist from "./pages/Waitlist";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import Setup from "./pages/Setup";
@@ -146,7 +145,7 @@ const App = () => (
             <Route path="/" element={<Splash />} />
             <Route path="/beta" element={<BetaHome />} />
             <Route path="/splash" element={<Splash />} />
-            <Route path="/waitlist" element={<Waitlist />} />
+            <Route path="/waitlist" element={<OgdexRedirect to="/auth?mode=signup" />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/setup" element={<Setup />} />
             <Route path="/terms" element={<Terms />} />

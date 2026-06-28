@@ -6,7 +6,8 @@ const BRAND = "OGSCAN";
 const LINKS = {
   app: "/OGDEX",
   auth: "/auth",
-  waitlist: "/waitlist",
+  signin: "/auth?mode=signin",
+  signup: "/auth?mode=signup",
   telegram: "https://t.me/ogscan",
   x: "https://x.com/ogscanbackup",
   xSolno: "https://x.com/solnobet",
@@ -94,8 +95,8 @@ export default function Splash() {
           <a href="#ecosystem">Ecosystem</a>
         </div>
         <div className="sp-nav-cta">
-          <a className="btn-ghost sm" href={LINKS.auth}>Launch app</a>
-          <a className="sp-cta" href={LINKS.waitlist}>Join waitlist</a>
+          <a className="btn-ghost sm" href={LINKS.signin}>Sign in</a>
+          <a className="sp-cta" href={LINKS.signup}>Sign up</a>
         </div>
       </nav>
 
@@ -115,8 +116,8 @@ export default function Splash() {
             data and AI that understands what you&apos;re trying to do.
           </p>
           <div className="sp-hero-actions">
-            <a className="btn-primary" href={LINKS.waitlist}>Join the waitlist</a>
-            <a className="btn-ghost" href={LINKS.auth}>Launch the app →</a>
+            <a className="btn-primary" href={LINKS.signup}>Sign up</a>
+            <a className="btn-ghost" href={LINKS.signin}>Sign in →</a>
           </div>
         </div>
         <div className="scroll-hint" aria-hidden><span /></div>
@@ -213,8 +214,8 @@ export default function Splash() {
       {/* FINAL CTA */}
       <section className="sp-close reveal">
         <h2>The last platform you ever open<br/>for on-chain activity.</h2>
-        <p>New name coming soon. New domain coming soon. Be first in line.</p>
-        <a className="btn-primary lg" href={LINKS.waitlist}>Join the waitlist</a>
+        <p>New name coming soon. New domain coming soon. Create your account and dive in.</p>
+        <a className="btn-primary lg" href={LINKS.signup}>Sign up</a>
       </section>
 
       {/* FOOTER */}
@@ -227,7 +228,7 @@ export default function Splash() {
               <a href={LINKS.app}>OG DEX</a>
               <a href={LINKS.solno} target="_blank" rel="noreferrer">Solno</a>
               <a href={LINKS.degen} target="_blank" rel="noreferrer">Degen Tower</a>
-              <a href={LINKS.waitlist}>Waitlist</a>
+              <a href={LINKS.signup}>Sign up</a>
             </div>
             <div>
               <h4>Community</h4>
