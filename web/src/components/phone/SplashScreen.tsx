@@ -6,7 +6,7 @@ interface SplashScreenProps {
 }
 
 const PLATFORM_FRAMES = [
-  { src: "/bg/bg-nebula.jpg", label: "OG DEX", accent: "#2F80FF" },
+  { src: "/bg/bg-nebula.jpg", label: "OrbitX DEX", accent: "#2F80FF" },
   { src: "/bg/bg-galaxy.jpg", label: "Scanner", accent: "#14E0C8" },
   { src: "/bg/bg-aurora.jpg", label: "Social", accent: "#9945FF" },
   { src: "/bg/bg-earth.jpg", label: "Intelligence", accent: "#FFC53D" },

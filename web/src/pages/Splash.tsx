@@ -6,7 +6,7 @@ import logo from "@/assets/logo.png";
 /* ── Data ───────────────────────────────────────────────────────── */
 
 const HERO_FRAMES = [
-  { src: "/bg/bg-nebula.jpg", label: "OG DEX", caption: "Live screener & trade", accent: "#2F80FF" },
+  { src: "/bg/bg-nebula.jpg", label: "OrbitX DEX", caption: "Live screener & trade", accent: "#2F80FF" },
   { src: "/bg/bg-galaxy.jpg", label: "Scanner", caption: "Forensic on-chain scan", accent: "#14E0C8" },
   { src: "/bg/bg-aurora.jpg", label: "Social", caption: "Spaces · voice · chat", accent: "#9945FF" },
   { src: "/bg/bg-earth.jpg", label: "Intelligence", caption: "Smart money & AI", accent: "#FFC53D" },
@@ -34,7 +34,7 @@ const FEATURES: Feature[] = [
     copy: "Real-time multi-chain scanner with a proprietary OG Score — on-chain metrics, holder quality, momentum and AI signals. Trending, hidden gems and about-to-explode, powered by live data." },
   { tag: "Wallet forensics", title: "Track smart money like a pro", tone: "f2", icon: "💰",
     copy: "Any wallet's full history, win rate, hold time and PnL. Smart-money and KOL labels (Ansem, blknoiz06 + 37 more mapped), whale alerts and full holder lists with one-click actions." },
-  { tag: "OG DEX", title: "Blazing-fast trading & execution", tone: "f3", icon: "⚡",
+  { tag: "OrbitX DEX", title: "Blazing-fast trading & execution", tone: "f3", icon: "⚡",
     copy: "Live orderbook-style screener, one-click trading with Phantom, real-time buy/sell feeds, advanced charts with on-chain overlays and portfolio across every wallet." },
   { tag: "Launch", title: "Fair-launch & token tools", tone: "f4", icon: "🚀",
     copy: "Simple, powerful token creation with anti-rug safeguards, auto-listing on our DEX + aggregators, and post-launch monitoring with community tools baked in from minute one." },
@@ -387,7 +387,7 @@ export default function Splash() {
               <span className="sp-marquee-dot">◆</span>
               <span className="sp-marquee-item">Smart money</span>
               <span className="sp-marquee-dot">◆</span>
-              <span className="sp-marquee-item">OG DEX</span>
+              <span className="sp-marquee-item">OrbitX DEX</span>
               <span className="sp-marquee-dot">◆</span>
               <span className="sp-marquee-item">Fair launches</span>
               <span className="sp-marquee-dot">◆</span>
@@ -498,7 +498,7 @@ export default function Splash() {
           <a className="sp-eco-card stagger" href={LINKS.ogdex} onMouseMove={handleCardMouse}>
             <div className="sp-eco-glow" />
             <div className="sp-eco-icon">📊</div>
-            <h3>OG DEX</h3>
+            <h3>OrbitX DEX</h3>
             <p>Real-time Solana screener, scanner & trading.</p>
             <span className="sp-eco-link">Open <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
           </a>
@@ -540,7 +540,7 @@ export default function Splash() {
           <div className="sp-foot-cols">
             <div>
               <h4>Product</h4>
-              <a href={LINKS.ogdex}>OG DEX</a>
+              <a href={LINKS.ogdex}>OrbitX DEX</a>
               <a href={LINKS.orbitxPrediction} target="_blank" rel="noreferrer">OrbitX Prediction Market</a>
               <a href={LINKS.degen} target="_blank" rel="noreferrer">Degen Tower</a>
               <a href={LINKS.signup}>Sign up</a>
