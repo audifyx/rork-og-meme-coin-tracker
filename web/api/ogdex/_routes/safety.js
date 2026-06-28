@@ -14,6 +14,15 @@ async function quote(inputMint, outputMint, amount, slippageBps = 300) {
   } catch { return null; }
 }
 
+
+async function tokenMeta(mint) {
+  try {
+    const d = await jup(`/tokens/v2/search?query=${mint}`);
+    const arr = Array.isArray(d) ? d : (d?.tokens || d?.data || []);
+    return (arr || []).find((t) => t.id === mint) || (arr || [])[0] || null;
+  } catch { return null; }
+}
+
 export default async function handler(req, res) {
   const url = new URL(req.url, "http://x");
   const mint = url.searchParams.get("mint") || "";
@@ -35,6 +44,24 @@ export default async function handler(req, res) {
         sellImpact = num(sellQ.priceImpactPct) != null ? num(sellQ.priceImpactPct) * 100 : null;
         const solBack = Number(sellQ.outAmount);
         roundTripLossPct = ((TEST_SOL - solBack) / TEST_SOL) * 100; // tax + both-leg impact + fees
+      }
+    }
+
+    // pump.fun / bonding-curve fallback: Jupiter doesn't route pre-migration
+    // pump.fun tokens, but they ARE tradeable on the bonding curve via PumpPortal.
+    if (!canBuy) {
+      const m = await tokenMeta(mint);
+      const liq = num(m?.liquidity);
+      const isPump = (m && m.launchpad === "pump.fun") || /pump$/i.test(mint);
+      if (isPump && liq != null && liq > 0) {
+        const deep = liq >= 5000;
+        return send(res, 200, {
+          ok: true, mint, canBuy: true, canSell: true,
+          roundTripLossPct: null, buyImpactPct: null, sellImpactPct: null,
+          verdict: deep ? "Bonding curve" : "Thin liquidity",
+          tone: deep ? "good" : "warn",
+          note: `Trades on the pump.fun bonding curve (~$${Math.round(liq).toLocaleString()} liquidity), routed via PumpPortal. Jupiter has no swap route until it migrates to a DEX.`,
+        });
       }
     }
 
