@@ -329,7 +329,7 @@ const css = `
 .sp-hero-logo{border-radius:10px;box-shadow:0 10px 30px -12px rgba(47,128,255,.65);animation:spLogoFloat 4s ease-in-out infinite;}
 @keyframes spLogoFloat{50%{transform:translateY(-4px)}}
 .sp-eyebrow{font-size:12.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0;}
-.sp-h1{margin:0;font-size:clamp(42px,7.5vw,92px);line-height:.96;letter-spacing:-.04em;font-weight:800;position:relative;}
+.sp-h1{margin:0;font-size:clamp(42px,7.5vw,92px);line-height:.96;letter-spacing:-.04em;font-weight:800;position:relative;text-align:center;}
 @media(max-width:480px){.sp-h1{font-size:clamp(36px,6.5vw,52px);line-height:1.12;letter-spacing:-.02em;}}
 .sp-h1 span{background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;}
 .sp-h1::before,.sp-h1::after{content:attr(data-text);position:absolute;inset:0;pointer-events:none;opacity:0;}
