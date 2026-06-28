@@ -37,7 +37,7 @@ const VoiceLobbiesPage = lazy(() => import("./VoiceLobbies"));
    Types & Config
    ═══════════════════════════════════════════════════════════════ */
 
-type CommTab = "channels" | "rooms" | "spaces" | "communities";
+type CommTab = "channels" | "rooms" | "spaces" | "voice" | "communities";
 
 interface TabDef {
   id: CommTab;
@@ -50,6 +50,7 @@ const TABS: TabDef[] = [
   { id: "channels",    label: "Chat",        Icon: Hash,          eyebrow: "Channels & messages" },
   { id: "rooms",       label: "Rooms",       Icon: MessageSquare, eyebrow: "Group chat & trading lobbies" },
   { id: "spaces",      label: "Spaces",      Icon: Radio,         eyebrow: "Live voice & alpha" },
+  { id: "voice",       label: "Voice",       Icon: Headphones,    eyebrow: "Voice lobbies" },
   { id: "communities", label: "Communities", Icon: Globe,         eyebrow: "Token & OG communities" },
 ];
 
@@ -120,7 +121,7 @@ const CommunityHub: React.FC = () => {
         if (old === "social" || old === "channels") setActive("channels");
         else if (old === "rooms")    setActive("rooms");
         else if (old === "spaces")   setActive("spaces");
-        else if (old === "voice")    setActive("rooms");
+        else if (old === "voice")    setActive("voice");
         localStorage.removeItem("og_community_sub_tab");
       } catch {}
     };
@@ -190,6 +191,15 @@ const CommunityHub: React.FC = () => {
           <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 sm:px-5 lg:px-6 pb-4">
             <Suspense fallback={<Spinner />}>
               <SpacesPage />
+            </Suspense>
+          </div>
+        )}
+
+        {/* VOICE — voice lobbies (separate from Spaces) */}
+        {active === "voice" && (
+          <div className="min-h-0 flex-1 overflow-hidden flex flex-col">
+            <Suspense fallback={<Spinner />}>
+              <VoiceLobbiesPage />
             </Suspense>
           </div>
         )}

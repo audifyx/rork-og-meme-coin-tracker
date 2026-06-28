@@ -402,9 +402,9 @@ const LivePollWidget = ({ poll, onVote, onClose, isHost }: {
           <span className="text-xs font-bold text-primary">Live Poll</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-white/30">{totalVotes} vote{totalVotes !== 1 ? "s" : ""}</span>
+          <span className="text-[10px] text-white/55">{totalVotes} vote{totalVotes !== 1 ? "s" : ""}</span>
           {isHost && !poll.closed && (
-            <button onClick={onClose} className="text-[10px] text-white/30 hover:text-white/60 transition px-2 py-0.5 rounded-full border border-white/10 hover:border-white/20">
+            <button onClick={onClose} className="text-[10px] text-white/55 hover:text-white/60 transition px-2 py-0.5 rounded-full border border-white/10 hover:border-white/20">
               Close poll
             </button>
           )}
@@ -518,7 +518,7 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
               </div>
               {isScheduled ? "Schedule a Space" : "Start a Space"}
             </h2>
-            <p className="text-[10px] text-white/30 mt-0.5">
+            <p className="text-[10px] text-white/55 mt-0.5">
               {isScheduled ? "Set a time for your community to join" : "Go live with voice for your community"}
             </p>
           </div>
@@ -570,7 +570,7 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
 
           {/* Tags */}
           <div>
-            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 block">Tags <span className="text-white/20">({tags.length}/5)</span></label>
+            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1 block">Tags <span className="text-white/45">({tags.length}/5)</span></label>
             <div className="flex gap-2">
               <Input placeholder="#solana, #alpha..." value={tagInput} onChange={e => setTagInput(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && (e.preventDefault(), addTag())}
@@ -598,7 +598,7 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
               <div className="flex items-center justify-between px-3 py-2">
                 <div className="flex items-center gap-2.5">
                   <div className="p-1 rounded-lg bg-primary/10"><Calendar className="h-3 w-3 text-primary" /></div>
-                  <div><p className="text-[12px] font-bold text-white leading-tight">Schedule for later</p><p className="text-[9px] text-white/25">Set a date & time</p></div>
+                  <div><p className="text-[12px] font-bold text-white leading-tight">Schedule for later</p><p className="text-[9px] text-white/50">Set a date & time</p></div>
                 </div>
                 <Toggle on={isScheduled} onChange={() => setIsScheduled(v => !v)} />
               </div>
@@ -615,7 +615,7 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
             <div className="flex items-center justify-between px-3 py-2 rounded-xl border border-white/[0.06] bg-white/[0.02]">
               <div className="flex items-center gap-2.5">
                 <div className="p-1 rounded-lg bg-white/5"><Lock className="h-3 w-3 text-white/40" /></div>
-                <div><p className="text-[12px] font-bold text-white leading-tight">Private Space</p><p className="text-[9px] text-white/25">Invite-only access</p></div>
+                <div><p className="text-[12px] font-bold text-white leading-tight">Private Space</p><p className="text-[9px] text-white/50">Invite-only access</p></div>
               </div>
               <Toggle on={isPrivate} onChange={() => setIsPrivate(v => !v)} />
             </div>
@@ -625,7 +625,7 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
                 <div className="p-1 rounded-lg bg-red-500/10">
                   <div className="h-3 w-3 rounded-full border-2 border-red-400 flex items-center justify-center"><div className="h-1.5 w-1.5 rounded-full bg-red-400" /></div>
                 </div>
-                <div><p className="text-[12px] font-bold text-white leading-tight">Record Space</p><p className="text-[9px] text-white/25">Save for replay</p></div>
+                <div><p className="text-[12px] font-bold text-white leading-tight">Record Space</p><p className="text-[9px] text-white/50">Save for replay</p></div>
               </div>
               <Toggle on={isRecording} onChange={() => setIsRecording(v => !v)} activeColor="bg-red-500" />
             </div>
@@ -635,7 +635,7 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
               <div className="flex items-center justify-between px-3 py-2">
                 <div className="flex items-center gap-2.5">
                   <div className="p-1 rounded-lg bg-amber-500/10"><Shield className="h-3 w-3 text-amber-400" /></div>
-                  <div><p className="text-[12px] font-bold text-white leading-tight">Token Gate</p><p className="text-[9px] text-white/25">Require token to join</p></div>
+                  <div><p className="text-[12px] font-bold text-white leading-tight">Token Gate</p><p className="text-[9px] text-white/50">Require token to join</p></div>
                 </div>
                 <Toggle on={isTokenGated} onChange={() => setIsTokenGated(v => !v)} activeColor="bg-amber-500" />
               </div>
@@ -654,13 +654,13 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
             <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2">
               <div className="flex items-center gap-2.5 mb-1.5">
                 <div className="p-1 rounded-lg bg-primary/10"><Timer className="h-3 w-3 text-primary" /></div>
-                <div><p className="text-[12px] font-bold text-white leading-tight">Speaker Timer</p><p className="text-[9px] text-white/25">Auto-remove after time limit</p></div>
+                <div><p className="text-[12px] font-bold text-white leading-tight">Speaker Timer</p><p className="text-[9px] text-white/50">Auto-remove after time limit</p></div>
               </div>
               <div className="flex gap-1 flex-wrap">
                 {[0, 2, 5, 10, 15, 30, 60].map(m => (
                   <button key={m} type="button" onClick={() => setSpeakerTimerMin(m)}
                     className={cn("px-2 py-1 rounded-lg text-[10px] font-bold transition-all",
-                      speakerTimerMin === m ? "bg-primary/15 text-primary border border-primary/25" : "bg-white/[0.04] text-white/20 border border-white/[0.06]")}>
+                      speakerTimerMin === m ? "bg-primary/15 text-primary border border-primary/25" : "bg-white/[0.04] text-white/45 border border-white/[0.06]")}>
                     {m === 0 ? "Off" : `${m}m`}
                   </button>
                 ))}
@@ -709,7 +709,7 @@ const PersonCard = ({ username, avatarUrl, isYou, isSpeaking, isHost, online = t
         {safAvatar(avatarUrl) ? (
           <img src={safAvatar(avatarUrl)} alt="" className="w-full h-full object-cover" />
         ) : (
-          <span className="text-lg font-bold text-white/20">{(username?.[0] || "?").toUpperCase()}</span>
+          <span className="text-lg font-bold text-white/45">{(username?.[0] || "?").toUpperCase()}</span>
         )}
       </div>
       {online && (
@@ -792,7 +792,7 @@ const SpaceCard = ({ space, onJoin, variant = "default", onDelete, currentUserId
             {space.is_private && <Lock className="h-2.5 w-2.5 text-white/15" />}
             {space.token_gate_ca && <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-[8px] font-bold text-amber-400"><Shield className="h-2 w-2" />GATED</span>}
             {isPast && space.ended_at && (
-              <span className="text-[9px] text-white/20">{formatDistanceToNow(new Date(space.ended_at), { addSuffix: true })}</span>
+              <span className="text-[9px] text-white/45">{formatDistanceToNow(new Date(space.ended_at), { addSuffix: true })}</span>
             )}
             {isPast && hasReplay && (
               <span className="inline-flex items-center gap-1 text-[9px] text-primary/60 font-bold"><Play className="h-2.5 w-2.5" />{space.duration_seconds ? formatDuration(space.duration_seconds) : "Replay"}</span>
@@ -800,10 +800,10 @@ const SpaceCard = ({ space, onJoin, variant = "default", onDelete, currentUserId
             {isPast && !hasReplay && <span className="text-[8px] text-white/15 italic">No recording</span>}
           </div>
           <h3 className="font-bold text-[13px] text-white leading-tight line-clamp-1">{space.title}</h3>
-          {space.description && <p className="text-[10px] text-white/25 mt-0.5 line-clamp-1">{space.description}</p>}
+          {space.description && <p className="text-[10px] text-white/50 mt-0.5 line-clamp-1">{space.description}</p>}
           <div className="flex items-center gap-2.5 mt-1.5">
-            <span className="text-[10px] text-white/30 font-medium">@{space.host_username || "host"}</span>
-            {space.speaker_count > 1 && <span className="flex items-center gap-0.5 text-[9px] text-white/20"><Mic className="h-2.5 w-2.5" />{space.speaker_count}</span>}
+            <span className="text-[10px] text-white/55 font-medium">@{space.host_username || "host"}</span>
+            {space.speaker_count > 1 && <span className="flex items-center gap-0.5 text-[9px] text-white/45"><Mic className="h-2.5 w-2.5" />{space.speaker_count}</span>}
             <span className="flex items-center gap-0.5 text-[9px] text-white/15"><Headphones className="h-2.5 w-2.5" />{total}</span>
             {space.tags?.slice(0, 1).map(t => (
               <span key={t} className="text-[8px] px-1.5 py-0.5 rounded-full bg-white/[0.03] text-white/15 border border-white/[0.04]">#{t}</span>
@@ -830,7 +830,7 @@ const SpaceCard = ({ space, onJoin, variant = "default", onDelete, currentUserId
                     Delete
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); }}
-                    className="px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[9px] font-bold text-white/30 hover:bg-white/[0.08] transition-all">
+                    className="px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[9px] font-bold text-white/55 hover:bg-white/[0.08] transition-all">
                     Cancel
                   </button>
                 </div>
@@ -840,7 +840,7 @@ const SpaceCard = ({ space, onJoin, variant = "default", onDelete, currentUserId
                   className="w-8 h-8 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center hover:bg-red-500/10 hover:border-red-500/20 transition-colors"
                   title="Delete space"
                 >
-                  <Trash2 className="h-3 w-3 text-white/20 hover:text-red-400" />
+                  <Trash2 className="h-3 w-3 text-white/45 hover:text-red-400" />
                 </button>
               )
             )}
@@ -850,7 +850,7 @@ const SpaceCard = ({ space, onJoin, variant = "default", onDelete, currentUserId
               className="w-8 h-8 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center hover:bg-white/[0.08] transition-colors"
               title="Copy share link"
             >
-              <Share2 className="h-3 w-3 text-white/30" />
+              <Share2 className="h-3 w-3 text-white/55" />
             </button>
             {hasReplay ? (
               <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/25 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
@@ -858,7 +858,7 @@ const SpaceCard = ({ space, onJoin, variant = "default", onDelete, currentUserId
               </div>
             ) : (
               <div className="w-9 h-9 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center group-hover:bg-white/[0.08] transition-colors">
-                <Eye className="h-3.5 w-3.5 text-white/25" />
+                <Eye className="h-3.5 w-3.5 text-white/50" />
               </div>
             )}
           </div>
@@ -891,11 +891,11 @@ const ScheduledSpaceCard = ({ space, onRemind, onStartNow, isOwner }: { space: S
               </>
             )}
           </div>
-          <span className="text-[10px] text-white/25 mt-0.5 block">@{space.host_username || "host"}</span>
+          <span className="text-[10px] text-white/50 mt-0.5 block">@{space.host_username || "host"}</span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <button onClick={() => onRemind(space)}
-            className="h-8 w-8 rounded-lg flex items-center justify-center border border-white/[0.06] text-white/30 hover:bg-white/[0.04] hover:text-primary transition-all" title="Set reminder">
+            className="h-8 w-8 rounded-lg flex items-center justify-center border border-white/[0.06] text-white/55 hover:bg-white/[0.04] hover:text-primary transition-all" title="Set reminder">
             <Bell className="h-3.5 w-3.5" />
           </button>
           {isOwner && onStartNow && (
@@ -970,7 +970,7 @@ const SpaceChat = ({ spaceId, isHost }: { spaceId: string; isHost: boolean }) =>
           <div key={m.id} className="group flex items-start gap-2 py-1.5 px-2 hover:bg-white/[0.02] rounded-lg transition-colors">
             <div className="w-6 h-6 rounded-full bg-white/[0.05] border border-white/[0.08] flex items-center justify-center overflow-hidden shrink-0 mt-0.5">
               {safAvatar(m.avatar_url) ? <img src={safAvatar(m.avatar_url)} alt="" className="w-full h-full object-cover" /> :
-                <span className="text-[9px] font-bold text-white/30">{m.username?.[0]?.toUpperCase() || "?"}</span>}
+                <span className="text-[9px] font-bold text-white/55">{m.username?.[0]?.toUpperCase() || "?"}</span>}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline gap-1.5">
@@ -980,7 +980,7 @@ const SpaceChat = ({ spaceId, isHost }: { spaceId: string; isHost: boolean }) =>
               <p className="text-[13px] text-white/80 break-words leading-relaxed">{m.content}</p>
             </div>
             {isHost && (
-              <button onClick={() => pinMsg(m)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/10 transition" title="Pin"><Pin className="h-3 w-3 text-white/20" /></button>
+              <button onClick={() => pinMsg(m)} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/10 transition" title="Pin"><Pin className="h-3 w-3 text-white/45" /></button>
             )}
           </div>
         ))}
@@ -1053,11 +1053,11 @@ const SpeakerQueue = ({ spaceId, isHost, onRaiseHand, hasRaised, onPromote }: {
       {reqs.map(r => (
         <div key={r.id} className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full bg-white/[0.05] border border-white/[0.08] flex items-center justify-center overflow-hidden">
-            {safAvatar(r.avatar_url) ? <img src={safAvatar(r.avatar_url)} alt="" className="w-full h-full object-cover" /> : <span className="text-[9px] font-bold text-white/30">{r.username?.[0]?.toUpperCase() || "?"}</span>}
+            {safAvatar(r.avatar_url) ? <img src={safAvatar(r.avatar_url)} alt="" className="w-full h-full object-cover" /> : <span className="text-[9px] font-bold text-white/55">{r.username?.[0]?.toUpperCase() || "?"}</span>}
           </div>
           <span className="text-[11px] text-white/60 font-medium flex-1 truncate">{r.username || "User"}</span>
           <button onClick={() => handle(r, "approved")} className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20 hover:bg-emerald-500/20">Accept</button>
-          <button onClick={() => handle(r, "denied")} className="p-1 rounded-full hover:bg-white/10 text-white/25"><XIcon className="h-3 w-3" /></button>
+          <button onClick={() => handle(r, "denied")} className="p-1 rounded-full hover:bg-white/10 text-white/50"><XIcon className="h-3 w-3" /></button>
         </div>
       ))}
     </div>
@@ -1344,8 +1344,8 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
             <h3 className="font-black text-sm text-white uppercase tracking-wide truncate">{cur.title}</h3>
           </div>
           <div className="flex items-center gap-2 mt-0.5 ml-[18px]">
-            <Globe className="h-3 w-3 text-white/20" />
-            <span className="text-[11px] text-white/30">{cur.is_private ? "private" : "public"} · {totalInRoom} connected{publicListenerCount > 0 ? ` · ${publicListenerCount} via public link` : ""}</span>
+            <Globe className="h-3 w-3 text-white/45" />
+            <span className="text-[11px] text-white/55">{cur.is_private ? "private" : "public"} · {totalInRoom} connected{publicListenerCount > 0 ? ` · ${publicListenerCount} via public link` : ""}</span>
             {cur.is_recording && <span className="flex items-center gap-1 text-[9px] text-red-400/60 font-bold"><div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />REC</span>}
           </div>
         </div>
@@ -1356,7 +1356,7 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
           </div>
           {isHost && (
             <div className="relative">
-              <button onClick={() => setShowMore(!showMore)} className="p-2 rounded-xl hover:bg-white/[0.05] transition"><MoreVertical className="h-4 w-4 text-white/30" /></button>
+              <button onClick={() => setShowMore(!showMore)} className="p-2 rounded-xl hover:bg-white/[0.05] transition"><MoreVertical className="h-4 w-4 text-white/55" /></button>
               {showMore && (
                 <>
                   <div className="fixed inset-0 z-20" onClick={() => setShowMore(false)} />
@@ -1381,7 +1381,7 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
         <div className="mx-4 mt-3 px-3.5 py-2.5 rounded-xl bg-amber-400/[0.04] border border-amber-400/15 flex items-start gap-2 shrink-0 sp-slide-up">
           <Pin className="h-3 w-3 text-amber-400 shrink-0 mt-0.5" />
           <p className="text-[11px] text-amber-200/70 leading-relaxed flex-1 line-clamp-2">{pinnedMsg}</p>
-          {isHost && <button onClick={async () => { setPinnedMsg(null); const { error } = await supabase.from("spaces").update({ pinned_message: null }).eq("id", space.id); if (error) toast.error("Failed to unpin"); }} className="p-0.5 hover:bg-white/10 rounded"><XIcon className="h-2.5 w-2.5 text-white/25" /></button>}
+          {isHost && <button onClick={async () => { setPinnedMsg(null); const { error } = await supabase.from("spaces").update({ pinned_message: null }).eq("id", space.id); if (error) toast.error("Failed to unpin"); }} className="p-0.5 hover:bg-white/10 rounded"><XIcon className="h-2.5 w-2.5 text-white/50" /></button>}
         </div>
       )}
 
@@ -1407,11 +1407,11 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
             <TokenTicker ca={tickerCA} onClose={() => { setShowTokenTicker(false); setTickerCA(""); }} />
           ) : (
             <div className="p-3 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-              <p className="text-[10px] text-white/30 font-bold mb-2">Paste a token CA to show live chart</p>
+              <p className="text-[10px] text-white/55 font-bold mb-2">Paste a token CA to show live chart</p>
               <div className="flex gap-2">
                 <input placeholder="Token contract address..." onChange={e => setTickerCA(e.target.value)}
                   className="flex-1 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] text-white placeholder:text-white/15 focus:outline-none font-mono" />
-                <button onClick={() => setShowTokenTicker(false)} className="px-2 py-1 rounded-lg bg-white/[0.04] text-white/20 text-[10px]">Close</button>
+                <button onClick={() => setShowTokenTicker(false)} className="px-2 py-1 rounded-lg bg-white/[0.04] text-white/45 text-[10px]">Close</button>
               </div>
             </div>
           )}
@@ -1423,15 +1423,15 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
         <div className="mx-4 mt-3 rounded-2xl border border-primary/15 bg-primary/[0.02] p-4 sp-slide-up space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-xs font-bold text-primary flex items-center gap-2"><Shield className="h-4 w-4" /> Host Controls</p>
-            <button onClick={() => setShowHostPanel(false)} className="p-1 rounded hover:bg-white/10"><XIcon className="h-3 w-3 text-white/25" /></button>
+            <button onClick={() => setShowHostPanel(false)} className="p-1 rounded hover:bg-white/10"><XIcon className="h-3 w-3 text-white/50" /></button>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-white/30 uppercase tracking-wider mb-2">Speakers ({displayParticipants.filter(p => p.role === "speaker").length}/{MAX_SPEAKERS})</p>
+            <p className="text-[10px] font-bold text-white/55 uppercase tracking-wider mb-2">Speakers ({displayParticipants.filter(p => p.role === "speaker").length}/{MAX_SPEAKERS})</p>
             <div className="space-y-1.5">
               {displayParticipants.filter(p => p.role === "speaker").map(p => (
                 <div key={p.id} className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                   <div className="w-7 h-7 rounded-full bg-white/[0.05] border border-white/[0.08] overflow-hidden flex items-center justify-center">
-                    {safAvatar(p.avatar_url) ? <img src={safAvatar(p.avatar_url)} alt="" className="w-full h-full object-cover" /> : <span className="text-[9px] font-bold text-white/30">{p.username?.[0]?.toUpperCase() || "?"}</span>}
+                    {safAvatar(p.avatar_url) ? <img src={safAvatar(p.avatar_url)} alt="" className="w-full h-full object-cover" /> : <span className="text-[9px] font-bold text-white/55">{p.username?.[0]?.toUpperCase() || "?"}</span>}
                   </div>
                   <span className="text-[11px] text-white/60 font-medium flex-1 truncate">{p.username || "User"}{p.user_id === space.host_id && <Crown className="h-3 w-3 text-amber-400 inline ml-1" />}</span>
                   {p.user_id !== space.host_id && p.user_id !== user?.id && (
@@ -1446,12 +1446,12 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
           </div>
           {displayParticipants.filter(p => p.role === "listener").length > 0 && (
             <div>
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-wider mb-2">Listeners ({displayParticipants.filter(p => p.role === "listener").length})</p>
+              <p className="text-[10px] font-bold text-white/55 uppercase tracking-wider mb-2">Listeners ({displayParticipants.filter(p => p.role === "listener").length})</p>
               <div className="space-y-1.5 max-h-32 overflow-y-auto" style={{ scrollbarWidth: "none" }}>
                 {displayParticipants.filter(p => p.role === "listener").map(p => (
                   <div key={p.id} className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/[0.05]">
                     <div className="w-6 h-6 rounded-full bg-white/[0.05] border border-white/[0.06] overflow-hidden flex items-center justify-center">
-                      {safAvatar(p.avatar_url) ? <img src={safAvatar(p.avatar_url)} alt="" className="w-full h-full object-cover" /> : <span className="text-[8px] font-bold text-white/20">{p.username?.[0]?.toUpperCase() || "?"}</span>}
+                      {safAvatar(p.avatar_url) ? <img src={safAvatar(p.avatar_url)} alt="" className="w-full h-full object-cover" /> : <span className="text-[8px] font-bold text-white/45">{p.username?.[0]?.toUpperCase() || "?"}</span>}
                     </div>
                     <span className="text-[10px] text-white/40 font-medium flex-1 truncate">{p.username || "User"}</span>
                     {displayParticipants.filter(pp => pp.role === "speaker").length < MAX_SPEAKERS && (
@@ -1469,11 +1469,11 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
 
           {/* ── Public listener link (host-only) ── */}
           <div className="pt-3 border-t border-white/[0.05]">
-            <p className="text-[10px] font-bold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <p className="text-[10px] font-bold text-white/55 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Globe className="h-3 w-3" /> Public Listener Link
             </p>
             <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-              <code className="text-[10px] text-white/30 flex-1 truncate">{typeof window !== "undefined" ? `${window.location.origin}/space/${space.id}` : `/space/${space.id}`}</code>
+              <code className="text-[10px] text-white/55 flex-1 truncate">{typeof window !== "undefined" ? `${window.location.origin}/space/${space.id}` : `/space/${space.id}`}</code>
               <button
                 onClick={sharePublicLink}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold hover:bg-primary/20 transition whitespace-nowrap"
@@ -1481,14 +1481,14 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
                 <Copy className="h-3 w-3" /> Copy
               </button>
             </div>
-            <p className="text-[9px] text-white/20 mt-1.5 leading-relaxed">
+            <p className="text-[9px] text-white/45 mt-1.5 leading-relaxed">
               Anyone with this link can listen live — no account required. They'll appear as <span className="text-white/40">"X listening via public link"</span> in your space.
             </p>
           </div>
 
           {/* ── Embed this space ── */}
           <div className="pt-3 border-t border-white/[0.05]">
-            <p className="text-[10px] font-bold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <p className="text-[10px] font-bold text-white/55 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Code2 className="h-3 w-3" /> Embed This Space
             </p>
             <div className="bg-black/30 rounded-xl border border-white/[0.06] p-3">
@@ -1509,11 +1509,11 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
           {/* ── Your profile page ── */}
           {user && (
             <div className="pt-3 border-t border-white/[0.05]">
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <p className="text-[10px] font-bold text-white/55 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <Users className="h-3 w-3" /> Your Public Page
               </p>
               <div className="flex items-center gap-2 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-                <code className="text-[10px] text-white/30 flex-1 truncate">ogscan.fun/u/{space.host_username || "you"}</code>
+                <code className="text-[10px] text-white/55 flex-1 truncate">ogscan.fun/u/{space.host_username || "you"}</code>
                 <button
                   onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/u/${space.host_username}`); toast.success("Profile page link copied!"); }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[10px] font-bold hover:bg-violet-500/20 transition whitespace-nowrap"
@@ -1521,7 +1521,7 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
                   <Copy className="h-3 w-3" /> Copy
                 </button>
               </div>
-              <p className="text-[9px] text-white/20 mt-1.5">
+              <p className="text-[9px] text-white/45 mt-1.5">
                 Your page auto-shows a live banner whenever you're hosting. Embed it on your website too.
               </p>
             </div>
@@ -1529,7 +1529,7 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
 
           {/* ── Cross-post to X ── */}
           <div className="pt-3 border-t border-white/[0.05]">
-            <p className="text-[10px] font-bold text-white/30 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <p className="text-[10px] font-bold text-white/55 uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Twitter className="h-3 w-3" /> Post to X / Twitter
             </p>
             <button
@@ -1739,7 +1739,7 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
           {/* About section */}
           {cur.description && (
             <div className="mt-4 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
-              <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1.5">About</p>
+              <p className="text-[10px] font-black text-white/45 uppercase tracking-widest mb-1.5">About</p>
               <p className="text-[12px] text-white/40 leading-relaxed">{cur.description}</p>
             </div>
           )}
@@ -1752,7 +1752,7 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
             <>
               <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/[0.06] shrink-0">
                 <p className="text-[11px] font-bold text-white/40 flex items-center gap-1.5"><MessageSquare className="h-3 w-3" /> Live Chat</p>
-                <button onClick={() => setShowChat(false)} className="p-1 rounded hover:bg-white/10 lg:hidden"><XIcon className="h-3 w-3 text-white/25" /></button>
+                <button onClick={() => setShowChat(false)} className="p-1 rounded hover:bg-white/10 lg:hidden"><XIcon className="h-3 w-3 text-white/50" /></button>
               </div>
               <SpaceChat spaceId={space.id} isHost={isHost} />
             </>
@@ -1958,7 +1958,7 @@ const ReplayPlayer = ({ space, onClose }: { space: Space; onClose: () => void })
           <div className="flex items-center gap-2 mt-0.5">
             <span className={cn("inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full border", tm.color)}>{tm.icon} {space.topic}</span>
             <span className="text-[10px] text-white/15">·</span>
-            <span className="text-[10px] text-white/25">{hasAudio ? "Replay" : "Summary"}</span>
+            <span className="text-[10px] text-white/50">{hasAudio ? "Replay" : "Summary"}</span>
             {space.ended_at && <><span className="text-[10px] text-white/15">·</span><span className="text-[10px] text-white/15">{formatDistanceToNow(new Date(space.ended_at), { addSuffix: true })}</span></>}
           </div>
         </div>
@@ -1972,8 +1972,8 @@ const ReplayPlayer = ({ space, onClose }: { space: Space; onClose: () => void })
             {safAvatar(space.host_avatar) ? <img src={safAvatar(space.host_avatar)} alt="" className="w-full h-full object-cover rounded-2xl" /> : <Radio className="h-8 w-8 text-primary/50" />}
           </div>
           <h2 className="text-lg font-black text-white mb-1">{space.title}</h2>
-          {space.description && <p className="text-sm text-white/30 mb-2">{space.description}</p>}
-          <p className="text-[11px] text-white/25">Hosted by @{space.host_username || "unknown"}</p>
+          {space.description && <p className="text-sm text-white/55 mb-2">{space.description}</p>}
+          <p className="text-[11px] text-white/50">Hosted by @{space.host_username || "unknown"}</p>
         </div>
 
         {hasAudio ? (
@@ -2011,7 +2011,7 @@ const ReplayPlayer = ({ space, onClose }: { space: Space; onClose: () => void })
                 className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(var(--primary-rgb,190,242,100),0.5)]"
                 style={{ background: `linear-gradient(to right, hsl(var(--primary)) ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.1) ${(currentTime / (duration || 1)) * 100}%)` }}
               />
-              <div className="flex justify-between text-[10px] text-white/25 font-mono">
+              <div className="flex justify-between text-[10px] text-white/50 font-mono">
                 <span>{fmtTime(currentTime)}</span>
                 <span>{fmtTime(duration)}</span>
               </div>
@@ -2021,15 +2021,15 @@ const ReplayPlayer = ({ space, onClose }: { space: Space; onClose: () => void })
           /* No recording available */
           <div className="flex flex-col items-center gap-3">
             <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center">
-              <Mic className="h-7 w-7 text-white/20" />
+              <Mic className="h-7 w-7 text-white/45" />
             </div>
             <p className="text-sm font-bold text-white/40">No recording available</p>
-            <p className="text-xs text-white/20 text-center max-w-xs">This space ended without saving a recording. Future spaces with recording enabled will be playable here.</p>
+            <p className="text-xs text-white/45 text-center max-w-xs">This space ended without saving a recording. Future spaces with recording enabled will be playable here.</p>
           </div>
         )}
 
         {/* Stats */}
-        <div className="flex items-center gap-4 text-[10px] text-white/20">
+        <div className="flex items-center gap-4 text-[10px] text-white/45">
           {space.peak_listeners > 0 && <span className="flex items-center gap-1"><Headphones className="h-3 w-3" />{space.peak_listeners} peak listeners</span>}
           {space.speaker_count > 0 && <span className="flex items-center gap-1"><Mic className="h-3 w-3" />{space.speaker_count} speakers</span>}
           {space.duration_seconds && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{formatDuration(space.duration_seconds)}</span>}
@@ -2158,7 +2158,7 @@ const StatsBar = ({ liveCount, listenerCount, activeNow, trending }: {
             <s.icon className={cn("h-4 w-4", s.color)} />
             <span className="text-base font-black text-white">{s.value}</span>
           </div>
-          <span className="text-[9px] text-white/30 font-medium">{s.label}</span>
+          <span className="text-[9px] text-white/55 font-medium">{s.label}</span>
         </div>
       ))}
     </div>
@@ -2244,7 +2244,7 @@ const OnlineUsersBanner = () => {
                 {safAvatar(u.avatar_url) ? (
                   <img src={safAvatar(u.avatar_url)} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-[11px] font-bold text-white/30">{(u.username?.[0] || "?").toUpperCase()}</span>
+                  <span className="text-[11px] font-bold text-white/55">{(u.username?.[0] || "?").toUpperCase()}</span>
                 )}
               </div>
               {/* Green online dot */}
@@ -2323,7 +2323,7 @@ const XSpaceCard = ({ space }: { space: XSpace }) => {
         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
           <span className="text-[10px] text-white/40 font-medium">@{space.creator_username}</span>
           {space.participant_count > 0 && (
-            <span className="flex items-center gap-0.5 text-[10px] text-white/25">
+            <span className="flex items-center gap-0.5 text-[10px] text-white/50">
               <Headphones className="h-2.5 w-2.5" />
               {space.participant_count.toLocaleString()}
             </span>
@@ -2395,7 +2395,7 @@ const XSpacesFeed = ({ session }: { session: string | null }) => {
           <Twitter className="h-6 w-6 text-primary" />
         </div>
         <h3 className="text-base font-black text-white mb-1">Connect your X account</h3>
-        <p className="text-sm text-white/30 mb-4 max-w-xs mx-auto">See live X Spaces from people you follow and join them right here.</p>
+        <p className="text-sm text-white/55 mb-4 max-w-xs mx-auto">See live X Spaces from people you follow and join them right here.</p>
         <button
           onClick={() => xStartLogin()}
           className="px-5 py-2.5 rounded-xl bg-primary/15 border border-primary/25 text-primary text-sm font-bold hover:bg-primary/25 transition-all flex items-center gap-2 mx-auto"
@@ -2449,7 +2449,7 @@ const XSpacesFeed = ({ session }: { session: string | null }) => {
           <Radio className="h-5 w-5 text-primary/50" />
         </div>
         <h3 className="text-sm font-bold text-white/60">No X Spaces right now</h3>
-        <p className="text-xs text-white/25 mt-1">Check back later — live spaces from people you follow will show up here.</p>
+        <p className="text-xs text-white/50 mt-1">Check back later — live spaces from people you follow will show up here.</p>
         <button onClick={fetch} className="mt-4 text-[10px] font-bold text-primary/50 hover:text-primary transition flex items-center gap-1.5 mx-auto">
           <Repeat2 className="h-3 w-3" /> Refresh
         </button>
@@ -2461,7 +2461,7 @@ const XSpacesFeed = ({ session }: { session: string | null }) => {
     <div className="space-y-4">
       {/* Connected as */}
       <div className="flex items-center justify-between">
-        <span className="text-[10px] text-white/25 font-medium">
+        <span className="text-[10px] text-white/50 font-medium">
           Following feed for <span className="text-white/50">@{xUser.username}</span>
         </span>
         <button onClick={fetch} className="text-[10px] font-bold text-primary/50 hover:text-primary transition flex items-center gap-1">
@@ -2474,7 +2474,7 @@ const XSpacesFeed = ({ session }: { session: string | null }) => {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[11px] font-black text-red-400 uppercase tracking-wide">🔴 Live Now</span>
-            <span className="text-[10px] text-white/25">{liveSpaces.length}</span>
+            <span className="text-[10px] text-white/50">{liveSpaces.length}</span>
           </div>
           <div className="space-y-2">
             {liveSpaces.map(s => <XSpaceCard key={s.id} space={s} />)}
@@ -2487,7 +2487,7 @@ const XSpacesFeed = ({ session }: { session: string | null }) => {
         <div>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[11px] font-black text-primary/70 uppercase tracking-wide">🗓 Scheduled</span>
-            <span className="text-[10px] text-white/25">{scheduledSpaces.length}</span>
+            <span className="text-[10px] text-white/50">{scheduledSpaces.length}</span>
           </div>
           <div className="space-y-2">
             {scheduledSpaces.map(s => <XSpaceCard key={s.id} space={s} />)}
@@ -2722,7 +2722,7 @@ const Spaces = () => {
               Join or start live voice rooms — alpha calls, discussions, and community hangouts.
             </p>
             <div className="flex items-center gap-2 mt-3">
-              <span className="text-[11px] text-white/25 font-mono px-2.5 py-1 rounded-full border border-white/[0.08] bg-white/[0.02]">/spaces</span>
+              <span className="text-[11px] text-white/50 font-mono px-2.5 py-1 rounded-full border border-white/[0.08] bg-white/[0.02]">/spaces</span>
               <SpaceNotifications onNavigateToSpace={(id) => { const s = spaces.find(sp => sp.id === id); if (s) setActiveSpace(s); }} />
             </div>
           </div>
@@ -2752,13 +2752,13 @@ const Spaces = () => {
                       ? "bg-primary/15 text-primary border border-primary/25"
                       : isX
                       ? "text-primary/50 hover:text-primary/80 hover:bg-primary/[0.05] border border-transparent"
-                      : "text-white/35 hover:text-white/60 hover:bg-white/[0.03] border border-transparent"
+                      : "text-white/60 hover:text-white/60 hover:bg-white/[0.03] border border-transparent"
                   )}>
                   {label}
                   {count !== undefined && count > 0 && (
                     <span className={cn(
                       "ml-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                      isActive ? "bg-primary/20 text-primary" : "bg-white/[0.06] text-white/30"
+                      isActive ? "bg-primary/20 text-primary" : "bg-white/[0.06] text-white/55"
                     )}>{count}</span>
                   )}
                 </button>
@@ -2772,7 +2772,7 @@ const Spaces = () => {
               "w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0",
               showSearch
                 ? "bg-primary/15 border border-primary/25 text-primary"
-                : "bg-white/[0.04] border border-white/[0.06] text-white/30 hover:text-white/50"
+                : "bg-white/[0.04] border border-white/[0.06] text-white/55 hover:text-white/50"
             )}>
             <Search className="h-4 w-4" />
           </button>
@@ -2787,10 +2787,10 @@ const Spaces = () => {
         {/* Search input (expandable) */}
         {showSearch && (
           <div className="relative sp-slide-up">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/20" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/45" />
             <Input placeholder="Search spaces..." value={search} onChange={e => setSearch(e.target.value)} autoFocus
               className="bg-white/[0.03] border-white/[0.06] rounded-xl pl-10 h-10 text-sm focus:border-primary/40" />
-            {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50"><XIcon className="h-4 w-4" /></button>}
+            {search && <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/45 hover:text-white/50"><XIcon className="h-4 w-4" /></button>}
           </div>
         )}
 
@@ -2807,7 +2807,7 @@ const Spaces = () => {
                       "flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[12px] font-bold whitespace-nowrap transition-all shrink-0",
                       isActive
                         ? "bg-primary/20 text-primary border border-primary/30"
-                        : "bg-white/[0.03] text-white/35 border border-white/[0.06] hover:bg-white/[0.06] hover:text-white/50"
+                        : "bg-white/[0.03] text-white/60 border border-white/[0.06] hover:bg-white/[0.06] hover:text-white/50"
                     )}>
                     {meta && <span className="text-sm">{meta.icon}</span>}
                     {t}
@@ -2817,7 +2817,7 @@ const Spaces = () => {
             </div>
             {/* Scroll fade indicator */}
             <div className="absolute right-0 top-0 bottom-1 w-10 bg-gradient-to-l from-background to-transparent pointer-events-none flex items-center justify-end pr-1">
-              <ChevronRight className="h-3.5 w-3.5 text-white/20" />
+              <ChevronRight className="h-3.5 w-3.5 text-white/45" />
             </div>
           </div>
         )}
@@ -2834,7 +2834,7 @@ const Spaces = () => {
                   <div className="rounded-2xl border border-white/[0.05] bg-white/[0.015] py-10 px-6">
                     <EmptyMicIllustration />
                     <h3 className="text-lg font-bold text-white text-center mt-4">No live spaces right now</h3>
-                    <p className="text-sm text-white/30 text-center mt-1">Be the first to start one!</p>
+                    <p className="text-sm text-white/55 text-center mt-1">Be the first to start one!</p>
                     <div className="flex justify-center mt-5">
                       <button onClick={() => setShowCreate(true)}
                         className="px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-sm font-black flex items-center gap-2 transition-all shadow-lg shadow-amber-400/10">
@@ -2857,7 +2857,7 @@ const Spaces = () => {
                   <div className="rounded-2xl border border-white/[0.05] bg-white/[0.015] py-10 px-6">
                     <EmptyMicIllustration />
                     <h3 className="text-lg font-bold text-white text-center mt-4">No upcoming spaces</h3>
-                    <p className="text-sm text-white/30 text-center mt-1">Schedule one and invite your community!</p>
+                    <p className="text-sm text-white/55 text-center mt-1">Schedule one and invite your community!</p>
                     <div className="flex justify-center mt-5">
                       <button onClick={() => setShowCreate(true)}
                         className="px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-sm font-black flex items-center gap-2 transition-all shadow-lg shadow-amber-400/10">
@@ -2887,7 +2887,7 @@ const Spaces = () => {
                   <div className="rounded-2xl border border-white/[0.05] bg-white/[0.015] py-10 px-6">
                     <EmptyMicIllustration />
                     <h3 className="text-lg font-bold text-white text-center mt-4">No replays yet</h3>
-                    <p className="text-sm text-white/30 text-center mt-1">Recorded spaces will appear here</p>
+                    <p className="text-sm text-white/55 text-center mt-1">Recorded spaces will appear here</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
