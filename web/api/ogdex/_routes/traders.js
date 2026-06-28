@@ -1,46 +1,38 @@
 // OG DEX — top holders + top traders for a token. NO Birdeye.
-// Holders: Helius getTokenLargestAccounts (via rpc-proxy). Traders: GeckoTerminal
-// recent pool trades aggregated by wallet (buys/sells/volume). Price: Jupiter.
-import { callFn, send, cache } from "../_lib.js";
+// Holders: resilient Helius largest-accounts (retry + owner-resolve + whale
+// labels + last-known-good cache) via _holders.js. Traders: GeckoTerminal
+// recent trades on the DEEPEST pool(s), aggregated by wallet. Price: Jupiter.
+import { send, cache, kvGet, kvPut } from "../_lib.js";
+import { getLabeledHolders } from "../_holders.js";
 
 const JUP = "https://lite-api.jup.ag";
 const GT = "https://api.geckoterminal.com/api/v2";
 const GT_HEADERS = { Accept: "application/json;version=20230302" };
 const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
 
-async function rpc(method, params) {
+async function gtFetch(path, timeout = 9000) {
+  const ctl = new AbortController();
+  const id = setTimeout(() => ctl.abort(), timeout);
   try {
-    const r = await callFn("rpc-proxy", { jsonrpc: "2.0", id: 1, method, params, provider: "helius" });
-    return r?.data?.result ?? r?.result ?? null;
-  } catch { return null; }
+    const r = await fetch(`${GT}${path}`, { headers: GT_HEADERS, signal: ctl.signal });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; } finally { clearTimeout(id); }
 }
 
-// Top holders via Helius largest token accounts, owner-resolved.
-async function fetchHolders(mint) {
-  const [largest, supply] = await Promise.all([
-    rpc("getTokenLargestAccounts", [mint]),
-    rpc("getTokenSupply", [mint]),
-  ]);
-  const accts = (largest?.value || []).slice(0, 20);
-  const total = num(supply?.value?.uiAmount) || 0;
-  return accts.map((a, i) => {
-    const amt = num(a.uiAmount) || 0;
-    return { rank: i + 1, owner: a.address, uiAmount: amt, pct: total ? (amt / total) * 100 : null, usdValue: null };
-  });
-}
+// Top traders via GeckoTerminal recent trades on the deepest pool(s).
+async function fetchTradersLive(mint) {
+  const pd = await gtFetch(`/networks/solana/tokens/${mint}/pools?page=1`);
+  const pools = (pd?.data || [])
+    .map((p) => ({ addr: p.attributes?.address, resv: num(p.attributes?.reserve_in_usd) || 0 }))
+    .filter((p) => p.addr)
+    .sort((a, b) => b.resv - a.resv)
+    .slice(0, 2);
+  if (!pools.length) return [];
 
-// Top traders via GeckoTerminal recent trades on the deepest pool.
-async function fetchTraders(mint) {
-  try {
-    const pr = await fetch(`${GT}/networks/solana/tokens/${mint}/pools?page=1`, { headers: GT_HEADERS });
-    if (!pr.ok) return [];
-    const pd = await pr.json();
-    const pool = pd?.data?.[0]?.attributes?.address;
-    if (!pool) return [];
-    const tr = await fetch(`${GT}/networks/solana/pools/${pool}/trades`, { headers: GT_HEADERS });
-    if (!tr.ok) return [];
-    const td = await tr.json();
-    const agg = new Map();
+  const agg = new Map();
+  for (const pool of pools) {
+    const td = await gtFetch(`/networks/solana/pools/${pool.addr}/trades`);
     for (const t of td?.data || []) {
       const a = t.attributes || {};
       const who = a.tx_from_address;
@@ -50,30 +42,49 @@ async function fetchTraders(mint) {
       if ((a.kind || "").toLowerCase() === "buy") { e.buys++; e.buyVol += usd; } else { e.sells++; e.sellVol += usd; }
       agg.set(who, e);
     }
-    return [...agg.values()]
-      .map((e) => ({ ...e, tradeCount: e.buys + e.sells, volume: e.buyVol + e.sellVol, realizedPnl: null, unrealizedPnl: null, netPnl: null, isHolder: false, holdingPct: null, holdingAmount: null }))
-      .sort((a, b) => b.volume - a.volume).slice(0, 50)
-      .map((t, i) => ({ rank: i + 1, ...t }));
-  } catch { return []; }
+  }
+  return [...agg.values()]
+    .map((e) => ({ ...e, tradeCount: e.buys + e.sells, volume: e.buyVol + e.sellVol, realizedPnl: null, unrealizedPnl: null, netPnl: null, isHolder: false, holdingPct: null, holdingAmount: null }))
+    .sort((a, b) => b.volume - a.volume)
+    .slice(0, 50)
+    .map((t, i) => ({ rank: i + 1, ...t }));
+}
+
+// Traders with last-known-good fallback.
+async function fetchTraders(mint) {
+  const live = await fetchTradersLive(mint).catch(() => []);
+  if (live.length) {
+    kvPut(`traders/${mint}.json`, { ts: Date.now(), traders: live }).catch(() => {});
+    return live;
+  }
+  const cached = await kvGet(`traders/${mint}.json`).catch(() => null);
+  if (cached?.traders?.length) return cached.traders.map((t) => ({ ...t, stale: true }));
+  return [];
 }
 
 async function fetchPrice(mint) {
+  const ctl = new AbortController();
+  const id = setTimeout(() => ctl.abort(), 6000);
   try {
-    const r = await fetch(`${JUP}/price/v3?ids=${mint}`);
+    const r = await fetch(`${JUP}/price/v3?ids=${mint}`, { signal: ctl.signal });
     if (!r.ok) return null;
     const d = await r.json();
     return num(d[mint]?.usdPrice);
-  } catch { return null; }
+  } catch { return null; } finally { clearTimeout(id); }
 }
 
 export default async function handler(req, res) {
   const url = new URL(req.url, "http://x");
   const mint = (url.searchParams.get("mint") || "").trim();
   if (!mint) return send(res, 400, { ok: false, error: "mint required" });
-  cache(res, 60, 300);
+  cache(res, 60, 600);
   try {
-    const [holders, traders, price] = await Promise.all([fetchHolders(mint), fetchTraders(mint), fetchPrice(mint)]);
-    if (price) for (const h of holders) h.usdValue = h.uiAmount * price;
+    const price = await fetchPrice(mint);
+    const [holdersRes, traders] = await Promise.all([
+      getLabeledHolders(mint, price),
+      fetchTraders(mint),
+    ]);
+    const holders = holdersRes.holders;
     const holderMap = new Map(holders.map((h) => [h.owner, h]));
     const traderMap = new Map(traders.map((t) => [t.owner, t]));
     for (const h of holders) {
@@ -84,8 +95,8 @@ export default async function handler(req, res) {
       const h = holderMap.get(t.owner);
       if (h) { t.isHolder = true; t.holdingPct = h.pct; t.holdingAmount = h.uiAmount; t.holdingUsd = h.usdValue; }
     }
-    return send(res, 200, { ok: true, mint, holders, traders });
+    return send(res, 200, { ok: true, mint, holders, traders, holdersSource: holdersRes.source, holdersStale: holdersRes.stale });
   } catch (e) {
-    return send(res, 200, { ok: false, mint, error: String(e?.message || e) });
+    return send(res, 200, { ok: false, mint, holders: [], traders: [], error: String(e?.message || e) });
   }
 }

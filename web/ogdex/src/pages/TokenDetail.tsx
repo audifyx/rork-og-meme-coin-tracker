@@ -104,12 +104,10 @@ export default function TokenDetail() {
   useEffect(() => { let on = true; setForLoading(true); getForensics(mint).then((x) => { if (on) { setForensics(x); setForLoading(false); } }).catch(() => { if (on) setForLoading(false); }); return () => { on = false; }; }, [mint]);
   useEffect(() => { let on = true; getAth(mint).then((x) => { if (on && x?.ok) setAth(x); }).catch(() => {}); return () => { on = false; }; }, [mint]);
   useEffect(() => {
-    if (tab !== "holders") return;
-    if (topData) return; // already loaded
-    let on = true; setTopLoading(true);
+    let on = true; setTopData(null); setTopLoading(true);
     getTopTraders(mint).then((x) => { if (on && x?.ok) setTopData({ holders: x.holders, traders: x.traders }); }).catch(() => {}).finally(() => { if (on) setTopLoading(false); });
     return () => { on = false; };
-  }, [mint, tab]);
+  }, [mint]);
   useEffect(() => { let on = true; setXrayLoading(true); getXray(mint).then((x) => { if (on) { setXray(x); setXrayLoading(false); } }).catch(() => { if (on) setXrayLoading(false); }); return () => { on = false; }; }, [mint]);
   useEffect(() => {
     let on = true; setLoading(true);
@@ -152,7 +150,7 @@ export default function TokenDetail() {
   const athPrice = ath?.athPrice ?? null;
   const fromAthPct = ath?.fromAthPct ?? null;
   const verified = t.isVerified || meta.isVerifiedJup || d.flags?.isVerified;
-  const holders: any[] = intel.holders || [];
+  const holders: any[] = (intel.holders && intel.holders.length) ? intel.holders : (topData?.holders || []);
   const trades: any[] = intel.trades || [];
   const whales = holders.filter((h) => h.label === "whale").length;
   const score = d.score?.total ?? meta.organicScore;

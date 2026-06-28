@@ -1,4 +1,5 @@
 import { jup, callFn, send, cache, INTEL_FN } from "../_lib.js";
+import { getLabeledHolders } from "../_holders.js";
 import { normToken, num } from "../_normalize.js";
 
 const GT_HDR = { Accept: "application/json;version=20230302" };
@@ -251,6 +252,21 @@ export default async function handler(req, res) {
       txnsBuys: p.txns?.h24?.buys || 0, txnsSells: p.txns?.h24?.sells || 0,
     }));
 
+    // Backfill top holders if the intel function returned none (e.g. its
+    // Birdeye source is down / Helius index overloaded). Uses the resilient
+    // largest-accounts helper so whales / holder-count / holders tab keep working.
+    let intelOut = intel?.ok ? intel : null;
+    if (!intelOut?.holders?.length) {
+      const hp = meta.priceUsd ?? token?.priceUsd ?? null;
+      const hb = await Promise.race([
+        getLabeledHolders(mint, hp).catch(() => ({ holders: [] })),
+        new Promise((r) => setTimeout(() => r({ holders: [] }), 6500)),
+      ]);
+      if (hb.holders?.length) {
+        intelOut = { ...(intelOut || { ok: true }), ok: true, holders: hb.holders, holdersBackfilled: true, holdersSource: hb.source };
+      }
+    }
+
     return send(res, 200, {
       mint,
       token: token || (scanMeta ? normMetaToken(scanMeta) : null),
@@ -263,7 +279,7 @@ export default async function handler(req, res) {
       verdict:       scan?.verdict ?? null,
       momentum:      scanMeta?.momentum      ?? null,
       momentumLabel: scanMeta?.momentumLabel ?? null,
-      intel:  intel?.ok ? intel : null,
+      intel:  intelOut,
       safety: intel?.safety ?? null,
     });
   } catch (e) {
