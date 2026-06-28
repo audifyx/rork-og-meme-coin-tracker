@@ -23,17 +23,9 @@ async function fetchHolders(mint) {
   ]);
   const accts = (largest?.value || []).slice(0, 20);
   const total = num(supply?.value?.uiAmount) || 0;
-  let owners = {};
-  try {
-    const infos = await rpc("getMultipleAccounts", [accts.map((a) => a.address), { encoding: "jsonParsed" }]);
-    (infos?.value || []).forEach((acc, i) => {
-      const o = acc?.data?.parsed?.info?.owner;
-      if (o) owners[accts[i].address] = o;
-    });
-  } catch { /* ignore */ }
   return accts.map((a, i) => {
     const amt = num(a.uiAmount) || 0;
-    return { rank: i + 1, owner: owners[a.address] || a.address, uiAmount: amt, pct: total ? (amt / total) * 100 : null, usdValue: null };
+    return { rank: i + 1, owner: a.address, uiAmount: amt, pct: total ? (amt / total) * 100 : null, usdValue: null };
   });
 }
 
