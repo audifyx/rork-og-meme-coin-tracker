@@ -139,7 +139,7 @@ export default function Splash() {
           <div className="sp-hero-inner">
             <div className="sp-hero-badge">
               <img src={logo} alt="" width={28} height={28} className="sp-hero-logo" />
-              <p className="sp-eyebrow">{BRAND} · Reimagined</p>
+              <p className="sp-eyebrow">{BRAND} · The On-Chain OS</p>
             </div>
             <h1 className="sp-h1">
               <div>One platform.</div>
