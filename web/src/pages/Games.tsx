@@ -1,7 +1,7 @@
 /**
  * Partnerships page — Browser-style wrapper for partner sites.
  * Matches the Phantom Trade tab setup exactly.
- * Supports swipping/switching between Degen Tower and solno.fun
+ * Supports swipping/switching between Degen Tower and orbitx-prediction.fun
  */
 
 import { useState, useRef } from "react";
@@ -9,7 +9,7 @@ import { RefreshCw, ExternalLink, Lock, ArrowLeft, ArrowRight, Gamepad2, Zap } f
 
 const PARTNERSHIPS = [
   { id: "degen-tower", name: "Degen Tower", url: "https://degen-tower.vercel.app/", icon: Gamepad2, color: "text-og-lime" },
-  { id: "solno", name: "Solno", url: "http://solno.fun/", icon: Zap, color: "text-og-gold" },
+  { id: "orbitx-prediction", name: "OrbitX Prediction Market", url: "http://orbitx-prediction.fun/", icon: Zap, color: "text-og-gold" },
 ];
 
 const Partnerships = () => {

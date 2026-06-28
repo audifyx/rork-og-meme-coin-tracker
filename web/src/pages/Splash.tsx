@@ -10,9 +10,9 @@ const LINKS = {
   signup: "/auth?mode=signup",
   telegram: "https://t.me/ogscan",
   x: "https://x.com/orbitx_wrldbackup",
-  xSolno: "https://x.com/solnobet",
+  xOrbitX Prediction Market: "https://x.com/orbitx-predictionbet",
   ogdex: "/ORBITX_DEX",
-  solno: "https://solno.fun",
+  orbitx-prediction: "https://orbitx-prediction.fun",
   degen: "https://degen-tower.vercel.app",
   privacy: "/privacy",
   terms: "/terms",
@@ -28,7 +28,7 @@ const FEATURES: Feature[] = [
     copy: "Live orderbook-style screener, one-click trading with Phantom, real-time buy/sell feeds, advanced charts with on-chain overlays and portfolio across every wallet." },
   { tag: "Launch", title: "Fair-launch & token tools", tone: "f4",
     copy: "Simple, powerful token creation with anti-rug safeguards, auto-listing on our DEX + aggregators, and post-launch monitoring with community tools baked in from minute one." },
-  { tag: "Solno", title: "Prediction markets & 1v1 games", tone: "f5",
+  { tag: "OrbitX Prediction Market", title: "Prediction markets & 1v1 games", tone: "f5",
     copy: "Native prediction markets plus Coinflip, Dice, Crash and Plinko with provably-fair, on-chain settlement — wired into your OrbitX insights, with leaderboards and achievements." },
   { tag: "Social", title: "Community & social layer", tone: "f6",
     copy: "Host Twitter Spaces with token context, voice lobbies, per-token chat and updates, creator tools, and a cross-platform identity that follows you across trading, gaming and social." },
@@ -207,7 +207,7 @@ export default function Splash() {
         <h2 className="sp-h2">Already live. Already shipping.</h2>
         <div className="sp-eco">
           <a className="sp-eco-card" href={LINKS.ogdex}><h3>OG DEX</h3><p>Real-time Solana screener, scanner & trading.</p><span>Open →</span></a>
-          <a className="sp-eco-card" href={LINKS.solno} target="_blank" rel="noreferrer"><h3>Solno</h3><p>Prediction markets + provably-fair 1v1 games.</p><span>solno.fun →</span></a>
+          <a className="sp-eco-card" href={LINKS.orbitx-prediction} target="_blank" rel="noreferrer"><h3>OrbitX Prediction Market</h3><p>Prediction markets + provably-fair 1v1 games.</p><span>orbitx-prediction.fun →</span></a>
           <a className="sp-eco-card" href={LINKS.degen} target="_blank" rel="noreferrer"><h3>Degen Tower</h3><p>Tap-to-earn with real USDC payouts.</p><span>Play →</span></a>
         </div>
       </section>
@@ -227,7 +227,7 @@ export default function Splash() {
             <div>
               <h4>Product</h4>
               <a href={LINKS.app}>OG DEX</a>
-              <a href={LINKS.solno} target="_blank" rel="noreferrer">Solno</a>
+              <a href={LINKS.orbitx-prediction} target="_blank" rel="noreferrer">OrbitX Prediction Market</a>
               <a href={LINKS.degen} target="_blank" rel="noreferrer">Degen Tower</a>
               <a href={LINKS.signup}>Sign up</a>
             </div>
@@ -235,7 +235,7 @@ export default function Splash() {
               <h4>Community</h4>
               <a href={LINKS.telegram} target="_blank" rel="noreferrer">Telegram</a>
               <a href={LINKS.x} target="_blank" rel="noreferrer">X · @orbitx_wrld</a>
-              <a href={LINKS.xSolno} target="_blank" rel="noreferrer">X · @solnobet</a>
+              <a href={LINKS.xOrbitX Prediction Market} target="_blank" rel="noreferrer">X · @orbitx-predictionbet</a>
             </div>
             <div>
               <h4>Legal</h4>
