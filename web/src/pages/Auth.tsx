@@ -28,14 +28,14 @@ type AuthMode = "signin" | "signup" | "reset";
 const modeCopy = {
   signin: {
     eyebrow: "Welcome back",
-    title: "Open your command deck.",
+    title: "Open your On-Chain OS.",
     body: "Sign in to scan tokens, watch launches, and track your OG signals.",
     cta: "Sign in",
   },
   signup: {
     eyebrow: "Create account",
-    title: "Start with the mobile deck.",
-    body: "Build your profile, save watchlists, and keep scanner history in sync.",
+    title: "Join the On-Chain OS.",
+    body: "Get instant access to the complete on-chain platform — scanning, trading, and social tools in one place.",
     cta: "Create account",
   },
   reset: {
@@ -184,8 +184,8 @@ const Auth = () => {
 
           <div className="max-w-md">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#9945FF]/25 bg-[#9945FF]/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-[#9945FF]">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Secure access
+              <Sparkles className="h-3.5 w-3.5" />
+              The On-Chain OS
             </div>
             <h1 className="text-6xl font-black leading-[0.92] tracking-normal">{copy.title}</h1>
             <p className="mt-5 text-lg leading-8 text-white/55">{copy.body}</p>
@@ -227,8 +227,8 @@ const Auth = () => {
                       <img src="/icon.png" alt="OrbitX" className="h-full w-full object-cover" />
                     </div>
                     <div>
-                      <p className="text-sm font-black uppercase tracking-[0.18em]">OrbitX</p>
-                      <p className="text-[10px] font-semibold text-white/38">{copy.eyebrow}</p>
+                     <p className="text-sm font-black uppercase tracking-[0.18em]">The On-Chain OS</p>
+                       <p className="text-[10px] font-semibold text-white/38">{copy.eyebrow}</p>
                     </div>
                   </div>
                   <div className="grid h-11 w-11 place-items-center rounded-2xl border border-[#2F80FF]/25 bg-[#2F80FF]/10 text-[#2F80FF]">
