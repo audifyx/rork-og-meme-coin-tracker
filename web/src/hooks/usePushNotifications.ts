@@ -286,7 +286,7 @@ export const usePushNotifications = () => {
         body: {
           userId: user.id,
           type: "test_push",
-          title: "OG Scan push notifications are on",
+          title: "OrbitX push notifications are on",
           body: "This device is now connected for real push notifications.",
           url: "/notifications",
           tag: "group-system",

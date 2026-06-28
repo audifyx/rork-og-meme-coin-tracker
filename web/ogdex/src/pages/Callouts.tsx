@@ -45,7 +45,7 @@ export default function Callouts() {
         <h1 className="font-display text-2xl font-black text-white">Callouts</h1>
       </div>
       <p className="-mt-2 text-sm text-muted">
-        Live token and wallet callouts from the community. Tap any token to run an OG Scan.
+        Live token and wallet callouts from the community. Tap any token to run an OrbitX.
       </p>
 
       {loading ? (
@@ -86,7 +86,7 @@ export default function Callouts() {
                   <span className="text-[11px] text-muted">by <span className="text-white/70">{c.username || "anon"}</span></span>
                   {isToken && c.address && (
                     <Link to={`/token/${c.address}`} className="inline-flex items-center gap-1 text-[12px] font-bold text-accent hover:brightness-110">
-                      OG Scan <ExternalLink className="h-3.5 w-3.5" />
+                      OrbitX <ExternalLink className="h-3.5 w-3.5" />
                     </Link>
                   )}
                 </div>

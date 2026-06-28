@@ -33,7 +33,7 @@ export default function PasswordGate({ children }: { children: React.ReactNode }
             <Lock className="w-12 h-12 text-accent" />
           </div>
           
-          <h1 className="text-2xl font-bold text-center mb-2 text-accent">OG Scan Redesign</h1>
+          <h1 className="text-2xl font-bold text-center mb-2 text-accent">OrbitX Redesign</h1>
           <p className="text-center text-muted text-sm mb-6">Under maintenance & rebranding</p>
           
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -41,7 +41,7 @@ const modeCopy = {
   reset: {
     eyebrow: "Password reset",
     title: "Get a fresh access link.",
-    body: "Enter your email and OGSCAN will send the reset flow.",
+    body: "Enter your email and OrbitX will send the reset flow.",
     cta: "Send reset link",
   },
 } satisfies Record<AuthMode, { eyebrow: string; title: string; body: string; cta: string }>;
@@ -94,7 +94,7 @@ const Auth = () => {
       try { passwordSchema.parse(password); } catch (e) { if (e instanceof z.ZodError) newErrors.password = e.errors[0].message; }
     }
     if (mode === "signup" && password !== confirmPassword) newErrors.confirm = "Passwords do not match";
-    if (mode === "signup" && humanCode.trim().toUpperCase() !== "OGSCAN") newErrors.humanCode = "Type OGSCAN exactly to verify you are human";
+    if (mode === "signup" && humanCode.trim().toUpperCase() !== "ORBITX") newErrors.humanCode = "Type ORBITX exactly to verify you are human";
     if (mode === "signup" && !captchaToken) newErrors.captcha = "Please complete the CAPTCHA verification";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -224,10 +224,10 @@ const Auth = () => {
                 <div className="mb-6 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="h-12 w-12 overflow-hidden rounded-2xl border border-white/15 bg-white/10">
-                      <img src="/icon.png" alt="OGSCAN" className="h-full w-full object-cover" />
+                      <img src="/icon.png" alt="OrbitX" className="h-full w-full object-cover" />
                     </div>
                     <div>
-                      <p className="text-sm font-black uppercase tracking-[0.18em]">OGSCAN</p>
+                      <p className="text-sm font-black uppercase tracking-[0.18em]">OrbitX</p>
                       <p className="text-[10px] font-semibold text-white/38">{copy.eyebrow}</p>
                     </div>
                   </div>
@@ -306,8 +306,8 @@ const Auth = () => {
 
                       <div className="rounded-2xl border border-white/10 bg-black/20 p-4 space-y-4">
                         <div>
-                          <Label className="text-[11px] font-black uppercase tracking-[0.16em] text-white/42">Type OGSCAN</Label>
-                          <Input value={humanCode} onChange={(e) => setHumanCode(e.target.value.toUpperCase())} className="mt-2 min-h-[52px] rounded-2xl border-white/10 bg-white/[0.07] text-base uppercase tracking-[0.18em] text-white focus:border-[#2F80FF]" placeholder="OGSCAN" />
+                          <Label className="text-[11px] font-black uppercase tracking-[0.16em] text-white/42">Type ORBITX</Label>
+                          <Input value={humanCode} onChange={(e) => setHumanCode(e.target.value.toUpperCase())} className="mt-2 min-h-[52px] rounded-2xl border-white/10 bg-white/[0.07] text-base uppercase tracking-[0.18em] text-white focus:border-[#2F80FF]" placeholder="ORBITX" />
                           {errors.humanCode && <p className="mt-1 text-xs font-semibold text-og-blood">{errors.humanCode}</p>}
                         </div>
 

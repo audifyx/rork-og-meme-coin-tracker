@@ -1251,26 +1251,26 @@ export const THEME_PRESETS: ThemePreset[] = [
     "--border":"340 10% 14%","--input":"340 10% 14%","--ring":"340 85% 56%","--popover":"340 14% 7%","--popover-foreground":"340 4% 86%",
   }, gradient: "radial-gradient(ellipse at 30% 70%, rgba(255,0,120,0.14) 0%, transparent 45%), radial-gradient(ellipse at 70% 30%, rgba(0,220,255,0.12) 0%, transparent 40%)"},
 
-  // ── SPECIAL OG SCAN BRANDED (8) ──
-  { id: "ogscan-brand", name: "OG Scan Brand", category: "OG", vars: {
+  // ── SPECIAL OrbitX BRANDED (8) ──
+  { id: "ogscan-brand", name: "OrbitX Brand", category: "OG", vars: {
     "--background":"220 20% 4%","--foreground":"0 0% 92%","--card":"220 16% 7%","--card-foreground":"0 0% 92%",
     "--primary":"168 100% 48%","--primary-foreground":"0 0% 3%","--accent":"280 80% 55%","--accent-foreground":"0 0% 100%",
     "--secondary":"220 16% 12%","--secondary-foreground":"0 0% 80%","--muted":"220 12% 9%","--muted-foreground":"220 5% 44%",
     "--border":"220 12% 15%","--input":"220 12% 15%","--ring":"168 100% 48%","--popover":"220 16% 7%","--popover-foreground":"0 0% 92%",
   }, gradient: "radial-gradient(ellipse at 20% 80%, rgba(0,245,196,0.16) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.14) 0%, transparent 45%)"},
-  { id: "ogscan-dark", name: "OG Scan Dark", category: "OG", vars: {
+  { id: "ogscan-dark", name: "OrbitX Dark", category: "OG", vars: {
     "--background":"0 0% 2%","--foreground":"0 0% 90%","--card":"0 0% 5%","--card-foreground":"0 0% 90%",
     "--primary":"168 100% 48%","--primary-foreground":"0 0% 2%","--accent":"280 80% 55%","--accent-foreground":"0 0% 100%",
     "--secondary":"0 0% 9%","--secondary-foreground":"0 0% 78%","--muted":"0 0% 7%","--muted-foreground":"0 0% 36%",
     "--border":"0 0% 11%","--input":"0 0% 11%","--ring":"168 100% 48%","--popover":"0 0% 5%","--popover-foreground":"0 0% 90%",
   }, gradient: "radial-gradient(ellipse at 50% 50%, rgba(0,245,196,0.1) 0%, transparent 55%)"},
-  { id: "ogscan-gold", name: "OG Scan Gold", category: "OG", vars: {
+  { id: "ogscan-gold", name: "OrbitX Gold", category: "OG", vars: {
     "--background":"40 14% 4%","--foreground":"40 5% 88%","--card":"40 10% 7%","--card-foreground":"40 5% 88%",
     "--primary":"42 95% 56%","--primary-foreground":"0 0% 3%","--accent":"168 90% 46%","--accent-foreground":"0 0% 3%",
     "--secondary":"40 10% 12%","--secondary-foreground":"40 4% 76%","--muted":"40 6% 9%","--muted-foreground":"40 4% 42%",
     "--border":"40 6% 14%","--input":"40 6% 14%","--ring":"42 95% 56%","--popover":"40 10% 7%","--popover-foreground":"40 5% 88%",
   }, gradient: "radial-gradient(ellipse at 40% 40%, rgba(245,197,24,0.16) 0%, transparent 50%), radial-gradient(ellipse at 70% 70%, rgba(0,200,160,0.1) 0%, transparent 40%)"},
-  { id: "ogscan-night", name: "OG Scan Night", category: "OG", vars: {
+  { id: "ogscan-night", name: "OrbitX Night", category: "OG", vars: {
     "--background":"235 22% 4%","--foreground":"235 5% 88%","--card":"235 18% 7%","--card-foreground":"235 5% 88%",
     "--primary":"235 65% 60%","--primary-foreground":"0 0% 100%","--accent":"168 85% 46%","--accent-foreground":"0 0% 3%",
     "--secondary":"235 18% 12%","--secondary-foreground":"235 4% 76%","--muted":"235 14% 9%","--muted-foreground":"235 4% 42%",

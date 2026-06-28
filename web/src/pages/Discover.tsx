@@ -1,5 +1,5 @@
 /**
- * Discover / LaunchPad — OG Scan's full-featured token discovery engine.
+ * Discover / LaunchPad — OrbitX's full-featured token discovery engine.
  *
  * Sections: All, Featured, Hot, New, Migrated, Gainers, Losers, Volume, Mine
  * Data: DexScreener APIs + pump_v5_submissions from Supabase
@@ -721,7 +721,7 @@ const Discover = ({ inline = false }: { inline?: boolean }) => {
           {/* ── Refresh bar ── */}
           <div className="flex items-center justify-between">
             <span className="text-[9px] text-white/10 font-mono">
-              Data: DexScreener + OG Scan submissions
+              Data: DexScreener + OrbitX submissions
             </span>
             <button onClick={() => fetchAll(true)} className="flex items-center gap-1.5 text-[10px] text-white/20 hover:text-primary transition-colors">
               <RefreshCw className={cn("h-3 w-3", refreshing && "animate-spin")} />

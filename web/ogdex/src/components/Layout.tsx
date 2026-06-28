@@ -14,11 +14,11 @@ function Brand() {
   return (
     <span className="flex items-center gap-3 shrink-0">
       <span className="w-9 h-9 rounded-xl overflow-hidden ring-brand flex-shrink-0">
-        <img src="/OGDEX/ogdex-logo.png" alt="OG SCAN" className="w-full h-full object-cover" width={36} height={36} />
+        <img src="/OGDEX/ogdex-logo.png" alt="OrbitX" className="w-full h-full object-cover" width={36} height={36} />
       </span>
       <span className="hidden sm:flex flex-col leading-none">
         <span className="font-black text-[17px] tracking-tight" style={{ fontFamily: "'Sora', 'Plus Jakarta Sans', sans-serif" }}>
-          OG<span className="text-brand-gradient">SCAN</span>
+          Orbit<span className="text-brand-gradient">X</span>
         </span>
         <span className="text-[9px] font-bold tracking-[0.18em] uppercase" style={{ color: "#2F80FF" }}>DEX Intelligence</span>
       </span>
@@ -231,7 +231,7 @@ export default function Layout() {
             <div className="max-w-xs">
               <Brand />
               <p className="mt-4 text-[13px] leading-relaxed" style={{ color: "#8497B8" }}>
-                OG SCAN surfaces already-public on-chain data in a higher-quality design — our tools show you what most tools hide. Built for the crypto community.
+                OrbitX surfaces already-public on-chain data in a higher-quality design — our tools show you what most tools hide. Built for the crypto community.
               </p>
               <p className="mt-2 text-[13px] leading-relaxed" style={{ color: "#8497B8" }}>
                 Updated weekly — read our{" "}
@@ -288,10 +288,10 @@ export default function Layout() {
 
           {/* Disclaimer */}
           <div className="mt-10 pt-6 text-[11px] leading-relaxed" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", color: "rgba(136,150,170,0.7)" }}>
-            <p><span className="text-[#8497B8] font-semibold">Not financial advice.</span> OG SCAN is purely a data &amp; analytics platform. Token scores, risk flags, AI summaries and signals are provided "as is" and are not investment, financial, legal or tax advice. Crypto is high-risk — do your own research. OG SCAN is non-custodial and never holds your funds or keys.</p>
+            <p><span className="text-[#8497B8] font-semibold">Not financial advice.</span> OrbitX is purely a data &amp; analytics platform. Token scores, risk flags, AI summaries and signals are provided "as is" and are not investment, financial, legal or tax advice. Crypto is high-risk — do your own research. OrbitX is non-custodial and never holds your funds or keys.</p>
           </div>
           <div className="mt-4 pt-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px]" style={{ borderTop: "1px solid rgba(255,255,255,0.05)", color: "rgba(136,150,170,0.55)" }}>
-            <span>© {new Date().getFullYear()} OG SCAN. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} OrbitX. All rights reserved.</span>
             <div className="flex items-center gap-4">
               <Link to="/terms" className="hover:text-[#2F80FF] transition-colors">Terms</Link>
               <Link to="/privacy" className="hover:text-[#2F80FF] transition-colors">Privacy</Link>

@@ -267,7 +267,7 @@ const OfficialToken = () => {
             <CardContent className="space-y-4">
               {[
                 { q: "Is Sol Tools really free?", a: "Yes! Sol Tools is completely free forever. The $SOLTOOLS token funds platform development through transaction fees." },
-                { q: "Is the platform really free?", a: "Yes. Every tool on OG Scan is free to use. We don't believe in paywalls or restricting access to the intelligence you need to trade safely." },
+                { q: "Is the platform really free?", a: "Yes. Every tool on OrbitX is free to use. We don't believe in paywalls or restricting access to the intelligence you need to trade safely." },
                 { q: "What is the $SOLTOOLS token?", a: "It's the utility token that powers the Sol Tools ecosystem. Transaction fees are used to fund development, marketing, and buybacks." },
                 { q: "How do I get started?", a: "Simply create an account, and you'll have instant access to 30+ Solana trading tools, social lobbies, and analytics." },
                 { q: "Is my data safe?", a: "Yes. We use enterprise-grade encryption and never store private keys. Your wallet address is used only for read-only tracking." },

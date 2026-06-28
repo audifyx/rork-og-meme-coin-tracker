@@ -55,7 +55,7 @@ export default function Tools() {
     <div className="mx-auto max-w-[1080px] space-y-6 px-4 py-6">
       <div className="flex items-center gap-2">
         <Crosshair className="h-5 w-5 text-accent" />
-        <h1 className="font-display text-2xl font-black text-white">OG Scan Tools</h1>
+        <h1 className="font-display text-2xl font-black text-white">OrbitX Tools</h1>
       </div>
 
       {/* Tool selector */}

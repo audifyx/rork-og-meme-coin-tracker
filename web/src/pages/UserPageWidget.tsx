@@ -6,7 +6,7 @@
  *
  * LIVE state: animated pulsing card, space title, live listener count,
  *   last 3 chat messages (auto-scrolling), volume control, "Listen" CTA
- * OFFLINE state: avatar, last space, time since, "Follow on OGScan" CTA
+ * OFFLINE state: avatar, last space, time since, "Follow on OrbitX" CTA
  * Realtime: updates via Supabase subscriptions — no refresh needed
  */
 
@@ -395,7 +395,7 @@ export default function UserPageWidget() {
                 "bg-white/5 hover:bg-white/10 border border-white/10 text-white/45 hover:text-white"
               )}
             >
-              Follow @{profile.username} on OGScan
+              Follow @{profile.username} on OrbitX
             </a>
           </div>
         </div>

@@ -41,7 +41,7 @@ export default function Submit() {
       <div className="text-center mb-6">
         <div className="inline-flex items-center gap-1.5 pill bg-accent/15 text-accent mb-3"><Rocket className="w-3.5 h-3.5" /> Project Listing</div>
         <h1 className="text-3xl font-bold tracking-tight">Get your token listed on OG DEX</h1>
-        <p className="text-muted mt-2 max-w-2xl mx-auto">Permanently listed and shared to our community every time new tokens drop. We post to our X community (200+) and Telegram. Visible to 55+ and growing users on OG Scan.</p>
+        <p className="text-muted mt-2 max-w-2xl mx-auto">Permanently listed and shared to our community every time new tokens drop. We post to our X community (200+) and Telegram. Visible to 55+ and growing users on OrbitX.</p>
       </div>
 
       {/* Verified incentive */}

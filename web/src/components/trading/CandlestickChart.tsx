@@ -1,7 +1,7 @@
 /**
  * CandlestickChart — Native TradingView-quality candlestick chart.
  * Uses lightweight-charts for high-performance canvas rendering.
- * Styled for OG Scan dark theme.
+ * Styled for OrbitX dark theme.
  */
 import { useEffect, useRef, memo } from "react";
 import { createChart, ColorType, CrosshairMode } from "lightweight-charts";

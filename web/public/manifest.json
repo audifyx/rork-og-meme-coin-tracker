@@ -1,6 +1,6 @@
 {
-  "name": "OG Scan — Live OG Coin Scanner",
-  "short_name": "OG Scan",
+  "name": "OrbitX — Live OG Coin Scanner",
+  "short_name": "OrbitX",
   "description": "Live on-chain intel for OG coins, new pairs, migrations, whales, tape, and any Solana token.",
   "start_url": "/app",
   "scope": "/",

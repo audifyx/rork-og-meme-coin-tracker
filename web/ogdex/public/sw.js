@@ -1,4 +1,4 @@
-// OGDEX PWA service worker — scope: /OGDEX/. Separate from OG Scan root sw.js
+// OGDEX PWA service worker — scope: /OGDEX/. Separate from OrbitX root sw.js
 // (which intentionally bypasses /OGDEX). Must never cache /api/ responses long.
 const VERSION = "ogdex-v2";
 const SHELL = "ogdex-shell-" + VERSION;

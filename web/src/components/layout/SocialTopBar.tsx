@@ -19,7 +19,7 @@ export function SocialTopBar(_props?: { activeId?: string; onNavigate?: (id: str
   return (
     <header className="stb">
       <style>{css}</style>
-      <a className="stb-brand" href="/app"><span className="stb-mark" />OGSCAN</a>
+      <a className="stb-brand" href="/app"><span className="stb-mark" />OrbitX</a>
 
       <nav className="stb-tabs">
         {TABS.map((t) => (

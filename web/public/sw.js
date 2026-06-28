@@ -1,5 +1,5 @@
 /**
- * OG Scan — Service Worker
+ * OrbitX — Service Worker
  * Provides offline caching, background sync, rich Web Push notifications, and PWA install support.
  */
 
@@ -53,7 +53,7 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("push", (event) => {
   let data = {
-    title: "OG Scan",
+    title: "OrbitX",
     body: "New notification",
     icon: "/icon-192x192.png",
     badge: "/favicon.png",
@@ -140,7 +140,7 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
   // OGDEX is a separate sub-app mounted at /OGDEX with its own hashed assets.
-  // Never let OG Scan's SW cache or intercept it — always go to network.
+  // Never let OrbitX's SW cache or intercept it — always go to network.
   if (url.pathname === "/OGDEX" || url.pathname.startsWith("/OGDEX/") || url.pathname.startsWith("/api/ogdex")) {
     return;
   }

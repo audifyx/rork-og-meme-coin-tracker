@@ -1,5 +1,5 @@
 /**
- * TradingTerminal — Phantom-style 3-panel trading terminal for OG Scan.
+ * TradingTerminal — Phantom-style 3-panel trading terminal for OrbitX.
  *
  * Layout:
  *   Left   (280 px)  Token list with search + trending/positions tabs
@@ -490,7 +490,7 @@ export const TradingTerminal = () => {
               <X className="h-5 w-5" />
             </button>
           </div>
-          <p className="text-xs text-white/40">Select a wallet to connect to OG Scan.</p>
+          <p className="text-xs text-white/40">Select a wallet to connect to OrbitX.</p>
           <div className="space-y-2">
             {available.map((w) => (
               <button

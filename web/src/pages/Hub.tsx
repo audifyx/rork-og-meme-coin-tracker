@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
-const BRAND = "OGSCAN";
-const OS = "OGSCAN OS";
+const BRAND = "OrbitX";
+const OS = "OrbitX OS";
 const VERSION = "v1.0.4";
 
 type App = {
@@ -73,7 +73,7 @@ const APPS: App[] = [
 ];
 
 const BOOT_LINES = [
-  "OGSCAN OS · bootloader " + VERSION,
+  "OrbitX OS · bootloader " + VERSION,
   "› mounting on-chain kernel ............ ok",
   "› linking helius rpc node ............. ok",
   "› forensic attribution engine ........ ok",

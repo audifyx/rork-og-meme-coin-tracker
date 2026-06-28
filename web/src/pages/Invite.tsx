@@ -58,7 +58,7 @@ const PRIZE_TIERS = [
 /** Contest 1 dates — 2 weeks */
 const CONTEST_START = new Date("2026-05-30T00:00:00Z");
 const CONTEST_END = new Date("2026-06-17T12:00:00Z");
-const CONTEST_NAME = "OG Scan Referral Sprint #1";
+const CONTEST_NAME = "OrbitX Referral Sprint #1";
 
 /* ═══════════════════════════════════════════════════════════════════
    Types
@@ -384,8 +384,8 @@ const Invite = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Join OG Scan",
-          text: `Join OG Scan — the Solana meme coin trading terminal. Sign up and buy ${MIN_HOLDING_USD === 6.5 ? "$6.50" : `$${MIN_HOLDING_USD}`} of OGS to join the referral contest!`,
+          title: "Join OrbitX",
+          text: `Join OrbitX — the Solana meme coin trading terminal. Sign up and buy ${MIN_HOLDING_USD === 6.5 ? "$6.50" : `$${MIN_HOLDING_USD}`} of OGS to join the referral contest!`,
           url: inviteLink,
         });
       } catch { /* user cancelled */ }
@@ -476,7 +476,7 @@ const Invite = () => {
               Invite & <span className="text-[#ab9ff2]">Earn</span>
             </h1>
             <p className="text-white/50 text-sm sm:text-base max-w-xl">
-              Bring new holders to OG Scan. Top 8 referrers split a <span className="font-bold text-white">$100 prize pool</span>.
+              Bring new holders to OrbitX. Top 8 referrers split a <span className="font-bold text-white">$100 prize pool</span>.
               Every signup via your link is tracked. Referrals qualify when they connect a wallet holding ≥ ${MIN_HOLDING_USD === 6.5 ? "$6.50" : `$${MIN_HOLDING_USD}`} of OGS.
             </p>
           </div>
@@ -627,7 +627,7 @@ const Invite = () => {
                           Share
                         </Button>
                         <Button
-                          onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Join OG Scan — the Solana meme coin trading terminal 🔥\n\nSign up, hold $10 OGS, and compete for the $100 referral contest!\n\n${inviteLink}`)}`, "_blank")}
+                          onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Join OrbitX — the Solana meme coin trading terminal 🔥\n\nSign up, hold $10 OGS, and compete for the $100 referral contest!\n\n${inviteLink}`)}`, "_blank")}
                           variant="outline"
                           className="flex-1 border-white/10 text-white/60 hover:text-white text-xs"
                         >
@@ -952,7 +952,7 @@ const Invite = () => {
                     </li>
                     <li className="flex items-start gap-2">
                       <ChevronRight className="h-3.5 w-3.5 text-[#ab9ff2] shrink-0 mt-0.5" />
-                      OG Scan team reserves the right to adjust rules if abuse is detected.
+                      OrbitX team reserves the right to adjust rules if abuse is detected.
                     </li>
                   </ul>
                 </div>

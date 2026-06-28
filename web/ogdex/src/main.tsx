@@ -90,7 +90,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 );
 
 // Register the OGDEX PWA service worker (scope /OGDEX/). Kept separate from the
-// OG Scan root service worker, which intentionally bypasses /OGDEX.
+// OrbitX root service worker, which intentionally bypasses /OGDEX.
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/OGDEX/sw.js", { scope: "/OGDEX/" }).catch(() => {});

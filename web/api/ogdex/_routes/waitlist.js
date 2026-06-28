@@ -44,15 +44,15 @@ export default async function handler(req, res) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "OG Scan <noreply@ogscan.fun>",
+            from: "OrbitX <noreply@ogscan.fun>",
             to: email,
-            subject: "Welcome to OG Scan Waitlist 🚀",
+            subject: "Welcome to OrbitX Waitlist 🚀",
             html: `
               <div style="max-width: 600px; margin: 0 auto; font-family: 'Sora', sans-serif; background: #04060E; color: #fff; padding: 40px 20px; border-radius: 24px;">
                 <h1 style="background: linear-gradient(135deg, #fff 0%, #c27fff 40%, #14F195 80%, #00E5FF 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 32px; margin-bottom: 20px;">Welcome to the Waitlist!</h1>
                 
                 <p style="color: rgba(255,255,255,0.8); font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
-                  Thanks for joining our waitlist. We're rebranding OG Scan into something even more powerful, and we can't wait to show you what's coming.
+                  Thanks for joining our waitlist. We're rebranding OrbitX into something even more powerful, and we can't wait to show you what's coming.
                 </p>
 
                 <div style="background: rgba(153,69,255,0.1); border-left: 3px solid #9945FF; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
                 <a href="https://t.me/ogupdates" style="display: inline-block; background: linear-gradient(135deg, #9945FF 0%, #2F80FF 50%, #14F195 100%); color: #fff; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 600;">Join Telegram</a>
 
                 <hr style="border: none; border-top: 1px solid rgba(153,69,255,0.2); margin: 32px 0;">
-                <p style="color: rgba(255,255,255,0.4); font-size: 12px; text-align: center;">OG Scan — Token Intelligence Platform<br/>© 2026 @ogscanbackup</p>
+                <p style="color: rgba(255,255,255,0.4); font-size: 12px; text-align: center;">OrbitX — Token Intelligence Platform<br/>© 2026 @ogscanbackup</p>
               </div>
             `
           }),

@@ -173,9 +173,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return;
     }
 
-    // Verify "Type OGSCAN" human check
-    if (typeof humanCode !== "string" || humanCode.trim().toUpperCase() !== "OGSCAN") {
-      res.status(200).json({ allowed: false, code: "human_check", message: "Type OGSCAN in the verification box to continue." });
+    // Verify "Type ORBITX" human check
+    if (typeof humanCode !== "string" || humanCode.trim().toUpperCase() !== "ORBITX") {
+      res.status(200).json({ allowed: false, code: "human_check", message: "Type ORBITX in the verification box to continue." });
       return;
     }
 

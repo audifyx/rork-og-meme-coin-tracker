@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
-// Brand name — OGSCAN for now (rename later).
-const BRAND = "OGSCAN";
+// Brand name — OrbitX for now (rename later).
+const BRAND = "OrbitX";
 
 const LINKS = {
   app: "/OGDEX",
@@ -29,7 +29,7 @@ const FEATURES: Feature[] = [
   { tag: "Launch", title: "Fair-launch & token tools", tone: "f4",
     copy: "Simple, powerful token creation with anti-rug safeguards, auto-listing on our DEX + aggregators, and post-launch monitoring with community tools baked in from minute one." },
   { tag: "Solno", title: "Prediction markets & 1v1 games", tone: "f5",
-    copy: "Native prediction markets plus Coinflip, Dice, Crash and Plinko with provably-fair, on-chain settlement — wired into your OG Scan insights, with leaderboards and achievements." },
+    copy: "Native prediction markets plus Coinflip, Dice, Crash and Plinko with provably-fair, on-chain settlement — wired into your OrbitX insights, with leaderboards and achievements." },
   { tag: "Social", title: "Community & social layer", tone: "f6",
     copy: "Host Twitter Spaces with token context, voice lobbies, per-token chat and updates, creator tools, and a cross-platform identity that follows you across trading, gaming and social." },
   { tag: "AI", title: "AI-powered intelligence", tone: "f7",
