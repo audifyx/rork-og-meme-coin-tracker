@@ -56,20 +56,19 @@ const Glyph = {
     </svg>
   ),
   settings: (
-    <svg viewBox="0 0 48 48" fill="none">
-      <circle cx="24" cy="24" r="6" stroke="currentColor" strokeWidth="3" />
-      <path d="M24 6v5M24 37v5M6 24h5M37 24h5M11 11l3.5 3.5M33.5 33.5L37 37M37 11l-3.5 3.5M14.5 33.5L11 37" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    <svg viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.49.49 0 0 0-.48-.41h-3.84a.49.49 0 0 0-.48.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87a.49.49 0 0 0 .12.61l2.03 1.58c-.05.3-.07.62-.07.94 0 .32.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.49.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.07.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.03-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z" />
     </svg>
   ),
 };
 
 const APPS: App[] = [
-  { key: "dex", name: "OG Dex", caption: "Scanner · Trade · Intel", href: "/OGDEX", tone: "#2F80FF", glyph: Glyph.dex },
-  { key: "social", name: "Social", caption: "Spaces · Chat · Profile", href: "/social", tone: "#9945FF", glyph: Glyph.social },
-  { key: "predict", name: "Prediction Markets", caption: "Solno · Provably fair", href: "https://solno.fun", external: true, tone: "#FFC53D", glyph: Glyph.predict },
-  { key: "scanner", name: "OG Scanner", caption: "Forensic attribution", href: "/OGDEX/scanner", tone: "#14E0C8", glyph: Glyph.scanner },
-  { key: "tower", name: "Degen Tower", caption: "Climb · Cash out", href: "https://degen-tower.vercel.app", external: true, tone: "#FF5BBD", glyph: Glyph.tower },
-  { key: "settings", name: "Settings", caption: "Account · Preferences", href: "/settings", tone: "#8A93A6", glyph: Glyph.settings },
+  { key: "dex", name: "OG Dex", caption: "Scanner · Trade", href: "/OGDEX", tone: "#2F80FF", glyph: Glyph.dex },
+  { key: "social", name: "Social", caption: "Spaces · Chat", href: "/social", tone: "#9945FF", glyph: Glyph.social },
+  { key: "predict", name: "Prediction Markets", caption: "Provably fair", href: "https://solno.fun", external: true, tone: "#FFC53D", glyph: Glyph.predict },
+  { key: "scanner", name: "OG Scanner", caption: "Forensic scan", href: "/OGDEX/scanner", tone: "#14E0C8", glyph: Glyph.scanner },
+  { key: "tower", name: "Degen Tower", caption: "Climb · Win", href: "https://degen-tower.vercel.app", external: true, tone: "#FF5BBD", glyph: Glyph.tower },
+  { key: "settings", name: "Settings", caption: "Preferences", href: "/settings", tone: "#8A93A6", glyph: Glyph.settings },
 ];
 
 const BOOT_LINES = [
@@ -273,13 +272,13 @@ const css = `
 /* ── BOOT ── */
 .boot{position:fixed;inset:0;z-index:50;background:#020306;display:flex;align-items:center;justify-content:center;overflow:hidden;animation:bootout .5s ease 3.2s forwards;}
 .boot-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(47,128,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(47,128,255,.07) 1px,transparent 1px);background-size:42px 42px;-webkit-mask-image:radial-gradient(circle at 50% 50%,#000,transparent 78%);mask-image:radial-gradient(circle at 50% 50%,#000,transparent 78%);}
-.boot-inner{position:relative;z-index:1;width:min(620px,86vw);}
+.boot-inner{position:relative;z-index:1;width:min(620px,86vw);text-align:center;}
 .boot-logo{font-family:'SF Pro Display',Inter,system-ui,sans-serif;font-weight:900;font-size:clamp(46px,9vw,84px);letter-spacing:.06em;line-height:1;position:relative;color:#fff;text-shadow:0 0 30px rgba(47,128,255,.6);animation:glitch 2.6s steps(1) infinite;}
 .boot-logo::before,.boot-logo::after{content:attr(data-text);position:absolute;inset:0;}
 .boot-logo::before{color:#2F80FF;animation:gl-r 2.6s steps(1) infinite;}
 .boot-logo::after{color:#FF5BBD;animation:gl-b 2.6s steps(1) infinite;}
 .boot-os{margin-top:6px;font-size:12px;letter-spacing:.5em;color:#2F80FF;text-transform:uppercase;}
-.boot-log{margin:26px 0 0;font-size:12.5px;line-height:1.7;color:#7fd3c4;white-space:pre-wrap;min-height:150px;}
+.boot-log{display:inline-block;text-align:left;margin:26px 0 0;font-size:12.5px;line-height:1.7;color:#7fd3c4;white-space:pre-wrap;min-height:150px;}
 .boot-line{animation:typein .3s ease;}
 .boot-cursor{color:#2F80FF;animation:blink 1s steps(1) infinite;}
 .boot-bar{margin-top:14px;height:3px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;}
@@ -365,7 +364,7 @@ const css = `
 @keyframes rgbB{0%,100%{transform:translate(-2px,1px)}50%{transform:translate(2px,-1px)}}
 .app-icon-gloss{position:absolute;top:0;left:0;right:0;height:42%;background:linear-gradient(180deg,rgba(255,255,255,.22),transparent);z-index:3;pointer-events:none;}
 .app-name{font-family:'SF Pro Display',Inter,system-ui,sans-serif;font-weight:700;font-size:clamp(13px,1.5vw,15px);color:#fff;position:relative;}
-.app-cap{font-size:10.5px;color:var(--muted);letter-spacing:.04em;}
+.app-cap{font-size:10.5px;color:var(--muted);letter-spacing:.04em;white-space:nowrap;}
 .app.opening .app-icon{animation:openpop .8s ease forwards;border-color:var(--tone);}
 @keyframes openpop{30%{transform:scale(1.12)}100%{transform:scale(.6);opacity:0;filter:blur(6px)}}
 
@@ -378,7 +377,7 @@ const css = `
 .dock-glyph svg{width:24px;height:24px;}
 .dock-tip{position:absolute;bottom:120%;left:50%;transform:translateX(-50%) translateY(6px);opacity:0;white-space:nowrap;font-size:11px;padding:5px 9px;border-radius:8px;background:#0c1018;border:1px solid var(--line);color:#fff;transition:all .2s;pointer-events:none;}
 .dock-item:hover .dock-tip{opacity:1;transform:translateX(-50%) translateY(0);}
-@media(max-width:560px){.dock-inner{gap:5px;padding:7px 9px}.dock-item{width:40px;height:40px}}
+@media(max-width:560px){.dock{display:none}}
 
 /* ── LAUNCH OVERLAY ── */
 .launch{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:rgba(2,4,8,.86);backdrop-filter:blur(6px);animation:lin .25s ease;}
