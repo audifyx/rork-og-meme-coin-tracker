@@ -692,6 +692,7 @@ function ConfigTab({ data, act }: any) {
   const [screenerEnabled, setScreenerEnabled] = useState(cfg.screener_enabled !== false);
   const [mcpEnabled, setMcpEnabled]           = useState(cfg.mcp_enabled !== false);
   const [widgetEnabled, setWidgetEnabled]     = useState(cfg.widget_enabled !== false);
+  const [spacesAutoEnd, setSpacesAutoEnd]     = useState(cfg.spaces_auto_end !== false);
 
   const save = async (key: string, val: any) => {
     setSaving(true); setSaved("");
@@ -707,6 +708,7 @@ function ConfigTab({ data, act }: any) {
     { key: "mcp_enabled",       label: "MCP API",     desc: "Public AI/MCP endpoint at /api/mcp",    val: mcpEnabled,      set: setMcpEnabled },
     { key: "widget_enabled",    label: "Widget",      desc: "Embeddable token widget (widget.js)",   val: widgetEnabled,   set: setWidgetEnabled },
     { key: "maintenance_mode",  label: "Maintenance", desc: "Show maintenance page to all visitors", val: maintenanceMode, set: setMaintenanceMode },
+    { key: "spaces_auto_end",   label: "Auto-end Spaces", desc: "End a live Space if the host is gone 20 min", val: spacesAutoEnd, set: setSpacesAutoEnd },
   ];
 
   return (

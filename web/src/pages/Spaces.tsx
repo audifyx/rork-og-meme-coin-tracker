@@ -484,6 +484,7 @@ const CreateSpaceModal = ({ onClose, onCreated, user, profile }: {
         token_gate_ca: isTokenGated && tokenGateCA.trim() ? tokenGateCA.trim() : null,
         token_gate_name: isTokenGated && tokenGateName.trim() ? tokenGateName.trim() : null,
         max_speaker_time_minutes: speakerTimerMin > 0 ? speakerTimerMin : null,
+        host_last_seen_at: isScheduled ? null : new Date().toISOString(),
       };
       const { data, error } = await supabase.from("spaces").insert(d).select().single();
       if (error) throw error;
@@ -1101,6 +1102,16 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
   useEffect(() => {
     if (isHost) setMyRole("speaker");
   }, [isHost]);
+
+  // Host presence heartbeat — keeps host_last_seen_at fresh so the auto-end
+  // job only ends the space when the host has actually been gone ~20 min.
+  useEffect(() => {
+    if (!isHost) return;
+    const beat = () => { supabase.from("spaces").update({ host_last_seen_at: new Date().toISOString() }).eq("id", space.id); };
+    beat();
+    const iv = setInterval(beat, 60000);
+    return () => clearInterval(iv);
+  }, [isHost, space.id]);
   const tm = topicOf(cur.topic);
   const rxId = useRef(0);
   const MAX_SPEAKERS = 10;
