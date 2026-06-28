@@ -1349,7 +1349,7 @@ const CommunityRooms: React.FC = () => {
 
   return (
     <div className="flex h-full overflow-hidden bg-background text-white">
-      <aside className="flex w-[310px] shrink-0 flex-col border-r border-white/[0.06] bg-card max-md:w-[92px]">
+      <aside className="hidden md:flex w-[310px] shrink-0 flex-col border-r border-white/[0.06] bg-card">
         <div className="flex items-center gap-2.5 border-b border-white/[0.06] p-3">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-400 text-white shadow-lg shadow-emerald-500/30 max-md:mx-auto">
             <MessageSquare className="h-4 w-4" />
