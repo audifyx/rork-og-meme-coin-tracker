@@ -14,7 +14,7 @@ export default async function handler(req, res) {
 
   try {
     const [pending, approved, rejected, events, kols, boosts, launches,
-           nominations, proWallets, bannedWallets, alerts, configRows, waitlist, users, reports, auditLog, spaces, support, chat, affiliates] = await Promise.all([
+           nominations, proWallets, bannedWallets, alerts, configRows, waitlist, users, reports, auditLog, spaces, support, chat, affiliates, communities, notifs] = await Promise.all([
       dbSelect("ogdex_listings",       "status=eq.pending&order=created_at.desc&limit=200"),
       dbSelect("ogdex_listings",       "status=eq.approved&order=approved_at.desc&limit=200"),
       dbSelect("ogdex_listings",       "status=eq.rejected&order=updated_at.desc&limit=100"),
@@ -35,6 +35,8 @@ export default async function handler(req, res) {
       dbSelect("support_tickets",      "select=id,username,subject,status,priority,last_message_at,created_at&order=created_at.desc&limit=200").catch(() => []),
       dbSelect("community_messages",   "select=id,username,content,community_id,created_at&order=created_at.desc&limit=200").catch(() => []),
       dbSelect("affiliates",           "select=id,name,referral_code,status,clicks,signups,conversions,total_earnings,created_at&order=created_at.desc&limit=200").catch(() => []),
+      dbSelect("communities",          "select=id,name,member_count,privacy,is_active,created_at&order=created_at.desc&limit=200").catch(() => []),
+      dbSelect("admin_notifications",  "select=id,title,message,notification_type,created_at&order=created_at.desc&limit=100").catch(() => []),
     ]);
 
     // Build config object
@@ -99,11 +101,12 @@ export default async function handler(req, res) {
         reportsPending: reports.filter((r) => r.status !== 'resolved' && r.status !== 'dismissed').length,
         spacesLive: spaces.filter((x) => x.is_live).length,
         supportOpen: support.filter((t) => t.status !== 'closed' && t.status !== 'resolved').length,
+        communities: communities.length,
         byType, series, topTokens, topPaths, byChain, byTier,
       },
       pending, approved, rejected, kols, boosts, launches,
       nominations, proWallets, banned: bannedWallets,
-      alerts, config, waitlist, users, reports, auditLog, spaces, support, chat, affiliates,
+      alerts, config, waitlist, users, reports, auditLog, spaces, support, chat, affiliates, communities, notifs,
     });
   } catch (e) {
     return send(res, 200, { ok: false, error: String(e?.message || e) });
@@ -259,6 +262,8 @@ async function action(req, res) {
       }
 
       // ── Banned wallets ──────────────────────────────────────────────────────
+      case "delete_community": { await dbDelete("communities", q); break; }
+      case "toggle_community": { await dbUpdate("communities", q, { is_active: b.is_active !== false, updated_at: now }); break; }
       case "delete_message": { await dbDelete("community_messages", q); break; }
       case "end_space": { await dbUpdate("spaces", q, { is_live: false, ended_at: now }); break; }
       case "close_ticket": { await dbUpdate("support_tickets", q, { status: "closed", updated_at: now }); break; }

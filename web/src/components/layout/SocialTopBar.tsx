@@ -1,11 +1,9 @@
-import { Hash, Mic, Headphones, User, Mail, LayoutGrid, Wrench } from "lucide-react";
+import { Hash, User, Mail, Wrench } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 /** New-theme top header for the social app (replaces the side tab bar). Route-based. */
 const TABS: { id: string; label: string; route: string; Icon: typeof Hash }[] = [
   { id: "community",   label: "Community", route: "/community",   Icon: Hash },
-  { id: "spaces",      label: "Spaces",    route: "/spaces",      Icon: Mic },
-  { id: "voice",       label: "Voice",     route: "/voice-rooms", Icon: Headphones },
   { id: "messages",    label: "Messages",  route: "/messages",    Icon: Mail },
   { id: "profile",     label: "Profile",   route: "/profile",     Icon: User },
 ];
@@ -29,7 +27,6 @@ export function SocialTopBar(_props?: { activeId?: string; onNavigate?: (id: str
       </nav>
 
       <div className="stb-right">
-        <a className="stb-link" href="/social"><LayoutGrid className="h-4 w-4" /><span>Social</span></a>
         <a className="stb-link" href="/OGDEX"><Wrench className="h-4 w-4" /><span>OG Dex</span></a>
         <a className="stb-cta" href="/app">Hub</a>
       </div>

@@ -29,7 +29,9 @@ type Tab =
   | "spaces"
   | "chat"
   | "support"
-  | "affiliates";
+  | "affiliates"
+  | "communities"
+  | "notifications";
 
 type Cat = "dex" | "social";
 const TABS: { id: Tab; label: string; icon: any; cat: Cat }[] = [
@@ -51,6 +53,8 @@ const TABS: { id: Tab; label: string; icon: any; cat: Cat }[] = [
   { id: "chat",         label: "Chat",           icon: MessageSquare,  cat: "social" },
   { id: "support",      label: "Support",        icon: LifeBuoy,       cat: "social" },
   { id: "affiliates",   label: "Affiliates",     icon: Link2,          cat: "social" },
+  { id: "communities",  label: "Communities",    icon: Globe,          cat: "social" },
+  { id: "notifications",label: "Notifications",   icon: Bell,           cat: "social" },
 ];
 const CAT_LABEL: Record<Cat, string> = { dex: "OG Dex", social: "Social" };
 
@@ -171,6 +175,8 @@ export default function Admin() {
       {tab === "chat"      && <ChatTab data={data} act={act} />}
       {tab === "support"   && <SupportTab data={data} act={act} />}
       {tab === "affiliates" && <AffiliatesTab data={data} act={act} />}
+      {tab === "communities" && <CommunitiesTab data={data} act={act} />}
+      {tab === "notifications" && <NotificationsTab data={data} />}
     </div>
   );
 }
@@ -1010,6 +1016,40 @@ function AuditTab({ data }: { data: any }) {
   );
 }
 
+
+
+function CommunitiesTab({ data, act }: { data: any; act: any }) {
+  const rows: any[] = data?.communities || [];
+  return (
+    <div className="space-y-2">
+      <div className="text-lg font-black text-white">Communities <span className="text-xs font-normal text-muted">· {rows.length}</span></div>
+      {rows.length === 0 ? <div className="rounded-xl border border-line bg-panel2/60 p-8 text-center text-sm text-muted">No communities.</div> : rows.map((c) => (
+        <div key={c.id} className="flex items-center gap-3 rounded-xl border border-line bg-panel2/60 p-3 text-sm">
+          <div className="min-w-0 flex-1"><div className="truncate font-semibold text-white">{c.name || "Untitled"}</div><div className="text-[11px] text-muted">{fmtNum(c.member_count || 0)} members · {c.privacy || "public"} · {c.created_at ? new Date(c.created_at).toLocaleDateString() : ""}</div></div>
+          <span className={`pill text-[10px] ${c.is_active ? "bg-up/15 text-up" : "bg-panel2 text-muted"}`}>{c.is_active ? "active" : "hidden"}</span>
+          <button onClick={() => act("toggle_community", c.id, { is_active: !c.is_active })} className="rounded-lg border border-line bg-panel2 px-2.5 py-1 text-[11px] font-bold text-muted hover:text-white">{c.is_active ? "Hide" : "Show"}</button>
+          <button onClick={() => { if (confirm("Delete community?")) act("delete_community", c.id); }} className="rounded-lg border border-down/40 bg-down/10 px-2 py-1 text-[11px] font-bold text-down hover:bg-down/20"><Trash2 className="h-3 w-3" /></button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function NotificationsTab({ data }: { data: any }) {
+  const rows: any[] = data?.notifs || [];
+  return (
+    <div className="space-y-2">
+      <div className="text-lg font-black text-white">Notifications <span className="text-xs font-normal text-muted">· {rows.length}</span></div>
+      <p className="text-[12px] text-muted">Recent admin notifications. Use the Banners tab to broadcast a site-wide message to all users.</p>
+      {rows.length === 0 ? <div className="rounded-xl border border-line bg-panel2/60 p-8 text-center text-sm text-muted">No notifications.</div> : rows.map((n) => (
+        <div key={n.id} className="rounded-xl border border-line/60 bg-panel2/40 p-3 text-sm">
+          <div className="flex items-center gap-2"><span className="font-semibold text-white">{n.title || "(untitled)"}</span>{n.notification_type && <span className="pill bg-panel2 text-muted text-[9px]">{n.notification_type}</span>}<span className="ml-auto text-[10px] text-muted">{n.created_at ? new Date(n.created_at).toLocaleString() : ""}</span></div>
+          {n.message && <div className="mt-0.5 text-white/75">{n.message}</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function SpacesTab({ data, act }: { data: any; act: any }) {
   const rows: any[] = data?.spaces || [];
