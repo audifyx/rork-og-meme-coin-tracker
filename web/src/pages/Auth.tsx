@@ -32,19 +32,13 @@ const modeCopy = {
     body: "Sign in to scan tokens, watch launches, and track your OG signals.",
     cta: "Sign in",
   },
-  signup: {
-    eyebrow: "Create account",
-    title: "Join the On-Chain OS.",
-    body: "Get instant access to the complete on-chain platform — scanning, trading, and social tools in one place.",
-    cta: "Create account",
-  },
-  signup: {
-    eyebrow: "Create account",
-    title: "Join the On-Chain OS.",
-    body: "Get instant access to the complete on-chain platform — scanning, trading, and social tools in one place.",
-    cta: "Create account",
-  },
-  reset: {
+   signup: {
+     eyebrow: "Create account",
+     title: "Join the On-Chain OS.",
+     body: "Get instant access to the complete on-chain platform — scanning, trading, and social tools in one place.",
+     cta: "Create account",
+   },
+   reset: {
     eyebrow: "Password reset",
     title: "Get a fresh access link.",
     body: "Enter your email and OrbitX will send the reset flow.",
