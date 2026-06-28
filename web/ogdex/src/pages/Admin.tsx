@@ -27,21 +27,24 @@ type Tab =
   | "reports"
   | "audit";
 
-const TABS: { id: Tab; label: string; icon: any }[] = [
-  { id: "overview",     label: "Overview",      icon: LayoutDashboard },
-  { id: "listings",     label: "Listings",       icon: List },
-  { id: "kols",         label: "KOLs",           icon: Radio },
-  { id: "nominations",  label: "Nominations",    icon: Star },
-  { id: "pro",          label: "Pro Wallets",    icon: Shield },
-  { id: "banners",      label: "Banners",        icon: Megaphone },
-  { id: "config",       label: "Config",         icon: Settings },
-  { id: "banned",       label: "Banned",         icon: Ban },
-  { id: "alerts",       label: "Alerts",         icon: Bell },
-  { id: "waitlist",     label: "Waitlist",       icon: Mail },
-  { id: "users",        label: "Users",          icon: Users },
-  { id: "reports",      label: "Reports",        icon: Flag },
-  { id: "audit",        label: "Audit Log",      icon: Activity },
+type Cat = "dex" | "social";
+const TABS: { id: Tab; label: string; icon: any; cat: Cat }[] = [
+  { id: "overview",     label: "Overview",      icon: LayoutDashboard, cat: "dex" },
+  { id: "listings",     label: "Listings",       icon: List,           cat: "dex" },
+  { id: "kols",         label: "KOLs",           icon: Radio,          cat: "dex" },
+  { id: "nominations",  label: "Nominations",    icon: Star,           cat: "dex" },
+  { id: "pro",          label: "Pro Wallets",    icon: Shield,         cat: "dex" },
+  { id: "banners",      label: "Banners",        icon: Megaphone,      cat: "dex" },
+  { id: "config",       label: "Config",         icon: Settings,       cat: "dex" },
+  { id: "banned",       label: "Banned",         icon: Ban,            cat: "dex" },
+  { id: "alerts",       label: "Alerts",         icon: Bell,           cat: "dex" },
+  // ── Social ──
+  { id: "users",        label: "Users",          icon: Users,          cat: "social" },
+  { id: "reports",      label: "Reports",        icon: Flag,           cat: "social" },
+  { id: "audit",        label: "Audit Log",      icon: Activity,       cat: "social" },
+  { id: "waitlist",     label: "Waitlist",       icon: Mail,           cat: "social" },
 ];
+const CAT_LABEL: Record<Cat, string> = { dex: "OG Dex", social: "Social" };
 
 // ─── Root ──────────────────────────────────────────────────────────────────────
 export default function Admin() {
@@ -115,23 +118,30 @@ export default function Admin() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-0.5 flex-wrap mb-5 bg-panel2 p-1 rounded-xl border border-line">
-        {TABS.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              tab === t.id ? "bg-accent/15 text-accent" : "text-muted hover:text-white"
-            }`}>
-            <t.icon className="w-3.5 h-3.5" /> {t.label}
-            {t.id === "nominations" && (data?.nominations?.filter((n: any) => n.status === "pending")?.length || 0) > 0 &&
-              <span className="ml-0.5 bg-down text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                {data.nominations.filter((n: any) => n.status === "pending").length}
-              </span>}
-            {t.id === "listings" && (data?.pending?.length || 0) > 0 &&
-              <span className="ml-0.5 bg-accent text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                {data.pending.length}
-              </span>}
-          </button>
+      {/* Tabs — grouped by category */}
+      <div className="space-y-2 mb-5">
+        {(["dex", "social"] as Cat[]).map((c) => (
+          <div key={c}>
+            <div className="px-1 mb-1 text-[10px] font-bold uppercase tracking-widest text-muted">{CAT_LABEL[c]}</div>
+            <div className="flex gap-0.5 flex-wrap bg-panel2 p-1 rounded-xl border border-line">
+              {TABS.filter((t) => t.cat === c).map((t) => (
+                <button key={t.id} onClick={() => setTab(t.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    tab === t.id ? "bg-accent/15 text-accent" : "text-muted hover:text-white"
+                  }`}>
+                  <t.icon className="w-3.5 h-3.5" /> {t.label}
+                  {t.id === "nominations" && (data?.nominations?.filter((n: any) => n.status === "pending")?.length || 0) > 0 &&
+                    <span className="ml-0.5 bg-down text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                      {data.nominations.filter((n: any) => n.status === "pending").length}
+                    </span>}
+                  {t.id === "listings" && (data?.pending?.length || 0) > 0 &&
+                    <span className="ml-0.5 bg-accent text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                      {data.pending.length}
+                    </span>}
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 

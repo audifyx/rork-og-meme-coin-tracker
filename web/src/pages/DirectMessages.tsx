@@ -8,6 +8,7 @@ import {
   Send, ArrowLeft, Search, Plus, X as XIcon,
   Loader2, UserPlus, Check, CheckCheck, Reply,
   Copy, Edit2, Trash2, MoreHorizontal, Smile,
+  ImagePlus, Mic, Play, Pause,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -55,6 +56,8 @@ interface DMMessage {
   deleted_at: string | null;
   reply_to_id: string | null;
   message_type: string | null;
+  audio_url?: string | null;
+  audio_duration_ms?: number | null;
 }
 
 const dicebear = (seed: string) =>
@@ -125,6 +128,14 @@ const DirectMessages: React.FC = () => {
   const [messages, setMessages] = useState<DMMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recSecs, setRecSecs] = useState(0);
+  const imgInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecRef = useRef<MediaRecorder | null>(null);
+  const recChunksRef = useRef<Blob[]>([]);
+  const recTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recStartRef = useRef<number>(0);
   const [loadingConvos, setLoadingConvos] = useState(true);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -445,6 +456,62 @@ const DirectMessages: React.FC = () => {
     setMessages((prev) => prev.filter((m) => m.id !== msgId));
     const { error } = await supabase.from("dm_messages").delete().eq("id", msgId);
     if (error) { toast.error("Could not delete message"); if (activeConvo) fetchMessages(activeConvo.id); }
+  };
+
+  /* ─── Media: image + voice notes (dm-media bucket) ─── */
+  const uploadDM = async (file: Blob, ext: string): Promise<string | null> => {
+    if (!user) return null;
+    const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("dm-media").upload(path, file, { contentType: (file as File).type || undefined, upsert: false });
+    if (error) { toast.error("Upload failed"); return null; }
+    return supabase.storage.from("dm-media").getPublicUrl(path).data.publicUrl;
+  };
+
+  const sendImage = async (file: File) => {
+    if (!user || !activeConvo) return;
+    setUploading(true);
+    const url = await uploadDM(file, (file.name.split(".").pop() || "jpg").toLowerCase());
+    setUploading(false);
+    if (!url) return;
+    await supabase.from("dm_messages").insert({ conversation_id: activeConvo.id, sender_id: user.id, body: "", image_url: url, message_type: "image", read: false });
+    supabase.from("dm_conversations").update({ updated_at: new Date().toISOString() }).eq("id", activeConvo.id);
+    setTimeout(() => scrollToBottom(), 60);
+  };
+
+  const startRec = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      recChunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size) recChunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        if (recTimerRef.current) { clearInterval(recTimerRef.current); recTimerRef.current = null; }
+        setRecording(false);
+        const blob = new Blob(recChunksRef.current, { type: "audio/webm" });
+        const dur = Date.now() - recStartRef.current;
+        setRecSecs(0);
+        if (blob.size < 800 || !user || !activeConvo) return;
+        setUploading(true);
+        const url = await uploadDM(blob, "webm");
+        setUploading(false);
+        if (!url) return;
+        await supabase.from("dm_messages").insert({ conversation_id: activeConvo.id, sender_id: user.id, body: "", audio_url: url, audio_duration_ms: dur, message_type: "voice", read: false });
+        supabase.from("dm_conversations").update({ updated_at: new Date().toISOString() }).eq("id", activeConvo.id);
+        setTimeout(() => scrollToBottom(), 60);
+      };
+      mr.start();
+      mediaRecRef.current = mr;
+      recStartRef.current = Date.now();
+      setRecording(true); setRecSecs(0);
+      recTimerRef.current = setInterval(() => setRecSecs((x) => x + 1), 1000);
+    } catch { toast.error("Microphone access denied"); }
+  };
+  const stopRec = (cancel = false) => {
+    const mr = mediaRecRef.current;
+    if (cancel) { recChunksRef.current = []; if (recTimerRef.current) clearInterval(recTimerRef.current); setRecording(false); setRecSecs(0); }
+    if (mr && mr.state !== "inactive") mr.stop();
+    mediaRecRef.current = null;
   };
 
   const startEdit = (msg: DMMessage) => { setEditingId(msg.id); setEditText(msg.body); };
@@ -799,12 +866,16 @@ const DirectMessages: React.FC = () => {
                             "relative px-3.5 py-2 text-[14px] leading-relaxed",
                             bubbleRadius,
                             isMe
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted/70 text-foreground",
+                              ? "bg-gradient-to-br from-[#2F80FF] to-[#9945FF] text-white shadow-[0_8px_24px_-10px_rgba(47,128,255,0.7)]"
+                              : "bg-white/[0.07] text-foreground border border-white/10 backdrop-blur-md",
                           )}
                           onDoubleClick={() => setReplyTo(msg)}
                         >
-                          <p>{msg.body}</p>
+                          {msg.image_url && (
+                            <img src={msg.image_url} alt="" loading="lazy" className="mb-1 max-h-72 w-full max-w-[260px] rounded-2xl object-cover" />
+                          )}
+                          {msg.audio_url && <VoiceNote src={msg.audio_url} durationMs={msg.audio_duration_ms ?? null} mine={isMe} />}
+                          {msg.body && <p className="whitespace-pre-wrap break-words">{msg.body}</p>}
 
                           {/* Time + read receipt */}
                           <div className={cn("mt-0.5 flex items-center gap-1", isMe ? "justify-end" : "justify-start")}>
@@ -929,35 +1000,67 @@ const DirectMessages: React.FC = () => {
         </div>
       )}
 
-      {/* ── Input bar (iOS-style) ── */}
-      <div className="border-t border-border/60 px-3 py-2.5">
-        <div className="flex items-end gap-2">
-          <div className="flex-1 rounded-full border border-border/60 bg-muted/40 px-4 py-2 min-h-[36px] flex items-center">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => { setInput(e.target.value); broadcastTyping(); }}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-              placeholder={`Message ${otherName}…`}
-              className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/40 outline-none"
-            />
+      {/* ── Input bar (iOS-style, glass) ── */}
+      <div className="border-t border-white/10 px-3 py-2.5">
+        {recording ? (
+          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2.5 backdrop-blur">
+            <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
+            <span className="text-[13px] font-semibold text-foreground">Recording… {recSecs}s</span>
+            <div className="flex-1" />
+            <button onClick={() => stopRec(true)} className="text-[12px] font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
+            <button onClick={() => stopRec(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-[#2F80FF] to-[#9945FF] text-white active:scale-95"><Send className="h-4 w-4" /></button>
           </div>
-          <button
-            onClick={sendMessage}
-            disabled={!input.trim() || sending}
-            className={cn(
-              "flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition-all",
-              input.trim()
-                ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/80 active:scale-95"
-                : "bg-muted/60 text-muted-foreground/30",
+        ) : (
+          <div className="flex items-end gap-2">
+            <input type="file" accept="image/*" ref={imgInputRef} className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) sendImage(f); if (e.currentTarget) e.currentTarget.value = ""; }} />
+            <button onClick={() => imgInputRef.current?.click()} disabled={uploading} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-muted-foreground transition hover:text-foreground disabled:opacity-50">
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+            </button>
+            <div className="flex-1 rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 min-h-[36px] flex items-center backdrop-blur">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => { setInput(e.target.value); broadcastTyping(); }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                placeholder={`Message ${otherName}…`}
+                className="flex-1 bg-transparent text-[14px] text-foreground placeholder:text-muted-foreground/40 outline-none"
+              />
+            </div>
+            {input.trim() ? (
+              <button onClick={sendMessage} disabled={sending} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#2F80FF] to-[#9945FF] text-white shadow-sm active:scale-95">
+                <Send className="h-4 w-4" />
+              </button>
+            ) : (
+              <button onClick={startRec} disabled={uploading} className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-muted-foreground transition hover:text-foreground">
+                <Mic className="h-4 w-4" />
+              </button>
             )}
-          >
-            <Send className="h-4 w-4" />
-          </button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
+
+function VoiceNote({ src, durationMs, mine }: { src: string; durationMs: number | null; mine: boolean }) {
+  const [playing, setPlaying] = useState(false);
+  const ref = useRef<HTMLAudioElement | null>(null);
+  const secs = Math.max(1, Math.round((durationMs || 0) / 1000));
+  const toggle = () => { const a = ref.current; if (!a) return; if (playing) a.pause(); else void a.play(); };
+  return (
+    <div className="flex items-center gap-2 py-0.5">
+      <button onClick={toggle} className={cn("flex h-8 w-8 items-center justify-center rounded-full", mine ? "bg-white/25" : "bg-white/10")}>
+        {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+      </button>
+      <div className="flex items-center gap-[2px]">
+        {Array.from({ length: 18 }).map((_, i) => (
+          <span key={i} className={cn("w-[2px] rounded-full", mine ? "bg-white/70" : "bg-foreground/40")} style={{ height: `${6 + ((i * 7) % 15)}px` }} />
+        ))}
+      </div>
+      <span className="text-[10px] opacity-70">{secs}s</span>
+      <audio ref={ref} src={src} preload="none" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} className="hidden" />
+    </div>
+  );
+}
 
 export default DirectMessages;
