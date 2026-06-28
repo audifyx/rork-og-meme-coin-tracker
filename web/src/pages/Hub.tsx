@@ -313,7 +313,7 @@ const css = `
 .menubar{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;height:38px;padding:0 16px;
   background:rgba(8,11,20,.6);backdrop-filter:blur(22px);border-bottom:1px solid var(--line);font-size:12.5px;}
 .mb-left{display:flex;align-items:center;gap:14px;}
-.mb-mark{width:15px;height:15px;border-radius:5px;background:conic-gradient(from 130deg,#2F80FF,#9945FF,#14E0C8,#2F80FF);box-shadow:0 0 14px rgba(47,128,255,.6);animation:spin 9s linear infinite;}
+.mb-mark{width:15px;height:15px;border-radius:5px;background:conic-gradient(from 130deg,#2F80FF,#9945FF,#14E0C8,#2F80FF);box-shadow:0 0 14px rgba(47,128,255,.6);}
 @keyframes spin{to{transform:rotate(360deg)}}
 .mb-os{font-weight:800;letter-spacing:.16em;}
 .mb-menu{display:flex;gap:16px;color:var(--muted);}
@@ -414,7 +414,7 @@ const css = `
 @keyframes band{0%,92%{opacity:0}94%{opacity:.5;transform:translateX(8px)}96%{opacity:.2;transform:translateX(-8px)}}
 
 /* ── glitch keyframes ── */
-@keyframes glitch{0%,90%,100%{transform:none}92%{transform:translate(-2px,1px)}94%{transform:translate(2px,-1px)}96%{transform:translate(-1px,0)}}
+
 @keyframes gl-r{0%,90%,100%{opacity:0;transform:none}92%{opacity:.8;transform:translate(-3px,1px)}96%{opacity:.6;transform:translate(2px,-1px)}}
 @keyframes gl-b{0%,90%,100%{opacity:0;transform:none}93%{opacity:.8;transform:translate(3px,-1px)}97%{opacity:.6;transform:translate(-2px,1px)}}
 
