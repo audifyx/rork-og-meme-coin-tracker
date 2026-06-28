@@ -617,8 +617,7 @@ class TradingLobbiesErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <AppLayout>
-          <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center">
             <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
               <Shield className="h-7 w-7 text-red-400" />
             </div>
@@ -628,8 +627,7 @@ class TradingLobbiesErrorBoundary extends React.Component<
               className="px-4 py-2 rounded-xl bg-primary/15 text-primary text-xs font-bold hover:bg-primary/25 transition-colors">
               Reload Page
             </button>
-          </div>
-        </AppLayout>
+        </div>
       );
     }
     return this.props.children;

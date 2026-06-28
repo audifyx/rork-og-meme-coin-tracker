@@ -177,7 +177,7 @@ const CommunityHub: React.FC = () => {
             <SubToggle options={[["rooms", "Community Rooms"], ["trading", "Trading Lobbies"]]} value={roomsView} onChange={setRoomsView} />
             <div className="min-h-0 flex-1 overflow-hidden">
               <Suspense fallback={<Spinner />}>
-                {roomsView === "rooms" ? <CommunityRoomsPage /> : <TradingLobbiesPage />}
+                {roomsView === "rooms" ? <CommunityRoomsPage /> : <TradingLobbiesPage inline />}
               </Suspense>
             </div>
           </div>
