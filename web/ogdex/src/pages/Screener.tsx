@@ -537,9 +537,11 @@ function SocialFeed({ items, loading }: { items: SocialItem[]; loading: boolean 
                   <span className={`pill text-[9px] uppercase ml-auto
                     ${item.source === "coingecko" ? "bg-green-500/15 text-green-400" :
                       item.source === "geckoterminal" ? "bg-accent/15 text-accent" :
+                      item.source === "jupiter" ? "bg-[#2F80FF]/15 text-[#2F80FF]" :
                       "bg-panel2 text-muted"}`}>
                     {item.source === "coingecko" ? "CoinGecko"
                       : item.source === "geckoterminal" ? "GeckoTerminal"
+                      : item.source === "jupiter" ? "Jupiter"
                       : "DexScreener"}
                   </span>
                 </div>

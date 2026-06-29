@@ -578,9 +578,44 @@ export default async function handler(req, res) {
           source: c.source, chain: "solana", poolAddress: c.poolAddress || null, cgId: c.cgId || null, _score: score,
         });
       }
+      // Fallback: GeckoTerminal + CoinGecko frequently rate-limit Vercel's shared
+      // IPs and return nothing, leaving the social feed empty. Jupiter top-traded
+      // is reliable, so seed the feed from it whenever the social sources are thin.
+      let usedJup = false;
+      if (items.length < 8) {
+        try {
+          const jdata = await jup(`/tokens/v2/toptraded/24h?limit=100`).catch(() => null);
+          const jrows = (Array.isArray(jdata) ? jdata : [])
+            .filter((t) => !STABLES.has(String(t.symbol || "").toUpperCase()))
+            .map((t) => normToken(t, "24h"))
+            .filter(Boolean)
+            .filter((r) => (r.volume ?? 0) >= 10000 && (r.liquidity ?? 0) >= 15000 && ((r.numBuys || 0) + (r.numSells || 0)) >= 30);
+          const have = new Set(items.map((i) => i.mint));
+          for (const r of jrows) {
+            if (items.length >= 24) break;
+            if (!r.mint || have.has(r.mint)) continue;
+            const e = { ch1: r.change1h || 0, ch24: r.change24h || 0, vol: r.volume || 0, liq: r.liquidity || 0, buys: r.numBuys || 0, sells: r.numSells || 0, price: r.priceUsd, mcap: r.mcap };
+            const reasons = reasonsFor(e);
+            reasons.push("\u{1F525} Top traded on Jupiter");
+            const score = (e.ch24 > 0 ? e.ch24 : 0) + Math.min(e.vol / 50000, 60) + (e.ch1 > 0 ? e.ch1 * 1.5 : 0);
+            items.push({
+              mint: r.mint, symbol: r.symbol, name: r.name, icon: r.icon,
+              priceUsd: e.price, mcap: e.mcap, change1h: e.ch1, change24h: e.ch24, volume: e.vol, liquidity: e.liq,
+              reason: reasons[0] || "Trending", reasons: reasons.slice(0, 3), aiSummary: aiFor(e, r.symbol),
+              source: "jupiter", chain: "solana", poolAddress: null, cgId: null, _score: score,
+            });
+            have.add(r.mint);
+            usedJup = true;
+          }
+        } catch {}
+      }
       items.sort((a, b) => (b._score || 0) - (a._score || 0));
       for (const it of items) delete it._score;
-      return send(res, 200, { count: items.length, items, sources: ["geckoterminal","coingecko","dexscreener"] });
+      // Don't let a transient empty result get cached for long.
+      if (!items.length) cache(res, 10, 30);
+      const sources = ["geckoterminal", "coingecko", "dexscreener"];
+      if (usedJup) sources.push("jupiter");
+      return send(res, 200, { count: items.length, items, sources });
 
     // ── Default: Trending (Jupiter primary + GeckoTerminal fallback) ──────────
     } else {
