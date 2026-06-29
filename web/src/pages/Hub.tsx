@@ -255,14 +255,6 @@ export default function Hub() {
         {/* macOS Dock */}
         <footer className="mac-dock-container">
           <div className="mac-dock">
-            <div className="dock-section">
-              {leftApps.map((app) => (
-                <DockItem key={app.key} app={app} launching={launching} onOpen={() => openApp(app)} onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onDragEnd={onDragEnd} isDragging={dragId === app.key} isOver={dragOverId === app.key} />
-              ))}
-            </div>
-
-            <div className="dock-divider" aria-hidden />
-
             <div className="dock-center">
               {CENTER_TABS.map((tab) => (
                 <button
@@ -278,14 +270,6 @@ export default function Hub() {
                   </div>
                   <span className="dock-tooltip">{tab.name}</span>
                 </button>
-              ))}
-            </div>
-
-            <div className="dock-divider" aria-hidden />
-
-            <div className="dock-section">
-              {rightApps.map((app) => (
-                <DockItem key={app.key} app={app} launching={launching} onOpen={() => openApp(app)} onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop} onDragEnd={onDragEnd} isDragging={dragId === app.key} isOver={dragOverId === app.key} />
               ))}
             </div>
           </div>
