@@ -171,9 +171,22 @@ export const UserManagement = () => {
 
   const unbanUser = async (userId: string) => {
     if (!adminUser) return;
-    await supabase.from("profiles").update({ is_banned: false }).eq("user_id", userId);
+    // Clear both flags so unban fully restores access (the device-tracker sets is_suspended).
+    await supabase.from("profiles").update({ is_banned: false, is_suspended: false }).eq("user_id", userId);
     await logAudit(adminUser.id, "Unbanned user", "profiles", userId);
     toast.success("User unbanned");
+    fetchUsers();
+  };
+
+  // Reinstate: clear ban + suspension regardless of current state. Use this to
+  // allow an account that the device-tracker auto-suspended (e.g. a second
+  // account on the same device).
+  const reinstateUser = async (userId: string) => {
+    if (!adminUser) return;
+    const { error } = await supabase.from("profiles").update({ is_banned: false, is_suspended: false }).eq("user_id", userId);
+    if (error) { toast.error("Could not reinstate: " + error.message); return; }
+    await logAudit(adminUser.id, "Reinstated user (cleared ban + suspend)", "profiles", userId);
+    toast.success("User reinstated — ban & suspension cleared");
     fetchUsers();
   };
 
@@ -638,6 +651,9 @@ export const UserManagement = () => {
                     <Card className="og-glass-card border-red-500/20">
                       <CardHeader className="pb-3"><CardTitle className="text-sm text-red-400">Danger Zone</CardTitle></CardHeader>
                       <CardContent className="space-y-3">
+                        <Button variant="outline" onClick={() => reinstateUser(selectedUser.user_id)} className="w-full gap-2 border-green-500/30 text-green-400">
+                          <UserCheck className="h-4 w-4" /> Reinstate (clear ban + suspend)
+                        </Button>
                         <Button variant="outline" onClick={() => (selectedUser as any).is_banned ? unbanUser(selectedUser.user_id) : banUser(selectedUser.user_id)} className="w-full gap-2 border-yellow-500/30 text-yellow-400">
                           <Ban className="h-4 w-4" /> {(selectedUser as any).is_banned ? "Unban User" : "Ban User"}
                         </Button>

@@ -8,6 +8,8 @@ import { getDeviceInfo } from "@/hooks/useDeviceFingerprint";
 
 const TRACK_COOLDOWN_MS = 5 * 60 * 1000; // Don't re-track within 5 min
 const LAST_TRACK_KEY = "og_last_device_track";
+// Usernames that bypass device tracking (owner / trusted accounts). Add alts here.
+const TRUSTED_USERNAMES = ["orbitx.world", "orbitxworld", "orbitx"];
 
 export function useSecurityTracker() {
   const tracked = useRef(false);
@@ -26,6 +28,11 @@ export function useSecurityTracker() {
       if (!session?.access_token) return;
       if (tracked.current) return;
       if (event !== "SIGNED_IN" && event !== "TOKEN_REFRESHED" && event !== "INITIAL_SESSION") return;
+
+      // Trusted accounts skip device tracking entirely so they can never be
+      // auto-flagged/suspended (e.g. running multiple owner accounts on one device).
+      const uname = String(session.user?.user_metadata?.username || "").toLowerCase().replace(/^@/, "");
+      if (TRUSTED_USERNAMES.includes(uname)) { tracked.current = true; return; }
 
       tracked.current = true;
       try {
