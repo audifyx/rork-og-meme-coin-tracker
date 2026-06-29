@@ -198,9 +198,6 @@ export default function SocialHome({ onSwitchTab, onSelectMint }: { onSwitchTab?
         <div className="sticky top-0 z-10 -mx-1 mb-3 bg-background/85 px-1 pt-2 backdrop-blur-md">
           <div className="mb-2 flex items-center justify-between gap-2">
             <h1 className="text-[19px] font-black text-white">Home</h1>
-            <button onClick={() => onSwitchTab?.("community")} className="flex items-center gap-1.5 rounded-full border border-red-500/25 bg-red-500/10 px-2.5 py-1 text-[10px] font-bold text-red-400 transition hover:bg-red-500/20">
-              <Radio className="h-3 w-3" /> Go Live
-            </button>
           </div>
           <div className="flex gap-1 border-b border-white/[0.06]">
             {TABS.map((t) => (
@@ -328,7 +325,7 @@ export default function SocialHome({ onSwitchTab, onSelectMint }: { onSwitchTab?
           <h3 className="mb-3 text-[13px] font-black text-white">Jump in</h3>
           <div className="space-y-1.5">
             {[
-              { label: "Live & Spaces", desc: "Streams + voice rooms", Icon: Radio, t: "community" },
+              { label: "Spaces", desc: "Live voice rooms", Icon: Radio, t: "community" },
               { label: "Communities", desc: "Token groups", Icon: Users, t: "communities" },
               { label: "Discover", desc: "Find people", Icon: Sparkles, t: "discover" },
               { label: "Scanner", desc: "Check a token", Icon: Search, t: "scanner" },

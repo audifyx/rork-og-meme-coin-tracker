@@ -77,11 +77,11 @@ const dicebear = (seed: string) =>
 const avatarSrc = (url: string | null | undefined, fallback: string) =>
   safeAvatarUrl(url) || dicebear(fallback);
 
-const CHANNELS: { id: ChannelId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const CHANNELS: { id: ChannelId; label: string; icon: React.ComponentType<{ className?: string }>; soon?: boolean }[] = [
   { id: "activity-feed", label: "activity-feed", icon: Zap },
   { id: "general-chat", label: "general-chat", icon: Hash },
   { id: "voice-rooms", label: "voice-rooms", icon: Volume2 },
-  { id: "live-stream", label: "live-stream", icon: Radio },
+  { id: "live-stream", label: "live-stream", icon: Radio, soon: true },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -231,6 +231,11 @@ const SocialHub = () => {
                     {onlineCount}
                   </span>
                 )}
+                {ch.soon && (
+                  <span className="ml-auto rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[7px] font-black uppercase tracking-wide text-white/40">
+                    soon
+                  </span>
+                )}
               </button>
             );
           })}
@@ -303,6 +308,9 @@ const SocialHub = () => {
               >
                 <Icon className="h-3 w-3" />
                 {ch.label}
+                {ch.soon && (
+                  <span className="rounded-full bg-white/15 px-1 py-px text-[7px] font-black uppercase tracking-wide text-white/60">soon</span>
+                )}
               </button>
             );
           })}
@@ -320,7 +328,7 @@ const SocialHub = () => {
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             {activeChannel === "general-chat" && <GeneralChat />}
             {activeChannel === "voice-rooms" && <VoiceRooms members={sortedMembers} />}
-            {activeChannel === "live-stream" && <LiveStream />}
+            {activeChannel === "live-stream" && <LiveStreamComingSoon />}
           </div>
         )}
       </div>
@@ -446,7 +454,7 @@ const ActivityFeed = ({ members, activeMembersList, onlineCount, onSwitchChannel
           {[
             { label: "Voice Lobby", desc: "Join live voice chat", icon: Volume2, color: "og-lime", channel: "voice-rooms" as ChannelId },
             { label: "Chat Room", desc: "Message the community", icon: MessageSquare, color: "primary", channel: "general-chat" as ChannelId },
-            { label: "Go Live", desc: "Start streaming", icon: Radio, color: "red-400", channel: "live-stream" as ChannelId },
+            { label: "Go Live", desc: "Coming soon", icon: Radio, color: "red-400", channel: "live-stream" as ChannelId },
             { label: "Voice Rooms", desc: "Create private rooms", icon: Headphones, color: "og-gold", channel: "voice-rooms" as ChannelId },
           ].map((action) => (
             <button
@@ -1443,6 +1451,32 @@ const VoiceRooms = ({ members }: { members: CommunityMember[] }) => {
     </div>
   );
 };
+
+/* ═══════════════════════════════════════════════════════════════
+   Live Stream — Coming Soon placeholder
+   The full LiveKit streaming build below is kept intact and disabled.
+   To re-enable, render <LiveStream /> instead of <LiveStreamComingSoon />.
+   ═══════════════════════════════════════════════════════════════ */
+
+const LiveStreamComingSoon = () => (
+  <div className="flex h-full flex-col items-center justify-center px-6 py-16 text-center">
+    <div className="relative mb-6">
+      <div className="absolute inset-0 animate-ping rounded-full bg-red-500/20" />
+      <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-red-500/30 bg-red-500/10">
+        <Radio className="h-9 w-9 text-red-400" />
+      </div>
+    </div>
+    <span className="mb-3 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/50">
+      Coming Soon
+    </span>
+    <h3 className="mb-2 text-xl font-black text-white">OrbitX Live</h3>
+    <p className="max-w-sm text-[13px] leading-relaxed text-white/40">
+      Live video streaming is on the way. Soon you'll be able to go live with your camera,
+      share your screen, and broadcast to the OrbitX community in real time.
+    </p>
+    <p className="mt-5 text-[11px] text-white/25">Stay tuned — we're building it.</p>
+  </div>
+);
 
 /* ═══════════════════════════════════════════════════════════════
    Live Stream — LiveKit streaming
