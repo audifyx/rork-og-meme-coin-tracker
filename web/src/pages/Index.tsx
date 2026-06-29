@@ -60,6 +60,7 @@ import { ToolHeader, EmeraldHeader, SegmentedTabs } from "@/components/ToolPageS
 
 /* ─── Standard Feature imports ─── */
 const OgStats = lazy(() => import("@/components/OgStats").then(m => ({ default: m.OgStats })));
+import SocialHome from "@/components/SocialHome";
 const Scanner = lazy(() => import("@/components/Scanner").then(m => ({ default: m.Scanner })));
 const Trending = lazy(() => import("@/components/Trending").then(m => ({ default: m.Trending })));
 const OgFinder = lazy(() => import("@/components/OgFinder").then(m => ({ default: m.OgFinder })));
@@ -71,6 +72,7 @@ const GamesPage = lazy(() => import("@/pages/Games").then(m => ({ default: m.def
 const TechStack = lazy(() => import("@/components/TechStack").then(m => ({ default: m.TechStack })));
 const OurCoin = lazy(() => import("@/components/OurCoin").then(m => ({ default: m.OurCoin })));
 const SnipeFeed = lazy(() => import("@/components/SnipeFeed").then(m => ({ default: m.SnipeFeed })));
+const SwapPanel = lazy(() => import("@/components/SwapPanel").then(m => ({ default: m.SwapPanel })));
 const Feed = lazy(() => import("@/components/Feed").then(m => ({ default: m.Feed })));
 const NewsSignal = lazy(() => import("@/components/NewsSignal").then(m => ({ default: m.NewsSignal })));
 const SolToolsRoadmap = lazy(() => import("@/components/SolToolsRoadmap").then(m => ({ default: m.SolToolsRoadmap })));
@@ -1103,10 +1105,16 @@ const TokenDetailPopupWrapper = ({ token, onClose, onOpenScanner }: { token: Jup
 
 /* ─── Overview / Dashboard ─── */
 const TOOL_TABS: { id: TabId; label: string }[] = [
+  // Original OrbitX tools — each restored as its own standalone tool, exactly
+  // as they were on the old Tools tab (just dropped into the new UI).
   { id: "scanner", label: "Scanner" },
-  { id: "snipe-feed", label: "Market Radar" },
+  { id: "snipe-feed", label: "Snipe Feed" },
+  { id: "og-finder", label: "OG Finder" },
+  { id: "pairs", label: "New Pairs" },
+  { id: "migrations", label: "Migrations" },
+  { id: "trending", label: "Trending" },
+  { id: "swap", label: "Swap" },
   { id: "listings", label: "Listings" },
-  // Token Manager hidden from view for now (still routable directly).
 ];
 
 /* Tools — one page, top tab bar, every tool suite in one place. */
@@ -1125,8 +1133,13 @@ const ToolsTabbed = ({ mint, onSelectMint }: { mint: string; onSelectMint: (m: s
         ))}
       </div>
       <Suspense fallback={fallback}>
-        {active === "scanner" && <TruthScanSuite onSelect={onSelectMint} />}
-        {active === "snipe-feed" && <MarketRadarSuite mint={mint} onSelect={onSelectMint} />}
+        {active === "scanner" && <Scanner onSelect={onSelectMint} />}
+        {active === "snipe-feed" && <SnipeFeed onSelect={onSelectMint} />}
+        {active === "og-finder" && <OgFinder onSelect={onSelectMint} />}
+        {active === "pairs" && <PairTracker onSelect={onSelectMint} />}
+        {active === "migrations" && <Migrations onSelect={onSelectMint} />}
+        {active === "trending" && <Trending onSelect={onSelectMint} />}
+        {active === "swap" && <SwapPanel ogMint={mint} onSelectMint={onSelectMint} />}
         {active === "listings" && <TokenListings />}
       </Suspense>
     </div>
@@ -1134,10 +1147,7 @@ const ToolsTabbed = ({ mint, onSelectMint }: { mint: string; onSelectMint: (m: s
 };
 
 const OverviewPage = ({
-  mint,
   onSwitchTab,
-  onScanClick,
-  onChangeMint,
   onSelectMint,
 }: {
   mint: string;
@@ -1146,223 +1156,10 @@ const OverviewPage = ({
   onChangeMint: () => void;
   onSelectMint: (m: string) => void;
 }) => {
-  const { user, profile } = useAuth();
-  const [popupMint, setPopupMint] = useState<string | null>(null);
-  const popupToken: JupTokenInfo | null = popupMint ? { id: popupMint, name: "", symbol: "", decimals: 9 } : null;
-  type HomePanel = "watchlist" | "alpha" | "leaders" | "paper" | "calendar" | "calc";
-  const [panel, setPanel] = useState<HomePanel>("watchlist");
-  const quickActions: { label: string; Icon: ComponentType<{ className?: string }>; accent: TabAccent; onClick: () => void }[] = [
-    { label: "Scanner", Icon: Search, accent: "lime", onClick: () => onSwitchTab("scanner") },
-    { label: "Launches", Icon: Rocket, accent: "cyan", onClick: () => onSwitchTab("snipe-feed") },
-    { label: "Market", Icon: Flame, accent: "gold", onClick: () => onSwitchTab("feed") },
-    { label: "Spaces", Icon: Radio, accent: "cyan", onClick: () => openCommunitySub("spaces") },
-    { label: "Chat", Icon: MessageSquare, accent: "cyan", onClick: () => openCommunitySub("social") },
-    { label: "Dev Radar", Icon: Crosshair, accent: "gold", onClick: () => onSwitchTab("dev-wallet-radar") },
-    { label: "Tools", Icon: Wrench, accent: "white", onClick: () => onSwitchTab("tools") },
-    { label: "Profile", Icon: User, accent: "lime", onClick: () => onSwitchTab("profile") },
-  ];
-  const homePanels: { id: HomePanel; label: string }[] = [
-    { id: "watchlist", label: "Watchlist" },
-    { id: "alpha", label: "Alpha" },
-    { id: "leaders", label: "Leaders" },
-    { id: "paper", label: "Paper Trade" },
-    { id: "calendar", label: "Calendar" },
-    { id: "calc", label: "Calc" },
-  ];
-
-  const openCommunitySub = (sub: CommunitySubTab) => {
-    try {
-      localStorage.setItem(COMMUNITY_SUB_STORAGE_KEY, sub);
-      window.dispatchEvent(new Event("og:community-sub-tab"));
-    } catch { /* noop */ }
-    onSwitchTab("community");
-  };
-
-  const greeting = (() => {
-    const h = new Date().getHours();
-    if (h < 12) return "Good morning";
-    if (h < 17) return "Good afternoon";
-    return "Good evening";
-  })();
-
-  const displayName = profile?.display_name || profile?.username || "OG";
-
-  // Feature highlight cards — the 4 main entry points
-  const featureCards = [
-    {
-      eyebrow: "FORENSICS",
-      title: "Truth Scanner",
-      desc: "Rug score, dev wallet DNA, holder risk, bundle detection",
-      Icon: Search,
-      accent: "lime" as TabAccent,
-      tab: "scanner" as TabId,
-      badge: "LIVE",
-      gradient: "from-og-lime/10 to-og-lime/[0.02]",
-      glow: "shadow-[0_8px_32px_-12px_hsl(var(--og-lime)/0.4)]",
-    },
-    {
-      eyebrow: "LAUNCHES",
-      title: "Launch Radar",
-      desc: "Fresh mints, migrations, repeat dev flags, snipe alerts",
-      Icon: Rocket,
-      accent: "cyan" as TabAccent,
-      tab: "snipe-feed" as TabId,
-      badge: "STREAMING",
-      gradient: "from-og-cyan/10 to-og-cyan/[0.02]",
-      glow: "shadow-[0_8px_32px_-12px_hsl(var(--og-cyan)/0.4)]",
-    },
-    {
-      eyebrow: "MARKET",
-      title: "Market Feed",
-      desc: "Trending tokens, whale moves, narratives, news signals",
-      Icon: Flame,
-      accent: "gold" as TabAccent,
-      tab: "feed" as TabId,
-      badge: "HOT",
-      gradient: "from-og-gold/10 to-og-gold/[0.02]",
-      glow: "shadow-[0_8px_32px_-12px_hsl(var(--og-gold)/0.4)]",
-    },
-    {
-      eyebrow: "COMMUNITY",
-      title: "OG Spaces",
-      desc: "Voice rooms, live alpha calls, trader communities",
-      Icon: Radio,
-      accent: "cyan" as TabAccent,
-      tab: "community" as TabId,
-      communitySub: "spaces" as CommunitySubTab,
-      badge: "OPEN",
-      gradient: "from-purple-500/10 to-purple-500/[0.02]",
-      glow: "shadow-[0_8px_32px_-12px_rgba(168,85,247,0.4)]",
-    },
-  ];
-
-  // Community quick links — compact horizontal strip
-  const communityLinks = [
-    { label: "Chat", Icon: MessageSquare, sub: "social" as CommunitySubTab, accent: "cyan" as TabAccent },
-    { label: "Rooms", Icon: Hash, sub: "rooms" as CommunitySubTab, accent: "cyan" as TabAccent },
-    { label: "Spaces", Icon: Radio, sub: "spaces" as CommunitySubTab, accent: "gold" as TabAccent },
-    { label: "Groups", Icon: Users, sub: "communities" as CommunitySubTab, accent: "lime" as TabAccent },
-    { label: "Discover", Icon: Compass, sub: "discover" as CommunitySubTab, accent: "lime" as TabAccent },
-  ];
-
-  // Forensic tools — compact list
-  const forensicTools = [
-    { label: "Token Scanner", Icon: Search, tab: "scanner" as TabId, accent: "lime" as TabAccent, desc: "Risk & rug analysis" },
-    { label: "OG Finder", Icon: Crosshair, tab: "og-finder" as TabId, accent: "white" as TabAccent, desc: "Origin & clone check" },
-    { label: "Dev Wallet", Icon: Wallet, tab: "dev-wallet-radar" as TabId, accent: "gold" as TabAccent, desc: "Wallet DNA radar" },
-    { label: "Snipe Feed", Icon: Target, tab: "snipe-feed" as TabId, accent: "cyan" as TabAccent, desc: "New launches live" },
-  ];
-
-  const spinnerSm = (color: string) => (
-    <div className="h-36 rounded-2xl border border-white/[0.07] bg-white/[0.02] flex items-center justify-center">
-      <div className={`h-4 w-4 border-2 ${color} border-t-transparent rounded-full animate-spin`} />
-    </div>
-  );
-
-  return (
-    <div className="space-y-5 pb-6">
-
-      {/* ── HERO: greeting + avatar + scan bar ── */}
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-white/[0.09] bg-[#080e1a] p-5">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_0%_0%,hsl(var(--primary)/0.12),transparent_55%),radial-gradient(ellipse_at_100%_100%,hsl(var(--secondary)/0.08),transparent_55%)]" />
-
-        <div className="relative flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="relative shrink-0">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="h-12 w-12 rounded-2xl border border-white/15 object-cover" />
-              ) : (
-                <div className="h-12 w-12 rounded-2xl border border-white/15 bg-primary/10 flex items-center justify-center text-xl font-black text-primary">
-                  {displayName[0]?.toUpperCase()}
-                </div>
-              )}
-              <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-400 border-2 border-[#080e1a]" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-bold text-white/35 uppercase tracking-widest">{greeting}</p>
-              <h1 className="text-[22px] font-black text-white truncate leading-tight">{displayName}</h1>
-            </div>
-          </div>
-          <div className="shrink-0 flex items-center gap-2">
-            {profile?.current_level && (
-              <div className="flex items-center gap-1.5 rounded-xl border border-primary/25 bg-primary/[0.08] px-3 py-1.5">
-                <Trophy className="h-3 w-3 text-primary" />
-                <span className="text-[11px] font-black text-primary">LVL {profile.current_level}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Scan bar */}
-        <div className="relative mt-4 flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-black/20 px-4 py-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-0.5">Active Mint</p>
-            <p className="font-mono text-sm font-black text-white truncate">{shortAddr(mint, 8)}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onChangeMint}
-            className="h-8 px-3 rounded-xl border border-white/10 bg-white/[0.06] text-[11px] font-bold text-white/50 transition hover:bg-white/[0.1] hover:text-white"
-          >
-            Change
-          </button>
-          <button
-            type="button"
-            onClick={onScanClick}
-            className="h-8 px-4 rounded-xl bg-primary text-primary-foreground text-[12px] font-black transition hover:brightness-110 active:scale-95 flex items-center gap-1.5"
-          >
-            <Search className="h-3.5 w-3.5" />
-            Scan
-          </button>
-        </div>
-      </div>
-
-      {/* QUICK ACTIONS */}
-      <div>
-        <p className="text-[11px] font-black text-white/30 uppercase tracking-widest mb-3">Quick Actions</p>
-        <div className="grid grid-cols-4 gap-2.5">
-          {quickActions.map((a) => (
-            <button key={a.label} type="button" onClick={a.onClick}
-              className="group flex flex-col items-center gap-2 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-2 py-3.5 transition hover:border-white/[0.14] hover:bg-white/[0.06] active:scale-95">
-              <span className={cn("flex h-11 w-11 items-center justify-center rounded-xl border", accentIcon(a.accent))}>
-                <a.Icon className="h-5 w-5" />
-              </span>
-              <span className="text-[10.5px] font-bold text-white/70 text-center leading-tight">{a.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* SEGMENTED INSIGHTS PANEL — one view at a time to keep the home short */}
-      <div>
-        <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-          {homePanels.map((pp) => (
-            <button key={pp.id} type="button" onClick={() => setPanel(pp.id)}
-              className={cn("shrink-0 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition",
-                panel === pp.id ? "bg-primary text-primary-foreground" : "border border-white/10 bg-white/[0.03] text-white/50 hover:text-white/80")}>
-              {pp.label}
-            </button>
-          ))}
-        </div>
-        {panel === "watchlist" && <Suspense fallback={spinnerSm("border-secondary")}><SmartWatchlist onSelectMint={(m: string) => setPopupMint(m)} /></Suspense>}
-        {panel === "alpha" && <Suspense fallback={spinnerSm("border-og-gold")}><AlphaCallouts onSelectMint={(m: string) => { onSelectMint(m); onSwitchTab("scanner"); }} /></Suspense>}
-        {panel === "leaders" && <Suspense fallback={spinnerSm("border-primary")}><PlatformLeaderboard /></Suspense>}
-        {panel === "paper" && <Suspense fallback={spinnerSm("border-primary")}><PaperTrading onSelectMint={(m: string) => { onSelectMint(m); onSwitchTab("scanner"); }} /></Suspense>}
-        {panel === "calendar" && <Suspense fallback={spinnerSm("border-secondary")}><CryptoCalendar /></Suspense>}
-        {panel === "calc" && <Suspense fallback={spinnerSm("border-primary")}><QuickCalc /></Suspense>}
-      </div>
-
-      {popupToken && (
-        <TokenDetailPopupWrapper
-          token={popupToken}
-          onClose={() => setPopupMint(null)}
-          onOpenScanner={(m) => { setPopupMint(null); onSelectMint(m); onSwitchTab("scanner"); }}
-        />
-      )}
-    </div>
-  );
+  // Home is now an X-style social timeline (composer + live community feed),
+  // wired to the shared social_messages feed. Quick-action launcher removed.
+  return <SocialHome onSwitchTab={(t) => onSwitchTab(t as TabId)} onSelectMint={onSelectMint} />;
 };
-
 
 const QuickToolCard = ({ tool, onClick }: { tool: TabConfig; onClick: () => void }) => (
   <button
