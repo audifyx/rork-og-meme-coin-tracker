@@ -758,7 +758,12 @@ const DirectMessages: React.FC = () => {
           <img src={otherAvatar} alt="" className="h-12 w-12 rounded-full object-cover" />
           <OnlineDot online={isOnline} />
         </div>
-        <p className="text-[15px] font-bold text-foreground leading-tight">{otherName}</p>
+        <p className="text-[15px] font-bold text-foreground leading-tight">
+          {otherName}
+          {activeConvo.otherUser?.badge && (
+            <span className="ml-1.5 text-[10px] font-semibold text-primary align-middle">{activeConvo.otherUser.badge}</span>
+          )}
+        </p>
         <p className={cn("text-[12px] font-medium", isOnline ? "text-green-400" : "text-muted-foreground/50")}>
           {isOnline ? "Online" : lastSeen(activeConvo.otherUser?.last_active_at || null)}
         </p>
