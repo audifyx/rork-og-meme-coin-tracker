@@ -122,7 +122,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     setCurrentTheme(themeId);
     localStorage.setItem("sol-theme", themeId);
     applyThemeVars(themeId);
-    const allNow = [...THEME_PRESETS, ...customThemes];
+    const allNow = [...BASE_PRESETS, ...customThemes];
     const _preset = allNow.find(t => t.id === themeId);
     setThemeGradient(_preset?.gradient ?? null);
     if (user) {
@@ -182,7 +182,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [currentTheme, setTheme]);
 
-  const allThemes = useMemo(() => [...THEME_PRESETS, ...customThemes], [customThemes]);
+  const allThemes = useMemo(() => [...BASE_PRESETS, ...customThemes], [customThemes]);
 
   return (
     <ThemeContext.Provider value={{
