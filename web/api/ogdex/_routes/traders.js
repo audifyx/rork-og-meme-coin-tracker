@@ -95,6 +95,32 @@ export default async function handler(req, res) {
       const h = holderMap.get(t.owner);
       if (h) { t.isHolder = true; t.holdingPct = h.pct; t.holdingAmount = h.uiAmount; t.holdingUsd = h.usdValue; }
     }
+
+    // ── PnL ──────────────────────────────────────────────────────────────
+    // Derive Realized / Unrealized / Net PnL per wallet from the captured
+    // buy/sell USD volumes plus the current holding value. Cost basis is
+    // allocated between the sold portion and the still-held portion by value,
+    // so Net PnL === Realized + Unrealized === sold + holding − bought.
+    // Wallets with no captured cost basis (no buys in the trade window) are
+    // left null and render as "—" rather than fabricating a number.
+    const withPnl = (e, heldRaw) => {
+      const cost = num(e.buyVol) || 0;       // USD bought (cost basis seen)
+      const proceeds = num(e.sellVol) || 0;  // USD sold (realized proceeds)
+      const held = num(heldRaw) || 0;        // current holding value (USD)
+      if (cost <= 0 || (proceeds <= 0 && held <= 0)) {
+        e.realizedPnl = null; e.unrealizedPnl = null; e.netPnl = null; return;
+      }
+      const denom = proceeds + held;
+      const soldShare = denom > 0 ? proceeds / denom : 0;
+      const costOfSold = cost * soldShare;
+      const realized = proceeds - costOfSold;
+      const unrealized = held > 0 ? held - (cost - costOfSold) : 0;
+      e.realizedPnl = realized;
+      e.unrealizedPnl = unrealized;
+      e.netPnl = realized + unrealized;
+    };
+    for (const t of traders) withPnl(t, t.holdingUsd);
+    for (const h of holders) withPnl(h, h.usdValue);
     return send(res, 200, { ok: true, mint, holders, traders, holdersSource: holdersRes.source, holdersStale: holdersRes.stale });
   } catch (e) {
     return send(res, 200, { ok: false, mint, holders: [], traders: [], error: String(e?.message || e) });
