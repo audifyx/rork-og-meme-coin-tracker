@@ -99,8 +99,9 @@ const ALL_APPS: App[] = [
   { key: "ai", name: "AI Assistant", caption: "Help & Support", href: "/ai-chat", tone: "#14a0ff", iconBg: "linear-gradient(135deg, #14a0ff, #0077b6)", glyph: Glyph.ai },
 ];
 
-const CENTER_TABS: { key: string; name: string; href?: string; action: "profile" | "settings" | "logout"; tone: string; glyph: JSX.Element }[] = [
+const CENTER_TABS: { key: string; name: string; href?: string; action: "profile" | "settings" | "logout" | "wallpaper"; tone: string; glyph: JSX.Element }[] = [
   { key: "profile", name: "Profile", href: "/profile", action: "profile", tone: "#2F80FF", glyph: Glyph.profile },
+  { key: "wallpaper", name: "Wallpaper", action: "wallpaper", tone: "#FFC53D", glyph: <div style={{fontSize:"18px"}}>🎨</div> },
   { key: "settings", name: "Settings", href: "/settings", action: "settings", tone: "#9945FF", glyph: Glyph.settings },
   { key: "logout", name: "Log Out", action: "logout", tone: "#FF5B6B", glyph: Glyph.logout },
 ];
@@ -174,6 +175,25 @@ export default function Hub() {
     window.setTimeout(() => {
       if ("action" in app) {
         if (app.action === "logout") logout();
+        else if (app.action === "wallpaper") {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = 'image/*';
+          input.onchange = async (e: any) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (event: any) => {
+                localStorage.setItem('hub-wallpaper', event.target.result);
+                window.location.reload();
+              };
+              reader.readAsDataURL(file);
+            }
+            setLaunching(null);
+          };
+          input.click();
+          setLaunching(null);
+        }
         else window.location.assign(app.href || "/settings");
       } else {
         if (app.external) {
@@ -200,7 +220,7 @@ export default function Hub() {
 
       {/* ── DESKTOP ── */}
       <div className={`desktop ${booted ? "desktop-ready" : ""}`}>
-        <div className="wallpaper" aria-hidden>
+        <div className="wallpaper" aria-hidden style={{ backgroundImage: `url('${localStorage.getItem('hub-wallpaper') || ''}')` }}>
           <div className="wp-image" />
           <div className="wp-overlay" />
         </div>
