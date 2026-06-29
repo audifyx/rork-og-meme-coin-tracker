@@ -18,19 +18,7 @@ type App = {
 };
 
 const OrbitLogo = ({ size = 48, className = "" }: { size?: number; className?: string }) => (
-  <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
-    <defs>
-      <linearGradient id="og-grad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#2F80FF" />
-        <stop offset="50%" stopColor="#9945FF" />
-        <stop offset="100%" stopColor="#14E0C8" />
-      </linearGradient>
-    </defs>
-    <circle cx="24" cy="24" r="3.5" fill="url(#og-grad)" />
-    <ellipse cx="24" cy="24" rx="16" ry="5" stroke="url(#og-grad)" strokeWidth="1.8" transform="rotate(-25 24 24)" opacity="0.92" />
-    <circle cx="33" cy="17" r="2.2" fill="url(#og-grad)" opacity="0.85" />
-    <path d="M24 24L33 17" stroke="url(#og-grad)" strokeWidth="1.2" opacity="0.55" />
-  </svg>
+  <img src="/icon-192x192.png" width={size} height={size} alt="OrbitX" className={className} style={{ objectFit: "contain" }} />
 );
 
 const Glyph = {
