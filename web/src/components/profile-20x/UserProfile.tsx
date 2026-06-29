@@ -1377,7 +1377,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
     { label: "Calls Made", value: profileData?.trades_count ?? null, hint: "Trade/call records tracked on profile", icon: Radio, accent: "rose" as const, formatter: compact },
     { label: "Top Calls", value: positiveCalls.length || null, hint: "Positive call history detected", icon: TrendingUp, accent: "cyan" as const, formatter: compact },
     { label: "Reputation", value: profileData?.reputation_score ?? null, hint: "Community trust and profile strength", icon: Award, accent: "violet" as const, formatter: compact },
-    { label: "OG Score", value: derivedOgScore, hint: "Derived from level, reach, spaces, and badges", icon: Crown, accent: "amber" as const, formatter: (value: number) => `${Math.round(value)}` },
+    { label: "OrbitX Score", value: derivedOgScore, hint: "Derived from level, reach, spaces, and badges", icon: Crown, accent: "amber" as const, formatter: (value: number) => `${Math.round(value)}` },
     { label: "Wallet PNL", value: profileData?.total_pnl ?? null, hint: "Wallet performance linked into identity", icon: Wallet, accent: (profileData?.total_pnl ?? 0) >= 0 ? "emerald" as const : "rose" as const, formatter: formatUsdCompact },
     { label: "Diamond Hands", value: diamondHandsScore, hint: diamondHandsScore == null ? "Unlocks when holder streak data syncs" : "Based on holder streak retention", icon: Medal, accent: "amber" as const, formatter: (value: number) => `${Math.round(value)}` },
     { label: "Spaces Hosted", value: pastSpaces.length + (liveSpace ? 1 : 0), hint: `${compact(totalListeners)} total listeners reached`, icon: Headphones, accent: "cyan" as const, formatter: compact },

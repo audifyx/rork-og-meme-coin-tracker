@@ -1,5 +1,5 @@
 /**
- * SpaceReplay — Public standalone page for listening to recorded OG Spaces.
+ * SpaceReplay — Public standalone page for listening to recorded OrbitX Spaces.
  * No auth required. Shareable link: ogscan.fun/listen/{spaceId}
  */
 import React, { useState, useEffect, useRef } from "react";
@@ -177,7 +177,7 @@ const SpaceReplay = () => {
   // ─── OG Meta tags via document.title ───
   useEffect(() => {
     if (space) {
-      document.title = `${space.title} — OG Spaces | OrbitX`;
+      document.title = `${space.title} — OrbitX Spaces | OrbitX`;
     }
     return () => { document.title = "OrbitX"; };
   }, [space]);
@@ -244,7 +244,7 @@ const SpaceReplay = () => {
           <div className="px-5 pt-5 pb-3 flex items-center gap-3">
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.06] border border-white/[0.08]">
               <Radio className="h-3 w-3 text-white/40" />
-              <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">OG Space</span>
+              <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">OrbitX Space</span>
             </div>
             {space.topic && (
               <span className="text-[10px] font-bold text-white/30 px-2 py-0.5 rounded-full border border-white/[0.06]">
@@ -391,7 +391,7 @@ const SpaceReplay = () => {
         {/* ─── CTA to join platform ─── */}
         <div className="mt-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 text-center">
           <p className="text-sm font-bold text-white/50 mb-1">Want to join live spaces?</p>
-          <p className="text-[11px] text-white/25 mb-4">Create an account to host or join live OG Spaces on OrbitX.</p>
+          <p className="text-[11px] text-white/25 mb-4">Create an account to host or join live OrbitX Spaces on OrbitX.</p>
           <Link to="/auth"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-sm font-black transition-all shadow-lg shadow-amber-400/10">
             <Mic className="h-4 w-4" /> Join OrbitX

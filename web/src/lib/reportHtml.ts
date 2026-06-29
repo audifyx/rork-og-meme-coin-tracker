@@ -299,7 +299,7 @@ function buildDocument(d: {
 <html lang="en"><head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>OG SCAN · ${esc(token.symbol || 'Token')} Intelligence Report</title>
+<title>OrbitX · ${esc(token.symbol || 'Token')} Intelligence Report</title>
 <style>
 :root{ --yellow:#f4a261; --bg:#0a0a0a; --panel:#121212; --line:rgba(255,255,255,.08); --text:#f5f5f5; --muted:#9ca3af; }
 *{box-sizing:border-box}

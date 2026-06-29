@@ -1228,7 +1228,7 @@ export default function TokenManager() {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl border border-og-lime/15 bg-og-lime/[0.03] p-3">
                 <p className="text-[10px] font-black text-og-lime/60">
-                  OG SCAN
+                  OrbitX
                 </p>
                 <p className="mt-1 text-xl font-black text-og-lime">FREE</p>
                 <ul className="mt-2 space-y-1 text-[10px] text-white/30">

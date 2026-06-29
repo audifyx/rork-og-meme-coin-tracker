@@ -1072,9 +1072,9 @@ function HomeFeed({
     })();
   }, []);
 
-  // Default communities always shown (OG SCAN Feed + OG Official Community)
+  // Default communities always shown (OrbitX Feed + OG Official Community)
   const OG_DEFAULT_COMMUNITY_IDS = [
-    "ce67b7a0-6372-40d9-b958-3af7fb4ac5a3", // OG SCAN Feed
+    "ce67b7a0-6372-40d9-b958-3af7fb4ac5a3", // OrbitX Feed
     "f680a202-209d-4242-aa1f-c44218fd80ce", // OG Official Community 📈
   ];
 

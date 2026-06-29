@@ -39,7 +39,7 @@ export default function Whitepaper() {
         <LI><b className="text-white">Portfolio</b> — holdings, realized and unrealized PnL, win rate, and one-tap PnL share cards.</LI>
         <LI><b className="text-white">Copy Tracking</b> — follow up to 10 wallets and see their trades in a live feed at <Link to="/copy-trade" className="text-accent">/copy-trade</Link>.</LI>
         <LI><b className="text-white">Community KOL Lists</b> — community-nominated and OG-verified smart-money wallets at <Link to="/kol/community" className="text-accent">/kol/community</Link>. Anyone can nominate a wallet; OG team verifies and tags.</LI>
-        <LI><b className="text-white">Embeddable Token Widget</b> — a single script tag embeds live price, market cap, 24h change, OG Score, and trust verdict for any token on any website. Configure at <Link to="/embed" className="text-accent">/embed</Link>.</LI>
+        <LI><b className="text-white">Embeddable Token Widget</b> — a single script tag embeds live price, market cap, 24h change, OrbitX Score, and trust verdict for any token on any website. Configure at <Link to="/embed" className="text-accent">/embed</Link>.</LI>
         <LI><b className="text-white">Smart Alerts v2</b> — price, percent-move, whale-buy, dev-sell, and migration alerts delivered to Telegram or any webhook (Discord, Slack, custom).</LI>
         <LI><b className="text-white">Multi-chain</b> — 16 chains including Solana, Ethereum, Base, BNB Chain, Arbitrum, Polygon, Avalanche, SUI and TON.</LI>
         <LI><b className="text-white">Tools</b> — smart alerts, community Store and boosts, token launcher, and a one-link public OpenAPI.</LI>

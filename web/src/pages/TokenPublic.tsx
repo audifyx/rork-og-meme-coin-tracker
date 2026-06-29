@@ -116,7 +116,7 @@ export default function TokenPublic() {
               </div>
               <div className="shrink-0 text-center">
                 <div className="relative h-16 w-16 rounded-full" style={{ background: ring }}>
-                  <div className="absolute inset-[3px] flex flex-col items-center justify-center rounded-full bg-[#080e1a]"><span className="text-lg font-black leading-none" style={{ color: scoreColor(total) }}>{total}</span><span className="text-[8px] font-bold text-white/40">OG SCORE</span></div>
+                  <div className="absolute inset-[3px] flex flex-col items-center justify-center rounded-full bg-[#080e1a]"><span className="text-lg font-black leading-none" style={{ color: scoreColor(total) }}>{total}</span><span className="text-[8px] font-bold text-white/40">ORBITX SCORE</span></div>
                 </div>
               </div>
             </div>
@@ -259,7 +259,7 @@ export default function TokenPublic() {
           )}
 
           {tab === "Score" && (<>
-            <Stat label="OG Score" value={`${total}/100`} accent="text-primary" />
+            <Stat label="OrbitX Score" value={`${total}/100`} accent="text-primary" />
             <Stat label="Token Age" value={`${sig.age ?? "--"}`} />
             <Stat label="ATH MCap" value={`${sig.athMcap ?? "--"}`} />
             <Stat label="Holder Profile" value={`${sig.holderProfile ?? "--"}`} />

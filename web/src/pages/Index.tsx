@@ -286,7 +286,7 @@ const TABS: TabConfig[] = [
     slug: "scanner",
     pageNumber: 6,
     eyebrow: "Forensics",
-    description: "Scanner + OG Finder for mint checks, origin proof, dominance status, LP risk, and holders.",
+    description: "Scanner + OrbitX Finder for mint checks, origin proof, dominance status, LP risk, and holders.",
     Icon: Search,
     accent: "lime",
     group: "Forensics",
@@ -295,7 +295,7 @@ const TABS: TabConfig[] = [
   },
   {
     id: "og-finder",
-    label: "OG Finder",
+    label: "OrbitX Finder",
     slug: "og-finder",
     pageNumber: 7,
     eyebrow: "Origin Check",
@@ -1109,7 +1109,7 @@ const TOOL_TABS: { id: TabId; label: string }[] = [
   // as they were on the old Tools tab (just dropped into the new UI).
   { id: "scanner", label: "Scanner" },
   { id: "snipe-feed", label: "Snipe Feed" },
-  { id: "og-finder", label: "OG Finder" },
+  { id: "og-finder", label: "OrbitX Finder" },
   { id: "pairs", label: "New Pairs" },
   { id: "migrations", label: "Migrations" },
   { id: "trending", label: "Trending" },
@@ -1272,7 +1272,7 @@ const SuiteNav = <T extends string>({
 
 const truthSuiteOptions: SuiteOption<"scanner" | "og-finder">[] = [
   { id: "scanner", label: "Scanner", eyebrow: "Mint scan", description: "Risk, liquidity, holders, dominance.", Icon: Search, accent: "lime" },
-  { id: "og-finder", label: "OG Finder", eyebrow: "Origin proof", description: "First mint, lineage, clone check.", Icon: Crosshair, accent: "white" },
+  { id: "og-finder", label: "OrbitX Finder", eyebrow: "Origin proof", description: "First mint, lineage, clone check.", Icon: Crosshair, accent: "white" },
 ];
 
 const launchSuiteOptions: SuiteOption<"snipe-feed" | "migrations">[] = [

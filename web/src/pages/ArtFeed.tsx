@@ -105,7 +105,7 @@ interface Trailer {
 const TRAILERS: Trailer[] = [
   {
     id: "tr-1",
-    title: "OG SCAN: Origins",
+    title: "OrbitX: Origins",
     subtitle: "The story of how on-chain forensics changed Solana forever.",
     thumbnail: "/memes/og-forensic-matrix.jpg",
     duration: "0:15",
@@ -403,7 +403,7 @@ const MemeGridCard = ({
 
         {/* Top label */}
         <div className="flex items-center justify-between px-3 py-2 bg-white/[0.03] border-b border-white/5">
-          <span className="text-[10px] font-bold tracking-widest text-white/30 uppercase">OG SCAN</span>
+          <span className="text-[10px] font-bold tracking-widest text-white/30 uppercase">OrbitX</span>
           <Badge className="text-[9px] px-2 py-0 h-4 bg-white/5 text-white/50 border-white/10 font-bold tracking-wide uppercase">
             {meme.tag}
           </Badge>
@@ -528,7 +528,7 @@ const MemeSlider = ({ memes, onOpen, reactions }: { memes: Meme[]; onOpen: (idx:
                   </div>
                 )}
                 <div className="flex items-center justify-between px-3 py-2 bg-white/[0.03] border-b border-white/5">
-                  <span className="text-[10px] font-bold tracking-widest text-white/30 uppercase">OG SCAN</span>
+                  <span className="text-[10px] font-bold tracking-widest text-white/30 uppercase">OrbitX</span>
                   <Badge className="text-[9px] px-2 py-0 h-4 bg-white/5 text-white/50 border-white/10">{meme.tag}</Badge>
                 </div>
                 <div className="relative aspect-square overflow-hidden bg-black">

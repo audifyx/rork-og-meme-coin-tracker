@@ -37,7 +37,7 @@ export async function downloadScanCardImage(card: ScanCardPayload, iconUrl?: str
   const PAD = 70;
   // header
   ctx.fillStyle = accent; ctx.font = "bold 34px Helvetica, Arial, sans-serif";
-  ctx.fillText("OG SCAN", PAD, 95);
+  ctx.fillText("OrbitX", PAD, 95);
   ctx.fillStyle = "rgba(255,255,255,0.45)"; ctx.font = "20px Helvetica, Arial, sans-serif";
   ctx.fillText(card.title, PAD, 125);
   ctx.textAlign = "right";

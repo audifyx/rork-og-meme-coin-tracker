@@ -464,7 +464,7 @@ function buildReportHtml(d: {
   </style>
 
   <div class="topbar">
-    <div class="brand">OG SCAN INTELLIGENCE REPORT • v2.1 • MAX FORENSIC DEPTH</div>
+    <div class="brand">OrbitX INTELLIGENCE REPORT • v2.1 • MAX FORENSIC DEPTH</div>
     <div class="site">ogscan.fun</div>
   </div>
   <div class="subbar">CA: ${esc(token.id)} | ${nowUtc} • Report ID: ${esc(fingerprint)} • Data Completeness 100% • NOT FINANCIAL ADVICE</div>
@@ -702,7 +702,7 @@ function buildReportHtml(d: {
       <div>Current — Peak momentum, supported by real on-chain activity. High entropy.</div>`}
     </div>
 
-    <div class="section-title"><span class="d">◆</span>SCAN HISTORY (OG SCAN AUDIT LOG)</div>
+    <div class="section-title"><span class="d">◆</span>SCAN HISTORY (OrbitX AUDIT LOG)</div>
     <div class="kv">
       <div>${nowUtc} — OG TOKEN ${conf}% • risk ${risk}</div>
       <div style="color:#9a9a9a">Consistent TRUE OG classification across all scans. No material deterioration in risk profile.</div>
@@ -713,7 +713,7 @@ function buildReportHtml(d: {
       <div class="qrtxt"><b>VERIFY ON-CHAIN</b><br>Scan to open this token on Solscan and independently verify every metric in this report.<br>${esc(token.id)}</div>
     </div>` : ''}
 
-    <div class="footer-note">OG SCAN INTELLIGENCE ENGINE v2.1 — ogscan.fun. Generated using the full forensic stack: on-chain wallet clustering, deployer history, holder entropy modeling, liquidity authenticity scoring, smart money flow detection, behavioral analysis, and narrative dominance tracking.</div>
+    <div class="footer-note">OrbitX INTELLIGENCE ENGINE v2.1 — ogscan.fun. Generated using the full forensic stack: on-chain wallet clustering, deployer history, holder entropy modeling, liquidity authenticity scoring, smart money flow detection, behavioral analysis, and narrative dominance tracking.</div>
 
     <div class="disclaimer"><b>DISCLAIMER:</b> This is NOT financial advice. Cryptocurrency investments carry extremely high risk of total loss. Always conduct your own research (DYOR). OrbitX provides intelligence and analytics tools only. Past performance is not indicative of future results.</div>
   </div>

@@ -75,7 +75,7 @@ export type ScanCardPayload = {
 export function buildScanCard(input: ScanShareInput): ScanCardPayload {
   const { result } = input;
   return {
-    title: "OG SCAN REPORT",
+    title: "OrbitX REPORT",
     ticker: input.symbol ? `$${input.symbol}` : (input.name ?? shortMint(input.mint)),
     tierLabel: result.tierLabel,
     tier: result.tier,
@@ -98,7 +98,7 @@ export function buildTelegramAlert(trigger: TelegramTrigger, input: ScanShareInp
     trigger === "og_identified" ? `${TIER_EMOJI.OG_TOKEN} OG IDENTIFIED` :
     trigger === "velocity_spike" ? `🚀 VELOCITY SPIKE${input.velocity ? ` (${Math.round(input.velocity)}/100)` : ""}` :
     trigger === "abnormal_activity" ? `${TIER_EMOJI.RISKY_TOKEN} ABNORMAL ACTIVITY` :
-    `📊 OG SCAN DAILY`;
+    `📊 OrbitX DAILY`;
   return [
     `*${head}*`,
     `${ticker} — ${input.result.tierLabel} (${input.result.confidence}%)`,

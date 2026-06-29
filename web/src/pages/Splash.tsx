@@ -31,7 +31,7 @@ const LINKS = {
 type Feature = { tag: string; title: string; copy: string; tone: string; icon: string };
 const FEATURES: Feature[] = [
   { tag: "Discovery", title: "Intelligent token discovery", tone: "f1", icon: "discover",
-    copy: "Real-time multi-chain scanner with a proprietary OG Score — on-chain metrics, holder quality, momentum and AI signals. Trending, hidden gems and about-to-explode, powered by live data." },
+    copy: "Real-time multi-chain scanner with a proprietary OrbitX Score — on-chain metrics, holder quality, momentum and AI signals. Trending, hidden gems and about-to-explode, powered by live data." },
   { tag: "Wallet forensics", title: "Track smart money like a pro", tone: "f2", icon: "wallet",
     copy: "Any wallet's full history, win rate, hold time and PnL. Smart-money and KOL labels (Ansem, blknoiz06 + 37 more mapped), whale alerts and full holder lists with one-click actions." },
   { tag: "OrbitX DEX", title: "Blazing-fast trading & execution", tone: "f3", icon: "dex",

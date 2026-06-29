@@ -636,7 +636,7 @@ export default function UserPublicPage() {
                 )}
                 {profile.is_official_account && (
                   <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 text-black shadow-md shadow-amber-500/20">
-                    ✦ OFFICIAL OG SCAN
+                    ✦ OFFICIAL OrbitX
                   </span>
                 )}
                 {profile.affiliate_org_id && !profile.is_official_account && (

@@ -2727,7 +2727,7 @@ const Spaces = () => {
               <span className="text-[11px] font-bold text-amber-400 uppercase tracking-widest">Live Voice</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight mb-1.5">
-              OG Spaces
+              OrbitX Spaces
             </h2>
             <p className="text-[13px] text-white/40 leading-relaxed max-w-sm">
               Join or start live voice rooms — alpha calls, discussions, and community hangouts.

@@ -304,7 +304,7 @@ export default function TokenDetail() {
           <StatPill label="Holders"     value={fmtNum(meta.holderCount ?? t.holderCount ?? safety?.totalHolders)} />
           <StatPill label="FDV"         value={fmtUsd(t.fdv ?? meta.fdv, { compact: true })} />
           {athMcap != null && <StatPill label="ATH MCap" value={fmtUsd(athMcap, { compact: true })} sub={fromAthPct != null ? (fromAthPct >= 0 ? "+" : "") + fromAthPct.toFixed(0) + "% ATH" : undefined} />}
-          <StatPill label="OG Score"    value={score != null ? Math.round(score) + "/100" : "—"} accent={score != null && score >= 60} />
+          <StatPill label="OrbitX Score"    value={score != null ? Math.round(score) + "/100" : "—"} accent={score != null && score >= 60} />
           <StatPill label="Token Age"   value={meta.ageDays != null ? meta.ageDays + "d" : "—"} />
           <StatPill label="Whales"      value={String(whales)} sub={whales === 0 ? "healthy" : "concentrated"} />
           <StatPill label="Risk"        value={safety?.riskScore != null ? String(safety.riskScore) : "—"} />
@@ -368,7 +368,7 @@ export default function TokenDetail() {
 }
 
 /* ─────────────────────────────────────────────
-   Overview tab  (includes OG Score + Forensic Scores, no duplicates)
+   Overview tab  (includes OrbitX Score + Forensic Scores, no duplicates)
 ───────────────────────────────────────────── */
 function Overview({ d, t, meta, safety, trades, ath, score, whales }: any) {
   const buyVol  = meta.buyVolume24h ?? t.buyVolume ?? 0;
@@ -383,10 +383,10 @@ function Overview({ d, t, meta, safety, trades, ath, score, whales }: any) {
   return (
     <div className="space-y-3">
 
-      {/* OG Score + Forensic Scores */}
+      {/* OrbitX Score + Forensic Scores */}
       <div className="grid lg:grid-cols-3 gap-3">
         <div className="card p-5 flex flex-col items-center justify-center text-center">
-          <div className="text-[10px] uppercase tracking-widest text-muted mb-3">OG Score</div>
+          <div className="text-[10px] uppercase tracking-widest text-muted mb-3">OrbitX Score</div>
           <ScoreRing value={score} label="/ 100" size={120} />
           {(d.momentumLabel || meta.momentumLabel) && (
             <div className="mt-3 inline-flex pill bg-panel2 text-muted capitalize">

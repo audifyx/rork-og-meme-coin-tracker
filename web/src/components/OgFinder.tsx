@@ -76,7 +76,7 @@ const DEFAULT_FILTERS: FinderFilters = {
   hideHighRisk: false,
 };
 
-// OG score is intentionally age-only after quote-backed LP safety gates. Price,
+// OrbitX score is intentionally age-only after quote-backed LP safety gates. Price,
 // verification, migration, and market hype never decide OG status.
 function ogScore(t: JupTokenInfo, oldest: number | null): number {
   const created = tokenOgCreatedAtMs(t);
@@ -269,7 +269,7 @@ export const OgFinder = ({ onSelect }: Props) => {
               </button>
             </div>
             <div className="grid gap-2 sm:grid-cols-4">
-              <FilterNum label="MIN OG SCORE" value={filters.minScore} step={5} onChange={(v) => setFilters({ ...filters, minScore: v })} />
+              <FilterNum label="MIN ORBITX SCORE" value={filters.minScore} step={5} onChange={(v) => setFilters({ ...filters, minScore: v })} />
               <FilterNum label="MIN LIQ" value={filters.minLiq} step={1000} onChange={(v) => setFilters({ ...filters, minLiq: Math.max(1000, v) })} />
               <FilterToggle label="VERIFIED" value={filters.verifiedOnly} onChange={(v) => setFilters({ ...filters, verifiedOnly: v })} />
               <FilterToggle label="HIDE RUG RISK" value={filters.hideHighRisk} onChange={(v) => setFilters({ ...filters, hideHighRisk: v })} />

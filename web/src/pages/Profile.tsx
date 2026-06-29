@@ -593,7 +593,7 @@ const Profile = () => {
             )}
             {profile.affiliate_org_id && !profile.is_official_account && (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-violet-600 to-indigo-500 text-white shrink-0">
-                🏷 OG SCAN AFFILIATE
+                🏷 OrbitX AFFILIATE
               </span>
             )}
           </div>

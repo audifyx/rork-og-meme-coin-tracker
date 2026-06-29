@@ -2,7 +2,7 @@
  * EmbedCombined — ogscan.fun/embed/combined/:username
  *
  * Full combined embeddable widget. No auth, no chrome.
- * Shows: OG SCAN branded header · OG Spaces widget · Profile widget
+ * Shows: OrbitX branded header · OrbitX Spaces widget · Profile widget
  * Designed to be dropped as a single <iframe> on any external website.
  *
  * iframe embed code:
@@ -151,7 +151,7 @@ function LiveWaveform({ active, color }: { active: boolean; color: string }) {
   return <canvas ref={canvasRef} width={280} height={28} className="w-full h-7 block opacity-80" />;
 }
 
-/* ─── OG SCAN Banner logo ─────────────────────────────────── */
+/* ─── OrbitX Banner logo ─────────────────────────────────── */
 function OGScanBanner() {
   return (
     <div className="flex flex-col items-center justify-center py-5 px-4 relative overflow-hidden"
@@ -168,7 +168,7 @@ function OGScanBanner() {
           </div>
           <h1 className="text-xl font-black tracking-tight"
             style={{ background: "linear-gradient(90deg, #a78bfa 0%, #06b6d4 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            OG SCAN EMBEDDED
+            OrbitX EMBEDDED
           </h1>
         </div>
         <p className="text-[11px] text-white/30 tracking-wide">The Ultimate Solana Alpha &amp; Trading Platform</p>
@@ -345,7 +345,7 @@ export default function EmbedCombined() {
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius:2px; }
       `}</style>
 
-      {/* ── OG SCAN Banner Header ─────────────────────── */}
+      {/* ── OrbitX Banner Header ─────────────────────── */}
       <OGScanBanner />
 
       {loading ? (
@@ -619,7 +619,7 @@ export default function EmbedCombined() {
           <div className="px-4 py-3 border-t border-white/[0.05] flex items-center justify-center gap-1.5">
             <Radio className="h-2 w-2 text-violet-400/40" />
             <a href="https://ogscan.fun" target="_blank" rel="noopener noreferrer" className="text-[9px] text-white/15 hover:text-violet-400/60 transition-colors tracking-wider">
-              Powered by <span className="text-violet-400/50">OG SCAN</span> · Built for Solana Traders
+              Powered by <span className="text-violet-400/50">OrbitX</span> · Built for Solana Traders
             </a>
           </div>
         </>

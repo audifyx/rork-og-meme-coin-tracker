@@ -1,6 +1,6 @@
 /**
  * PublicSpaceListen — Public standalone live-listener page.
- * No auth required. Anyone with the link can listen to a live OG Space.
+ * No auth required. Anyone with the link can listen to a live OrbitX Space.
  * Shareable link: ogscan.fun/space/:spaceId
  *
  * Architecture:

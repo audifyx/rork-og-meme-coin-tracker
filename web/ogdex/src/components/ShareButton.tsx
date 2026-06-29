@@ -10,7 +10,7 @@ export default function ShareButton({ mint, symbol, score, mcap, verdict }: { mi
   const sym = (symbol || "").replace(/^\$/, "");
   const mc = mcap != null ? "$" + compact(mcap) : null;
   const lines = [`🔍 ${sym ? "$" + sym : "Token"} scanned on OrbitX DEX`];
-  if (score != null) lines.push(`OG Score ${Math.round(score)}/100${mc ? ` · MC ${mc}` : ""}`);
+  if (score != null) lines.push(`OrbitX Score ${Math.round(score)}/100${mc ? ` · MC ${mc}` : ""}`);
   else if (mc) lines.push(`MC ${mc}`);
   if (verdict) lines.push(String(verdict).replace(/[^\w\s.+-]/g, "").trim());
   lines.push("Live on-chain report 👇");

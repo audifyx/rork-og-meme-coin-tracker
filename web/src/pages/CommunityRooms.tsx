@@ -1424,7 +1424,7 @@ const CommunityRooms: React.FC = () => {
                     {activeRoom.is_locked && <Lock className="h-4 w-4 text-red-300" />}
                     {activeRoom.is_read_only && <Megaphone className="h-4 w-4 text-og-gold" />}
                   </div>
-                  <p className="truncate text-xs text-white/35">{activeRoom.description || "Crypto-native chat connected to OG SCAN communities, profiles, spaces, and moderation."}</p>
+                  <p className="truncate text-xs text-white/35">{activeRoom.description || "Crypto-native chat connected to OrbitX communities, profiles, spaces, and moderation."}</p>
                 </div>
                 <div className="flex items-center gap-1">
                   {[

@@ -25,7 +25,7 @@ const InviteLink: React.FC<InviteLinkProps> = ({ spaceId, spaceName, isHost }) =
 
   const shareNative = () => {
     if (navigator.share) {
-      navigator.share({ title: `Join: ${spaceName}`, text: `Join this OG Space: ${spaceName}`, url: inviteUrl });
+      navigator.share({ title: `Join: ${spaceName}`, text: `Join this OrbitX Space: ${spaceName}`, url: inviteUrl });
     } else {
       copyLink();
     }

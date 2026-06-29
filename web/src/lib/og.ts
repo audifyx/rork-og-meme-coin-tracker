@@ -1,4 +1,4 @@
-// $OG SCANNER — API constants & helpers
+// $OrbitX Scanner — API constants & helpers
 // Keys loaded from environment variables (set VITE_* in your deploy env). No secrets in source.
 
 export const JUPITER_API_KEY = import.meta.env.VITE_JUPITER_API_KEY ?? "";
@@ -444,7 +444,7 @@ export function findOriginalOgToken(searchName: string, candidates: JupTokenInfo
     if (canonical) return canonical;
   }
 
-  // ── 3. Composite OG score (if pre-computed scores are attached) ──────────
+  // ── 3. Composite OrbitX score (if pre-computed scores are attached) ──────────
   // When forensicOgAttribution has already run rankCandidatesByOgScore, tokens
   // will carry _ogScore. Use that — highest score = true OG.
   const withScores = candidates.filter((t) => (t as JupTokenInfo & { _ogScore?: number })._ogScore != null);
@@ -1834,7 +1834,7 @@ function scoreDeployPattern(token: JupTokenInfo): number {
 }
 
 /**
- * Build composite OG score for a token.
+ * Build composite OrbitX score for a token.
  * All inputs should already be enriched (ATH, holder count, on-chain date).
  * @param token       The candidate token (enriched)
  * @param oldestMintMs The oldest confirmed mint timestamp across all candidates (for relative age scoring)

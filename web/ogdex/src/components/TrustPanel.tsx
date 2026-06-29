@@ -49,7 +49,7 @@ export default function TrustPanel({ d }: { d: any }) {
             <div>
               <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted">Trust Verdict</div>
               <div className={`text-lg font-black leading-tight ${c.text}`}>{d?.verdict || (read.tone === "good" ? "Looks Solid" : read.tone === "bad" ? "High Risk" : "Mixed")}</div>
-              {score != null && <div className="text-[11px] text-muted">OG Score <span className="font-bold text-white">{Math.round(score)}</span>/100</div>}
+              {score != null && <div className="text-[11px] text-muted">OrbitX Score <span className="font-bold text-white">{Math.round(score)}</span>/100</div>}
             </div>
           </div>
 

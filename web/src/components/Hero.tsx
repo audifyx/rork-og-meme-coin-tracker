@@ -110,7 +110,7 @@ export const Hero = ({ onScanClick, onSwapClick }: HeroProps) => {
                   {[
                     { label: "Scanner", accent: "text-og-lime border-og-lime/25 bg-og-lime/5" },
                     { label: "Snipe Feed", accent: "text-og-cyan border-og-cyan/25 bg-og-cyan/5" },
-                    { label: "OG Finder", accent: "text-white/80 border-white/15 bg-white/5" },
+                    { label: "OrbitX Finder", accent: "text-white/80 border-white/15 bg-white/5" },
                     { label: "Migrations", accent: "text-og-gold border-og-gold/25 bg-og-gold/5" },
                   ].map((tool, index) => (
                     <div key={tool.label} className={`flex items-center justify-between rounded-full border ${tool.accent} px-3 py-2 transition hover:brightness-110`}>

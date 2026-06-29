@@ -298,7 +298,7 @@ export const TechStack = () => {
           {[
             { label: "TOKEN SEARCH", src: "JUPITER" },
             { label: "NARRATIVE CLUSTER", src: "OGSCAN" },
-            { label: "TRUE OG SCORE", src: "12-FACTOR FUSION" },
+            { label: "TRUE ORBITX SCORE", src: "12-FACTOR FUSION" },
             { label: "CLONE PROBABILITY", src: "ORIGIN GRAPH" },
             { label: "PARSED TX", src: "HELIUS" },
             { label: "FIRST LIQUIDITY", src: "DEXSCREENER" },

@@ -149,7 +149,7 @@ const tools = [
   { Icon: Wallet, name: "Wallet Intelligence", desc: "Forensic wallet analysis & win rate", tone: "text-og-cyan border-og-cyan/30 bg-og-cyan/10" },
   { Icon: BrainCircuit, name: "AI Analyst", desc: "Unlimited chat over on-chain data", tone: "text-[#f472b6] border-[#f472b6]/30 bg-[#f472b6]/10" },
   { Icon: Radar, name: "Market Radar", desc: "Launches, pairs, migrations, whales", tone: "text-og-gold border-og-gold/30 bg-og-gold/10" },
-  { Icon: TrendingUp, name: "ORBITX_DEX Screener", desc: "OG Score, KOL picks & token launch", tone: "text-og-cyan border-og-cyan/30 bg-og-cyan/10" },
+  { Icon: TrendingUp, name: "ORBITX_DEX Screener", desc: "OrbitX Score, KOL picks & token launch", tone: "text-og-cyan border-og-cyan/30 bg-og-cyan/10" },
   { Icon: FileText, name: "PDF Reports", desc: "Shareable charts, metrics & AI insight", tone: "text-og-lime border-og-lime/30 bg-og-lime/10" },
   { Icon: Bot, name: "Telegram Bot", desc: "The full platform inside Telegram", tone: "text-og-cyan border-og-cyan/30 bg-og-cyan/10" },
   { Icon: Newspaper, name: "Live Crypto News", desc: "Bullish & bearish narratives, real-time", tone: "text-[#f472b6] border-[#f472b6]/30 bg-[#f472b6]/10" },
@@ -258,7 +258,7 @@ const BetaHome = memo(() => {
         </div>
       </section>
 
-      {/* WHAT IS OG SCAN / WHY */}
+      {/* WHAT IS OrbitX / WHY */}
       <section className="relative z-10 mx-auto max-w-6xl px-4 pt-20 sm:px-6">
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-7 sm:p-10">
           <p className="text-[10px] font-black uppercase tracking-[0.22em] text-og-cyan">What is OrbitX · Why it exists</p>

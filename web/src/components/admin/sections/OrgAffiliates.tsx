@@ -298,7 +298,7 @@ export function OrgAffiliates() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-white">{p.display_name || p.username}</span>
                       <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-violet-600 to-indigo-500 text-white">
-                        <Shield className="h-2.5 w-2.5" /> OG SCAN AFFILIATE
+                        <Shield className="h-2.5 w-2.5" /> OrbitX AFFILIATE
                       </span>
                     </div>
                     <span className="text-xs text-white/40">@{p.username}</span>

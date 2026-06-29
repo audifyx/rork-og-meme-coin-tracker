@@ -149,7 +149,7 @@ export default function ReportView() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
             <a href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
               <div style={{ height: 26, width: 26, borderRadius: 8, border: "1px solid rgba(182,242,61,0.5)", background: "rgba(182,242,61,0.1)", display: "grid", placeItems: "center", color: "#b6f23d", fontWeight: 900, fontSize: 13 }}>OG</div>
-              <span style={{ color: "#fff", fontWeight: 800, fontSize: 13, letterSpacing: 0.5 }}>OG SCAN</span>
+              <span style={{ color: "#fff", fontWeight: 800, fontSize: 13, letterSpacing: 0.5 }}>OrbitX</span>
             </a>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <Btn onClick={rerun} primary disabled={rerunning}>{rerunning ? "Re-running…" : "↻ Re-run AI take"}</Btn>

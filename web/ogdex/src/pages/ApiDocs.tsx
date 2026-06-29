@@ -8,7 +8,7 @@ const LLMS = "https://ogscan.fun/api/ogdex/llms.txt";
 const ENDPOINTS = [
   { m: "GET", path: "/screener?type=trending&chain=solana&limit=100", desc: "Token screener. type: trending|runners|new|fomo|jupiter|unbonded|migrated|moonshot|newpairs|og|kols|celebrity|organic|listed|multichain|social." },
   { m: "GET", path: "/signals", desc: "Live Pulse signals — volume/velocity/buyer surges, momentum, fresh runners, pump.fun graduating + just-migrated." },
-  { m: "GET", path: "/token?mint=<MINT>", desc: "Full token intel: price, mcap, liquidity, OG Score, verdict, flags, safety, holders, trades, KOL/whale labels." },
+  { m: "GET", path: "/token?mint=<MINT>", desc: "Full token intel: price, mcap, liquidity, OrbitX Score, verdict, flags, safety, holders, trades, KOL/whale labels." },
   { m: "GET", path: "/forensics?mint=<MINT>", desc: "Dev & origin: creator wallet, dev sold?, first buyer (wallet + tx), DexScreener-paid status, concentration." },
   { m: "GET", path: "/xray?mint=<MINT>", desc: "Risk X-ray: snipers, same-block bundlers, early buyers, concentration, dev + safety merged into a green/yellow/red verdict." },
   { m: "GET", path: "/safety?mint=<MINT>", desc: "Honeypot / tradeability — Jupiter round-trip: canBuy, canSell, round-trip loss %, verdict." },

@@ -106,7 +106,7 @@ export const OGBannerHero = () => (
         {/* Text */}
         <div className="text-center sm:text-left flex-1">
           <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white mb-1">
-            OG SCAN
+            OrbitX
           </h2>
           <p className="text-sm text-[#22d3ee]/70 font-semibold tracking-widest uppercase mb-3">
             Originals Only · On-Chain Forensics
