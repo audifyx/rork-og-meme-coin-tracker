@@ -490,6 +490,42 @@ export const UserManagement = () => {
 
                   {/* Profile Tab */}
                   <TabsContent value="info" className="space-y-4">
+                    {/* Identity & security */}
+                    <Card className="og-glass-card">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div><Label className="text-xs text-muted-foreground">Display name</Label><p className="font-medium">{(selectedUser as any).display_name || selectedUser.username || "\u2014"}</p></div>
+                          <div><Label className="text-xs text-muted-foreground">Username</Label><p className="font-medium">@{selectedUser.username || "\u2014"}</p></div>
+                          <div><Label className="text-xs text-muted-foreground">Email</Label><p className="text-sm break-all">{(selectedUser as any).email || "\u2014"}</p></div>
+                          <div><Label className="text-xs text-muted-foreground">Role</Label><p className="text-sm capitalize">{role}</p></div>
+                          <div className="col-span-2"><Label className="text-xs text-muted-foreground">User ID</Label><p className="font-mono text-xs break-all">{selectedUser.user_id}</p></div>
+                          <div><Label className="text-xs text-muted-foreground">First seen IP</Label><p className="font-mono text-sm">{(selectedUser as any).first_seen_ip || "\u2014"}</p></div>
+                          <div><Label className="text-xs text-muted-foreground">Last fingerprint</Label><p className="font-mono text-xs break-all">{(selectedUser as any).last_fingerprint || "\u2014"}</p></div>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Tags</Label>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {Array.isArray((selectedUser as any).tags) && (selectedUser as any).tags.length
+                              ? (selectedUser as any).tags.map((t: string) => <Badge key={t} variant="outline" className="text-[10px]">{t}</Badge>)
+                              : (selectedUser as any).badge
+                                ? <Badge variant="outline" className="text-[10px]">{(selectedUser as any).badge}</Badge>
+                                : <span className="text-sm text-muted-foreground">No tags</span>}
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <Label className="text-xs text-muted-foreground">Status</Label>
+                          {(selectedUser as any).is_banned
+                            ? <Badge className="bg-red-500/20 text-red-400">Banned</Badge>
+                            : (selectedUser as any).is_suspended
+                              ? <Badge className="bg-yellow-500/20 text-yellow-400">Suspended</Badge>
+                              : <Badge className="bg-green-500/20 text-green-400">Active</Badge>}
+                          <div className="ml-auto flex flex-wrap gap-2">
+                            <Button size="sm" variant="outline" className="gap-1.5 border-emerald-500/30 text-emerald-400" onClick={() => reinstateUser(selectedUser.user_id)}><RotateCcw className="h-3.5 w-3.5" /> Reinstate</Button>
+                            <Button size="sm" variant="outline" className="gap-1.5 border-yellow-500/30 text-yellow-400" onClick={() => (selectedUser as any).is_banned ? unbanUser(selectedUser.user_id) : banUser(selectedUser.user_id)}><Ban className="h-3.5 w-3.5" /> {(selectedUser as any).is_banned ? "Unban" : "Ban"}</Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                     {!editingProfile ? (
                       <Card className="og-glass-card">
                         <CardContent className="p-4 space-y-3">
