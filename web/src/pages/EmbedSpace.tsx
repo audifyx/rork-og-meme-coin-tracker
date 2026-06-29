@@ -744,7 +744,7 @@ export default function EmbedSpace() {
             rel="noopener noreferrer"
             className="block w-full py-1.5 rounded-xl bg-white/5 border border-white/10 text-center text-[10px] text-white/40 hover:text-white/60 transition-all"
           >
-            View Replay on OGScan →
+            View Replay on OrbitX →
           </a>
         )}
       </div>

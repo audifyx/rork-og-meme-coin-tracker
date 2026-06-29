@@ -49,7 +49,7 @@ const PHASES: { phase: string; title: string; items: { t: string; s: Status }[] 
   {
     phase: "Phase 4", title: "Ecosystem — Shipped",
     items: [
-      { t: "Public AI agent / MCP at /api/mcp — any AI assistant can query OG DEX live (token, screener, forensics, wallet, chart, KOLs, search)", s: "done" },
+      { t: "Public AI agent / MCP at /api/mcp — any AI assistant can query OrbitX DEX live (token, screener, forensics, wallet, chart, KOLs, search)", s: "done" },
       { t: "Community-curated KOL lists with nominations, reputation scoring, and OG verification at /kol/community", s: "done" },
       { t: "Embeddable token widget — one script tag, live price + metrics, any site; configure at /embed", s: "done" },
       { t: "Native mobile apps", s: "planned" },
@@ -62,7 +62,7 @@ export default function Roadmap() {
     <div className="max-w-3xl mx-auto py-6 px-1">
       <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-white mb-4"><ArrowLeft className="w-4 h-4" /> Back</Link>
       <PageBanner />
-      <div className="flex items-center gap-2 mb-1"><Sparkles className="w-5 h-5 text-accent" /><h1 className="text-2xl font-black tracking-tight">OG DEX Roadmap</h1></div>
+      <div className="flex items-center gap-2 mb-1"><Sparkles className="w-5 h-5 text-accent" /><h1 className="text-2xl font-black tracking-tight">OrbitX DEX Roadmap</h1></div>
       <p className="text-xs text-muted mb-6">We ship every week, driven by what the community asks for. Follow <a href="https://t.me/OrbitXupdates" target="_blank" rel="noreferrer" className="text-accent">@ogupdates</a> for releases.</p>
 
       <div className="space-y-5">

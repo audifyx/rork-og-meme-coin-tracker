@@ -1,5 +1,5 @@
 /**
- * OgVerdict — the OG Scan tool's full intelligence report for the primary token.
+ * OgVerdict — the OrbitX tool's full intelligence report for the primary token.
  * Shows EVERYTHING (classification, forensic scores, identity/origin, authority,
  * market/liquidity, holders, DEX-paid, lifecycle/trend, clone lineage) organised
  * into glass-themed collapsible dropdowns. Logs each verdict to the append-only log.

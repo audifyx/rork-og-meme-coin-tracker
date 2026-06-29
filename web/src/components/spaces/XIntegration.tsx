@@ -4,7 +4,7 @@
  * Features:
  *  1. Cross-post to X — when going live, auto-tweet with public listener link
  *  2. X Space Card — paste any X Space URL to create a card in the Spaces feed
- *  3. Schedule Sync — add X Spaces events to OGScan calendar
+ *  3. Schedule Sync — add X Spaces events to OrbitX calendar
  *  4. X Handle linking (stored in profiles.twitter_handle)
  *
  * NOTE: We cannot bridge X Space audio (X API doesn't allow audio relay).
@@ -80,9 +80,9 @@ export default function XIntegration({ spaceId, spaceTitle, mode = "full", onClo
 
   /* ── Generate tweet draft ── */
   useEffect(() => {
-    const title = spaceTitle || "Live Crypto Space on OGScan";
+    const title = spaceTitle || "Live Crypto Space on OrbitX";
     const handle = savedHandle ? `\n\nHosted by @${savedHandle.replace("@", "")}` : "";
-    setTweetDraft(`🎙️ I'm live on OGScan Spaces!\n\n"${title}"${handle}\n\nAnyone can listen — no login needed:\n${publicUrl}\n\n#OGScan #CryptoSpaces`);
+    setTweetDraft(`🎙️ I'm live on OrbitX Spaces!\n\n"${title}"${handle}\n\nAnyone can listen — no login needed:\n${publicUrl}\n\n#OrbitX #CryptoSpaces`);
   }, [spaceTitle, savedHandle, publicUrl]);
 
   /* ── Save X handle ── */
@@ -122,7 +122,7 @@ export default function XIntegration({ spaceId, spaceTitle, mode = "full", onClo
         listener_count: null,
       });
       if (error) throw error;
-      toast.success("X Space card added to OGScan feed!");
+      toast.success("X Space card added to OrbitX feed!");
       setXSpaceUrl("");
       setXSpaceTitle("");
       setXScheduled("");
@@ -256,7 +256,7 @@ export default function XIntegration({ spaceId, spaceTitle, mode = "full", onClo
         {tab === "crosspost" && (
           <div className="space-y-4">
             <p className="text-xs text-white/40">
-              Post a tweet to let your X followers know you're live on OGScan.
+              Post a tweet to let your X followers know you're live on OrbitX.
               Anyone can listen without an account.
             </p>
             <div className="bg-black/30 rounded-xl border border-white/8 p-4">
@@ -288,7 +288,7 @@ export default function XIntegration({ spaceId, spaceTitle, mode = "full", onClo
             <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15">
               <AlertCircle className="h-3.5 w-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-amber-400/80">
-                The public listener link lets anyone tune in instantly — no OGScan account needed.
+                The public listener link lets anyone tune in instantly — no OrbitX account needed.
                 Great for growing your audience from X.
               </p>
             </div>
@@ -299,8 +299,8 @@ export default function XIntegration({ spaceId, spaceTitle, mode = "full", onClo
         {tab === "card" && (
           <div className="space-y-4">
             <p className="text-xs text-white/40">
-              Hosting a Space on X? Paste the URL below to create a card in the OGScan Spaces feed.
-              Your OGScan followers will see it and can jump over to join on X.
+              Hosting a Space on X? Paste the URL below to create a card in the OrbitX Spaces feed.
+              Your OrbitX followers will see it and can jump over to join on X.
             </p>
 
             {/* Input form */}
@@ -361,7 +361,7 @@ export default function XIntegration({ spaceId, spaceTitle, mode = "full", onClo
         {tab === "sync" && (
           <div className="space-y-4">
             <p className="text-xs text-white/40">
-              Got an upcoming X Space? Add it to OGScan so your followers get notified when it starts.
+              Got an upcoming X Space? Add it to OrbitX so your followers get notified when it starts.
             </p>
             <div className="space-y-2">
               <input
@@ -388,13 +388,13 @@ export default function XIntegration({ spaceId, spaceTitle, mode = "full", onClo
                 className={cn("w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40", accentBtn)}
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Calendar className="h-4 w-4" />}
-                Schedule on OGScan
+                Schedule on OrbitX
               </button>
             </div>
             <div className="p-3 rounded-xl bg-white/3 border border-white/8">
               <p className="text-xs text-white/40 leading-relaxed">
                 <span className="text-white/60 font-medium">How it works:</span><br />
-                Your followers on OGScan will see this upcoming event on your profile page and in the Spaces feed.
+                Your followers on OrbitX will see this upcoming event on your profile page and in the Spaces feed.
                 When the time arrives, they'll get a notification. You'll still host it on X — this just surfaces it here.
               </p>
             </div>

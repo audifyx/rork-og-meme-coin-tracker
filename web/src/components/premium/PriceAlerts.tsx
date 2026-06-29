@@ -31,7 +31,7 @@ const POPULAR_TOKENS = [
   { address: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", symbol: "BONK", name: "Bonk" },
   { address: "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN", symbol: "JUP", name: "Jupiter" },
   { address: "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr", symbol: "POPCAT", name: "Popcat" },
-  { address: "JDkRjxdLjbyQyyy8m1tqCG29WRENxDdiyKUXU93Npump", symbol: "SOLTOOLS", name: "Sol Tools" },
+  { address: "JDkRjxdLjbyQyyy8m1tqCG29WRENxDdiyKUXU93Npump", symbol: "SOLTOOLS", name: "OrbitX" },
 ];
 
 export const PriceAlerts = () => {
@@ -171,7 +171,7 @@ export const PriceAlerts = () => {
       const { error } = await supabase.functions.invoke('discord-webhook', {
         body: {
           type: 'custom',
-          message: '🔔 Test alert from Sol Tools! Your webhook is working correctly.',
+          message: '🔔 Test alert from OrbitX! Your webhook is working correctly.',
           username: user?.email || 'Test User',
         }
       });

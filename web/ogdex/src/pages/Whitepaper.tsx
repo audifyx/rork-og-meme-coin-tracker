@@ -11,20 +11,20 @@ export default function Whitepaper() {
     <div className="max-w-3xl mx-auto py-6 px-1">
       <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-white mb-4"><ArrowLeft className="w-4 h-4" /> Back</Link>
       <PageBanner />
-      <div className="flex items-center gap-2 mb-1"><FileText className="w-5 h-5 text-accent" /><h1 className="text-2xl font-black tracking-tight">OG DEX Whitepaper</h1></div>
+      <div className="flex items-center gap-2 mb-1"><FileText className="w-5 h-5 text-accent" /><h1 className="text-2xl font-black tracking-tight">OrbitX DEX Whitepaper</h1></div>
       <p className="text-xs text-muted mb-5">Version 2.0 · {new Date().getFullYear()} · The data tools most platforms hide.</p>
 
       <H>Abstract</H>
-      <P>OG DEX is a unified on-chain data and analytics platform for crypto traders. It aggregates already-public blockchain and market data across 16 chains, enriches and cross-references it, and presents it in a fast, clean interface that surfaces what most tools hide: the developer wallet and whether they sold, the first on-chain buyer with the exact transaction, paid-listing status, whale and KOL holders, real all-time-high, live momentum signals, bundle and sniper detection, and wallet copy-tracking. Every token also has its own AI agent, grounded in live on-chain data plus live web search. OG DEX is non-custodial, free to use, and updated weekly.</P>
+      <P>OrbitX DEX is a unified on-chain data and analytics platform for crypto traders. It aggregates already-public blockchain and market data across 16 chains, enriches and cross-references it, and presents it in a fast, clean interface that surfaces what most tools hide: the developer wallet and whether they sold, the first on-chain buyer with the exact transaction, paid-listing status, whale and KOL holders, real all-time-high, live momentum signals, bundle and sniper detection, and wallet copy-tracking. Every token also has its own AI agent, grounded in live on-chain data plus live web search. OrbitX DEX is non-custodial, free to use, and updated weekly.</P>
 
       <H>1. The Problem</H>
       <P>On-chain trading is an information game, but the information is fragmented across block explorers, chart sites, holder tools, lock checkers, and chat groups. The data that protects a trader — who controls supply, whether the dev dumped, whether hype was paid for, whether liquidity is real, who bundled the launch — is usually buried or omitted entirely. At the same time, screeners flood users with dead, illiquid, and rug-pulled tokens, drowning signal in noise.</P>
 
       <H>2. The Solution</H>
-      <P>OG DEX collapses the entire research workflow into one product. Paste a contract address and receive a complete forensic dossier in seconds: trust verdict, plain-English AI read, native candlestick chart, holder and whale breakdown, bundle and sniper detection, developer and first-buyer forensics, safety flags, and live trades. Browse curated, garbage-filtered discovery lists, watch real-time signals in Pulse, copy-track smart wallets, follow smart money, track your portfolio, and build on a free public API or AI agent. The guiding principle is clarity: only public data, presented better, with nothing hidden, and no noise.</P>
+      <P>OrbitX DEX collapses the entire research workflow into one product. Paste a contract address and receive a complete forensic dossier in seconds: trust verdict, plain-English AI read, native candlestick chart, holder and whale breakdown, bundle and sniper detection, developer and first-buyer forensics, safety flags, and live trades. Browse curated, garbage-filtered discovery lists, watch real-time signals in Pulse, copy-track smart wallets, follow smart money, track your portfolio, and build on a free public API or AI agent. The guiding principle is clarity: only public data, presented better, with nothing hidden, and no noise.</P>
 
       <H>3. Architecture and Data Layer</H>
-      <P>OG DEX is an intelligence layer on top of public data sources. It blends multiple best-in-class feeds (market and token data, holder and trade data, safety and liquidity analysis, all-time-high history, OHLCV chart data, on-chain transaction tracing, and live web search) into a single normalized, scored picture. The system is resilient by design: when one source is slow or rate-limited, it falls back to another, with heavy edge caching so the app stays fast. A single serverless API gateway dispatches every endpoint, with per-IP rate limiting and an optional key to keep the public API healthy. System uptime is tracked at the public <Link to="/status" className="text-accent">status page</Link>.</P>
+      <P>OrbitX DEX is an intelligence layer on top of public data sources. It blends multiple best-in-class feeds (market and token data, holder and trade data, safety and liquidity analysis, all-time-high history, OHLCV chart data, on-chain transaction tracing, and live web search) into a single normalized, scored picture. The system is resilient by design: when one source is slow or rate-limited, it falls back to another, with heavy edge caching so the app stays fast. A single serverless API gateway dispatches every endpoint, with per-IP rate limiting and an optional key to keep the public API healthy. System uptime is tracked at the public <Link to="/status" className="text-accent">status page</Link>.</P>
 
       <H>4. Core Features</H>
       <ul className="list-disc pl-5 mb-3">
@@ -54,15 +54,15 @@ export default function Whitepaper() {
           <Code className="w-4 h-4 text-accent" />
           <span className="text-sm font-bold text-white">Machine-Readable API for AI Assistants</span>
         </div>
-        <P>OG DEX exposes a public <b className="text-white">MCP (Model Context Protocol)</b> manifest at <code className="text-accent text-[11px] bg-panel px-1.5 py-0.5 rounded">GET /api/ogdex/mcp</code>. Any AI assistant that supports MCP — including Claude, GPT-4, and custom agents — can discover and call OG DEX tools: token lookup, screener, forensics, ATH, wallet PnL, OHLCV chart data, and search. Programmatic tool calls go to <code className="text-accent text-[11px] bg-panel px-1.5 py-0.5 rounded">POST /api/ogdex/mcp</code> with <code className="text-accent text-[11px] bg-panel px-1.5 py-0.5 rounded">{"{ tool, params }"}</code>.</P>
+        <P>OrbitX DEX exposes a public <b className="text-white">MCP (Model Context Protocol)</b> manifest at <code className="text-accent text-[11px] bg-panel px-1.5 py-0.5 rounded">GET /api/ogdex/mcp</code>. Any AI assistant that supports MCP — including Claude, GPT-4, and custom agents — can discover and call OrbitX DEX tools: token lookup, screener, forensics, ATH, wallet PnL, OHLCV chart data, and search. Programmatic tool calls go to <code className="text-accent text-[11px] bg-panel px-1.5 py-0.5 rounded">POST /api/ogdex/mcp</code> with <code className="text-accent text-[11px] bg-panel px-1.5 py-0.5 rounded">{"{ tool, params }"}</code>.</P>
       </div>
 
       <H>7. Token and Utility</H>
-      <P>OG DEX has a community token on Solana. The token aligns the community with the platform and gates premium access and perks as the product grows: higher API limits, advanced analytics, and priority features via the Pro tier. The Pro tier checks the connected wallet's OG token balance non-custodially — tokens stay in the user's wallet. Utility expands over time and is announced through the official Updates channel. No statement here is a promise of value, an offer, or financial advice; always verify the official contract address before interacting.</P>
+      <P>OrbitX DEX has a community token on Solana. The token aligns the community with the platform and gates premium access and perks as the product grows: higher API limits, advanced analytics, and priority features via the Pro tier. The Pro tier checks the connected wallet's OG token balance non-custodially — tokens stay in the user's wallet. Utility expands over time and is announced through the official Updates channel. No statement here is a promise of value, an offer, or financial advice; always verify the official contract address before interacting.</P>
       <P><span className="text-muted">Official contract:</span> <span className="font-mono text-[11px] text-white break-all">HEivoBHhWT939vcaevGgZBtoArS4CAywCMjdVBTSpump</span></P>
 
       <H>8. Security and Non-custodial Design</H>
-      <P>OG DEX never takes custody of funds or private keys. Any trade is signed by the user's own wallet and routed to public programs. The platform surfaces safety data (mint and freeze authority, LP locked percentage, rug status, concentration, risk score) to inform decisions, but cannot guarantee any token is safe. Copy-tracking is informational only — no auto-execution, no permissions required beyond wallet connection for balance verification.</P>
+      <P>OrbitX DEX never takes custody of funds or private keys. Any trade is signed by the user's own wallet and routed to public programs. The platform surfaces safety data (mint and freeze authority, LP locked percentage, rug status, concentration, risk score) to inform decisions, but cannot guarantee any token is safe. Copy-tracking is informational only — no auto-execution, no permissions required beyond wallet connection for balance verification.</P>
 
       <H>9. System Reliability</H>
       <div className="card p-4 border border-line mb-3">
@@ -70,11 +70,11 @@ export default function Whitepaper() {
           <Activity className="w-4 h-4 text-accent" />
           <span className="text-sm font-bold text-white">Uptime & Status</span>
         </div>
-        <P>OG DEX runs on edge infrastructure with automatic fallbacks between data sources. The health endpoint is publicly accessible for uptime monitoring services. Live service status is available at <Link to="/status" className="text-accent">/status</Link> — each upstream (token data, charting, forensics, AI chat, screener, alerts) is probed independently with per-source latency and availability scores.</P>
+        <P>OrbitX DEX runs on edge infrastructure with automatic fallbacks between data sources. The health endpoint is publicly accessible for uptime monitoring services. Live service status is available at <Link to="/status" className="text-accent">/status</Link> — each upstream (token data, charting, forensics, AI chat, screener, alerts) is probed independently with per-source latency and availability scores.</P>
       </div>
 
       <H>10. Roadmap</H>
-      <P>OG DEX ships weekly, with the roadmap driven by community requests. Phases 1 through 3 are complete. Phase 4 (native mobile apps, community KOL curation, embeddable widgets) is in progress. See the full phased roadmap here:</P>
+      <P>OrbitX DEX ships weekly, with the roadmap driven by community requests. Phases 1 through 3 are complete. Phase 4 (native mobile apps, community KOL curation, embeddable widgets) is in progress. See the full phased roadmap here:</P>
       <Link to="/roadmap" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/30 hover:bg-accent/25 transition-all mb-2">
         <Map className="w-3.5 h-3.5" /> View the Roadmap
       </Link>
@@ -82,7 +82,7 @@ export default function Whitepaper() {
       <H>11. Disclaimer</H>
       <div className="card border border-down/30 bg-down/5 p-4 my-2 flex gap-3">
         <ShieldAlert className="w-5 h-5 text-down shrink-0 mt-0.5" />
-        <p className="text-[12.5px] text-white/85 leading-relaxed">OG DEX is a data and analytics platform. Nothing here is financial, investment, legal, or tax advice, and we are not responsible for what you buy or sell. Data comes from third-party sources and may be delayed or imperfect. Crypto is high risk. Do your own research and never invest more than you can afford to lose.</p>
+        <p className="text-[12.5px] text-white/85 leading-relaxed">OrbitX DEX is a data and analytics platform. Nothing here is financial, investment, legal, or tax advice, and we are not responsible for what you buy or sell. Data comes from third-party sources and may be delayed or imperfect. Crypto is high risk. Do your own research and never invest more than you can afford to lose.</p>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-3 text-sm">

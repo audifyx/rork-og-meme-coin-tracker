@@ -928,7 +928,7 @@ const Settings = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Webhook URL</Label>
-                  <p className="text-xs text-white/40 mb-2">Receive OG Scan alerts directly in your Discord server</p>
+                  <p className="text-xs text-white/40 mb-2">Receive OrbitX alerts directly in your Discord server</p>
                   <Input placeholder="https://discord.com/api/webhooks/..." value={discordWebhook} onChange={(e) => setDiscordWebhook(e.target.value)} />
                 </div>
                 <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-white/40 space-y-1">
@@ -1502,7 +1502,7 @@ function ConnectionsTab() {
         </div>
       </Card>
 
-      {/* Card 2: X Cross-Posting (native OAuth 2.0 — tweet.write for posting from OG Scan → X) */}
+      {/* Card 2: X Cross-Posting (native OAuth 2.0 — tweet.write for posting from OrbitX → X) */}
       <Card className="p-5 glass-card">
         <div className="flex items-start gap-4">
           <div className="h-11 w-11 rounded-2xl bg-og-lime/10 border border-og-lime/20 flex items-center justify-center shrink-0">
@@ -2554,7 +2554,7 @@ function PushCard() {
             </>
           ) : (
             <>
-              <p className="text-white/45 text-[13px] mt-1">Turn on push to get alerts on this device even when OG Scan is closed.</p>
+              <p className="text-white/45 text-[13px] mt-1">Turn on push to get alerts on this device even when OrbitX is closed.</p>
               <Button onClick={() => requestPermission()} disabled={isSyncing} className="rounded-xl bg-amber-500 hover:bg-amber-500/90 text-black font-bold mt-3">
                 {isSyncing ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Bell className="h-4 w-4 mr-1.5" />} Enable notifications
               </Button>

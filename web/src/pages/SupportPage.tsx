@@ -237,7 +237,7 @@ function UserChat({ agents }: { agents: AgentProfile[] }) {
           ))}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white">OGScan Support</p>
+          <p className="text-sm font-bold text-white">OrbitX Support</p>
           <p className="text-[10px] text-white/30">
             {onlineAgents.length > 0
               ? <span className="text-green-400">● {onlineAgents.length} online</span>

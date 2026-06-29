@@ -1,6 +1,6 @@
 // Maps the scanner's forensic data (TokenForensicScores + JupTokenInfo) into the
 // explainable 4-tier classification engine, and reconstructs a time-series for
-// the intelligence engines. Keeps the OG Scan tool as the single source of truth.
+// the intelligence engines. Keeps the OrbitX tool as the single source of truth.
 import {
   hasPulledOrDeadLiquidity, tokenEffectiveLiquidityUsd, tokenOgCreatedAtIso,
   type JupTokenInfo, type TokenForensicScores,

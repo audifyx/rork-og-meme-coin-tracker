@@ -405,7 +405,7 @@ const Notifications = () => {
                   <p className="text-sm font-semibold">Push Notifications</p>
                   <p className="text-xs text-muted-foreground">
                     {!supported
-                      ? "This browser is not ready for web push here yet. On iPhone, install OG Scan to the home screen, open the installed app, then enable notifications there."
+                      ? "This browser is not ready for web push here yet. On iPhone, install OrbitX to the home screen, open the installed app, then enable notifications there."
                       : permission === "denied"
                         ? "Blocked in this browser — re-enable notifications in browser settings first"
                         : permission === "granted" && isRegistered
@@ -448,7 +448,7 @@ const Notifications = () => {
 
             {!supported ? (
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-muted-foreground">
-                Push is tied to the phone/browser itself. If you want phone notifications, open OG Scan on that device, install it if needed, and enable push from this page there.
+                Push is tied to the phone/browser itself. If you want phone notifications, open OrbitX on that device, install it if needed, and enable push from this page there.
               </div>
             ) : null}
           </CardContent>

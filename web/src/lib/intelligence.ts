@@ -1,5 +1,5 @@
 // ============================================================
-// OG Scan — Intelligence Layer (spec section B & 7)
+// OrbitX — Intelligence Layer (spec section B & 7)
 // Pure, dependency-free analytics primitives:
 //  - trend velocity scoring (time-series)
 //  - lifecycle reconstruction (launch -> growth -> peak -> decay)

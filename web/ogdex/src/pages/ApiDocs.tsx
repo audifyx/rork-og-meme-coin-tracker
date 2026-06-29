@@ -22,7 +22,7 @@ const ENDPOINTS = [
   { m: "GET", path: "/kols", desc: "Tracked KOL / smart-money directory. Add ?feed=1 for activity, ?token=<MINT> to filter." },
   { m: "GET", path: "/search?q=<QUERY>", desc: "Search tokens by name, ticker, or mint." },
   { m: "GET", path: "/listings?featured=1", desc: "Featured / boosted listings from the Store." },
-  { m: "GET", path: "/launches?limit=50", desc: "Tokens launched through the OG DEX launcher." },
+  { m: "GET", path: "/launches?limit=50", desc: "Tokens launched through the OrbitX DEX launcher." },
   { m: "GET", path: "/metadata?mint=<MINT>", desc: "On-chain metadata + update authority + mutability." },
   { m: "POST", path: "/chat", desc: "Chat with the AI for a coin — answers from live on-chain data + web search. Body: { mint, messages:[{role,content}] }." },
 ];
@@ -36,8 +36,8 @@ export default function ApiDocs() {
     <div className="max-w-3xl mx-auto py-8 px-4">
       <div className="mb-6 text-center">
         <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl border border-accent/20 bg-accent/10"><Code2 className="h-7 w-7 text-accent" /></div>
-        <h1 className="text-2xl font-black tracking-tight">OG DEX Public API</h1>
-        <p className="mt-2 text-sm text-muted">All of OG DEX, free over HTTPS. No key required. One link plugs the whole tool into ChatGPT, Claude, Postman, or your app — no copy-pasting endpoints.</p>
+        <h1 className="text-2xl font-black tracking-tight">OrbitX DEX Public API</h1>
+        <p className="mt-2 text-sm text-muted">All of OrbitX DEX, free over HTTPS. No key required. One link plugs the whole tool into ChatGPT, Claude, Postman, or your app — no copy-pasting endpoints.</p>
       </div>
 
       {/* ONE LINK */}

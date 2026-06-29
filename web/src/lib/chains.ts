@@ -1,5 +1,5 @@
 /**
- * chains.ts — Multi-chain registry for OG Scan.
+ * chains.ts — Multi-chain registry for OrbitX.
  *
  * All supported EVM chains + Solana in one place.
  * DexScreener chainId slugs are used as the canonical identifier.

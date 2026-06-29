@@ -1223,7 +1223,7 @@ export default function TokenManager() {
         <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-br from-white/[0.02] to-transparent">
           <div className="p-4">
             <h4 className="mb-3 text-[10px] font-black uppercase tracking-widest text-white/25">
-              OG Scan vs DexScreener
+              OrbitX vs DexScreener
             </h4>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-xl border border-og-lime/15 bg-og-lime/[0.03] p-3">

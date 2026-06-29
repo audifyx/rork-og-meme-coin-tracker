@@ -91,7 +91,7 @@ export function captureError(error: unknown, context?: Record<string, unknown>) 
  * Run from the browser console: window.__testSentry?.()
  */
 export function testSentryError() {
-  throw new Error("[OGScan] Sentry test error — if you see this in your Sentry dashboard, it's working!");
+  throw new Error("[OrbitX] Sentry test error — if you see this in your Sentry dashboard, it's working!");
 }
 
 // Expose test helper on window in dev

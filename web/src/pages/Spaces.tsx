@@ -1545,7 +1545,7 @@ const SpaceRoom = ({ space, onLeave }: { space: Space; onLeave: () => void }) =>
             </p>
             <button
               onClick={() => {
-                const tweet = `🎙️ I'm live on OGScan Spaces!\n\n"${space.title}"\n\nAnyone can listen — no login needed:\n${window.location.origin}/space/${space.id}\n\n#OGScan #CryptoSpaces`;
+                const tweet = `🎙️ I'm live on OrbitX Spaces!\n\n"${space.title}"\n\nAnyone can listen — no login needed:\n${window.location.origin}/space/${space.id}\n\n#OrbitX #CryptoSpaces`;
                 window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}`, "_blank", "width=600,height=500");
               }}
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 border border-primary/20 text-primary text-[10px] font-bold hover:bg-primary/20 transition w-full justify-center"

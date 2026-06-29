@@ -97,7 +97,7 @@ function NotificationSettingsPanel({ onSave }: { onSave: () => void }) {
     if (granted) {
       setSettings((s) => ({ ...s, push_enabled: true }));
       setPushPermission("granted");
-      sendBrowserPush("🔔 OGScan Notifications Active", "You'll receive space reminders here.");
+      sendBrowserPush("🔔 OrbitX Notifications Active", "You'll receive space reminders here.");
       toast.success("Push notifications enabled!");
     } else {
       toast.error("Push permission denied. Enable it in browser settings.");

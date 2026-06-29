@@ -6,7 +6,7 @@
  *
  * Shows: banner · avatar (live ring if live) · display name · bio
  *        social links · LIVE space card (when live, auto-updates)
- *        last 5 past spaces · OGScan CTA footer
+ *        last 5 past spaces · OrbitX CTA footer
  *
  * Realtime: Supabase channels update live/offline state with no refresh.
  */
@@ -431,14 +431,14 @@ export default function EmbedProfile() {
             <div className="flex items-center gap-2">
               <Radio className={cn("h-3.5 w-3.5", a.text)} />
               <span className="text-xs text-white/40 group-hover:text-white/70 transition-colors">
-                Follow @{profile.username} on OGScan
+                Follow @{profile.username} on OrbitX
               </span>
             </div>
             <ArrowRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/50 transition-all group-hover:translate-x-0.5" />
           </div>
         </a>
 
-        {/* OGScan branding */}
+        {/* OrbitX branding */}
         <div className="flex items-center justify-center gap-1 mt-3">
           <Radio className="h-2 w-2 text-violet-400/40" />
           <span className="text-[9px] text-white/15 tracking-wider">Powered by ogscan.fun</span>

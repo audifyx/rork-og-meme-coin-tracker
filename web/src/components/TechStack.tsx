@@ -199,7 +199,7 @@ export const TechStack = () => {
               same ticker, same logo, same hype — while the real OG gets buried under copycats.
             </p>
             <p className="mx-auto mt-2 max-w-2xl text-xs leading-relaxed text-foreground/80 sm:text-sm">
-              OGScan verifies before you ape: search any ticker, reconstruct the origin timeline, and surface the contract with the earliest provable chain history.
+              OrbitX verifies before you ape: search any ticker, reconstruct the origin timeline, and surface the contract with the earliest provable chain history.
             </p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               <a href={OGSCAN_TECH_POST_URL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border border-og-gold bg-og-gold px-3 py-2 font-mono text-[9px] font-bold uppercase tracking-widest text-og-ink transition hover:bg-og-gold/90">

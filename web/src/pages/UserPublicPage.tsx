@@ -1,7 +1,7 @@
 /**
  * UserPublicPage — ogscan.fun/u/:username
  *
- * Every OGScan user's personal broadcast page. No auth needed to view.
+ * Every OrbitX user's personal broadcast page. No auth needed to view.
  *
  * Features:
  *  - Stunning hero with animated gradient, banner, glassmorphic avatar ring
@@ -516,7 +516,7 @@ export default function UserPublicPage() {
           <p className="text-white/40 text-sm">This page doesn't exist or is set to private.</p>
         </div>
         <Link to="/" className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-all">
-          Launch OGScan →
+          Launch OrbitX →
         </Link>
       </div>
     );
@@ -525,7 +525,7 @@ export default function UserPublicPage() {
   const displayName = profile.display_name || profile.username || "Anonymous";
   const website = profile.website_url || profile.website;
   const twitterHandle = profile.twitter_handle?.replace("@", "");
-  const xSpaceTweet = `https://twitter.com/intent/tweet?text=Follow+%40${twitterHandle || username}+on+OGScan+for+live+crypto+Spaces+🎙️%0A%0A&url=${encodeURIComponent(pageUrl)}`;
+  const xSpaceTweet = `https://twitter.com/intent/tweet?text=Follow+%40${twitterHandle || username}+on+OrbitX+for+live+crypto+Spaces+🎙️%0A%0A&url=${encodeURIComponent(pageUrl)}`;
 
   return (
     <div className="min-h-screen bg-[#060811] text-white">
@@ -567,7 +567,7 @@ export default function UserPublicPage() {
             Back
           </button>
         </div>
-        {/* OGScan nav top-right */}
+        {/* OrbitX nav top-right */}
         <div className="absolute top-4 right-4 flex items-center gap-2">
           {liveSpace && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 backdrop-blur text-xs font-semibold text-red-300">
@@ -577,7 +577,7 @@ export default function UserPublicPage() {
           )}
           <Link to="/" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/40 backdrop-blur border border-white/10 text-xs text-white/60 hover:text-white transition-all">
             <Radio className="h-3 w-3 text-violet-400" />
-            <span className="font-semibold">OGScan</span>
+            <span className="font-semibold">OrbitX</span>
           </Link>
         </div>
       </div>
@@ -795,7 +795,7 @@ export default function UserPublicPage() {
                     to="/spaces"
                     className="flex items-center gap-2 text-xs text-white/40 hover:text-white/70 transition-all"
                   >
-                    <Radio className="h-3 w-3" /> Join on OGScan
+                    <Radio className="h-3 w-3" /> Join on OrbitX
                   </Link>
                 </div>
 
@@ -964,7 +964,7 @@ export default function UserPublicPage() {
               <p className="text-white/25 text-sm mt-1">Come back when {displayName} goes live</p>
             </div>
             <Link to="/spaces" className="flex items-center gap-2 text-xs text-white/30 hover:text-white/60 transition-all">
-              <Radio className="h-3 w-3" /> Browse live spaces on OGScan
+              <Radio className="h-3 w-3" /> Browse live spaces on OrbitX
             </Link>
           </div>
         )}
@@ -973,7 +973,7 @@ export default function UserPublicPage() {
         <div className="border-t border-white/5 pt-8 pb-12 flex flex-col items-center gap-4">
           <Link to="/" className="flex items-center gap-2 text-white/25 hover:text-white/50 transition-all">
             <Radio className="h-4 w-4 text-violet-400" />
-            <span className="text-sm">Powered by <strong className="text-white/40">OGScan Spaces</strong></span>
+            <span className="text-sm">Powered by <strong className="text-white/40">OrbitX Spaces</strong></span>
           </Link>
           <Link to="/auth" className="flex items-center gap-1 text-xs text-white/20 hover:text-white/40 transition-all">
             Get your own page <ArrowRight className="h-3 w-3" />

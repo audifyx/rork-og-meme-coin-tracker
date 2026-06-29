@@ -1059,7 +1059,7 @@ export const Feed = ({ onSelect }: Props) => {
                 <Bell className="h-3.5 w-3.5" /> About this feed
               </div>
               <p className="text-xs leading-5 text-white/58">
-                OGScan pulls live RSS feeds from crypto news outlets and scans them for meme-coin relevance.
+                OrbitX pulls live RSS feeds from crypto news outlets and scans them for meme-coin relevance.
                 Each story gets a relevance score based on meme keyword density and is matched against
                 trending Solana tokens. Use the search bar to drill into specific narratives.
               </p>

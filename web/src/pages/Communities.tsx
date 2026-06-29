@@ -3267,7 +3267,7 @@ function PostCard({
                         // X/Twitter cross-post → external URL raid
                         onRaidPost({ title, url: post.tweet_url });
                       } else {
-                        // Native OGScan post → internal on-platform raid
+                        // Native OrbitX post → internal on-platform raid
                         onRaidPost({ title, postId: post.id });
                       }
                     }}
@@ -5243,7 +5243,7 @@ function getRaidCountdown(endsAt: string | null): { label: string; urgent: boole
 }
 
 function detectPlatform(url: string | null, isInternalPost?: boolean): { name: string; icon: JSX.Element } {
-  if (isInternalPost) return { name: "OGScan Post", icon: <Swords className="h-3 w-3" /> };
+  if (isInternalPost) return { name: "OrbitX Post", icon: <Swords className="h-3 w-3" /> };
   if (!url) return { name: "Web", icon: <Globe className="h-3 w-3" /> };
   if (url.includes("x.com") || url.includes("twitter.com")) return { name: "X / Twitter", icon: <svg viewBox="0 0 24 24" className="h-3 w-3 fill-current"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.74l7.73-8.835L1.254 2.25H8.08l4.213 5.567zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> };
   if (url.includes("t.me") || url.includes("telegram")) return { name: "Telegram", icon: <MessageSquare className="h-3 w-3" /> };
@@ -5310,7 +5310,7 @@ function RaidsHub({ user, prefill, onPrefillConsumed }: { user: any; prefill?: {
     if (prefill) {
       setCTitle(prefill.title);
       if (prefill.postId) {
-        // Internal OGScan post raid — no URL needed, default 10/10/10
+        // Internal OrbitX post raid — no URL needed, default 10/10/10
         setCPostId(prefill.postId);
         setCUrl("");
         setCLikes("10");
@@ -5709,11 +5709,11 @@ function RaidsHub({ user, prefill, onPrefillConsumed }: { user: any; prefill?: {
                   )}
                 </div>
 
-                {/* On-platform action buttons — for internal OGScan post raids */}
+                {/* On-platform action buttons — for internal OrbitX post raids */}
                 {live && isInternalPost && (
                   <div className="border-t border-white/[0.05] pt-3 space-y-2">
                     <p className="text-[9px] text-white/25 uppercase tracking-widest font-bold flex items-center gap-1.5">
-                      <Swords className="h-3 w-3" /> Engage directly on OGScan
+                      <Swords className="h-3 w-3" /> Engage directly on OrbitX
                     </p>
                     <div className="grid grid-cols-3 gap-1.5">
                       {([
@@ -5794,14 +5794,14 @@ function RaidsHub({ user, prefill, onPrefillConsumed }: { user: any; prefill?: {
             </div>
 
             <div className="overflow-y-auto flex-1 p-5 space-y-4">
-              {/* Internal post badge — shown when raiding an OGScan post */}
+              {/* Internal post badge — shown when raiding an OrbitX post */}
               {cPostId && (
                 <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-red-500/25 bg-red-500/[0.07]">
                   <div className="w-8 h-8 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center shrink-0">
                     <Swords className="h-4 w-4 text-red-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-black text-white/80">OGScan Post Raid</p>
+                    <p className="text-[11px] font-black text-white/80">OrbitX Post Raid</p>
                     <p className="text-[9px] text-white/30 mt-0.5">Community members engage directly on this post — no external link needed</p>
                   </div>
                   <button onClick={() => setCPostId(null)}

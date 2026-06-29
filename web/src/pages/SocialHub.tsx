@@ -1,9 +1,9 @@
 /**
- * SocialHub — Premium Discord-style community hub for OG Scan.
+ * SocialHub — Premium Discord-style community hub for OrbitX.
  * Channels: activity-feed, general-chat, voice-rooms, live-stream
  * Voice powered by LiveKit (real audio). Chat powered by Supabase Realtime.
  * Presence powered by Supabase Realtime Presence.
- * Branded with OG Scan design tokens (og-ink, og-lime, og-gold, og-cyan).
+ * Branded with OrbitX design tokens (og-ink, og-lime, og-gold, og-cyan).
  * Rendered inline inside Index.tsx — do NOT wrap in AppLayout.
  */
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
@@ -1260,7 +1260,7 @@ const VoiceRooms = ({ members }: { members: CommunityMember[] }) => {
                   {isInLobby ? participants.length : 0} here
                 </span>
               </div>
-              <p className="mb-5 text-[11px] text-white/40">Community voice channel powered by LiveKit. Talk live with OG Scan traders.</p>
+              <p className="mb-5 text-[11px] text-white/40">Community voice channel powered by LiveKit. Talk live with OrbitX traders.</p>
               {!user ? (
                 <p className="text-center text-[11px] text-white/25">Sign in to join voice</p>
               ) : (
@@ -1472,7 +1472,7 @@ const LiveStream = () => (
         </div>
       </div>
       <h3 className="mb-2 text-lg font-black text-white">LIVE STREAMING</h3>
-      <p className="mb-1 text-[12px] text-white/40">Stream live to the OG Scan community</p>
+      <p className="mb-1 text-[12px] text-white/40">Stream live to the OrbitX community</p>
       <p className="max-w-xs text-center text-[11px] leading-relaxed text-white/20">
         Go live, share your screen, and broadcast to the community. Currently under development — stay tuned!
       </p>

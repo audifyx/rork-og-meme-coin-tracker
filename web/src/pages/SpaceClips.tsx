@@ -158,7 +158,7 @@ function ClipCard({ clip, onLike }: { clip: Clip; onLike: (id: string) => void }
 
   const shareToX = () => {
     const url = `https://ogscan.fun/clip/${clip.id}`;
-    const text = `🎵 "${clip.title}" — a clip from OGScan Spaces\n${url}`;
+    const text = `🎵 "${clip.title}" — a clip from OrbitX Spaces\n${url}`;
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -448,7 +448,7 @@ export default function SpaceClips() {
               <Scissors className="h-4 w-4 text-violet-400" />
               Clips & Highlights
             </h1>
-            <p className="text-xs text-white/30 mt-0.5">Best moments from OGScan Spaces</p>
+            <p className="text-xs text-white/30 mt-0.5">Best moments from OrbitX Spaces</p>
           </div>
           {user && myRecentSpaces.length > 0 && (
             <button

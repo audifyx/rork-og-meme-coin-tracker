@@ -1,5 +1,5 @@
 /**
- * TokenListings — List & promote tokens on OG Scan.
+ * TokenListings — List & promote tokens on OrbitX.
  * Paste a CA → Helius + DexScreener pull all data → pro trading terminal view.
  */
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
@@ -661,8 +661,8 @@ const ListingDetail: React.FC<{
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${listing.name} ($${listing.symbol}) on OG Scan`,
-          text: `Check out ${listing.name} ($${listing.symbol}) on OG Scan`,
+          title: `${listing.name} ($${listing.symbol}) on OrbitX`,
+          text: `Check out ${listing.name} ($${listing.symbol}) on OrbitX`,
           url: shareUrl,
         });
       } catch { /* cancelled */ }
@@ -1294,7 +1294,7 @@ export const TokenListings: React.FC<{ initialMint?: string }> = ({ initialMint 
       <EmeraldHeader
         icon={Megaphone}
         title="Listings"
-        subtitle="List and promote any token on OG Scan — paste a contract and we pull live market, holder and safety data into a clean public card."
+        subtitle="List and promote any token on OrbitX — paste a contract and we pull live market, holder and safety data into a clean public card."
         badge="Community"
         right={(
           <button onClick={() => setShowListPanel(true)}

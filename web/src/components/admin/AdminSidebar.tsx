@@ -128,7 +128,7 @@ export const AdminSidebar = ({ active, onChange, badges = {}, onBack }: Props) =
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-200/70">Owner console</p>
-            <h2 className="mt-1 text-base font-black tracking-tight text-white">OGScan Admin</h2>
+            <h2 className="mt-1 text-base font-black tracking-tight text-white">OrbitX Admin</h2>
             <p className="mt-1 text-xs leading-5 text-white/50">Control center for moderation, growth, admin apps, and platform operations.</p>
           </div>
         </div>

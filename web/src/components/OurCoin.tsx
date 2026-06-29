@@ -93,7 +93,7 @@ function bestPair(pairs: DetailDexPair[]): DetailDexPair | undefined {
 
 function websiteLinks(pair: DetailDexPair | undefined): { label: string; url: string }[] {
   const raw = [
-    { label: "OG Scan", url: OGSCAN_SITE_URL },
+    { label: "OrbitX", url: OGSCAN_SITE_URL },
     { label: "DexScreener", url: OGSCAN_DEXSCREENER_URL },
     { label: "Pump.fun", url: OGSCAN_PUMPFUN_URL },
     { label: "Updates", url: OGSCAN_X_URL },
@@ -175,14 +175,14 @@ export const OurCoin = memo(() => {
     <section className="space-y-5 text-white">
       <div className="overflow-hidden border border-og-lime/35 bg-black shadow-[0_0_40px_rgba(101,255,0,0.08)]">
         <div className="relative isolate overflow-hidden border-b border-og-grid">
-          <img src={BRAND_BANNER} alt="OG Scan OFFICIAL OGS banner" className="absolute inset-0 h-full w-full object-cover opacity-65" />
+          <img src={BRAND_BANNER} alt="OrbitX OFFICIAL OGS banner" className="absolute inset-0 h-full w-full object-cover opacity-65" />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.88)_0%,rgba(0,0,0,0.55)_38%,rgba(0,0,0,0.76)_100%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_center,rgba(187,79,255,0.22),transparent_34%),radial-gradient(circle_at_right_center,rgba(101,255,0,0.16),transparent_30%)]" />
 
           <div className="relative grid gap-6 px-4 py-5 sm:px-6 lg:grid-cols-[180px_minmax(0,1fr)_320px] lg:px-8 lg:py-8">
             <div className="flex flex-col gap-3">
               <div className="border border-og-lime/35 bg-black/70 p-2">
-                <img src={BRAND_LOGO} alt="OG Scan logo" className="aspect-square w-full object-cover" />
+                <img src={BRAND_LOGO} alt="OrbitX logo" className="aspect-square w-full object-cover" />
               </div>
               <div className="border border-white/10 bg-black/70 p-3">
                 <div className="font-mono text-[10px] uppercase tracking-[0.28em] text-og-lime">Official mint</div>
@@ -199,7 +199,7 @@ export const OurCoin = memo(() => {
                 OFFICIAL OGS
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-relaxed text-white/82 sm:text-base">
-                Custom OG Scan market room built from your banner and logo art — live price chart, buy and sell flow, token metadata, ATH, migration status, and full scan analysis for the official mint.
+                Custom OrbitX market room built from your banner and logo art — live price chart, buy and sell flow, token metadata, ATH, migration status, and full scan analysis for the official mint.
               </p>
 
               <div className="mt-5 flex flex-wrap gap-2">

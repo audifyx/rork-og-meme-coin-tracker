@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════
-   OG Scan · Admin Dashboard
+   OrbitX · Admin Dashboard
    Cleaner admin shell with grouped sections and a single admin apps hub.
    ══════════════════════════════════════════════════════════════ */
 import { useState, useEffect, lazy, Suspense } from "react";

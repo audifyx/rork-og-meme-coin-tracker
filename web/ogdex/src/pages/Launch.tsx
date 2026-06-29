@@ -209,7 +209,7 @@ export default function Launch() {
         <div className="grid grid-cols-3 gap-2">
           <a href={result.links.pumpfun} target="_blank" rel="noreferrer" className="btn bg-panel2 text-white text-xs inline-flex items-center justify-center gap-1 py-2">pump.fun <ExternalLink className="w-3 h-3" /></a>
           <a href={result.links.solscan} target="_blank" rel="noreferrer" className="btn bg-panel2 text-white text-xs inline-flex items-center justify-center gap-1 py-2">Solscan <ExternalLink className="w-3 h-3" /></a>
-          <Link to={result.links.ogdex} className="btn bg-accent/15 text-accent text-xs inline-flex items-center justify-center gap-1 py-2">OG DEX <ExternalLink className="w-3 h-3" /></Link>
+          <Link to={result.links.ogdex} className="btn bg-accent/15 text-accent text-xs inline-flex items-center justify-center gap-1 py-2">OrbitX DEX <ExternalLink className="w-3 h-3" /></Link>
         </div>
       </div>
 
@@ -233,7 +233,7 @@ export default function Launch() {
           <h1 className="text-2xl font-black">Launch a Token</h1>
         </div>
         <p className="text-muted text-sm">
-          Create a token on pump.fun directly from OG DEX. Flat <span className="text-white font-semibold">${feeUsd}</span> launch
+          Create a token on pump.fun directly from OrbitX DEX. Flat <span className="text-white font-semibold">${feeUsd}</span> launch
           fee (SOL or USDC/USDT). Your new token is added to the <span className="text-white">Newly Listed</span> section instantly.
         </p>
       </div>

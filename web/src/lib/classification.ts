@@ -1,5 +1,5 @@
 // ============================================================
-// OG Scan — Explainable 4-Tier Classification Engine
+// OrbitX — Explainable 4-Tier Classification Engine
 // Spec sections 5[2] (Classification Module) & 6 (Taxonomy).
 //
 // Replaces binary OG/clone logic with a strict multi-signal

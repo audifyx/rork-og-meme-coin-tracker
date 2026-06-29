@@ -195,7 +195,7 @@ function AddStreamModal({ onClose, onAdded }: { onClose: () => void; onAdded: ()
         </div>
 
         <p className="text-xs text-white/40 leading-relaxed">
-          Paste your Twitch, YouTube Live, LinkedIn Live, or Facebook Live URL. A card will appear in the OGScan discovery feed so your followers can find you.
+          Paste your Twitch, YouTube Live, LinkedIn Live, or Facebook Live URL. A card will appear in the OrbitX discovery feed so your followers can find you.
         </p>
 
         {/* Supported platforms */}
@@ -502,7 +502,7 @@ export default function ExternalStreams() {
       {/* Subtitle */}
       <div className="max-w-2xl mx-auto px-4 pt-4">
         <p className="text-xs text-white/30 mb-4">
-          Link your Twitch, YouTube, LinkedIn, or Facebook live streams. Cards appear in the OGScan Discovery feed.
+          Link your Twitch, YouTube, LinkedIn, or Facebook live streams. Cards appear in the OrbitX Discovery feed.
         </p>
 
         {/* Filters */}

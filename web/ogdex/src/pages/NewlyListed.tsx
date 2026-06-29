@@ -30,7 +30,7 @@ export default function NewlyListed() {
             <Sparkles className="w-5 h-5 text-accent" />
             <h1 className="text-2xl font-black">Newly Listed</h1>
           </div>
-          <p className="text-muted text-sm">Fresh tokens launched through OG DEX. Unverified and unboosted — do your own research.</p>
+          <p className="text-muted text-sm">Fresh tokens launched through OrbitX DEX. Unverified and unboosted — do your own research.</p>
         </div>
         <Link to="/launch" className="btn bg-accent text-black font-bold inline-flex items-center gap-1.5 px-4 py-2">
           <Rocket className="w-4 h-4" /> Launch a Token
@@ -48,7 +48,7 @@ export default function NewlyListed() {
         <div className="card p-10 text-center space-y-3">
           <Rocket className="w-8 h-8 text-muted mx-auto" />
           <div className="font-semibold">No tokens launched yet</div>
-          <p className="text-sm text-muted">Be the first to launch a token on OG DEX.</p>
+          <p className="text-sm text-muted">Be the first to launch a token on OrbitX DEX.</p>
           <Link to="/launch" className="btn bg-accent text-black font-bold inline-flex items-center gap-1.5 px-4 py-2 mt-1">
             Launch now <ArrowRight className="w-4 h-4" />
           </Link>

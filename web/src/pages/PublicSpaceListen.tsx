@@ -587,16 +587,16 @@ const PublicSpaceListen = () => {
           </div>
         </div>
 
-        {/* ── OG Scan CTA ── */}
+        {/* ── OrbitX CTA ── */}
         <div className="rounded-2xl bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-purple-500/10 border border-white/[0.07] p-5 text-center">
           <p className="text-sm font-bold text-white/70 mb-1">Want the full experience?</p>
-          <p className="text-[11px] text-white/30 mb-4">Host spaces, chat live, earn XP, and explore 1000+ tokens on OG Scan.</p>
+          <p className="text-[11px] text-white/30 mb-4">Host spaces, chat live, earn XP, and explore 1000+ tokens on OrbitX.</p>
           <a
             href="/auth"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm font-bold hover:from-cyan-400 hover:to-blue-500 transition shadow-lg shadow-cyan-500/20"
           >
             <ExternalLink className="h-4 w-4" />
-            Join OG Scan Free
+            Join OrbitX Free
           </a>
         </div>
       </div>
@@ -605,7 +605,7 @@ const PublicSpaceListen = () => {
       <div className="fixed bottom-0 inset-x-0 bg-[#070b10]/95 backdrop-blur-xl border-t border-white/[0.06] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {connected && <><LivePulse /><span className="text-xs text-white/40">Listening live</span></>}
-          {!connected && <span className="text-xs text-white/20">OG Scan · Public Spaces</span>}
+          {!connected && <span className="text-xs text-white/20">OrbitX · Public Spaces</span>}
         </div>
         <a href="/" className="text-[11px] text-cyan-400/50 hover:text-cyan-400 transition">ogscan.fun</a>
       </div>

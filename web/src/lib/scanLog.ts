@@ -1,5 +1,5 @@
 // ============================================================
-// OG Scan — Append-only scan logging + public metrics (section 10)
+// OrbitX — Append-only scan logging + public metrics (section 10)
 // Writes every classification into the immutable ogi_scan_log,
 // records an audit-trail event, upserts the token registry node,
 // and reads aggregated public transparency metrics.

@@ -58,8 +58,8 @@ export const HomeScreen = () => {
     <div className="fixed inset-0 z-[180] flex flex-col bg-background/90 overflow-hidden">
       <StatusBar />
       <div className="flex items-center justify-center pt-3 pb-1">
-        <img src={logo} alt="Sol Tools" width={36} height={36} className="rounded-xl" />
-        <span className="ml-2 text-lg font-bold font-display gradient-text">Sol Tools</span>
+        <img src={logo} alt="OrbitX" width={36} height={36} className="rounded-xl" />
+        <span className="ml-2 text-lg font-bold font-display gradient-text">OrbitX</span>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 pt-3 pb-24 relative z-10">

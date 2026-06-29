@@ -32,7 +32,7 @@ function generateShareUrl(data: ScanData): string {
 
 function generateShareText(data: ScanData): string {
   const gradeEmoji = data.rugScore <= 30 ? "🟢" : data.rugScore <= 60 ? "🟡" : "🔴";
-  return `${gradeEmoji} OG Scan Report: $${data.symbol}\n\nRisk Score: ${data.rugScore}/100 (Grade ${data.grade})\nLiquidity: $${(data.liquidity / 1000).toFixed(1)}k\nMCap: $${(data.mcap / 1000).toFixed(1)}k\nHolders: ${data.holders.toLocaleString()}\n\nScanned on OG Scan — ${OGSCAN_SITE_URL}`;
+  return `${gradeEmoji} OrbitX Report: $${data.symbol}\n\nRisk Score: ${data.rugScore}/100 (Grade ${data.grade})\nLiquidity: $${(data.liquidity / 1000).toFixed(1)}k\nMCap: $${(data.mcap / 1000).toFixed(1)}k\nHolders: ${data.holders.toLocaleString()}\n\nScanned on OrbitX — ${OGSCAN_SITE_URL}`;
 }
 
 export const ScanShare: React.FC<Props> = ({ scanData, compact = false }) => {
@@ -63,7 +63,7 @@ export const ScanShare: React.FC<Props> = ({ scanData, compact = false }) => {
   const shareNative = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: `OG Scan: $${scanData.symbol}`, text: shareText, url: shareUrl });
+        await navigator.share({ title: `OrbitX: $${scanData.symbol}`, text: shareText, url: shareUrl });
       } catch {}
     } else {
       copyLink();

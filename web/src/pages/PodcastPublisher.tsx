@@ -93,7 +93,7 @@ function generateRSSXML(show: Show, episodes: any[]): string {
       <title><![CDATA[${show.title}]]></title>
       <link>https://ogscan.fun/shows/${show.id}</link>
     </image>` : ""}
-    <itunes:author><![CDATA[${show.host_username ?? "OGScan Host"}]]></itunes:author>
+    <itunes:author><![CDATA[${show.host_username ?? "OrbitX Host"}]]></itunes:author>
     <itunes:summary><![CDATA[${show.description ?? ""}]]></itunes:summary>
     <itunes:category text="${show.category ?? "Technology"}"/>
     <itunes:explicit>no</itunes:explicit>

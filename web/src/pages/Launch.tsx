@@ -1,8 +1,8 @@
 /**
- * Launch — Token launcher hub for OG Scan.
+ * Launch — Token launcher hub for OrbitX.
  *
  * Two views:
- *  1. Gallery (default) — browse all tokens launched through OG Scan
+ *  1. Gallery (default) — browse all tokens launched through OrbitX
  *  2. Create  — the launch form (accessed via "Launch Token" button)
  *
  * Launched tokens are stored in localStorage and enriched with live
@@ -40,7 +40,7 @@ import { formatDistanceToNow } from "date-fns";
 const MAX_IMG_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_IMG = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 
-/** OG Scan revenue wallet — receives the $3 launch fee */
+/** OrbitX revenue wallet — receives the $3 launch fee */
 const FEE_WALLET = new PublicKey("4jSxy7gni9ndwzPfNisfKnmCSUeVYrpNACmDxYADfi4i");
 const LAUNCH_FEE_USD = 3;
 
@@ -241,7 +241,7 @@ function TokenGallery({ onCreateClick }: { onCreateClick: () => void }) {
               Launched Tokens
             </h1>
             <p className="text-sm text-white/40 mt-1">
-              All tokens created through OG Scan's launcher
+              All tokens created through OrbitX's launcher
             </p>
           </div>
 
@@ -310,7 +310,7 @@ function EmptyState({ onCreateClick, hasSearch }: { onCreateClick: () => void; h
       </div>
       <h3 className="text-xl font-black text-white mb-2">No tokens launched yet</h3>
       <p className="text-sm text-white/35 max-w-sm mb-6">
-        Create your first token on pump.fun directly from OG Scan. It only takes a few seconds.
+        Create your first token on pump.fun directly from OrbitX. It only takes a few seconds.
       </p>
       <button
         onClick={onCreateClick}

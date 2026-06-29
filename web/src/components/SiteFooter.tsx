@@ -21,13 +21,13 @@ export const SiteFooter = () => {
             <a href={OGSCAN_SITE_URL} target="_blank" rel="noreferrer" className="block w-full max-w-md overflow-hidden rounded-[1rem] border border-og-lime/40 bg-black shadow-og transition hover:border-og-lime hover:shadow-[0_0_40px_-12px_hsl(var(--og-lime))]">
               <div className="relative aspect-[16/9]">
                 <div className="absolute inset-0 grid-bg opacity-40" />
-                <img src={OGSCAN_BRAND_IMAGE} alt="OG Scan official banner" className="relative h-full w-full object-contain p-4" />
+                <img src={OGSCAN_BRAND_IMAGE} alt="OrbitX official banner" className="relative h-full w-full object-contain p-4" />
               </div>
             </a>
             <div>
               <a href={OGSCAN_SITE_URL} target="_blank" rel="noreferrer" className="font-display text-4xl font-bold text-og-gold text-glow-gold hover:text-og-lime">ogscan.fun</a>
               <div className="mt-2 max-w-xl text-xs uppercase leading-relaxed tracking-widest text-muted-foreground">
-                Official OG Scan links. Built for Solana traders who want origin data before narrative noise.
+                Official OrbitX links. Built for Solana traders who want origin data before narrative noise.
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
 /**
- * ToolsHub — Clean square icon grid layout for OG Scan tools.
+ * ToolsHub — Clean square icon grid layout for OrbitX tools.
  * Compact squares with large icons. Fully theme-aware.
  */
 import React, { useMemo, useState } from "react";
@@ -28,7 +28,7 @@ const TOOLS: ToolItem[] = [
   { id: "swap", label: "Swap", tooltip: "Fast Jupiter-routed swaps", Icon: Zap, colorIndex: 0, category: "Trade" },
   { id: "listings", label: "Token Listings", tooltip: "List & promote tokens", Icon: Star, colorIndex: 2, category: "Discovery" },
   { id: "research", label: "Research", tooltip: "Full social + on-chain intel", Icon: Search, colorIndex: 2, category: "Forensics" },
-  { id: "our-coin", label: "About OGScan", tooltip: "Official token & roadmap", Icon: Coins, colorIndex: 1, category: "Info" },
+  { id: "our-coin", label: "About OrbitX", tooltip: "Official token & roadmap", Icon: Coins, colorIndex: 1, category: "Info" },
 ];
 
 const CATEGORY_ORDER: Category[] = ["Forensics", "Discovery", "Analytics", "Trade", "Info"];

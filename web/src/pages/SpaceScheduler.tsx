@@ -65,11 +65,11 @@ function generateICS(space: ScheduledSpace): string {
   const start = new Date(space.scheduled_for);
   const end = addHours(start, 1);
   const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-  const desc = `Hosted by @${space.host_username} on OGScan Spaces\\nhttps://ogscan.fun/space/${space.id}`;
+  const desc = `Hosted by @${space.host_username} on OrbitX Spaces\\nhttps://ogscan.fun/space/${space.id}`;
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//OGScan//Spaces//EN",
+    "PRODID:-//OrbitX//Spaces//EN",
     "BEGIN:VEVENT",
     `UID:${space.id}@ogscan.fun`,
     `DTSTART:${fmt(start)}`,
@@ -100,7 +100,7 @@ function googleCalendarUrl(space: ScheduledSpace): string {
     action: "TEMPLATE",
     text: space.title,
     dates: `${fmt(start)}/${fmt(end)}`,
-    details: `Hosted by @${space.host_username} on OGScan Spaces\nhttps://ogscan.fun/space/${space.id}`,
+    details: `Hosted by @${space.host_username} on OrbitX Spaces\nhttps://ogscan.fun/space/${space.id}`,
   });
   return `https://calendar.google.com/calendar/render?${p}`;
 }

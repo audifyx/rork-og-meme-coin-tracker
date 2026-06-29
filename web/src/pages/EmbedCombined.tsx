@@ -356,7 +356,7 @@ export default function EmbedCombined() {
         <div className="w-full flex items-center justify-center py-16 px-6">
           <div className="text-center">
             <Radio className="h-10 w-10 text-white/10 mx-auto mb-3" />
-            <p className="text-white/30 text-sm">@{username} not found on OGScan</p>
+            <p className="text-white/30 text-sm">@{username} not found on OrbitX</p>
           </div>
         </div>
       ) : (
@@ -512,7 +512,7 @@ export default function EmbedCombined() {
                   <div className={cn("flex items-center justify-between px-3 py-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] transition-all cursor-pointer group mt-2")}>
                     <div className="flex items-center gap-2">
                       <Radio className={cn("h-3 w-3", a.text)} />
-                      <span className="text-[10px] text-white/35 group-hover:text-white/60">@{profile.username} on OGScan</span>
+                      <span className="text-[10px] text-white/35 group-hover:text-white/60">@{profile.username} on OrbitX</span>
                     </div>
                     <ArrowRight className="h-3 w-3 text-white/15 group-hover:text-white/40" />
                   </div>
@@ -607,7 +607,7 @@ export default function EmbedCombined() {
                 <div className={cn("flex items-center justify-between px-4 py-2.5 rounded-xl border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.07] transition-all cursor-pointer group")}>
                   <div className="flex items-center gap-2">
                     <Radio className={cn("h-3.5 w-3.5", a.text)} />
-                    <span className="text-xs text-white/40 group-hover:text-white/70">Follow @{profile.username} on OGScan</span>
+                    <span className="text-xs text-white/40 group-hover:text-white/70">Follow @{profile.username} on OrbitX</span>
                   </div>
                   <ArrowRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/50 group-hover:translate-x-0.5 transition-all" />
                 </div>

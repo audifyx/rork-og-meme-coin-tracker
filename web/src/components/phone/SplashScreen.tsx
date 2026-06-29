@@ -47,7 +47,7 @@ export const SplashScreen = ({ onComplete }: SplashScreenProps) => {
   return (
     <div
       className={`splash-root fixed inset-0 z-[200] overflow-hidden bg-[#030408] ${exiting ? "splash-exit" : ""}`}
-      aria-label="Loading Sol Tools"
+      aria-label="Loading OrbitX"
     >
       <style>{splashCss}</style>
 
@@ -113,7 +113,7 @@ export const SplashScreen = ({ onComplete }: SplashScreenProps) => {
           <div className="splash-logo-ring splash-logo-ring-1" />
           <div className="splash-logo-ring splash-logo-ring-2" />
           <div className="splash-logo-core">
-            <img src={logo} alt="Sol Tools" className="splash-logo-img" draggable={false} />
+            <img src={logo} alt="OrbitX" className="splash-logo-img" draggable={false} />
           </div>
           <div className="splash-logo-pulse" />
         </div>

@@ -1,5 +1,5 @@
 // ============================================================
-// OG Scan — Discovery Engine (spec section C & 8)
+// OrbitX — Discovery Engine (spec section C & 8)
 // Explainable ranking + segmented feeds:
 //   Trending OG | Trending SAFE | Emerging | Risky
 // Pure & dependency-free.

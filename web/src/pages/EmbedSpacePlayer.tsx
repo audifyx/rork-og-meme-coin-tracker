@@ -14,7 +14,7 @@
  * - Volume + mute controls
  * - Copy share link + copy embed code panel
  * - Ended state → replay CTA
- * - Glassmorphism dark design — matches OGScan aesthetic
+ * - Glassmorphism dark design — matches OrbitX aesthetic
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -693,7 +693,7 @@ export default function EmbedSpacePlayer() {
           <a href={publicUrl} target="_blank" rel="noopener noreferrer">
             <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 hover:bg-white/[0.07] text-xs text-white/50 hover:text-white/70 transition-all">
               <Play className="h-3.5 w-3.5" />
-              View Replay on OGScan
+              View Replay on OrbitX
             </button>
           </a>
         )}

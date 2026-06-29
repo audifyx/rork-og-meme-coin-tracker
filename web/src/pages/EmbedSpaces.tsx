@@ -610,7 +610,7 @@ export default function EmbedSpaces() {
             <div className="flex items-center gap-2">
               <Radio className={cn("h-3 w-3", a.text)} />
               <span className="text-[10px] text-white/35 group-hover:text-white/60 transition-colors">
-                @{profile.username} on OGScan
+                @{profile.username} on OrbitX
               </span>
             </div>
             <ArrowRight className="h-3 w-3 text-white/15 group-hover:text-white/40 transition-all group-hover:translate-x-0.5" />

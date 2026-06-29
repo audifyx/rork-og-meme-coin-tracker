@@ -49,7 +49,7 @@ const FEATURES = [
   {
     icon: Mic2,
     title: "Siri & Google Assistant",
-    desc: '"Hey Siri, open the latest crypto space on OGScan" — voice shortcuts to tune in instantly.',
+    desc: '"Hey Siri, open the latest crypto space on OrbitX" — voice shortcuts to tune in instantly.',
     color: "text-emerald-400",
     bg: "bg-emerald-500/10 border-emerald-500/20",
   },
@@ -97,7 +97,7 @@ function PhoneMockup() {
           </div>
           {/* App bar */}
           <div className="flex items-center justify-between px-4 pb-2">
-            <span className="text-[11px] font-black text-white">OGScan</span>
+            <span className="text-[11px] font-black text-white">OrbitX</span>
             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500/20">
               <Bell className="h-2.5 w-2.5 text-violet-400" />
             </div>
@@ -200,14 +200,14 @@ export default function MobileApp() {
                 <span className="text-xs font-bold text-violet-300">Coming Soon — Beta Q3 2025</span>
               </div>
               <h1 className="mb-4 text-4xl font-black leading-tight tracking-tight">
-                OGScan
+                OrbitX
                 <br />
                 <span className="bg-gradient-to-r from-violet-400 to-sky-400 bg-clip-text text-transparent">
                   Native Mobile
                 </span>
               </h1>
               <p className="mb-6 text-sm text-white/50 leading-relaxed max-w-md">
-                The full OGScan experience in your pocket. Background audio, home screen widgets,
+                The full OrbitX experience in your pocket. Background audio, home screen widgets,
                 Siri/Google Assistant shortcuts, and CarPlay support — built for power listeners.
               </p>
 
@@ -312,7 +312,7 @@ export default function MobileApp() {
         <div className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 text-center">
           <h3 className="mb-2 text-lg font-black text-white">Home Screen Widget</h3>
           <p className="mb-6 text-xs text-white/40 max-w-md mx-auto">
-            Add the OGScan widget to your home screen for live space stats and one-tap join.
+            Add the OrbitX widget to your home screen for live space stats and one-tap join.
             Available in small (2×2) and medium (4×2) sizes.
           </p>
           <div className="flex justify-center gap-4 flex-wrap">
@@ -336,7 +336,7 @@ export default function MobileApp() {
             {/* Medium widget */}
             <div className="rounded-2xl bg-gradient-to-r from-[#0e0e20] to-[#12123a] border border-white/10 p-3 w-60 h-28 flex flex-col justify-between">
               <div className="flex items-center justify-between">
-                <span className="text-[9px] font-black text-white">OGScan</span>
+                <span className="text-[9px] font-black text-white">OrbitX</span>
                 <span className="text-[7px] text-white/30">3 spaces live</span>
               </div>
               <div className="space-y-1">

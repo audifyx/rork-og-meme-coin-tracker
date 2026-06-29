@@ -150,7 +150,7 @@ export async function downloadReportPdf(input: PdfReportInput): Promise<void> {
       heightLeft -= pageH;
     }
 
-    const filename = `${token.name || 'Token'}-${mint.slice(0, 8)}-OGScan.pdf`;
+    const filename = `${token.name || 'Token'}-${mint.slice(0, 8)}-OrbitX.pdf`;
     pdf.save(filename);
   } catch (error) {
     console.error('PDF error:', error);
@@ -299,7 +299,7 @@ function buildReportHtml(d: {
             </tr>`;
           })
           .join('')
-      : `<tr><td colspan="6" class="empty">Holder data populating — available in OG Scan Pro dashboard</td></tr>`;
+      : `<tr><td colspan="6" class="empty">Holder data populating — available in OrbitX Pro dashboard</td></tr>`;
 
   const traderRows =
     topTraders.length > 0
@@ -314,7 +314,7 @@ function buildReportHtml(d: {
             <td>${t.winRate != null ? (t.winRate * 100).toFixed(0) + '%' : 'N/A'}</td>
           </tr>`)
           .join('')
-      : `<tr><td colspan="6" class="empty">Trader data populating — available in OG Scan Pro dashboard</td></tr>`;
+      : `<tr><td colspan="6" class="empty">Trader data populating — available in OrbitX Pro dashboard</td></tr>`;
 
   const nowUtc = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
 
@@ -658,7 +658,7 @@ function buildReportHtml(d: {
     </div>
 
     <div class="section-title"><span class="d">◆</span>CLONE / COPYCAT COMPARISON (CLUSTER FORENSICS)</div>
-    <div class="kv" style="margin-bottom:4px">Tokens in the same narrative cluster that OG Scan ranked BELOW this one. This token verified as the earliest credible origin.</div>
+    <div class="kv" style="margin-bottom:4px">Tokens in the same narrative cluster that OrbitX ranked BELOW this one. This token verified as the earliest credible origin.</div>
     <table>
       <tr><th>Wallet / CA</th><th>Name</th><th>Market Cap</th><th>Liquidity</th><th>Clone Prob</th><th>Origin</th></tr>
       ${cloneRows}
@@ -715,7 +715,7 @@ function buildReportHtml(d: {
 
     <div class="footer-note">OG SCAN INTELLIGENCE ENGINE v2.1 — ogscan.fun. Generated using the full forensic stack: on-chain wallet clustering, deployer history, holder entropy modeling, liquidity authenticity scoring, smart money flow detection, behavioral analysis, and narrative dominance tracking.</div>
 
-    <div class="disclaimer"><b>DISCLAIMER:</b> This is NOT financial advice. Cryptocurrency investments carry extremely high risk of total loss. Always conduct your own research (DYOR). OG Scan provides intelligence and analytics tools only. Past performance is not indicative of future results.</div>
+    <div class="disclaimer"><b>DISCLAIMER:</b> This is NOT financial advice. Cryptocurrency investments carry extremely high risk of total loss. Always conduct your own research (DYOR). OrbitX provides intelligence and analytics tools only. Past performance is not indicative of future results.</div>
   </div>
 </div>`;
 }

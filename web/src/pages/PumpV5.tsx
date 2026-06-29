@@ -569,7 +569,7 @@ const PumpV5 = () => {
                   <div className="flex items-center gap-3">
                     <h1 className="text-3xl lg:text-4xl font-bold tracking-tight font-display">
                       <span className="gradient-text">
-                        Sol Tools Launch Pad
+                        OrbitX Launch Pad
                       </span>
                     </h1>
                     <Badge className="bg-primary/10 text-primary border-primary/20">
@@ -1114,7 +1114,7 @@ const PumpV5 = () => {
                     <Rocket className="h-12 w-12 text-muted-foreground" />
                   </div>
                   <p className="text-lg font-medium text-muted-foreground">No tokens found</p>
-                  <p className="text-sm text-muted-foreground mt-2 mb-6">Be the first to list a token on Sol Tools Launch Pad!</p>
+                  <p className="text-sm text-muted-foreground mt-2 mb-6">Be the first to list a token on OrbitX Launch Pad!</p>
                   <Button onClick={() => setShowSubmitDialog(true)} className="bg-gradient-to-r from-primary to-secondary">
                     <Plus className="h-4 w-4 mr-2" />
                     List Token Now

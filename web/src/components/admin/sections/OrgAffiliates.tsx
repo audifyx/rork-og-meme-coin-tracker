@@ -1,9 +1,9 @@
 /**
  * OrgAffiliates — Admin Section
  *
- * Manage the OG Scan official account & its affiliated users.
- * - Toggle which profile is the "Official" OG Scan account (gets gold ✦ badge)
- * - Assign any user as an "OG Scan Affiliate" (gets affiliate badge on profile)
+ * Manage the OrbitX official account & its affiliated users.
+ * - Toggle which profile is the "Official" OrbitX account (gets gold ✦ badge)
+ * - Assign any user as an "OrbitX Affiliate" (gets affiliate badge on profile)
  * - Revoke affiliation
  */
 
@@ -100,7 +100,7 @@ export function OrgAffiliates() {
     }
     const { error } = await supabase.from("profiles").update({ is_official_account: true }).eq("user_id", profile.user_id);
     if (error) { toast.error("Failed to set official account"); return; }
-    toast.success(`✦ @${profile.username} is now the Official OG Scan account`);
+    toast.success(`✦ @${profile.username} is now the Official OrbitX account`);
     load();
   };
 
@@ -121,7 +121,7 @@ export function OrgAffiliates() {
       .update({ affiliate_org_id: officialProfile.user_id })
       .eq("user_id", profile.user_id);
     if (error) { toast.error("Failed to add affiliate"); return; }
-    toast.success(`🏷️ @${profile.username} added as OG Scan Affiliate`);
+    toast.success(`🏷️ @${profile.username} added as OrbitX Affiliate`);
     setAddSearch("");
     setAddResults([]);
     load();
@@ -151,7 +151,7 @@ export function OrgAffiliates() {
             Org Affiliates
           </h2>
           <p className="text-white/40 text-sm mt-0.5">
-            Set your Official OG Scan account and assign affiliate badges to team members
+            Set your Official OrbitX account and assign affiliate badges to team members
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={load} className="border-white/20 text-white/60 hover:text-white gap-1.5">
@@ -318,7 +318,7 @@ export function OrgAffiliates() {
       <div className="bg-white/3 border border-white/8 rounded-xl p-4 flex gap-3">
         <Info className="h-4 w-4 text-white/30 flex-shrink-0 mt-0.5" />
         <p className="text-xs text-white/35 leading-relaxed">
-          <strong className="text-white/50">How it works:</strong> The <span className="text-amber-400">✦ Official</span> badge appears next to the display name on the official account's profile. Affiliates get a <span className="text-violet-300">🏷 OG Scan Affiliate</span> badge on their own profiles, linking them visually to your brand — just like X's verified affiliates feature. Both badges are visible to anyone who visits those profile pages.
+          <strong className="text-white/50">How it works:</strong> The <span className="text-amber-400">✦ Official</span> badge appears next to the display name on the official account's profile. Affiliates get a <span className="text-violet-300">🏷 OrbitX Affiliate</span> badge on their own profiles, linking them visually to your brand — just like X's verified affiliates feature. Both badges are visible to anyone who visits those profile pages.
         </p>
       </div>
     </div>

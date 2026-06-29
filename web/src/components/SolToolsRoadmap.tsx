@@ -40,7 +40,7 @@ const roadmapCards: RoadmapCard[] = [
   {
     title: "Build a real home for crypto communities",
     eyebrow: "Our goal",
-    body: "Crypto is scattered across platforms that were never designed for token communities. SolTools is the answer: tools, discovery, and community rails in one place.",
+    body: "Crypto is scattered across platforms that were never designed for token communities. OrbitX is the answer: tools, discovery, and community rails in one place.",
     Icon: Flag,
     tone: "lime",
     bullets: ["Crypto-native profiles", "Project-owned communities", "Signal over scam noise"],
@@ -48,7 +48,7 @@ const roadmapCards: RoadmapCard[] = [
   {
     title: "Start with useful tools first",
     eyebrow: "Our plan",
-    body: "OGScan begins as a lightweight scanner for blockchain history, first-pair discovery, token analytics, and launch intelligence before expanding into the wider SolTools ecosystem.",
+    body: "OrbitX begins as a lightweight scanner for blockchain history, first-pair discovery, token analytics, and launch intelligence before expanding into the wider OrbitX ecosystem.",
     Icon: Compass,
     tone: "cyan",
     bullets: ["Blockchain scanning", "Token history", "Discovery dashboards"],
@@ -56,7 +56,7 @@ const roadmapCards: RoadmapCard[] = [
   {
     title: "Grow the early operator community",
     eyebrow: "Next step",
-    body: "The first wave should be active traders, project owners, developers, community leaders, and real users who help shape what SolTools becomes.",
+    body: "The first wave should be active traders, project owners, developers, community leaders, and real users who help shape what OrbitX becomes.",
     Icon: Users,
     tone: "gold",
     bullets: ["Beta testers", "Founder feedback", "Community-led roadmap"],
@@ -64,7 +64,7 @@ const roadmapCards: RoadmapCard[] = [
   {
     title: "Become the social layer for crypto",
     eyebrow: "Long term vision",
-    body: "Not just another tracker. SolTools should become the place where alpha, spaces, project communities, analytics, and social systems live together.",
+    body: "Not just another tracker. OrbitX should become the place where alpha, spaces, project communities, analytics, and social systems live together.",
     Icon: Network,
     tone: "lime",
     bullets: ["On-platform discussions", "Project community hubs", "Trader discovery graph"],
@@ -74,7 +74,7 @@ const roadmapCards: RoadmapCard[] = [
 const phases: { phase: string; title: string; status: string; items: string[]; tone: Tone }[] = [
   {
     phase: "01",
-    title: "OGScan foundation",
+    title: "OrbitX foundation",
     status: "Current focus",
     tone: "lime",
     items: ["Beta testing", "Platform stability", "Scanner UX", "Live-market tools"],
@@ -95,7 +95,7 @@ const phases: { phase: string; title: string; status: string; items: string[]; t
   },
   {
     phase: "04",
-    title: "SolTools ecosystem",
+    title: "OrbitX ecosystem",
     status: "Big vision",
     tone: "lime",
     items: ["Social layer", "Spaces/discussions", "Multi-chain support", "Crypto community OS"],
@@ -129,14 +129,14 @@ export const SolToolsRoadmap = memo(() => {
         <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div>
             <div className="mb-4 inline-flex items-center gap-2 border border-og-lime/45 bg-og-lime/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.32em] text-og-lime">
-              <Zap className="h-3.5 w-3.5" /> SolTools roadmap
+              <Zap className="h-3.5 w-3.5" /> OrbitX roadmap
             </div>
             <h2 className="font-display text-[clamp(3rem,8vw,7.6rem)] font-black uppercase leading-[0.82] tracking-tighter">
               <span className="block text-og-gold text-glow-gold">Crypto needs</span>
               <span className="block text-og-lime text-glow">a real home.</span>
             </h2>
             <p className="mt-6 max-w-2xl text-lg font-semibold leading-relaxed text-foreground sm:text-2xl">
-              OGScan is the first product inside SolTools: a lightweight scanning layer that grows into a full social ecosystem for crypto communities.
+              OrbitX is the first product inside OrbitX: a lightweight scanning layer that grows into a full social ecosystem for crypto communities.
             </p>
             <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground">
               The mission is simple: stop forcing crypto communities into broken places filled with bots, scams, scattered chats, and disappearing community features. Build the platform crypto should have already had.
@@ -213,7 +213,7 @@ export const SolToolsRoadmap = memo(() => {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <div className="font-mono text-[10px] uppercase tracking-[0.34em] text-og-lime">official links</div>
-                <h3 className="mt-1 font-display text-2xl font-bold uppercase tracking-tight text-foreground">Join the early SolTools network</h3>
+                <h3 className="mt-1 font-display text-2xl font-bold uppercase tracking-tight text-foreground">Join the early OrbitX network</h3>
               </div>
               <MessageCircle className="hidden h-8 w-8 text-og-lime sm:block" />
             </div>

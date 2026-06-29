@@ -136,7 +136,7 @@ export default function TrackRecord() {
                 </tbody>
               </table>
             </div>
-            <div className="text-white/30 text-[10px] mt-2">Groups running an OG Scan bot, ranked by the realized peak multiple of the tokens they scanned. Min 3 tracked calls.</div>
+            <div className="text-white/30 text-[10px] mt-2">Groups running an OrbitX bot, ranked by the realized peak multiple of the tokens they scanned. Min 3 tracked calls.</div>
           </Card>
         ) : null}
 

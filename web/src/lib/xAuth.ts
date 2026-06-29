@@ -1,5 +1,5 @@
 /**
- * xAuth — Twitter OAuth 2.0 PKCE helpers for OG Scan.
+ * xAuth — Twitter OAuth 2.0 PKCE helpers for OrbitX.
  * Used for connecting X account with tweet.write scope so users can cross-post.
  *
  * Flow:

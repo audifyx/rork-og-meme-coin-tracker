@@ -1,7 +1,7 @@
 /**
  * WhiteLabelConfig — White-label & brand customization settings.
  * Configure custom domain, branding, colors, CSS/JS overrides,
- * and toggle OGScan branding visibility.
+ * and toggle OrbitX branding visibility.
  */
 import React, { useState, useEffect } from "react";
 import {
@@ -72,7 +72,7 @@ const WhiteLabelConfig: React.FC = () => {
     owner_id: user?.id || "",
     subdomain: "",
     custom_domain: "",
-    brand_name: "OGScan",
+    brand_name: "OrbitX",
     logo_url: "",
     favicon_url: "",
     primary_color: "#7c3aed",
@@ -204,8 +204,8 @@ const WhiteLabelConfig: React.FC = () => {
                 <span className={cn("absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all", config.hide_ogscan_branding ? "left-5" : "left-0.5")} />
               </button>
               <div>
-                <p className="text-sm font-bold text-white">Hide OGScan Branding</p>
-                <p className="text-xs text-white/30">Remove "Powered by OGScan" footer</p>
+                <p className="text-sm font-bold text-white">Hide OrbitX Branding</p>
+                <p className="text-xs text-white/30">Remove "Powered by OrbitX" footer</p>
               </div>
             </div>
 

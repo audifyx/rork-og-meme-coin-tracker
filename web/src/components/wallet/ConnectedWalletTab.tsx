@@ -437,7 +437,7 @@ export function ConnectedWalletTab() {
           <div>
             <h2 className="text-2xl font-bold mb-2">Connect Your Wallet</h2>
             <p className="text-white/50 text-sm leading-relaxed">
-              Connect Phantom or Solflare to view your portfolio, trade tokens, track PnL, volume, and full live data feeds — all inside OG Scan.
+              Connect Phantom or Solflare to view your portfolio, trade tokens, track PnL, volume, and full live data feeds — all inside OrbitX.
             </p>
           </div>
           <div className="flex flex-col gap-3">
@@ -456,7 +456,7 @@ export function ConnectedWalletTab() {
               </div>
             )}
           </div>
-          <p className="text-[11px] text-white/25">Your keys never leave your wallet. OG Scan only reads on-chain data.</p>
+          <p className="text-[11px] text-white/25">Your keys never leave your wallet. OrbitX only reads on-chain data.</p>
         </div>
         <div className="flex flex-wrap justify-center gap-2 max-w-sm">
           {["Portfolio overview", "Buy & sell tokens", "Per-token live feeds", "PnL tracker", "Volume analytics", "Trade history"].map(f => (

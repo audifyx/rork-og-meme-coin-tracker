@@ -429,7 +429,7 @@ const TABS: TabConfig[] = [
     slug: "our-coin",
     pageNumber: 2,
     eyebrow: "Official Token Room",
-    description: "Custom OG Scan coin tab with branded banner art, live charting, buy flow, ATH, migration bar, and full token scan details.",
+    description: "Custom OrbitX coin tab with branded banner art, live charting, buy flow, ATH, migration bar, and full token scan details.",
     Icon: Coins,
     accent: "gold",
     group: "Project",
@@ -442,7 +442,7 @@ const TABS: TabConfig[] = [
     slug: "roadmap",
     pageNumber: 3,
     eyebrow: "Vision",
-    description: "The path from OGScan into the crypto-native community layer SolTools is building.",
+    description: "The path from OrbitX into the crypto-native community layer OrbitX is building.",
     Icon: Map,
     accent: "cyan",
     group: "Project",
@@ -731,7 +731,7 @@ const getTabPath = (id: TabId): string => {
 };
 
 const renderTool = (tab: TabId, mint: string, updateMint: (m: string) => void, onNavigate?: (t: string) => void, profileViewUserId?: string, listingMint?: string): ReactNode => {
-  /* ─── Consolidated: About OGScan (token + roadmap + tech) ─── */
+  /* ─── Consolidated: About OrbitX (token + roadmap + tech) ─── */
   if (tab === "our-coin") return <OurCoin />;
   if (tab === "roadmap") return <AboutOgScan initialTab="roadmap" />;
   if (tab === "tech") return <AboutOgScan initialTab="tech" />;

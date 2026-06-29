@@ -2,7 +2,7 @@
  * Simulcast — ogscan.fun/simulcast
  *
  * Feature 17: Multi-Platform Simulcast
- * - Broadcast one space simultaneously to: OG Scan + X Spaces + YouTube Live + LinkedIn Live
+ * - Broadcast one space simultaneously to: OrbitX + X Spaces + YouTube Live + LinkedIn Live
  * - Single dashboard to manage all streams
  * - Unified chat that merges comments from all platforms
  * - Platform-specific analytics shown side by side
@@ -51,17 +51,17 @@ interface UnifiedMessage {
 }
 
 const MOCK_MESSAGES: UnifiedMessage[] = [
-  { id: "1", platform: "OG Scan", platformColor: "text-violet-400", platformIcon: "🔮", user: "drfootcare", text: "Amazing insight on carbon fiber composites!", timestamp: "now", type: "chat" },
+  { id: "1", platform: "OrbitX", platformColor: "text-violet-400", platformIcon: "🔮", user: "drfootcare", text: "Amazing insight on carbon fiber composites!", timestamp: "now", type: "chat" },
   { id: "2", platform: "YouTube", platformColor: "text-red-400", platformIcon: "▶", user: "OrthoTech_Fan", text: "Just found this channel — subscribed!", timestamp: "1s", type: "chat" },
   { id: "3", platform: "X", platformColor: "text-sky-400", platformIcon: "𝕏", user: "@biomech_sarah", text: "Love the point about accessibility 🔥", timestamp: "2s", type: "chat" },
   { id: "4", platform: "LinkedIn", platformColor: "text-blue-400", platformIcon: "in", user: "James Okafor", text: "This should be mandatory viewing for every prosthetist.", timestamp: "5s", type: "chat" },
-  { id: "5", platform: "OG Scan", platformColor: "text-violet-400", platformIcon: "🔮", user: "practitioner99", text: "How do I get early access to the new scanning API?", timestamp: "8s", type: "chat" },
+  { id: "5", platform: "OrbitX", platformColor: "text-violet-400", platformIcon: "🔮", user: "practitioner99", text: "How do I get early access to the new scanning API?", timestamp: "8s", type: "chat" },
   { id: "6", platform: "YouTube", platformColor: "text-red-400", platformIcon: "▶", user: "MedTechWeekly", text: "Sharing this on our channel 👏", timestamp: "12s", type: "chat" },
-  { id: "7", platform: "X", platformColor: "text-sky-400", platformIcon: "𝕏", user: "@orthogenix_fan", text: "OG Scan is changing the game fr", timestamp: "15s", type: "chat" },
+  { id: "7", platform: "X", platformColor: "text-sky-400", platformIcon: "𝕏", user: "@orthogenix_fan", text: "OrbitX is changing the game fr", timestamp: "15s", type: "chat" },
 ];
 
 const initialPlatforms: Platform[] = [
-  { id: "ogscan", name: "OG Scan", icon: Radio, color: "text-violet-400", bg: "bg-violet-500/10", border: "border-violet-500/20", isConnected: true, isLive: false, streamKey: "ogscan_live_●●●●●●●●", viewers: 0, chatMessages: 0, likes: 0 },
+  { id: "ogscan", name: "OrbitX", icon: Radio, color: "text-violet-400", bg: "bg-violet-500/10", border: "border-violet-500/20", isConnected: true, isLive: false, streamKey: "ogscan_live_●●●●●●●●", viewers: 0, chatMessages: 0, likes: 0 },
   { id: "youtube", name: "YouTube Live", icon: Youtube, color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/20", isConnected: false, isLive: false, streamKey: "", viewers: 0, chatMessages: 0, likes: 0 },
   { id: "x", name: "X (Twitter)", icon: Globe, color: "text-sky-400", bg: "bg-sky-500/10", border: "border-sky-500/20", isConnected: false, isLive: false, streamKey: "", viewers: 0, chatMessages: 0, likes: 0 },
   { id: "linkedin", name: "LinkedIn Live", icon: Linkedin, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", isConnected: false, isLive: false, streamKey: "", viewers: 0, chatMessages: 0, likes: 0 },

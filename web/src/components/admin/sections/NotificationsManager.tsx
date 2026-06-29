@@ -25,11 +25,11 @@ import {
 } from "lucide-react";
 
 const TEMPLATES = [
-  { name: "Maintenance", title: "Scheduled Maintenance", message: "OG Scan will undergo scheduled maintenance. We'll be back shortly." },
+  { name: "Maintenance", title: "Scheduled Maintenance", message: "OrbitX will undergo scheduled maintenance. We'll be back shortly." },
   { name: "New Feature", title: "New Feature Available!", message: "We've just shipped a new feature. Check it out!" },
   { name: "Security Alert", title: "Security Notice", message: "For your security, please review your account settings." },
   { name: "Token Alert", title: "Hot Token Alert 🔥", message: "A new trending token has been listed. Don't miss out!" },
-  { name: "Welcome", title: "Welcome to OG Scan! 🎉", message: "Thanks for joining OG Scan. Explore tokens, join communities, and connect with traders." },
+  { name: "Welcome", title: "Welcome to OrbitX! 🎉", message: "Thanks for joining OrbitX. Explore tokens, join communities, and connect with traders." },
 ];
 
 export const NotificationsManager = () => {

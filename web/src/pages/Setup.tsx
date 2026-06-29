@@ -120,7 +120,7 @@ const Setup = () => {
     if (error) {
       toast({ title: "Failed to set username", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Welcome to OGScan!" });
+      toast({ title: "Welcome to OrbitX!" });
       navigate("/app");
     }
 
@@ -164,7 +164,7 @@ const Setup = () => {
             <div className="w-12 h-12 rounded-xl bg-solana-gradient flex items-center justify-center">
               <Zap className="h-6 w-6 text-background" />
             </div>
-            <span className="text-2xl font-bold gradient-text">OGScan</span>
+            <span className="text-2xl font-bold gradient-text">OrbitX</span>
           </div>
 
           {/* Title */}

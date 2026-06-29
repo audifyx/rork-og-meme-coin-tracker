@@ -1,5 +1,5 @@
 /**
- * ToolPageShell — Shared premium wrapper for all OG Scan tool pages.
+ * ToolPageShell — Shared premium wrapper for all OrbitX tool pages.
  * Provides consistent header, section cards, and filter pill styling.
  */
 import React from "react";

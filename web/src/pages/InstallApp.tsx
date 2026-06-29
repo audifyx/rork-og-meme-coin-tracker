@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════
-   OG Scan · Install App Page (/install)
+   OrbitX · Install App Page (/install)
    PWA install + APK sideload instructions
    ══════════════════════════════════════════════════════════════ */
 import { useState, useEffect } from "react";
@@ -71,9 +71,9 @@ export default function InstallApp() {
         {/* Header */}
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-og-lime/40 bg-og-lime/10">
-            <img src="/og-icon.svg" alt="OGScan" className="h-full w-full object-cover rounded-2xl" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            <img src="/og-icon.svg" alt="OrbitX" className="h-full w-full object-cover rounded-2xl" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
           </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Install OG Scan</h1>
+          <h1 className="text-2xl font-black text-white tracking-tight">Install OrbitX</h1>
           <p className="text-sm text-white/40 mt-1">Get the app on any device — no app store required</p>
         </div>
 
@@ -141,7 +141,7 @@ export default function InstallApp() {
                 <Step n={2} text='Tap the three-dot menu (⋮) in the top-right corner' />
                 <Step n={3} text='Tap "Add to Home screen" or "Install app"' />
                 <Step n={4} text='Tap "Install" on the confirmation dialog' />
-                <Step n={5} text='OG Scan icon will appear on your home screen — open it for a full-screen app experience' />
+                <Step n={5} text='OrbitX icon will appear on your home screen — open it for a full-screen app experience' />
               </div>
             </div>
 
@@ -161,7 +161,7 @@ export default function InstallApp() {
                 <div className="flex gap-2">
                   <AlertCircle className="h-4 w-4 text-yellow-400 shrink-0 mt-0.5" />
                   <p className="text-[12px] text-yellow-400/80">
-                    You'll need to enable "Install unknown apps" in Android settings for your browser. This is safe — OG Scan is your own app.
+                    You'll need to enable "Install unknown apps" in Android settings for your browser. This is safe — OrbitX is your own app.
                   </p>
                 </div>
               </div>
@@ -171,7 +171,7 @@ export default function InstallApp() {
                 <Step n={2} text='Enable "Allow from this source" for your browser (Chrome, Files, etc.)' />
                 <Step n={3} text='Download the APK file below' />
                 <Step n={4} text='Open the downloaded file and tap "Install"' />
-                <Step n={5} text='OG Scan will appear in your app drawer' />
+                <Step n={5} text='OrbitX will appear in your app drawer' />
               </div>
 
               <a
@@ -202,7 +202,7 @@ export default function InstallApp() {
               <Step n={1} text="Open ogscan.fun in Safari (must be Safari — Chrome on iOS won't show the option)" />
               <Step n={2} text='Tap the Share button (□↑) at the bottom of the screen' />
               <Step n={3} text='Scroll down and tap "Add to Home Screen"' />
-              <Step n={4} text='Give it a name (default: "OG Scan") and tap "Add"' />
+              <Step n={4} text='Give it a name (default: "OrbitX") and tap "Add"' />
               <Step n={5} text="The app icon will appear on your home screen — it opens full-screen without Safari chrome" />
             </div>
           </div>
@@ -224,7 +224,7 @@ export default function InstallApp() {
               <Step n={1} text="Open ogscan.fun in Chrome or Edge" />
               <Step n={2} text='Look for the install icon (⊕) in the address bar on the right side' />
               <Step n={3} text='Click it and select "Install"' />
-              <Step n={4} text="OG Scan opens as a standalone desktop window — no browser chrome, works offline" />
+              <Step n={4} text="OrbitX opens as a standalone desktop window — no browser chrome, works offline" />
             </div>
             <div className="mt-4 rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
               <p className="text-[12px] text-white/40">
@@ -237,7 +237,7 @@ export default function InstallApp() {
         {/* Footer note */}
         <div className="mt-6 text-center">
           <p className="text-[12px] text-white/30">
-            OG Scan is a Progressive Web App — fast, offline-capable, and always up-to-date automatically.
+            OrbitX is a Progressive Web App — fast, offline-capable, and always up-to-date automatically.
           </p>
         </div>
       </div>

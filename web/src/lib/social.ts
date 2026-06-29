@@ -1,5 +1,5 @@
 // ============================================================
-// OG Scan — Social Distribution Layer (spec section D & 9)
+// OrbitX — Social Distribution Layer (spec section D & 9)
 // X (Twitter) share generator, viral scan cards, Telegram
 // alerts, and scan attribution. Pure & dependency-free.
 // ============================================================
@@ -48,7 +48,7 @@ export function buildTweet(input: ScanShareInput): string {
     `${result.rationale}`,
     ``,
     `Scan it 👉 ${url}`,
-    `#OGScan #Solana`,
+    `#OrbitX #Solana`,
   ].join("\n");
 }
 

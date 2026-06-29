@@ -72,7 +72,7 @@ export default function TokenPublic() {
     <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[#05070d] px-6 text-center">
       <div className="text-lg font-bold text-white/80">Couldn't load that token</div>
       <div className="font-mono text-sm text-white/40">{short(mint, 6, 6)}</div>
-      <a href="https://ogscan.fun" className="mt-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Go to OG Scan</a>
+      <a href="https://ogscan.fun" className="mt-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Go to OrbitX</a>
     </div>
   );
 
@@ -270,10 +270,10 @@ export default function TokenPublic() {
 
         <div className="mt-6 rounded-3xl border border-white/[0.09] bg-gradient-to-br from-primary/10 to-transparent p-5 text-center">
           <div className="text-[15px] font-black">Scan any token in seconds</div>
-          <p className="mx-auto mt-1 max-w-sm text-[12px] text-white/45">Rug scores, dev wallet DNA, holder risk, and live market data — free on OG Scan.</p>
-          <div className="mt-3 flex items-center justify-center gap-2"><Link to="/scanner" className="rounded-xl bg-primary px-4 py-2 text-[13px] font-black text-primary-foreground">Open OG Scan</Link></div>
+          <p className="mx-auto mt-1 max-w-sm text-[12px] text-white/45">Rug scores, dev wallet DNA, holder risk, and live market data — free on OrbitX.</p>
+          <div className="mt-3 flex items-center justify-center gap-2"><Link to="/scanner" className="rounded-xl bg-primary px-4 py-2 text-[13px] font-black text-primary-foreground">Open OrbitX</Link></div>
         </div>
-        <div className="mt-5 text-center text-[10px] text-white/25">Live data via OG Scan · RugCheck · DexScreener · Not financial advice · ogscan.fun</div>
+        <div className="mt-5 text-center text-[10px] text-white/25">Live data via OrbitX · RugCheck · DexScreener · Not financial advice · ogscan.fun</div>
       </div>
     </div>
   );

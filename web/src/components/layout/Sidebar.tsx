@@ -125,11 +125,11 @@ export const Sidebar = () => {
         <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-4">
           <NavLink to="/app" onClick={closeMobile} className="flex items-center gap-3 text-left">
             <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-og-lime/50 bg-og-lime/10">
-              <img src="/og-icon.svg" alt="OGScan" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <img src="/og-icon.svg" alt="OrbitX" className="h-full w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
               <span className="absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-og-lime shadow-[0_0_6px_hsl(var(--og-lime))]" />
             </div>
             <div>
-              <div className="text-sm font-black uppercase tracking-wide text-white">OGScan</div>
+              <div className="text-sm font-black uppercase tracking-wide text-white">OrbitX</div>
               <div className="text-[10px] font-semibold tracking-widest text-primary/80">PRO TRADING SUITE</div>
             </div>
           </NavLink>

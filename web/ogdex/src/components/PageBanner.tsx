@@ -2,7 +2,7 @@
 export default function PageBanner({ title, subtitle }: { title?: string; subtitle?: string }) {
   return (
     <div className="relative overflow-hidden rounded-2xl border border-white/10 mb-6 ring-brand">
-      <img src="/ORBITX_DEX/ogdex-article-banner.jpg" alt="OG DEX" className="w-full object-cover" loading="eager" />
+      <img src="/ORBITX_DEX/ogdex-article-banner.jpg" alt="OrbitX DEX" className="w-full object-cover" loading="eager" />
       {(title || subtitle) && (
         <div className="absolute inset-0 flex flex-col items-center justify-end text-center p-4 bg-gradient-to-t from-bg via-bg/40 to-transparent">
           {title && <h1 className="text-xl sm:text-3xl font-black tracking-tight drop-shadow-lg">{title}</h1>}

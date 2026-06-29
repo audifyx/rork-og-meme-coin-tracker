@@ -1,5 +1,5 @@
 /**
- * ClassificationCard — OG Scan 4-tier explainable verdict, glass-themed.
+ * ClassificationCard — OrbitX 4-tier explainable verdict, glass-themed.
  */
 import { useState } from "react";
 import {

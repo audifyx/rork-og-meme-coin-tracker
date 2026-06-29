@@ -56,10 +56,10 @@ const MobilePreview = memo(() => (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="h-10 w-10 overflow-hidden rounded-2xl border border-white/15 bg-white/10">
-                  <img src="/og-icon.svg" alt="OGScan" className="h-full w-full object-cover" />
+                  <img src="/og-icon.svg" alt="OrbitX" className="h-full w-full object-cover" />
                 </div>
                 <div>
-                  <p className="text-[13px] font-black text-white">OGScan</p>
+                  <p className="text-[13px] font-black text-white">OrbitX</p>
                   <p className="text-[10px] font-semibold text-white/45">Command home</p>
                 </div>
               </div>
@@ -183,10 +183,10 @@ const BetaHome = memo(() => {
       <nav className="relative z-20 mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-3">
           <div className="h-10 w-10 overflow-hidden rounded-2xl border border-white/15 bg-white/10">
-            <img src="/og-icon.svg" alt="OGScan" className="h-full w-full object-cover" />
+            <img src="/og-icon.svg" alt="OrbitX" className="h-full w-full object-cover" />
           </div>
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em]">OG Scan</p>
+            <p className="text-sm font-black uppercase tracking-[0.18em]">OrbitX</p>
             <p className="text-[10px] font-semibold text-white/40">on-chain intelligence</p>
           </div>
         </Link>
@@ -215,7 +215,7 @@ const BetaHome = memo(() => {
             Find the OGs. <span className="bg-gradient-to-r from-og-lime via-og-cyan to-[#f472b6] bg-clip-text text-transparent">Dodge the rugs.</span>
           </h1>
           <p className="mt-5 max-w-lg text-base leading-7 text-white/60 sm:text-lg">
-            OG Scan is the unified on-chain intelligence platform. Scan any token, x-ray any wallet, catch launches before they move, and screen or launch coins on ORBITX_DEX — all in one place, powered by AI.
+            OrbitX is the unified on-chain intelligence platform. Scan any token, x-ray any wallet, catch launches before they move, and screen or launch coins on ORBITX_DEX — all in one place, powered by AI.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2">
@@ -261,7 +261,7 @@ const BetaHome = memo(() => {
       {/* WHAT IS OG SCAN / WHY */}
       <section className="relative z-10 mx-auto max-w-6xl px-4 pt-20 sm:px-6">
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-7 sm:p-10">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-og-cyan">What is OG Scan · Why it exists</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-og-cyan">What is OrbitX · Why it exists</p>
           <h2 className="mt-3 max-w-3xl text-3xl font-black leading-tight sm:text-4xl">
             One platform for the entire on-chain edge.
           </h2>
@@ -270,7 +270,7 @@ const BetaHome = memo(() => {
               We got tired of juggling ten browser tabs to make one trade — a chart here, a holder map there, a rug-checker, a wallet tracker, a launch bot. None of them talked to each other. So we built the platform we actually wanted.
             </p>
             <p>
-              OG Scan unifies <span className="text-white font-semibold">token forensics, wallet intelligence, a live launch radar, an on-chain screener &amp; launcher (ORBITX_DEX), and an AI analyst</span> — all in real time. The mission: find the real OGs early, avoid the traps, and move faster than the crowd.
+              OrbitX unifies <span className="text-white font-semibold">token forensics, wallet intelligence, a live launch radar, an on-chain screener &amp; launcher (ORBITX_DEX), and an AI analyst</span> — all in real time. The mission: find the real OGs early, avoid the traps, and move faster than the crowd.
             </p>
           </div>
         </div>

@@ -260,12 +260,12 @@ export const TokenExplorer: React.FC<Props> = ({ onSelectMint }) => {
         <span>{CATEGORIES.find(c => c.id === category)?.desc}</span>
       </div>
 
-      {/* ── Listed on OG Scan ── */}
+      {/* ── Listed on OrbitX ── */}
       {listedTokens.length > 0 && (
         <div className="space-y-2.5">
           <div className="flex items-center gap-2">
             <Megaphone className="h-3.5 w-3.5 text-og-gold" />
-            <h3 className="text-[12px] font-black text-white/60 uppercase tracking-wider">Listed on OG Scan</h3>
+            <h3 className="text-[12px] font-black text-white/60 uppercase tracking-wider">Listed on OrbitX</h3>
             <div className="h-[1px] flex-1 bg-white/[0.04]" />
           </div>
           <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">

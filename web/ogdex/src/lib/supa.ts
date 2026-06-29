@@ -1,5 +1,5 @@
 // Lightweight Supabase REST reader for OrbitX DEX (no @supabase/supabase-js dependency).
-// Uses the public anon key + URL injected at build time (same project as OG Scan).
+// Uses the public anon key + URL injected at build time (same project as OrbitX).
 export const SUPABASE_URL =
   (import.meta as any).env?.VITE_SUPABASE_URL || "https://ffjipnkhcebjvttliptb.supabase.co";
 export const SUPABASE_ANON_KEY = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || "";

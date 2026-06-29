@@ -1,5 +1,5 @@
 // ============================================================
-// OG Scan — shared token data fetcher (DexScreener public API).
+// OrbitX — shared token data fetcher (DexScreener public API).
 // Normalises a token into: classification input, market snapshot,
 // and a reconstructed time-series for the intelligence engines.
 // ============================================================

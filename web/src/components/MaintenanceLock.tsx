@@ -171,7 +171,7 @@ export function MaintenanceLock({ children }: { children: React.ReactNode }) {
             </span>
           </h1>
           <p className="text-slate-400 text-sm leading-relaxed">
-            The OGScan team is currently upgrading the platform.
+            The OrbitX team is currently upgrading the platform.
             We'll be back live <span className="text-white font-medium">tomorrow</span> with brand new updates.
           </p>
           <p className="text-slate-500 text-xs">

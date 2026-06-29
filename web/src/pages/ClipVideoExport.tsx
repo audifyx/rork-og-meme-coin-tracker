@@ -163,7 +163,7 @@ function VideoPreviewCanvas({
       ctx.fillStyle = "#fff";
       ctx.font = `bold ${Math.max(8, H * 0.035)}px sans-serif`;
       ctx.textAlign = "left";
-      ctx.fillText("OGScan", W * 0.08, H * 0.05 + badgeH * 0.68);
+      ctx.fillText("OrbitX", W * 0.08, H * 0.05 + badgeH * 0.68);
     }
 
     // Title / clip name
@@ -274,7 +274,7 @@ export default function ClipVideoExport() {
 
     if (platform === "x") {
       const text = encodeURIComponent(
-        `🎙️ "${selectedClip.title}" — catch the clip!\n\nhttps://ogscan.fun/clips/${selectedClip.id}\n\n#OGScan #Spaces`
+        `🎙️ "${selectedClip.title}" — catch the clip!\n\nhttps://ogscan.fun/clips/${selectedClip.id}\n\n#OrbitX #Spaces`
       );
       window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
       toast.success("Tweet window opened — attach your video before posting!");
@@ -494,8 +494,8 @@ export default function ClipVideoExport() {
                   {/* Branding */}
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-semibold text-white">OGScan Branding</p>
-                      <p className="text-[10px] text-white/35">Show OGScan badge on video</p>
+                      <p className="text-xs font-semibold text-white">OrbitX Branding</p>
+                      <p className="text-[10px] text-white/35">Show OrbitX badge on video</p>
                     </div>
                     <button
                       onClick={() => setShowBranding(!showBranding)}

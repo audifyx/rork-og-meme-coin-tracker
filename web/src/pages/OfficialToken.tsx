@@ -85,10 +85,10 @@ const OfficialToken = () => {
               <div className="flex flex-col sm:flex-row items-center gap-6">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent blur-2xl opacity-40" />
-                  <img src={logo} alt="Sol Tools" className="relative w-24 h-24 rounded-3xl shadow-2xl shadow-primary/30 border border-primary/20" />
+                  <img src={logo} alt="OrbitX" className="relative w-24 h-24 rounded-3xl shadow-2xl shadow-primary/30 border border-primary/20" />
                 </div>
                 <div className="text-center sm:text-left flex-1">
-                  <h1 className="text-3xl font-bold gradient-text font-display mb-1">Sol Tools Token</h1>
+                  <h1 className="text-3xl font-bold gradient-text font-display mb-1">OrbitX Token</h1>
                   <p className="text-xl text-muted-foreground mb-3">$SOLTOOLS</p>
                   <button onClick={copyCA} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.07] hover:border-primary/30 transition-all text-sm font-mono">
                     <span className="text-muted-foreground">{CONTRACT_ADDRESS.slice(0, 8)}...{CONTRACT_ADDRESS.slice(-6)}</span>
@@ -150,14 +150,14 @@ const OfficialToken = () => {
             </CardContent>
           </Card>
 
-          {/* What is Sol Tools */}
+          {/* What is OrbitX */}
           <Card className="og-glass-card-premium border-primary/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-[#22d3ee]" /> What is Sol Tools?</CardTitle>
+              <CardTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-[#22d3ee]" /> What is OrbitX?</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm leading-relaxed text-muted-foreground">
-                <span className="text-foreground font-semibold">Sol Tools</span> is the ultimate all-in-one Solana toolkit — tracking, analytics, sniping, social trading, and more — completely <span className="text-primary font-semibold">FREE FOREVER</span>.
+                <span className="text-foreground font-semibold">OrbitX</span> is the ultimate all-in-one Solana toolkit — tracking, analytics, sniping, social trading, and more — completely <span className="text-primary font-semibold">FREE FOREVER</span>.
               </p>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 The $SOLTOOLS token powers the ecosystem. Transaction fees fund platform development, community growth, and token buybacks — keeping the platform free while rewarding holders.
@@ -185,7 +185,7 @@ const OfficialToken = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="text-sm leading-relaxed text-muted-foreground">
-                🚀 <span className="text-foreground font-semibold">We have finally launched Sol Tools!</span> Your all-in-one platform for tracking, analyzing, and sniping on the Solana blockchain — completely <span className="text-primary font-semibold">FREE FOREVER</span>. No price tag, ever. 🤑
+                🚀 <span className="text-foreground font-semibold">We have finally launched OrbitX!</span> Your all-in-one platform for tracking, analyzing, and sniping on the Solana blockchain — completely <span className="text-primary font-semibold">FREE FOREVER</span>. No price tag, ever. 🤑
               </p>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 Why free? Because our token powers the platform: it generates fees that let us build more tools, grow the team, and expand the community — without charging you a dime. 💪
@@ -266,9 +266,9 @@ const OfficialToken = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               {[
-                { q: "Is Sol Tools really free?", a: "Yes! Sol Tools is completely free forever. The $SOLTOOLS token funds platform development through transaction fees." },
+                { q: "Is OrbitX really free?", a: "Yes! OrbitX is completely free forever. The $SOLTOOLS token funds platform development through transaction fees." },
                 { q: "Is the platform really free?", a: "Yes. Every tool on OrbitX is free to use. We don't believe in paywalls or restricting access to the intelligence you need to trade safely." },
-                { q: "What is the $SOLTOOLS token?", a: "It's the utility token that powers the Sol Tools ecosystem. Transaction fees are used to fund development, marketing, and buybacks." },
+                { q: "What is the $SOLTOOLS token?", a: "It's the utility token that powers the OrbitX ecosystem. Transaction fees are used to fund development, marketing, and buybacks." },
                 { q: "How do I get started?", a: "Simply create an account, and you'll have instant access to 30+ Solana trading tools, social lobbies, and analytics." },
                 { q: "Is my data safe?", a: "Yes. We use enterprise-grade encryption and never store private keys. Your wallet address is used only for read-only tracking." },
               ].map((faq, i) => (

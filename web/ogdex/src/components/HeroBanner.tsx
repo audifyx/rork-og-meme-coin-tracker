@@ -8,7 +8,7 @@ export default function HeroBanner() {
       }}>
       <img
         src="/ORBITX_DEX/ogdex-hero.jpg"
-        alt="OG DEX"
+        alt="OrbitX DEX"
         className="w-full h-full"
         style={{ objectFit: "cover", objectPosition: "center", display: "block" }}
       />

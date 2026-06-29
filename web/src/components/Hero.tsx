@@ -47,7 +47,7 @@ export const Hero = ({ onScanClick, onSwapClick }: HeroProps) => {
             Paste any mint, prove first origin, rank dominance — stop guessing which token is actually OG.
           </p>
           <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-            Price action and migrations don't decide OG status. OGScan focuses on on-chain creation data, then layers in liquidity, ATH, DEX signals, boosts, and safety context.
+            Price action and migrations don't decide OG status. OrbitX focuses on on-chain creation data, then layers in liquidity, ATH, DEX signals, boosts, and safety context.
           </p>
 
           {/* CTAs */}
@@ -94,7 +94,7 @@ export const Hero = ({ onScanClick, onSwapClick }: HeroProps) => {
               <div className="relative aspect-[16/9] max-h-[300px] w-full overflow-hidden sm:aspect-[21/10]">
                 <div className="absolute inset-0 grid-bg opacity-36" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,hsl(var(--og-lime)/0.18),transparent_34%),linear-gradient(180deg,hsl(var(--og-ink)/0.08),hsl(var(--og-ink)/0.72))]" />
-                <img src={OGSCAN_BRAND_IMAGE} alt="OG Scan radar banner" className="relative h-full w-full object-contain p-4 transition duration-700 group-hover:scale-[1.03] sm:p-6" />
+                <img src={OGSCAN_BRAND_IMAGE} alt="OrbitX radar banner" className="relative h-full w-full object-contain p-4 transition duration-700 group-hover:scale-[1.03] sm:p-6" />
                 <div className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-og-lime/35 bg-og-ink/75 px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-og-lime backdrop-blur">
                   X <ExternalLink className="h-3 w-3" />
                 </div>
@@ -157,7 +157,7 @@ const RadarBadge = () => {
 
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-og-gold bg-og-ink shadow-og-gold sm:h-32 sm:w-32">
-          <img src="/og-icon.svg" alt="OG Scan" className="absolute inset-0 h-full w-full scale-125 object-cover" />
+          <img src="/og-icon.svg" alt="OrbitX" className="absolute inset-0 h-full w-full scale-125 object-cover" />
           <div className="absolute inset-2 rounded-full border border-og-gold/40" />
           <Crosshair className="absolute right-3 top-3 h-3 w-3 text-og-lime" />
           <Crosshair className="absolute bottom-3 left-3 h-3 w-3 text-og-lime" />

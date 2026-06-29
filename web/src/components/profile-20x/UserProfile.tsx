@@ -681,7 +681,7 @@ function PostCard({
   showPinned?: boolean;
 }) {
   const avatar = authorOverride?.avatarUrl || safeAvatarUrl(post.avatar_url) || dices(post.username || post.user_id || "ogscan-post");
-  const displayName = authorOverride?.displayName || post.username || "OG Scan";
+  const displayName = authorOverride?.displayName || post.username || "OrbitX";
   const handle = authorOverride?.handle || (post.username ? `@${post.username}` : "@ogscan");
   const official = Boolean(authorOverride?.official);
   const verified = Boolean(authorOverride?.verified) && !official;
@@ -1302,14 +1302,14 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
     list.push({
       key: "og",
       label: "OG",
-      description: "Original Gangster — the founding badge given to every OG Scan member.",
+      description: "Original Gangster — the founding badge given to every OrbitX member.",
       tone: "gold",
       icon: Star,
     });
     list.push({
       key: "beta",
       label: "Beta",
-      description: "Early beta tester badge given to all OG Scan signups.",
+      description: "Early beta tester badge given to all OrbitX signups.",
       tone: "purple",
       icon: Sparkles,
     });
@@ -1319,7 +1319,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
       list.push({
         key: "verified",
         label: "Verified",
-        description: "Blue verification for authenticated OG Scan accounts.",
+        description: "Blue verification for authenticated OrbitX accounts.",
         tone: "blue",
         icon: BadgeCheck,
       });
@@ -1336,7 +1336,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
       list.push({
         key: "admin",
         label: "Admin",
-        description: "Admin badge for accounts with elevated OG Scan access.",
+        description: "Admin badge for accounts with elevated OrbitX access.",
         tone: "gold",
         icon: ShieldCheck,
       });
@@ -1345,7 +1345,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
       list.push({
         key: "og-team",
         label: "OG Team",
-        description: "Gold team badge for official OG Scan accounts.",
+        description: "Gold team badge for official OrbitX accounts.",
         tone: "gold",
         icon: Crown,
       });
@@ -1369,7 +1369,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
   const profilePresenceSubtitle = getPresenceSubtitle(profileData, presenceNow);
 
   const statCards = [
-    { label: "Followers", value: followerCount, hint: "Social gravity across OG Scan", icon: Users, accent: "cyan" as const, formatter: compact },
+    { label: "Followers", value: followerCount, hint: "Social gravity across OrbitX", icon: Users, accent: "cyan" as const, formatter: compact },
     { label: "Following", value: followingCount, hint: "Curated signal graph", icon: User, accent: "violet" as const, formatter: compact },
     { label: "XP", value: totalXp, hint: `${levelProgress.toNext.toLocaleString()} XP until next unlock`, icon: Zap, accent: "amber" as const, formatter: compact },
     { label: "Level", value: level, hint: getLevelTitle(level), icon: Trophy, accent: "emerald" as const, formatter: (value: number) => Math.round(value).toString() },
@@ -1406,7 +1406,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
     ...userBadges.map((badge) => ({
       key: `user-${badge.id}`,
       title: badge.name,
-      body: badge.rarity ? `${badge.rarity} rarity badge earned by this account.` : "User badge unlocked on OG Scan.",
+      body: badge.rarity ? `${badge.rarity} rarity badge earned by this account.` : "User badge unlocked on OrbitX.",
       tone: badge.rarity?.toLowerCase().includes("legend") ? "legendary" : badge.rarity?.toLowerCase().includes("epic") ? "purple" : "blue",
       icon: Trophy,
     })),
@@ -1450,7 +1450,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
       <EmptyState
         icon={User}
         title="Profile not found"
-        body="This profile could not be loaded from OG Scan right now. Try refreshing again."
+        body="This profile could not be loaded from OrbitX right now. Try refreshing again."
       />
     );
   }
@@ -1589,7 +1589,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
                     <Link2 className="h-4 w-4" /> {website.replace(/^https?:\/\//, "")}
                   </a>
                 ) : null}
-                <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4" /> {profileData.created_at ? `Joined ${format(new Date(profileData.created_at), "MMMM yyyy")}` : "Joined OG Scan"}</span>
+                <span className="inline-flex items-center gap-1.5"><Calendar className="h-4 w-4" /> {profileData.created_at ? `Joined ${format(new Date(profileData.created_at), "MMMM yyyy")}` : "Joined OrbitX"}</span>
                 {walletAddress ? <span className="inline-flex items-center gap-1.5"><Wallet className="h-4 w-4" /> {walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}</span> : null}
               </div>
 
@@ -1778,7 +1778,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
                       </div>
                     ))
                   ) : (
-                    <EmptyState icon={Users} title="No communities yet" body="Community memberships and roles will show up here once the user joins OG Scan communities." />
+                    <EmptyState icon={Users} title="No communities yet" body="Community memberships and roles will show up here once the user joins OrbitX communities." />
                   )
                 ) : null}
 

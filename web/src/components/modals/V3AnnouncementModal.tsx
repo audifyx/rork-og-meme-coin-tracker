@@ -49,7 +49,7 @@ export const V3AnnouncementModal = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold gradient-text font-display">Sol Tools V5</h2>
+                <h2 className="text-xl font-bold gradient-text font-display">OrbitX V5</h2>
                 <Badge className="bg-accent/20 text-accent border-accent/30 text-[10px]">NEW</Badge>
               </div>
               <p className="text-sm text-muted-foreground">Major Platform Upgrade</p>

@@ -649,7 +649,7 @@ function BannersTab({ data, act }: any) {
         <div className="text-sm font-bold mb-3">Set new banner</div>
         <div className="space-y-3">
           <textarea value={text} onChange={e => setText(e.target.value)}
-            placeholder="Banner message — appears site-wide at the top of OG DEX…"
+            placeholder="Banner message — appears site-wide at the top of OrbitX DEX…"
             rows={2} className="inp w-full resize-none" />
           <div className="flex gap-1.5 flex-wrap">
             {TYPES.map((t) => (
@@ -674,7 +674,7 @@ function BannersTab({ data, act }: any) {
       </div>
 
       <div className="text-xs text-muted">
-        The banner renders at the top of OG DEX for all visitors. Use Urgent sparingly — it's red and catches attention immediately.
+        The banner renders at the top of OrbitX DEX for all visitors. Use Urgent sparingly — it's red and catches attention immediately.
       </div>
     </div>
   );

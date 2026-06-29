@@ -3,7 +3,7 @@ import { AlertTriangle, RefreshCw } from "lucide-react";
 
 interface Props {
   children: ReactNode;
-  /** Optional custom fallback — if omitted, the default OGScan UI is shown */
+  /** Optional custom fallback — if omitted, the default OrbitX UI is shown */
   fallback?: ReactNode;
   /** Label for the reset button (default: "Try again") */
   resetLabel?: string;

@@ -32,7 +32,7 @@ export const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 const USDT_MINT = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkYgGPhbNHnc1j7Na";
 const STABLE_QUOTE_MINTS = new Set<string>([USDC_MINT, USDT_MINT]);
 const STABLE_QUOTE_SYMBOLS = new Set<string>(["USDC", "USDT", "USDH", "USDS", "PYUSD"]);
-// Default scan target is now the official live OG Scan token.
+// Default scan target is now the official live OrbitX token.
 export const DEFAULT_OG_MINT = OGSCAN_TOKEN_MINT;
 export const MIN_OGSCAN_LIQUIDITY_USD = 1_000;
 

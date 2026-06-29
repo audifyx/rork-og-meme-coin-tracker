@@ -8,7 +8,7 @@ import {
 } from "@solana/spl-token";
 
 /**
- * Client RPC is proxied through OG Scan's Helius-backed rpc-proxy
+ * Client RPC is proxied through OrbitX's Helius-backed rpc-proxy
  * (/api/ogdex/rpc) so no API keys live in the browser and no sign-in is
  * needed. HTTP only — we poll for confirmation instead of using websockets.
  */

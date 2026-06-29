@@ -177,9 +177,9 @@ const SpaceReplay = () => {
   // ─── OG Meta tags via document.title ───
   useEffect(() => {
     if (space) {
-      document.title = `${space.title} — OG Spaces | OG Scan`;
+      document.title = `${space.title} — OG Spaces | OrbitX`;
     }
-    return () => { document.title = "OG Scan"; };
+    return () => { document.title = "OrbitX"; };
   }, [space]);
 
   // ─── Loading state ───
@@ -198,7 +198,7 @@ const SpaceReplay = () => {
       <h1 className="text-xl font-bold text-white">Space Not Found</h1>
       <p className="text-sm text-white/40 text-center max-w-sm">This space may have been removed or the link is invalid.</p>
       <Link to="/" className="mt-2 px-5 py-2.5 rounded-xl bg-blue-500/15 text-blue-400 text-sm font-bold border border-blue-500/25 hover:bg-blue-500/25 transition-all">
-        Go to OG Scan
+        Go to OrbitX
       </Link>
     </div>
   );
@@ -225,7 +225,7 @@ const SpaceReplay = () => {
         <div className="flex items-center justify-between mb-8">
           <Link to="/" className="flex items-center gap-2 text-white/40 hover:text-white/70 transition-colors">
             <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm font-bold">OG Scan</span>
+            <span className="text-sm font-bold">OrbitX</span>
           </Link>
           <button onClick={copyLink}
             className={cn(
@@ -391,17 +391,17 @@ const SpaceReplay = () => {
         {/* ─── CTA to join platform ─── */}
         <div className="mt-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 text-center">
           <p className="text-sm font-bold text-white/50 mb-1">Want to join live spaces?</p>
-          <p className="text-[11px] text-white/25 mb-4">Create an account to host or join live OG Spaces on OG Scan.</p>
+          <p className="text-[11px] text-white/25 mb-4">Create an account to host or join live OG Spaces on OrbitX.</p>
           <Link to="/auth"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-sm font-black transition-all shadow-lg shadow-amber-400/10">
-            <Mic className="h-4 w-4" /> Join OG Scan
+            <Mic className="h-4 w-4" /> Join OrbitX
             <ExternalLink className="h-3 w-3 ml-1 opacity-50" />
           </Link>
         </div>
 
         {/* Footer */}
         <div className="mt-8 text-center">
-          <p className="text-[10px] text-white/15">OG Scan · Solana Token Intelligence · ogscan.fun</p>
+          <p className="text-[10px] text-white/15">OrbitX · Solana Token Intelligence · ogscan.fun</p>
         </div>
       </div>
     </div>

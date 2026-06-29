@@ -72,12 +72,12 @@ const EVENTS = [
 
 const MOCK_APPS: MarketplaceApp[] = [
   {
-    id: "1", name: "Zapier Bridge", description: "Connect OG Scan to 5,000+ apps via Zapier triggers and actions.", author: "Zapier Inc.",
+    id: "1", name: "Zapier Bridge", description: "Connect OrbitX to 5,000+ apps via Zapier triggers and actions.", author: "Zapier Inc.",
     icon: "⚡", category: "Automation", installs: 8421, rating: 4.8, price: "free", is_installed: true,
     tags: ["automation", "no-code", "workflows"],
   },
   {
-    id: "2", name: "Spotify Auto-Publish", description: "Auto-submit your show episodes to Spotify Podcasts when published.", author: "OGScan Labs",
+    id: "2", name: "Spotify Auto-Publish", description: "Auto-submit your show episodes to Spotify Podcasts when published.", author: "OrbitX Labs",
     icon: "🎙️", category: "Distribution", installs: 3102, rating: 4.9, price: "free", is_installed: false,
     tags: ["spotify", "podcast", "distribution"],
   },
@@ -325,7 +325,7 @@ const DevPortal = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-white">Developer Portal</h1>
-                <p className="text-sm text-white/40 mt-0.5">Build on OG Scan — API keys, webhooks, docs & marketplace</p>
+                <p className="text-sm text-white/40 mt-0.5">Build on OrbitX — API keys, webhooks, docs & marketplace</p>
               </div>
             </div>
 
@@ -679,7 +679,7 @@ const DevPortal = () => {
             <div className="space-y-4">
               <div>
                 <h2 className="text-lg font-bold text-white mb-1">App Marketplace</h2>
-                <p className="text-sm text-white/40">Extend OG Scan with third-party integrations</p>
+                <p className="text-sm text-white/40">Extend OrbitX with third-party integrations</p>
               </div>
 
               {/* Category filter */}

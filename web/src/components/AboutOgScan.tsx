@@ -26,7 +26,7 @@ export const AboutOgScan = ({ initialTab = "token" }: { initialTab?: AboutTab })
     <section className="space-y-4">
       <ToolHeader
         icon={Coins}
-        title="About OGScan"
+        title="About OrbitX"
         subtitle="Official token, project roadmap, and the data infrastructure powering everything."
         gradient="from-amber-400 to-yellow-500"
         glowColor="rgba(251,191,36,0.25)"

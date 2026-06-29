@@ -22,7 +22,7 @@ export default function Store() {
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-accent/10 border border-accent/20 mb-4">
           <ShoppingBag className="w-7 h-7 text-accent" />
         </div>
-        <h1 className="text-3xl font-black tracking-tight">OG DEX Store</h1>
+        <h1 className="text-3xl font-black tracking-tight">OrbitX DEX Store</h1>
         <p className="text-muted text-sm mt-2">List your token or boost your visibility to thousands of traders.</p>
 
         {/* Discount banner */}
@@ -95,7 +95,7 @@ export default function Store() {
             </div>
           </div>
           <p className="text-sm text-muted/80 leading-relaxed">
-            Get your project added to OG DEX's token directory. Manually reviewed and approved — seen by all users on the <span className="text-white">Listed</span> tab.
+            Get your project added to OrbitX DEX's token directory. Manually reviewed and approved — seen by all users on the <span className="text-white">Listed</span> tab.
           </p>
 
           <div className="space-y-2 text-sm">
@@ -139,7 +139,7 @@ export default function Store() {
             </div>
           </div>
           <p className="text-sm text-muted/80 leading-relaxed">
-            Create a token on pump.fun straight from OG DEX. Pay a flat fee, deploy in seconds, and get added to the <span className="text-white">Newly Listed</span> section automatically. Unverified, no boost.
+            Create a token on pump.fun straight from OrbitX DEX. Pay a flat fee, deploy in seconds, and get added to the <span className="text-white">Newly Listed</span> section automatically. Unverified, no boost.
           </p>
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between rounded-lg bg-panel2/60 px-3 py-2">

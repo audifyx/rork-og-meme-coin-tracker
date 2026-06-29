@@ -52,7 +52,7 @@ export const PushNotificationPrompt = () => {
             <div>
               <p className="text-sm font-semibold text-white">Turn on real push notifications</p>
               <p className="text-xs text-white/65">
-                Get live alerts for messages, spaces, and platform activity even when OG Scan is closed.
+                Get live alerts for messages, spaces, and platform activity even when OrbitX is closed.
               </p>
             </div>
           </div>

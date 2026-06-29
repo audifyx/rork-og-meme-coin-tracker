@@ -1,7 +1,7 @@
 import { TokenDetailData } from "./api";
 
 /* =========================================================================
- * OG DEX Predictive Intelligence — heuristic, transparent on-chain model.
+ * OrbitX DEX Predictive Intelligence — heuristic, transparent on-chain model.
  * These are statistical estimates derived from current on-chain signals,
  * NOT financial advice and NOT guarantees. Every output exposes its drivers.
  * ========================================================================= */

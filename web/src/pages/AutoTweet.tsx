@@ -51,14 +51,14 @@ const DEFAULT_TEMPLATES: TweetTemplate[] = [
   {
     id: "1",
     name: "Simple Announce",
-    template: "🎙️ I'm going LIVE on @OGScanApp!\n\n{title}\n\nJoin now 👉 {url}\n\n#OGScan #Spaces",
+    template: "🎙️ I'm going LIVE on @orbitx_wrld!\n\n{title}\n\nJoin now 👉 {url}\n\n#OrbitX #Spaces",
     is_default: true,
     send_on_start: true,
   },
   {
     id: "2",
     name: "Hype Drop",
-    template: "🔥 LIVE NOW on OGScan Spaces!\n\n\"{title}\"\n\nDrop in and join the convo 🎧\n{url}\n\n#Crypto #Spaces #OGScan",
+    template: "🔥 LIVE NOW on OrbitX Spaces!\n\n\"{title}\"\n\nDrop in and join the convo 🎧\n{url}\n\n#Crypto #Spaces #OrbitX",
     is_default: false,
     send_on_start: true,
   },
@@ -268,7 +268,7 @@ export default function AutoTweet() {
     const newT: TweetTemplate = {
       id: Date.now().toString(),
       name: "New Template",
-      template: "🎙️ I'm live on OGScan Spaces!\n\n{title}\n\n{url}",
+      template: "🎙️ I'm live on OrbitX Spaces!\n\n{title}\n\n{url}",
       is_default: false,
       send_on_start: false,
     };
@@ -537,7 +537,7 @@ export default function AutoTweet() {
                 />
               </div>
               <p className="mt-2 text-[11px] text-white/35">
-                Used as sender display name in previews. OGScan opens Twitter's intent URL
+                Used as sender display name in previews. OrbitX opens Twitter's intent URL
                 to post — you post with one tap from your own account.
               </p>
               <button

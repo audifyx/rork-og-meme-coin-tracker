@@ -1,5 +1,5 @@
 /**
- * ArtFeed — OG Scan Meme Gallery & Media Hub
+ * ArtFeed — OrbitX Meme Gallery & Media Hub
  *
  * Interactive meme gallery with reactions, fullscreen viewer, movie trailers,
  * 3D banners, and category filtering. Images are stored in /public/memes/.
@@ -34,7 +34,7 @@ interface Meme {
 const MEMES: Meme[] = [
   { id: 1, src: "/memes/og-built-different.jpg", caption: "Deploying the future. I am built different.", tag: "Builder", category: "Dev Life", featured: true },
   { id: 2, src: "/memes/og-real-explorer.jpg", caption: "WAGMI. Ship. Code. Repeat. The real Solana explorer.", tag: "OG Dev", category: "Dev Life", featured: true },
-  { id: 3, src: "/memes/og-truth-scanner.jpg", caption: "Exit liquidity is a scam. OG Scan Truth Scan exposes them all.", tag: "Truth Scan", category: "Forensics", featured: true },
+  { id: 3, src: "/memes/og-truth-scanner.jpg", caption: "Exit liquidity is a scam. OrbitX Truth Scan exposes them all.", tag: "Truth Scan", category: "Forensics", featured: true },
   { id: 4, src: "/memes/og-forensic-matrix.jpg", caption: "Originals only. We don't guess. We forensic.", tag: "OG Detection", category: "Forensics", featured: true },
   { id: 5, src: "/memes/og-deploying-future.jpg", caption: "Deploying the future, one block at a time.", tag: "Building", category: "Dev Life" },
   { id: 6, src: "/memes/og-scan-dashboard.jpg", caption: "WAGMI. Ship. Code. Repeat.", tag: "OG Dev", category: "Dev Life" },
@@ -45,7 +45,7 @@ const MEMES: Meme[] = [
   { id: 11, src: "/memes/og-wallet-profiler.jpg", caption: "Built by OGs. For OGs.", tag: "OG Dev", category: "Dev Life" },
   { id: 12, src: "/memes/og-they-dont-know.jpg", caption: "They don't know OG. We do.", tag: "Alpha", category: "Culture" },
   { id: 13, src: "/memes/og-command-deck.jpg", caption: "Solana Memecoin Forensics Command Deck.", tag: "Command Deck", category: "Dev Life" },
-  { id: 14, src: "/memes/og-clone-buyer.jpg", caption: "Clone buyer gets rekt. OG Scan user finds the gem.", tag: "True OG", category: "Culture" },
+  { id: 14, src: "/memes/og-clone-buyer.jpg", caption: "Clone buyer gets rekt. OrbitX user finds the gem.", tag: "True OG", category: "Culture" },
   { id: 15, src: "/memes/og-diamond-hands.jpg", caption: "Diamond hands verified. Never selling.", tag: "HODL", category: "Trading" },
   { id: 16, src: "/memes/og-whale-watcher.jpg", caption: "Whale spotted. Following the smart money.", tag: "Whale Watch", category: "Trading" },
   { id: 17, src: "/memes/og-rug-pull-detector.jpg", caption: "RUG PULL DETECTED. Trust no dev.", tag: "Rug Alert", category: "Forensics" },
@@ -65,9 +65,9 @@ const MEMES: Meme[] = [
   { id: 31, src: "/memes/og-no-sleep-dev.jpg", caption: "2,847 commits. Shipping never stops.", tag: "Builder", category: "Dev Life" },
   { id: 32, src: "/memes/og-airdrop-farmer.jpg", caption: "Farming season. Airdrops incoming.", tag: "Airdrop", category: "Trading" },
   { id: 33, src: "/memes/og-memecoin-radar.jpg", caption: "Memecoin radar active. All blips tracked.", tag: "Radar", category: "Trading" },
-  { id: 34, src: "/memes/og-ngmi-vs-wagmi.jpg", caption: "NGMI without research. WAGMI with OG Scan.", tag: "WAGMI", category: "Culture" },
+  { id: 34, src: "/memes/og-ngmi-vs-wagmi.jpg", caption: "NGMI without research. WAGMI with OrbitX.", tag: "WAGMI", category: "Culture" },
   { id: 35, src: "/memes/og-blockchain-samurai.jpg", caption: "Cutting through the rugs. Blockchain samurai.", tag: "Samurai", category: "Culture" },
-  { id: 36, src: "/memes/og-morning-ritual.jpg", caption: "The morning ritual. OG Scan before coffee.", tag: "Ritual", category: "Dev Life" },
+  { id: 36, src: "/memes/og-morning-ritual.jpg", caption: "The morning ritual. OrbitX before coffee.", tag: "Ritual", category: "Dev Life" },
   { id: 37, src: "/memes/og-wallet-tracker.jpg", caption: "Every wallet tells a story. We read them all.", tag: "Tracker", category: "Forensics" },
   { id: 38, src: "/memes/og-cope-room.jpg", caption: "From cope to hope. New gem found.", tag: "Cope", category: "Culture" },
   { id: 39, src: "/memes/og-mev-hunter.jpg", caption: "MEV hunter. Tracking the bots.", tag: "MEV", category: "Trading" },
@@ -75,7 +75,7 @@ const MEMES: Meme[] = [
   { id: 41, src: "/memes/og-portfolio-grief.jpg", caption: "Five stages of portfolio grief. We've all been there.", tag: "Grief", category: "Culture" },
   { id: 42, src: "/memes/og-onchain-proof.jpg", caption: "On-chain proof. The blockchain is the judge.", tag: "Proof", category: "Forensics" },
   { id: 43, src: "/memes/og-based-department.jpg", caption: "Hello? Based department? We found the OG.", tag: "Based", category: "Culture" },
-  { id: 44, src: "/memes/og-exit-liquidity.jpg", caption: "Not my exit liquidity. OG Scan warned me first.", tag: "Exit Liq", category: "Trading" },
+  { id: 44, src: "/memes/og-exit-liquidity.jpg", caption: "Not my exit liquidity. OrbitX warned me first.", tag: "Exit Liq", category: "Trading" },
 ];
 
 const CATEGORIES = ["All", "Dev Life", "Forensics", "Trading", "Culture"];
@@ -88,7 +88,7 @@ const REACTIONS = [
   { icon: Crown, label: "King", key: "king" },
 ];
 
-// ─── OG Scan Movie Trailers ──────────────────────────────────────────────────
+// ─── OrbitX Movie Trailers ──────────────────────────────────────────────────
 
 interface Trailer {
   id: string;
@@ -116,7 +116,7 @@ const TRAILERS: Trailer[] = [
   {
     id: "tr-2",
     title: "The Rug Pull Chronicles",
-    subtitle: "True stories of rugs detected and degens saved by OG Scan.",
+    subtitle: "True stories of rugs detected and degens saved by OrbitX.",
     thumbnail: "/memes/og-truth-scanner.jpg",
     duration: "0:15",
     videoUrl: "/trailers/rugpull.mp4",
@@ -136,7 +136,7 @@ const TRAILERS: Trailer[] = [
   {
     id: "tr-4",
     title: "Clone Wars: The OG Battle",
-    subtitle: "How OG Scan's detection matrix separates real from fake.",
+    subtitle: "How OrbitX's detection matrix separates real from fake.",
     thumbnail: "/memes/og-chain-detective.jpg",
     duration: "0:15",
     videoUrl: "/trailers/clone.mp4",
@@ -717,7 +717,7 @@ const ArtFeedHero = () => (
               The memes that built the movement
             </p>
             <p className="text-xs text-white/35 max-w-md leading-relaxed">
-              Curated memes, movie trailers, and art from the OG Scan universe. React, share, and collect.
+              Curated memes, movie trailers, and art from the OrbitX universe. React, share, and collect.
             </p>
           </div>
         </div>
@@ -805,7 +805,7 @@ const ArtFeed = ({ inline = false }: { inline?: boolean }) => {
   const content = (
     <>
       {!inline && (
-        <PageHeader title="OG Gallery" description="Memes, trailers & art from the OG Scan universe.">
+        <PageHeader title="OG Gallery" description="Memes, trailers & art from the OrbitX universe.">
           <div className="flex items-center gap-2">
             <Badge className="bg-[#a855f7]/15 text-[#a855f7] border-[#a855f7]/20 text-[10px] font-bold">
               <ImageIcon className="h-2.5 w-2.5 mr-1" /> {MEMES.length} MEMES
@@ -854,7 +854,7 @@ const ArtFeed = ({ inline = false }: { inline?: boolean }) => {
           <div className="px-4 lg:px-6 mb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Film className="h-5 w-5 text-[#a855f7]" />
-              <h3 className="font-bold text-white text-sm">OG Scan Movie Trailers</h3>
+              <h3 className="font-bold text-white text-sm">OrbitX Movie Trailers</h3>
               <Badge className="bg-[#a855f7]/10 text-[#a855f7] border-[#a855f7]/20 text-[9px]">ORIGINALS</Badge>
             </div>
             <button
@@ -969,7 +969,7 @@ const ArtFeed = ({ inline = false }: { inline?: boolean }) => {
               <div className="relative px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="text-center sm:text-left">
                   <p className="font-bold text-white text-base">More memes dropping soon</p>
-                  <p className="text-xs text-white/35 mt-1">New OG Scan art added regularly. Stay tuned for community submissions.</p>
+                  <p className="text-xs text-white/35 mt-1">New OrbitX art added regularly. Stay tuned for community submissions.</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="flex -space-x-2">
