@@ -1258,7 +1258,7 @@ export const UserProfile: React.FC<Props> = ({ viewUserId }) => {
 
   const avatarUrl = safeAvatarUrl(profileData?.avatar_url) || dices(profileData?.username || profileData?.user_id || "ogscan");
   const specialProfileMode = Boolean(profileData?.is_official_account || profileData?.affiliate_org_id || (isOwnProfile && (isAdmin || isOwner)));
-  const bannerUrl = safeAvatarUrl(profileData?.banner_url) || (specialProfileMode ? "/og-brand.jpg" : null);
+  const bannerUrl = safeAvatarUrl(profileData?.banner_url) || "/orbitx-banner.jpg";
   const displayName = profileData?.display_name || profileData?.username || "OG User";
   const handle = profileData?.username ? `@${profileData.username}` : "@ogscan";
   const website = profileData?.website_url || profileData?.website;

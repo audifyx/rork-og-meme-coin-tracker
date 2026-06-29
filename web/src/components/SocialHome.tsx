@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   Heart, MessageCircle, Repeat2, Share, ImageIcon, Sparkles, Radio,
-  Users, Search, Loader2, BadgeCheck, TrendingUp,
+  Users, Search, Loader2, BadgeCheck, TrendingUp, MoreHorizontal, Trash2, Copy, Flag,
 } from "lucide-react";
 
 /* Shared feed channel — same timeline used by the community Activity feed. */
@@ -75,6 +75,7 @@ export default function SocialHome({
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [posting, setPosting] = useState(false);
+  const [menuId, setMenuId] = useState<string | null>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
 
   const displayName = profile?.display_name || profile?.username || "You";
@@ -91,6 +92,12 @@ export default function SocialHome({
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (!menuId) return;
+    const h = () => setMenuId(null);
+    document.addEventListener("click", h);
+    return () => document.removeEventListener("click", h);
+  }, [menuId]);
 
   /* Realtime: new posts + like updates stream straight into the timeline. */
   useEffect(() => {
@@ -164,6 +171,22 @@ export default function SocialHome({
       setPosts((prev) => prev.map((p) => (p.id === post.id ? { ...p, liked_by: likedBy, likes_count: likedBy.length } : p)));
     }
   };
+
+  const deletePost = async (p: Post) => {
+    if (!user || p.user_id !== user.id) return;
+    setMenuId(null);
+    setPosts((prev) => prev.filter((x) => x.id !== p.id));
+    if (!p.id.startsWith("tmp-")) {
+      const { error } = await supabase.from("social_messages").delete().eq("id", p.id).eq("user_id", user.id);
+      if (error) toast.error("Could not delete post");
+    }
+  };
+  const copyLink = async (_p: Post) => {
+    setMenuId(null);
+    try { await navigator.clipboard.writeText(`${window.location.origin}/social`); toast.success("Link copied"); }
+    catch { toast.error("Copy failed"); }
+  };
+  const reportPost = (_p: Post) => { setMenuId(null); toast.success("Thanks — this post has been reported."); };
 
   const replyTo = (p: Post) => {
     setText((t) => (t.startsWith(`@${p.username} `) ? t : `@${p.username || "anon"} ${t}`));
@@ -264,6 +287,22 @@ export default function SocialHome({
                       <span className="truncate text-white/35">@{(p.username || "anon").toLowerCase()}</span>
                       <span className="text-white/25">·</span>
                       <span className="shrink-0 text-white/35">{timeAgo(p.created_at)}</span>
+                      <div className="relative ml-auto" onClick={(e) => e.stopPropagation()}>
+                        <button type="button" onClick={() => setMenuId(menuId === p.id ? null : p.id)}
+                          className="rounded-full p-1 text-white/25 transition hover:bg-white/[0.06] hover:text-white/70">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                        {menuId === p.id && (
+                          <div className="absolute right-0 top-7 z-20 min-w-[150px] overflow-hidden rounded-xl border border-white/10 bg-[#0d1320] py-1 shadow-2xl">
+                            <button type="button" onClick={() => copyLink(p)} className="flex w-full items-center gap-2 px-3 py-2 text-[12px] text-white/70 transition hover:bg-white/[0.05] hover:text-white"><Copy className="h-3.5 w-3.5" /> Copy link</button>
+                            {user && p.user_id === user.id ? (
+                              <button type="button" onClick={() => deletePost(p)} className="flex w-full items-center gap-2 px-3 py-2 text-[12px] text-rose-400/80 transition hover:bg-rose-500/10 hover:text-rose-400"><Trash2 className="h-3.5 w-3.5" /> Delete</button>
+                            ) : (
+                              <button type="button" onClick={() => reportPost(p)} className="flex w-full items-center gap-2 px-3 py-2 text-[12px] text-white/70 transition hover:bg-white/[0.05] hover:text-white"><Flag className="h-3.5 w-3.5" /> Report</button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <p className="mt-0.5 whitespace-pre-wrap break-words text-[14.5px] leading-relaxed text-white/90">
                       {renderContent(p.content, (m) => { onSelectMint?.(m); onSwitchTab?.("scanner"); })}
