@@ -13,7 +13,7 @@ import {
   MessageSquare, ChevronRight, Headphones, Eye, PhoneOff,
   Settings, Shield, Crown, Search, Bell, BellOff,
   UserPlus, X, MoreVertical, Smile, Image as ImageIcon,
-  ArrowDown, Pin, Trash2, Copy, Reply, Heart, Pencil, Check,
+  ArrowDown, Pin, Trash2, Copy, Reply, Heart, Pencil, Check, Loader2, MonitorOff,
 } from "lucide-react";
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -935,6 +935,7 @@ const GeneralChat = () => {
    ═══════════════════════════════════════════════════════════════ */
 
 const LK_URL = "wss://new-7unnd5e1.livekit.cloud";
+const COMMUNITY_LIVE_ROOM = "orbitx-community-live";
 
 interface VoiceParticipantInfo {
   identity: string;
@@ -1447,49 +1448,217 @@ const VoiceRooms = ({ members }: { members: CommunityMember[] }) => {
    Live Stream — LiveKit streaming
    ═══════════════════════════════════════════════════════════════ */
 
-const LiveStream = () => (
-  <div className="flex min-h-0 flex-1 flex-col">
-    {/* Header */}
-    <div className="border-b border-white/[0.07] px-4 py-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <Radio className="h-4 w-4 text-white/40" />
-          <span className="text-sm font-black tracking-wide text-white">live-stream</span>
-        </div>
-        <span className="flex items-center gap-1.5 rounded-full bg-og-gold/10 px-2.5 py-1 text-[10px] font-bold text-og-gold">
-          Coming Soon
-        </span>
-      </div>
-    </div>
+interface StreamTile { key: string; identity: string; name: string; isLocal: boolean; screen: boolean; track: any; }
 
-    <div className="flex flex-1 flex-col items-center justify-center p-6">
-      <div className="relative mb-6">
-        <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/[0.06] bg-white/[0.03]">
-          <Radio className="h-10 w-10 text-white/[0.08]" />
-        </div>
-        <div className="absolute -right-1 -top-1 rounded-full bg-og-gold/20 px-2 py-0.5 text-[8px] font-bold uppercase text-og-gold">
-          Soon
-        </div>
+function VideoTile({ tile }: { tile: StreamTile }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (el && tile.track) { try { tile.track.attach(el); } catch { /* noop */ } }
+    return () => { try { tile.track?.detach(); } catch { /* noop */ } };
+  }, [tile.track]);
+  return (
+    <div className="relative aspect-video overflow-hidden rounded-2xl border border-white/[0.08] bg-black">
+      <video ref={ref} autoPlay playsInline muted={tile.isLocal} className="h-full w-full object-cover" />
+      <div className="absolute left-2 top-2 flex items-center gap-1.5">
+        <span className="flex items-center gap-1 rounded-full bg-red-500/90 px-2 py-0.5 text-[9px] font-black uppercase text-white"><span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" /> Live</span>
+        {tile.screen && <span className="rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-bold text-white/80">Screen</span>}
       </div>
-      <h3 className="mb-2 text-lg font-black text-white">LIVE STREAMING</h3>
-      <p className="mb-1 text-[12px] text-white/40">Stream live to the OrbitX community</p>
-      <p className="max-w-xs text-center text-[11px] leading-relaxed text-white/20">
-        Go live, share your screen, and broadcast to the community. Currently under development — stay tuned!
-      </p>
-      <div className="mt-6 grid grid-cols-3 gap-3">
-        {[
-          { icon: Video, label: "Go Live" },
-          { icon: Monitor, label: "Screen Share" },
-          { icon: Eye, label: "Watch Streams" },
-        ].map((f) => (
-          <div key={f.label} className="flex flex-col items-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.02] p-3.5 opacity-40">
-            <f.icon className="h-5 w-5 text-white/20" />
-            <span className="text-[9px] font-bold text-white/25">{f.label}</span>
-          </div>
-        ))}
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent px-3 py-2 text-[12px] font-bold text-white">
+        {tile.name}{tile.isLocal ? " (You)" : ""}
       </div>
     </div>
-  </div>
-);
+  );
+}
+
+const LiveStream = () => {
+  const { user, profile } = useAuth();
+  const roomRef = useRef<Room | null>(null);
+  const [connecting, setConnecting] = useState(false);
+  const [connected, setConnected] = useState(false);
+  const [liveMode, setLiveMode] = useState<"none" | "camera" | "screen">("none");
+  const [micOn, setMicOn] = useState(false);
+  const [tiles, setTiles] = useState<StreamTile[]>([]);
+  const [viewers, setViewers] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  const addTile = useCallback((track: any, participant: any, isLocal: boolean) => {
+    if (!track || track.kind !== "video") return;
+    const screen = track.source === Track.Source.ScreenShare;
+    const key = `${participant.identity}:${track.sid}`;
+    setTiles((prev) => prev.some((t) => t.key === key) ? prev : [...prev, {
+      key, identity: participant.identity, name: participant.name || participant.identity || "Anon", isLocal, screen, track,
+    }]);
+  }, []);
+  const removeBySid = useCallback((sid?: string) => {
+    if (!sid) return;
+    setTiles((prev) => prev.filter((t) => t.track?.sid !== sid));
+  }, []);
+
+  const getToken = useCallback(async (): Promise<string | null> => {
+    if (!user) { setError("Sign in to join the stream"); return null; }
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const resp = await fetch(`${SUPABASE_URL}/functions/v1/livekit-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token || SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ roomName: COMMUNITY_LIVE_ROOM, identity: user.id, name: profile?.username || "Anon" }),
+      });
+      if (!resp.ok) throw new Error(`Server ${resp.status}`);
+      const data = await resp.json();
+      if (data.token) return data.token;
+      throw new Error(data.error || "No token");
+    } catch (e: any) {
+      setError(e.message === "Failed to fetch" ? "Unable to reach the stream server" : e.message);
+      return null;
+    }
+  }, [user, profile]);
+
+  const ensureConnected = useCallback(async (): Promise<Room | null> => {
+    if (roomRef.current && connected) return roomRef.current;
+    setError(null); setConnecting(true);
+    try {
+      const token = await getToken();
+      if (!token) return null;
+      const room = new Room({ adaptiveStream: true, dynacast: true });
+      room
+        .on(RoomEvent.TrackSubscribed, (track, _pub, participant) => addTile(track, participant, false))
+        .on(RoomEvent.TrackUnsubscribed, (track) => removeBySid(track.sid))
+        .on(RoomEvent.LocalTrackPublished, (pub) => { if (pub.track) addTile(pub.track, room.localParticipant, true); })
+        .on(RoomEvent.LocalTrackUnpublished, (pub) => removeBySid(pub.trackSid))
+        .on(RoomEvent.ParticipantConnected, () => setViewers(room.numParticipants))
+        .on(RoomEvent.ParticipantDisconnected, () => setViewers(room.numParticipants))
+        .on(RoomEvent.Disconnected, () => { setConnected(false); setTiles([]); setLiveMode("none"); setMicOn(false); });
+      await room.connect(LK_URL, token);
+      roomRef.current = room;
+      setConnected(true);
+      setViewers(room.numParticipants);
+      // attach any already-published remote tracks
+      room.remoteParticipants.forEach((p) => p.trackPublications.forEach((pub) => { if (pub.track && pub.isSubscribed) addTile(pub.track, p, false); }));
+      return room;
+    } catch (e: any) {
+      setError(e?.message || "Could not connect");
+      return null;
+    } finally { setConnecting(false); }
+  }, [connected, getToken, addTile, removeBySid]);
+
+  const goLive = useCallback(async (mode: "camera" | "screen") => {
+    const room = await ensureConnected();
+    if (!room) return;
+    try {
+      if (mode === "camera") {
+        await room.localParticipant.setCameraEnabled(true);
+        await room.localParticipant.setMicrophoneEnabled(true);
+        setMicOn(true);
+      } else {
+        await room.localParticipant.setScreenShareEnabled(true);
+      }
+      setLiveMode(mode);
+    } catch (e: any) { setError(e?.message || "Could not start your stream — check camera/screen permissions"); }
+  }, [ensureConnected]);
+
+  const stopLive = useCallback(async () => {
+    const room = roomRef.current;
+    if (!room) return;
+    try {
+      await room.localParticipant.setCameraEnabled(false);
+      await room.localParticipant.setScreenShareEnabled(false);
+      await room.localParticipant.setMicrophoneEnabled(false);
+    } catch { /* noop */ }
+    setTiles((prev) => prev.filter((t) => !t.isLocal));
+    setLiveMode("none"); setMicOn(false);
+  }, []);
+
+  const toggleMic = useCallback(async () => {
+    const room = roomRef.current; if (!room) return;
+    const next = !micOn;
+    try { await room.localParticipant.setMicrophoneEnabled(next); setMicOn(next); } catch { /* noop */ }
+  }, [micOn]);
+
+  const leave = useCallback(() => { roomRef.current?.disconnect(); roomRef.current = null; setConnected(false); setTiles([]); setLiveMode("none"); setMicOn(false); }, []);
+
+  useEffect(() => () => { roomRef.current?.disconnect(); }, []);
+
+  const liveCount = tiles.length;
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Header */}
+      <div className="border-b border-white/[0.07] px-4 py-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <Radio className="h-4 w-4 text-red-400" />
+            <span className="text-sm font-black tracking-wide text-white">live-stream</span>
+            {liveCount > 0 && <span className="flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-bold text-red-400"><span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse" /> {liveCount} live</span>}
+          </div>
+          <div className="flex items-center gap-2">
+            {connected && <span className="flex items-center gap-1 text-[11px] text-white/40"><Eye className="h-3.5 w-3.5" /> {viewers} in room</span>}
+            {connected && <button onClick={leave} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-bold text-white/60 hover:text-white">Leave</button>}
+          </div>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.06] px-4 py-2.5">
+        {liveMode === "none" ? (
+          <>
+            <button onClick={() => goLive("camera")} disabled={connecting || !user}
+              className="inline-flex items-center gap-1.5 rounded-full bg-red-500 px-3.5 py-1.5 text-[12px] font-black text-white transition hover:bg-red-600 disabled:opacity-40">
+              {connecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Video className="h-3.5 w-3.5" />} Go Live
+            </button>
+            <button onClick={() => goLive("screen")} disabled={connecting || !user}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05] px-3.5 py-1.5 text-[12px] font-bold text-white/80 transition hover:bg-white/[0.1] disabled:opacity-40">
+              <Monitor className="h-3.5 w-3.5" /> Share Screen
+            </button>
+          </>
+        ) : (
+          <>
+            <button onClick={stopLive} className="inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/10 px-3.5 py-1.5 text-[12px] font-black text-red-400 transition hover:bg-red-500/20">
+              {liveMode === "screen" ? <MonitorOff className="h-3.5 w-3.5" /> : <VideoOff className="h-3.5 w-3.5" />} Stop streaming
+            </button>
+            {liveMode === "camera" && (
+              <button onClick={toggleMic} className={cn("inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12px] font-bold transition", micOn ? "border-white/12 bg-white/[0.05] text-white/80 hover:bg-white/[0.1]" : "border-red-500/40 bg-red-500/10 text-red-400")}>
+                {micOn ? <Mic className="h-3.5 w-3.5" /> : <MicOff className="h-3.5 w-3.5" />} {micOn ? "Mic on" : "Muted"}
+              </button>
+            )}
+            {liveMode === "camera" && (
+              <button onClick={() => goLive("screen")} className="inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05] px-3.5 py-1.5 text-[12px] font-bold text-white/80 transition hover:bg-white/[0.1]">
+                <Monitor className="h-3.5 w-3.5" /> Add screen
+              </button>
+            )}
+          </>
+        )}
+        {!connected && !connecting && (
+          <button onClick={() => ensureConnected()} disabled={!user}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05] px-3.5 py-1.5 text-[12px] font-bold text-white/80 transition hover:bg-white/[0.1] disabled:opacity-40">
+            <Eye className="h-3.5 w-3.5" /> Watch live
+          </button>
+        )}
+      </div>
+
+      {error && <div className="border-b border-red-500/20 bg-red-500/10 px-4 py-2 text-[12px] text-red-400">{error}</div>}
+      {!user && <div className="border-b border-white/[0.06] px-4 py-2 text-[12px] text-white/40">Sign in to go live or watch the community stream.</div>}
+
+      {/* Stage */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {tiles.length > 0 ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {tiles.map((t) => <VideoTile key={t.key} tile={t} />)}
+          </div>
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center py-12 text-center">
+            <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-2xl border border-white/[0.06] bg-white/[0.03]">
+              <Radio className="h-10 w-10 text-white/15" />
+            </div>
+            <h3 className="mb-1 text-lg font-black text-white">{connected ? "No one is live right now" : "OrbitX Live"}</h3>
+            <p className="max-w-xs text-[12px] leading-relaxed text-white/35">
+              {connected ? "Be the first to go live — start your camera or share your screen with the community." : "Go live with your camera, share your screen, and broadcast to the OrbitX community in real time."}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default SocialHub;
