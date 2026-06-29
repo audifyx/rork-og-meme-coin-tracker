@@ -30,23 +30,23 @@ const LINKS = {
 
 type Feature = { tag: string; title: string; copy: string; tone: string; icon: string };
 const FEATURES: Feature[] = [
-  { tag: "Discovery", title: "Intelligent token discovery", tone: "f1", icon: "🔍",
+  { tag: "Discovery", title: "Intelligent token discovery", tone: "f1", icon: "discover",
     copy: "Real-time multi-chain scanner with a proprietary OG Score — on-chain metrics, holder quality, momentum and AI signals. Trending, hidden gems and about-to-explode, powered by live data." },
-  { tag: "Wallet forensics", title: "Track smart money like a pro", tone: "f2", icon: "💰",
+  { tag: "Wallet forensics", title: "Track smart money like a pro", tone: "f2", icon: "wallet",
     copy: "Any wallet's full history, win rate, hold time and PnL. Smart-money and KOL labels (Ansem, blknoiz06 + 37 more mapped), whale alerts and full holder lists with one-click actions." },
-  { tag: "OrbitX DEX", title: "Blazing-fast trading & execution", tone: "f3", icon: "⚡",
+  { tag: "OrbitX DEX", title: "Blazing-fast trading & execution", tone: "f3", icon: "dex",
     copy: "Live orderbook-style screener, one-click trading with Phantom, real-time buy/sell feeds, advanced charts with on-chain overlays and portfolio across every wallet." },
-  { tag: "Launch", title: "Fair-launch & token tools", tone: "f4", icon: "🚀",
+  { tag: "Launch", title: "Fair-launch & token tools", tone: "f4", icon: "launch",
     copy: "Simple, powerful token creation with anti-rug safeguards, auto-listing on our DEX + aggregators, and post-launch monitoring with community tools baked in from minute one." },
-  { tag: "OrbitX Prediction Market", title: "Prediction markets & 1v1 games", tone: "f5", icon: "🎯",
+  { tag: "OrbitX Prediction Market", title: "Prediction markets & 1v1 games", tone: "f5", icon: "predict",
     copy: "Native prediction markets plus Coinflip, Dice, Crash and Plinko with provably-fair, on-chain settlement — wired into your OrbitX insights, with leaderboards and achievements." },
-  { tag: "Social", title: "Community & social layer", tone: "f6", icon: "💬",
+  { tag: "Social", title: "Community & social layer", tone: "f6", icon: "social",
     copy: "Host Twitter Spaces with token context, voice lobbies, per-token chat and updates, creator tools, and a cross-platform identity that follows you across trading, gaming and social." },
-  { tag: "AI", title: "AI-powered intelligence", tone: "f7", icon: "🧠",
+  { tag: "AI", title: "AI-powered intelligence", tone: "f7", icon: "ai",
     copy: "Ask: 'which wallets bought $TOKEN in the last 30 min?' or 'top smart-money accumulating now?' Natural-language queries across all on-chain data, with automated reports and alerts." },
-  { tag: "Gaming", title: "Degen Tower & entertainment", tone: "f8", icon: "🎮",
+  { tag: "Gaming", title: "Degen Tower & entertainment", tone: "f8", icon: "gaming",
     copy: "Tap-to-earn with real USDC payouts, combos, upgrades and leaderboards — plus future games where in-game actions have on-chain consequences and rewards." },
-  { tag: "Developers", title: "Creator & developer tools", tone: "f9", icon: "⚙️",
+  { tag: "Developers", title: "Creator & developer tools", tone: "f9", icon: "dev",
     copy: "Webhooks and a bot framework, API access for power users, white-label community builds and monetization for projects — featured listings, premium analytics, promoted Spaces." },
 ];
 
@@ -65,6 +65,29 @@ const FOR = [
   "Power users who want APIs, webhooks & bots",
   "Casual users who want one clean place to trade, play & hang out",
 ];
+
+/* ── Premium icon set (replaces emoji) ─────────────────────────── */
+const ICONS: Record<string, JSX.Element> = {
+  discover: (<><circle cx="11" cy="11" r="6.4" /><path d="m20 20-3.6-3.6" /><path d="M11 7.9v6.2M7.9 11h6.2" opacity=".45" /></>),
+  wallet: (<><rect x="3" y="6" width="18" height="13" rx="3" /><path d="M3 9.5h18" /><circle cx="16.6" cy="13" r="1.25" fill="currentColor" stroke="none" /></>),
+  dex: (<><path d="M13 2.5 4.6 13.4H11l-1 8.1L19.4 10H13l1-7.5Z" strokeLinejoin="round" /></>),
+  launch: (<><path d="M4.6 16.4c-1.4 1.2-1.9 4.8-1.9 4.8s3.6-.5 4.8-1.9a2.05 2.05 0 0 0-.08-2.78 2.07 2.07 0 0 0-2.82-.12z" /><path d="m12 14.8-2.9-2.9a21 21 0 0 1 1.9-3.8A12.3 12.3 0 0 1 21.5 2.5c0 2.6-.75 7.2-5.75 10.5a21.4 21.4 0 0 1-3.75 1.8z" /><path d="M9.1 11.9H4.5s.5-2.9 1.9-3.8c1.55-1.03 4.8 0 4.8 0" opacity=".55" /></>),
+  predict: (<><circle cx="12" cy="12" r="8.7" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none" /></>),
+  social: (<><path d="M20.5 11.3a7.5 7.5 0 0 1-11 6.6L3.6 19.4l1.55-5A7.5 7.5 0 1 1 20.5 11.3Z" /><path d="M8.6 10.6h6.8M8.6 13.5h4.4" opacity=".55" /></>),
+  ai: (<><path d="M12 3.3l1.85 4.55L18.4 9.7l-4.55 1.85L12 16.1l-1.85-4.55L5.6 9.7l4.55-1.85L12 3.3Z" strokeLinejoin="round" /><path d="M18.4 14.6l.7 1.75 1.75.7-1.75.7-.7 1.75-.7-1.75-1.75-.7 1.75-.7.7-1.75Z" strokeLinejoin="round" opacity=".6" /></>),
+  gaming: (<><rect x="2" y="6.5" width="20" height="11" rx="4.6" /><path d="M6.6 11.6h3.1M8.15 10v3.1" /><circle cx="15.7" cy="12.5" r="1" fill="currentColor" stroke="none" /><circle cx="18" cy="10.4" r="1" fill="currentColor" stroke="none" /></>),
+  dev: (<><path d="m15.5 17 5-5-5-5M8.5 7l-5 5 5 5" strokeLinejoin="round" /><path d="M13.6 5 10.4 19" opacity=".5" /></>),
+  dexchart: (<><path d="M4 3.5v17h16.5" /><rect x="7.1" y="9" width="2.6" height="6.5" rx="1" /><path d="M8.4 7v2M8.4 15.5v1.6" /><rect x="13.9" y="6" width="2.6" height="6" rx="1" /><path d="M15.2 4.2v1.8M15.2 12v1.8" /></>),
+  target: (<><circle cx="12" cy="12" r="8.7" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none" /></>),
+  gamepad: (<><rect x="2" y="6.5" width="20" height="11" rx="4.6" /><path d="M6.6 11.6h3.1M8.15 10v3.1" /><circle cx="15.7" cy="12.5" r="1" fill="currentColor" stroke="none" /><circle cx="18" cy="10.4" r="1" fill="currentColor" stroke="none" /></>),
+};
+function Icon({ name }: { name: string }) {
+  return (
+    <svg className="sp-ico-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {ICONS[name] ?? ICONS.discover}
+    </svg>
+  );
+}
 
 /* ── Animated counter hook ──────────────────────────────────────── */
 
@@ -434,7 +457,7 @@ export default function Splash() {
               onMouseMove={handleCardMouse}
             >
               <div className="sp-card-glow" />
-              <div className="sp-card-icon">{f.icon}</div>
+              <div className="sp-card-icon"><Icon name={f.icon} /></div>
               <span className="sp-card-tag">{f.tag}</span>
               <h3>{f.title}</h3>
               <p>{f.copy}</p>
@@ -483,7 +506,7 @@ export default function Splash() {
         <div className="sp-for">
           {FOR.map((f, i) => (
             <div key={f} className="sp-for-item stagger" style={{ transitionDelay: `${i * 70}ms` }}>
-              <span className="sp-for-check">✓</span>
+              <span className="sp-for-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 4.5 4.5L19 7" /></svg></span>
               <span>{f}</span>
             </div>
           ))}
@@ -497,21 +520,21 @@ export default function Splash() {
         <div className="sp-eco">
           <a className="sp-eco-card stagger" href={LINKS.ogdex} onMouseMove={handleCardMouse}>
             <div className="sp-eco-glow" />
-            <div className="sp-eco-icon">📊</div>
+            <div className="sp-eco-icon" style={{ ["--ic" as never]: "#2F80FF" }}><Icon name="dexchart" /></div>
             <h3>OrbitX DEX</h3>
             <p>Real-time Solana screener, scanner & trading.</p>
             <span className="sp-eco-link">Open <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
           </a>
           <a className="sp-eco-card stagger" href={LINKS.orbitxPrediction} target="_blank" rel="noreferrer" onMouseMove={handleCardMouse} style={{ transitionDelay: "100ms" }}>
             <div className="sp-eco-glow" />
-            <div className="sp-eco-icon">🎯</div>
+            <div className="sp-eco-icon" style={{ ["--ic" as never]: "#9945FF" }}><Icon name="target" /></div>
             <h3>OrbitX Prediction Market</h3>
             <p>Prediction markets + provably-fair 1v1 games.</p>
             <span className="sp-eco-link">solno.fun <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
           </a>
           <a className="sp-eco-card stagger" href={LINKS.degen} target="_blank" rel="noreferrer" onMouseMove={handleCardMouse} style={{ transitionDelay: "200ms" }}>
             <div className="sp-eco-glow" />
-            <div className="sp-eco-icon">🎮</div>
+            <div className="sp-eco-icon" style={{ ["--ic" as never]: "#FF6BD0" }}><Icon name="gamepad" /></div>
             <h3>Degen Tower</h3>
             <p>Tap-to-earn with real USDC payouts.</p>
             <span className="sp-eco-link">Play <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
@@ -589,7 +612,7 @@ const css = `
   --radius-md: 18px;
   --radius-lg: 24px;
   --radius-xl: 32px;
-  --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  --font-display: 'Sora', 'Outfit', 'Space Grotesk', 'Inter', sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
   background: var(--bg);
@@ -888,10 +911,14 @@ const css = `
 }
 @media(max-width:980px) { .sp-hero-badge { justify-content: center; } }
 .sp-eyebrow {
-  display: flex; align-items: center; gap: 8px;
+  display: inline-flex; align-items: center; gap: 9px;
   font-family: var(--font-mono);
-  font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--accent); font-weight: 600; margin: 0;
+  font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: #d6dcec; font-weight: 600; margin: 0;
+  padding: 7px 15px 7px 11px; border-radius: 980px;
+  background: rgba(255,255,255,0.045);
+  border: 1px solid rgba(255,255,255,0.10);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
 }
 .sp-eyebrow-dot {
   width: 6px; height: 6px; border-radius: 50%;
@@ -908,9 +935,10 @@ const css = `
 .sp-h1 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(44px, 7.2vw, 88px);
-  line-height: 0.95; letter-spacing: -0.045em;
-  font-weight: 700;
+  font-size: clamp(46px, 7.6vw, 94px);
+  line-height: 0.92; letter-spacing: -0.05em;
+  font-weight: 800;
+  text-shadow: 0 2px 50px rgba(47,128,255,0.10);
 }
 .sp-h1-line {
   opacity: 0; transform: translateY(30px);
@@ -1155,10 +1183,14 @@ const css = `
 }
 .sp-card:hover .sp-card-glow { opacity: 1; }
 .sp-card:hover {
-  border-color: rgba(47, 128, 255, 0.3);
-  transform: translateY(-6px);
-  box-shadow: 0 24px 64px -24px rgba(47, 128, 255, 0.15);
+  border-color: color-mix(in srgb, var(--ic,#2F80FF) 45%, transparent);
+  transform: translateY(-8px) scale(1.012);
+  box-shadow: 0 30px 72px -28px color-mix(in srgb, var(--ic,#2F80FF) 50%, transparent);
 }
+.sp-card:hover .sp-card-icon { transform: translateY(-3px) scale(1.08) rotate(-4deg); box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 16px 36px -14px var(--ic,#2F80FF); }
+.sp-eco-card:hover .sp-eco-icon { transform: translateY(-3px) scale(1.07) rotate(-4deg); }
+.sp-ico-svg { width: 27px; height: 27px; }
+.sp-for-check svg { width: 14px; height: 14px; }
 .sp-card::before {
   content: ""; position: absolute; top: -1px; left: -1px; right: -1px;
   height: 2px; border-radius: var(--radius-lg) var(--radius-lg) 0 0;
@@ -1166,8 +1198,16 @@ const css = `
   opacity: 0; transition: opacity 0.4s;
 }
 .sp-card:hover::before { opacity: 1; }
-.sp-card.f1{--c:rgba(47,128,255,0.15)} .sp-card.f2{--c:rgba(20,241,149,0.15)} .sp-card.f3{--c:rgba(47,128,255,0.15)} .sp-card.f4{--c:rgba(255,197,61,0.15)} .sp-card.f5{--c:rgba(153,69,255,0.15)} .sp-card.f6{--c:rgba(255,107,208,0.15)} .sp-card.f7{--c:rgba(20,160,255,0.15)} .sp-card.f8{--c:rgba(255,138,61,0.15)} .sp-card.f9{--c:rgba(123,91,255,0.15)}
-.sp-card-icon { font-size: 28px; margin-bottom: 10px; }
+.sp-card.f1{--c:rgba(47,128,255,0.15);--ic:#2F80FF} .sp-card.f2{--c:rgba(20,241,149,0.15);--ic:#14F195} .sp-card.f3{--c:rgba(25,227,208,0.15);--ic:#19E3D0} .sp-card.f4{--c:rgba(255,197,61,0.15);--ic:#FFC53D} .sp-card.f5{--c:rgba(153,69,255,0.15);--ic:#9945FF} .sp-card.f6{--c:rgba(255,107,208,0.15);--ic:#FF6BD0} .sp-card.f7{--c:rgba(20,160,255,0.15);--ic:#14A0FF} .sp-card.f8{--c:rgba(255,138,61,0.15);--ic:#FF8A3D} .sp-card.f9{--c:rgba(123,91,255,0.15);--ic:#7B5BFF}
+.sp-card-icon {
+  width: 54px; height: 54px; margin-bottom: 18px;
+  display: grid; place-items: center; border-radius: 16px;
+  color: var(--ic, #2F80FF);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--ic,#2F80FF) 26%, transparent), color-mix(in srgb, var(--ic,#2F80FF) 5%, transparent));
+  border: 1px solid color-mix(in srgb, var(--ic,#2F80FF) 38%, rgba(255,255,255,0.06));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 28px -14px var(--ic,#2F80FF);
+  transition: transform .45s cubic-bezier(.16,1,.3,1), box-shadow .45s;
+}
 .sp-card-tag {
   position: relative;
   font-family: var(--font-mono);
@@ -1333,7 +1373,15 @@ const css = `
   transform: translateY(-6px);
   box-shadow: 0 24px 64px -20px rgba(47, 128, 255, 0.2);
 }
-.sp-eco-icon { font-size: 32px; margin-bottom: 12px; }
+.sp-eco-icon {
+  width: 56px; height: 56px; margin-bottom: 16px;
+  display: grid; place-items: center; border-radius: 16px;
+  color: var(--ic, #2F80FF);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--ic,#2F80FF) 26%, transparent), color-mix(in srgb, var(--ic,#2F80FF) 5%, transparent));
+  border: 1px solid color-mix(in srgb, var(--ic,#2F80FF) 38%, rgba(255,255,255,0.06));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 28px -14px var(--ic,#2F80FF);
+  transition: transform .45s cubic-bezier(.16,1,.3,1);
+}
 .sp-eco-card h3 {
   margin: 0;
   font-family: var(--font-display);
@@ -1400,15 +1448,18 @@ const css = `
 
 /* ── Reveal animations ─── */
 .reveal {
-  opacity: 0; transform: translateY(50px);
-  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0; transform: translateY(40px);
+  transition: opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1), transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 .reveal.in { opacity: 1; transform: none; }
 
 .stagger {
-  opacity: 0; transform: translateY(24px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0; transform: translateY(22px) scale(0.985);
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
+.stagger.in { transform: none; }
 .stagger.in { opacity: 1; transform: none; }
 
 /* ── Selection ─── */
