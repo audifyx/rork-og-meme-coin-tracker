@@ -897,7 +897,6 @@ const accentDot = (a: TabAccent): string =>
 
 /* ─── Main Index component ─── */
 const Index = () => {
-  const { customWallpaper } = useTheme();
   const { toolSlug, pageNumber, mintAddress: listingMint } = useParams<{ toolSlug?: string; pageNumber?: string; mintAddress?: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -1001,11 +1000,7 @@ const Index = () => {
   return (
     <div className="st-workspace flex h-screen overflow-hidden bg-background text-foreground relative">
       {/* Wallpaper layer — very subtle, pushed far back */}
-      {customWallpaper && (
-        <div className="pointer-events-none fixed inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-15" style={{ backgroundImage: `url(${customWallpaper})` }}>
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-md" />
-        </div>
-      )}
+
 
       {/* Main content */}
       <div className="relative z-10 flex min-w-0 flex-1 min-h-0 flex-col">
