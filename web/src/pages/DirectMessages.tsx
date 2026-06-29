@@ -9,6 +9,7 @@ import {
   Loader2, UserPlus, Check, CheckCheck, Reply,
   Copy, Edit2, Trash2, MoreHorizontal, Smile,
   ImagePlus, Mic, Play, Pause,
+  Pin, PinOff, Archive, Inbox,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
@@ -148,6 +149,10 @@ const DirectMessages: React.FC = () => {
   const [editText, setEditText] = useState("");
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [activeUsers, setActiveUsers] = useState<OtherUser[]>([]);
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
+  const [archivedIds, setArchivedIds] = useState<Set<string>>(new Set());
+  const [showArchived, setShowArchived] = useState(false);
+  const [convoMenuId, setConvoMenuId] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -458,6 +463,51 @@ const DirectMessages: React.FC = () => {
     if (error) { toast.error("Could not delete message"); if (activeConvo) fetchMessages(activeConvo.id); }
   };
 
+  /* ─── Conversation actions: pin / archive / delete (pin+archive persisted locally) ─── */
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const p = JSON.parse(localStorage.getItem(`dm_pinned_${user.id}`) || "[]");
+      const a = JSON.parse(localStorage.getItem(`dm_archived_${user.id}`) || "[]");
+      setPinnedIds(new Set(Array.isArray(p) ? p : []));
+      setArchivedIds(new Set(Array.isArray(a) ? a : []));
+    } catch { /* ignore */ }
+  }, [user]);
+
+  const persistConvoSet = (key: string, set: Set<string>) => {
+    try { localStorage.setItem(key, JSON.stringify([...set])); } catch { /* ignore */ }
+  };
+  const togglePin = (id: string) => {
+    setPinnedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      persistConvoSet(`dm_pinned_${user?.id}`, next);
+      return next;
+    });
+    setConvoMenuId(null);
+  };
+  const toggleArchive = (id: string) => {
+    const wasArchived = archivedIds.has(id);
+    setArchivedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      persistConvoSet(`dm_archived_${user?.id}`, next);
+      return next;
+    });
+    setConvoMenuId(null);
+    toast.success(wasArchived ? "Unarchived" : "Archived");
+  };
+  const deleteConversation = async (id: string) => {
+    if (!window.confirm("Delete this conversation? This permanently removes all messages for both people.")) return;
+    setConvoMenuId(null);
+    setConvos((prev) => prev.filter((c) => c.id !== id));
+    if (activeConvo?.id === id) { setActiveConvo(null); setMessages([]); }
+    await supabase.from("dm_messages").delete().eq("conversation_id", id);
+    const { error } = await supabase.from("dm_conversations").delete().eq("id", id);
+    if (error) { toast.error("Could not delete conversation"); fetchConversations(); }
+    else toast.success("Conversation deleted");
+  };
+
   /* ─── Media: image + voice notes (dm-media bucket) ─── */
   const uploadDM = async (file: Blob, ext: string): Promise<string | null> => {
     if (!user) return null;
@@ -541,6 +591,104 @@ const DirectMessages: React.FC = () => {
       (c.otherUser?.username || "").toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [convos, searchQuery]);
+
+  /* ─── organized conversation buckets ─── */
+  const visibleConvos = useMemo(
+    () => filtered.filter((c) => (showArchived ? archivedIds.has(c.id) : !archivedIds.has(c.id))),
+    [filtered, archivedIds, showArchived],
+  );
+  const pinnedConvos = useMemo(
+    () => (showArchived ? [] : visibleConvos.filter((c) => pinnedIds.has(c.id))),
+    [visibleConvos, pinnedIds, showArchived],
+  );
+  const otherConvos = useMemo(
+    () => visibleConvos.filter((c) => showArchived || !pinnedIds.has(c.id)),
+    [visibleConvos, pinnedIds, showArchived],
+  );
+  const archivedCount = archivedIds.size;
+
+  const renderConvo = (c: Conversation) => {
+    const unread = (c.unreadCount || 0) > 0;
+    const lastMsg = c.lastMessage;
+    const pinned = pinnedIds.has(c.id);
+    const archived = archivedIds.has(c.id);
+    const online = c.otherUser?.is_online || false;
+    const preview = !lastMsg
+      ? "Start the conversation"
+      : lastMsg.message_type === "image"
+      ? "\uD83D\uDCF7 Photo"
+      : lastMsg.message_type === "voice"
+      ? "\uD83C\uDFA4 Voice message"
+      : (lastMsg.sender_id === user?.id ? "You: " : "") + (lastMsg.body || "").slice(0, 60);
+    const menuOpen = convoMenuId === c.id;
+    return (
+      <div key={c.id} className="group relative border-b border-border/30">
+        <div
+          onClick={() => setActiveConvo(c)}
+          className={cn(
+            "flex w-full cursor-pointer items-center gap-3.5 px-4 py-3.5 text-left transition hover:bg-muted/30 active:bg-muted/50",
+            pinned && "bg-primary/[0.04]",
+          )}
+        >
+          <div className="relative flex-shrink-0">
+            <img
+              src={safeAvatar(c.otherUser?.avatar_url, c.otherUser?.username || c.otherUser?.user_id || "")}
+              alt=""
+              className={cn("h-12 w-12 rounded-full object-cover", unread && "ring-2 ring-primary/50")}
+            />
+            <OnlineDot online={online} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="mb-0.5 flex items-center justify-between">
+              <span className={cn("flex min-w-0 items-center gap-1 text-[15px]", unread ? "font-bold text-foreground" : "font-semibold text-foreground/80")}>
+                {pinned && <Pin className="h-3 w-3 shrink-0 fill-primary/40 text-primary/70" />}
+                <span className="truncate">{c.otherUser?.username || "User"}</span>
+                {c.otherUser?.badge && <span className="shrink-0 text-[10px] font-normal text-primary">{c.otherUser.badge}</span>}
+              </span>
+              <div className="ml-2 flex flex-shrink-0 items-center gap-1.5">
+                {lastMsg && <span className="text-[12px] text-muted-foreground/50">{fmtTime(lastMsg.created_at)}</span>}
+                {unread && (
+                  <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">
+                    {c.unreadCount}
+                  </span>
+                )}
+              </div>
+            </div>
+            <p className={cn("truncate text-[13px]", unread ? "font-medium text-foreground/70" : "text-muted-foreground/55")}>
+              {online && <span className="text-green-400">Active now · </span>}
+              {preview}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); setConvoMenuId(menuOpen ? null : c.id); }}
+          data-open={menuOpen}
+          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground/40 opacity-0 transition hover:bg-muted hover:text-foreground group-hover:opacity-100 data-[open=true]:opacity-100"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
+        {menuOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setConvoMenuId(null)} />
+            <div className="absolute right-3 top-10 z-50 w-44 overflow-hidden rounded-xl border border-border/60 bg-popover py-1 shadow-xl">
+              <button onClick={() => togglePin(c.id)} className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[13px] text-foreground transition hover:bg-muted">
+                {pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+                {pinned ? "Unpin" : "Pin to top"}
+              </button>
+              <button onClick={() => toggleArchive(c.id)} className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[13px] text-foreground transition hover:bg-muted">
+                {archived ? <Inbox className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
+                {archived ? "Unarchive" : "Archive"}
+              </button>
+              <div className="my-1 h-px bg-border/50" />
+              <button onClick={() => deleteConversation(c.id)} className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[13px] text-red-400 transition hover:bg-red-500/10">
+                <Trash2 className="h-3.5 w-3.5" /> Delete
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
 
   /* ═══════════════════════════════════════════════════════════════
      Render — Conversation List
@@ -663,73 +811,57 @@ const DirectMessages: React.FC = () => {
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/30" />
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <div className="h-14 w-14 rounded-full bg-muted/40 flex items-center justify-center">
-                <Send className="h-6 w-6 text-muted-foreground/30" />
+          ) : visibleConvos.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-20">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted/40">
+                {showArchived ? <Archive className="h-6 w-6 text-muted-foreground/30" /> : <Send className="h-6 w-6 text-muted-foreground/30" />}
               </div>
               <p className="text-[14px] font-semibold text-muted-foreground/60">
-                {searchQuery ? "No results" : "No messages yet"}
+                {searchQuery ? "No results" : showArchived ? "No archived chats" : "No messages yet"}
               </p>
               <p className="text-[12px] text-muted-foreground/35">
-                {searchQuery ? "Try a different name" : "Tap + to start a conversation"}
+                {searchQuery ? "Try a different name" : showArchived ? "Archived conversations show up here" : "Tap + to start a conversation"}
               </p>
             </div>
           ) : (
             <div>
-              {filtered.map((c) => {
-                const unread = (c.unreadCount || 0) > 0;
-                const lastMsg = c.lastMessage;
-                const preview = lastMsg
-                  ? (lastMsg.sender_id === user?.id ? "You: " : "") + (lastMsg.body || "").slice(0, 60)
-                  : "Start the conversation";
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => setActiveConvo(c)}
-                    className="flex w-full items-center gap-3.5 border-b border-border/30 px-4 py-3.5 text-left transition hover:bg-muted/30 active:bg-muted/50"
-                  >
-                    {/* Avatar */}
-                    <div className="relative flex-shrink-0">
-                      <img
-                        src={safeAvatar(c.otherUser?.avatar_url, c.otherUser?.username || c.otherUser?.user_id || "")}
-                        alt=""
-                        className={cn(
-                          "h-12 w-12 rounded-full object-cover",
-                          unread && "ring-2 ring-primary/50",
-                        )}
-                      />
-                      <OnlineDot online={c.otherUser?.is_online || false} />
+              {pinnedConvos.length > 0 && (
+                <>
+                  <div className="flex items-center gap-1.5 px-4 pb-1.5 pt-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/45">
+                    <Pin className="h-3 w-3" /> Pinned
+                  </div>
+                  {pinnedConvos.map(renderConvo)}
+                </>
+              )}
+              {otherConvos.length > 0 && (
+                <>
+                  {pinnedConvos.length > 0 && (
+                    <div className="px-4 pb-1.5 pt-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/45">
+                      {showArchived ? "Archived" : "All messages"}
                     </div>
-
-                    {/* Info */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className={cn("text-[15px] truncate", unread ? "font-bold text-foreground" : "font-semibold text-foreground/80")}>
-                          {c.otherUser?.username || "User"}
-                          {c.otherUser?.badge && (
-                            <span className="ml-1.5 text-[10px] text-primary font-normal">{c.otherUser.badge}</span>
-                          )}
-                        </span>
-                        <div className="flex items-center gap-1.5 ml-2 flex-shrink-0">
-                          {lastMsg && (
-                            <span className="text-[12px] text-muted-foreground/50">{fmtTime(lastMsg.created_at)}</span>
-                          )}
-                          {unread && (
-                            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">
-                              {c.unreadCount}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <p className={cn("text-[13px] truncate", unread ? "text-foreground/70 font-medium" : "text-muted-foreground/55")}>
-                        {preview}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
+                  )}
+                  {otherConvos.map(renderConvo)}
+                </>
+              )}
             </div>
+          )}
+
+          {/* Archived toggle */}
+          {!showArchived && archivedCount > 0 && (
+            <button
+              onClick={() => setShowArchived(true)}
+              className="flex w-full items-center justify-center gap-2 border-t border-border/40 px-4 py-3 text-[12px] font-semibold text-muted-foreground/60 transition hover:bg-muted/30"
+            >
+              <Archive className="h-3.5 w-3.5" /> Archived ({archivedCount})
+            </button>
+          )}
+          {showArchived && (
+            <button
+              onClick={() => setShowArchived(false)}
+              className="flex w-full items-center justify-center gap-2 border-t border-border/40 px-4 py-3 text-[12px] font-semibold text-primary transition hover:bg-muted/30"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to messages
+            </button>
           )}
         </div>
       </div>
