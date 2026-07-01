@@ -26,6 +26,7 @@ const LINKS = {
   degen: "https://degen-tower.vercel.app",
   privacy: "/privacy",
   terms: "/terms",
+  builder: "https://x.com/audifyx",
 };
 
 type Feature = { tag: string; title: string; copy: string; tone: string; icon: string };
@@ -210,6 +211,8 @@ export default function Splash() {
   const [heroFrame, setHeroFrame] = useState(0);
   const [heroReady, setHeroReady] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 });
+  const [menuOpen, setMenuOpen] = useState(false);
+  const progressRef = useRef<HTMLDivElement>(null);
 
   useParticles(canvasRef);
 
@@ -256,6 +259,10 @@ export default function Splash() {
         heroRef.current.style.setProperty("--py", `${y * 0.3}px`);
         heroRef.current.style.setProperty("--pf", `${Math.max(0, 1 - y / 500)}`)
       }
+      if (progressRef.current) {
+        const h = document.documentElement.scrollHeight - window.innerHeight;
+        progressRef.current.style.transform = `scaleX(${h > 0 ? y / h : 0})`;
+      }
       document.querySelector(".sp-nav")?.classList.toggle("scrolled", y > 20);
     };
     const onMove = (e: MouseEvent) => {
@@ -284,9 +291,24 @@ export default function Splash() {
     e.currentTarget.style.setProperty("--card-y", `${y}%`);
   }, []);
 
+  const handleMagnet = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mx = e.clientX - (rect.left + rect.width / 2);
+    const my = e.clientY - (rect.top + rect.height / 2);
+    e.currentTarget.style.setProperty("--tx", `${mx * 0.25}px`);
+    e.currentTarget.style.setProperty("--ty", `${my * 0.35}px`);
+  }, []);
+  const clearMagnet = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    e.currentTarget.style.setProperty("--tx", "0px");
+    e.currentTarget.style.setProperty("--ty", "0px");
+  }, []);
+
   return (
     <div className="sp">
       <style>{css}</style>
+
+      {/* ─── Scroll progress bar ─── */}
+      <div className="sp-progress" aria-hidden><div className="sp-progress-fill" ref={progressRef} /></div>
 
       {/* ─── Particle canvas ─── */}
       <canvas ref={canvasRef} className="sp-particles" aria-hidden />
@@ -295,9 +317,11 @@ export default function Splash() {
       <div className="sp-noise" aria-hidden />
 
       {/* ─── Nav ─── */}
-      <nav className="sp-nav">
+      <nav className={`sp-nav ${menuOpen ? "sp-nav-open" : ""}`}>
         <a className="sp-brand" href="/">
-          <span className="sp-mark" />
+          <span className="sp-brand-logo">
+            <img src={logo} alt="" width={30} height={30} />
+          </span>
           <span className="sp-brand-text">{BRAND}</span>
         </a>
         <div className="sp-links">
@@ -308,12 +332,29 @@ export default function Splash() {
         </div>
         <div className="sp-nav-cta">
           <a className="sp-btn-ghost sm" href={LINKS.signin}>Sign in</a>
-          <a className="sp-cta" href={LINKS.signup}>
-            <span>Get started</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          <a className="sp-cta" href={LINKS.signup} onMouseMove={handleMagnet} onMouseLeave={clearMagnet}>
+            <span className="sp-magnet">Get started</span>
+            <svg className="sp-magnet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </a>
+          <button className="sp-burger" onClick={() => setMenuOpen((v) => !v)} aria-label="Menu" aria-expanded={menuOpen}>
+            <span /><span /><span />
+          </button>
         </div>
       </nav>
+
+      {/* ─── Mobile menu ─── */}
+      <div className={`sp-mobile ${menuOpen ? "is-open" : ""}`} onClick={() => setMenuOpen(false)}>
+        <div className="sp-mobile-inner" onClick={(e) => e.stopPropagation()}>
+          <a href="#problem" onClick={() => setMenuOpen(false)}>The problem</a>
+          <a href="#build" onClick={() => setMenuOpen(false)}>What we build</a>
+          <a href="#roadmap" onClick={() => setMenuOpen(false)}>Roadmap</a>
+          <a href="#ecosystem" onClick={() => setMenuOpen(false)}>Ecosystem</a>
+          <div className="sp-mobile-cta">
+            <a className="sp-btn-ghost" href={LINKS.signin}>Sign in</a>
+            <a className="sp-cta" href={LINKS.signup}>Get started</a>
+          </div>
+        </div>
+      </div>
 
       {/* ─── Hero ─── */}
       <header className={`sp-hero ${heroReady ? "sp-hero-ready" : ""}`} ref={heroRef}>
@@ -326,6 +367,11 @@ export default function Splash() {
             />
           ))}
           <div className="sp-mesh" />
+          <div className="sp-aurora" aria-hidden>
+            <span className="sp-beam sp-beam-1" />
+            <span className="sp-beam sp-beam-2" />
+            <span className="sp-beam sp-beam-3" />
+          </div>
           <div className="orb orb-a" />
           <div className="orb orb-b" />
           <div className="orb orb-c" />
@@ -358,14 +404,19 @@ export default function Splash() {
             </p>
 
             <div className="sp-hero-actions">
-              <a className="sp-btn-primary" href={LINKS.signup}>
+              <a className="sp-btn-primary" href={LINKS.signup} onMouseMove={handleMagnet} onMouseLeave={clearMagnet}>
                 <span className="sp-btn-glow" />
-                <span className="sp-btn-text">Get started free</span>
+                <span className="sp-btn-shine" />
+                <span className="sp-btn-text sp-magnet">Get started free</span>
               </a>
               <a className="sp-btn-ghost" href={LINKS.signin}>
                 Sign in
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
               </a>
+              <div className="sp-trust" aria-hidden>
+                <div className="sp-trust-dots"><span/><span/><span/></div>
+                <span>Free forever core · no card required</span>
+              </div>
             </div>
           </div>
 
@@ -555,11 +606,28 @@ export default function Splash() {
 
       {/* ─── Footer ─── */}
       <footer className="sp-foot">
+        <div className="sp-foot-glow" aria-hidden />
         <div className="sp-foot-top">
-          <a className="sp-brand" href="/">
-            <span className="sp-mark" />
-            <span className="sp-brand-text">{BRAND}</span>
-          </a>
+          <div className="sp-foot-brand">
+            <a className="sp-brand" href="/">
+              <span className="sp-brand-logo">
+                <img src={logo} alt="" width={30} height={30} />
+              </span>
+              <span className="sp-brand-text">{BRAND}</span>
+            </a>
+            <p className="sp-foot-tag">The everything app for on-chain. Trading, intelligence, community, prediction markets and games — one destination.</p>
+            <div className="sp-social">
+              <a className="sp-social-btn" href={LINKS.x} target="_blank" rel="noreferrer" aria-label="X">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231 5.45-6.231Zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77Z"/></svg>
+              </a>
+              <a className="sp-social-btn" href={LINKS.telegram} target="_blank" rel="noreferrer" aria-label="Telegram">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+              </a>
+              <a className="sp-social-btn" href={LINKS.ogdex} aria-label="OrbitX DEX">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M4 3.5v17h16.5"/><rect x="7.1" y="9" width="2.6" height="6.5" rx="1"/><rect x="13.9" y="6" width="2.6" height="6" rx="1"/></svg>
+              </a>
+            </div>
+          </div>
           <div className="sp-foot-cols">
             <div>
               <h4>Product</h4>
@@ -583,6 +651,12 @@ export default function Splash() {
         </div>
         <div className="sp-foot-bottom">
           <span>© {new Date().getFullYear()} {BRAND}. Reimagined. Building in public, shipping daily.</span>
+          <span className="sp-built">
+            Built by{" "}
+            <a href={LINKS.builder} target="_blank" rel="noreferrer" className="sp-built-link">
+              @audifyx
+            </a>
+          </span>
         </div>
       </footer>
     </div>
@@ -1441,10 +1515,130 @@ const css = `
 }
 .sp-foot-cols a:hover { color: var(--accent); }
 .sp-foot-bottom {
+  position: relative; z-index: 1;
   max-width: 1140px; margin: 40px auto 0;
   padding-top: 24px; border-top: 1px solid var(--line);
   font-size: 12px; color: #5a6275;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap;
 }
+.sp-built { display: inline-flex; align-items: center; gap: 5px; color: #6b7384; font-weight: 500; }
+.sp-built-link {
+  position: relative;
+  font-weight: 800; color: #cdd4e0;
+  background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
+  background-size: 200% 200%;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  animation: gradientFlow 4s ease-in-out infinite;
+  transition: filter 0.3s;
+}
+.sp-built-link::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 1.5px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 2px; transform: scaleX(0); transform-origin: left;
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+.sp-built-link:hover { filter: brightness(1.25); }
+.sp-built-link:hover::after { transform: scaleX(1); }
+
+/* ── Footer brand / social ─── */
+.sp-foot { position: relative; overflow: hidden; }
+.sp-foot-glow {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 700px; height: 200px; pointer-events: none;
+  background: radial-gradient(ellipse at center top, rgba(47,128,255,0.10), transparent 70%);
+}
+.sp-foot-top { position: relative; z-index: 1; }
+.sp-foot-brand { max-width: 320px; }
+.sp-foot-tag {
+  margin: 16px 0 18px; font-size: 13.5px; line-height: 1.6; color: var(--muted);
+}
+.sp-social { display: flex; gap: 10px; }
+.sp-social-btn {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: grid; place-items: center;
+  border: 1px solid var(--glass-border); background: var(--glass);
+  color: #aeb6c6; backdrop-filter: blur(8px);
+  transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+.sp-social-btn svg { width: 18px; height: 18px; }
+.sp-social-btn:hover {
+  color: #fff; transform: translateY(-3px);
+  border-color: rgba(47,128,255,0.4);
+  background: rgba(47,128,255,0.12);
+  box-shadow: 0 10px 26px -12px rgba(47,128,255,0.5);
+}
+
+/* ── Scroll progress ─── */
+.sp-progress {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 200;
+  background: rgba(255,255,255,0.04); pointer-events: none;
+}
+.sp-progress-fill {
+  height: 100%; width: 100%; transform: scaleX(0); transform-origin: left;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  box-shadow: 0 0 12px rgba(47,128,255,0.6);
+}
+
+/* ── Brand logo chip ─── */
+.sp-brand-logo {
+  display: inline-grid; place-items: center;
+  width: 34px; height: 34px; border-radius: 10px; padding: 3px;
+  background: conic-gradient(from 140deg, var(--accent), var(--accent2), var(--accent3), var(--accent));
+  box-shadow: 0 0 20px rgba(47,128,255,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  animation: spMarkSpin 8s linear infinite;
+}
+.sp-brand-logo img { border-radius: 8px; display: block; background: var(--bg); }
+
+/* ── Magnetic buttons ─── */
+.sp-magnet { display: inline-block; transform: translate(var(--tx,0), var(--ty,0)); transition: transform 0.2s cubic-bezier(0.16,1,0.3,1); }
+.sp-btn-shine {
+  position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.4), transparent);
+  transform: skewX(-18deg); opacity: 0; pointer-events: none;
+}
+.sp-btn-primary:hover .sp-btn-shine { animation: btnShine 0.9s ease; }
+@keyframes btnShine { 0% { left: -60%; opacity: 0; } 30% { opacity: 1; } 100% { left: 130%; opacity: 0; } }
+
+/* ── Trust row ─── */
+.sp-trust { display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 4px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: #6b7384; }
+@media(max-width:980px) { .sp-trust { justify-content: center; } }
+.sp-trust-dots { display: inline-flex; }
+.sp-trust-dots span { width: 20px; height: 20px; border-radius: 50%; margin-left: -7px; border: 2px solid var(--bg); background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+.sp-trust-dots span:nth-child(2) { background: linear-gradient(135deg, var(--accent2), var(--accent3)); }
+.sp-trust-dots span:nth-child(3) { background: linear-gradient(135deg, var(--accent3), #FFC53D); }
+
+/* ── Aurora beams ─── */
+.sp-aurora { position: absolute; inset: 0; overflow: hidden; opacity: 0.6; mix-blend-mode: screen; }
+.sp-beam {
+  position: absolute; top: -30%; width: 42vw; height: 160%;
+  filter: blur(60px); border-radius: 50%; transform-origin: center;
+}
+.sp-beam-1 { left: 8%; background: radial-gradient(ellipse, rgba(47,128,255,0.35), transparent 70%); animation: beamSweep 14s ease-in-out infinite; }
+.sp-beam-2 { left: 42%; background: radial-gradient(ellipse, rgba(153,69,255,0.30), transparent 70%); animation: beamSweep 18s ease-in-out infinite reverse; }
+.sp-beam-3 { left: 70%; background: radial-gradient(ellipse, rgba(20,224,200,0.22), transparent 70%); animation: beamSweep 22s ease-in-out infinite; }
+@keyframes beamSweep {
+  0%,100% { transform: translateX(0) rotate(8deg) scaleY(1); opacity: 0.5; }
+  50% { transform: translateX(-6%) rotate(-6deg) scaleY(1.15); opacity: 0.85; }
+}
+
+/* ── Burger + mobile menu ─── */
+.sp-burger { display: none; width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--line-bright); background: var(--glass); backdrop-filter: blur(12px); cursor: pointer; padding: 0; align-items: center; justify-content: center; flex-direction: column; gap: 4px; }
+.sp-burger span { display: block; width: 18px; height: 2px; border-radius: 2px; background: #fff; transition: transform 0.3s, opacity 0.3s; }
+.sp-nav-open .sp-burger span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.sp-nav-open .sp-burger span:nth-child(2) { opacity: 0; }
+.sp-nav-open .sp-burger span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+.sp-mobile { position: fixed; inset: 0; z-index: 90; background: rgba(3,5,8,0.6); backdrop-filter: blur(16px); opacity: 0; pointer-events: none; transition: opacity 0.35s; }
+.sp-mobile.is-open { opacity: 1; pointer-events: auto; }
+.sp-mobile-inner { position: absolute; top: 72px; left: 16px; right: 16px; padding: 18px; display: flex; flex-direction: column; gap: 4px; border-radius: var(--radius-lg); border: 1px solid var(--glass-border); background: rgba(10,14,24,0.92); transform: translateY(-14px); transition: transform 0.4s cubic-bezier(0.16,1,0.3,1); }
+.sp-mobile.is-open .sp-mobile-inner { transform: none; }
+.sp-mobile-inner > a { padding: 14px 12px; font-family: var(--font-display); font-weight: 600; font-size: 16px; color: #dfe3ea; border-radius: 12px; transition: background 0.2s; }
+.sp-mobile-inner > a:hover { background: rgba(255,255,255,0.05); }
+.sp-mobile-cta { display: flex; gap: 10px; margin-top: 10px; }
+.sp-mobile-cta .sp-btn-ghost, .sp-mobile-cta .sp-cta { flex: 1; justify-content: center; }
+@media(max-width:880px) { .sp-burger { display: flex; } }
+@media(min-width:881px) { .sp-mobile { display: none; } }
+@media(max-width:520px) { .sp-nav-cta .sp-cta { display: none; } }
 
 /* ── Reveal animations ─── */
 .reveal {

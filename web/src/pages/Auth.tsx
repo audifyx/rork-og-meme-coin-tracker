@@ -166,14 +166,34 @@ const Auth = () => {
 
   return (
     <main className="min-h-screen overflow-hidden bg-black text-white" style={{ fontFamily: "'Plus Jakarta Sans', 'Sora', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap');`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap');
+        @keyframes authOrb { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(4%,-3%,0) scale(1.12); } }
+        @keyframes authCardIn { from { opacity: 0; transform: translateY(28px) scale(0.97); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+        @keyframes authPanelIn { from { opacity: 0; transform: translateX(-24px); } to { opacity: 1; transform: none; } }
+        @keyframes authFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        @keyframes authBuiltFlow { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        .auth-card-in { animation: authCardIn 0.9s cubic-bezier(0.16,1,0.3,1) 0.1s both; }
+        .auth-panel-in { animation: authPanelIn 0.9s cubic-bezier(0.16,1,0.3,1) both; }
+        .auth-orb { position: fixed; border-radius: 50%; filter: blur(90px); pointer-events: none; will-change: transform; }
+        .auth-built { background: linear-gradient(135deg,#2F80FF,#9945FF,#14E0C8); background-size: 200% 200%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: authBuiltFlow 4s ease-in-out infinite; }
+      `}</style>
       <div className="pointer-events-none fixed inset-0 bg-cover bg-center" style={{ backgroundImage: "url(/bg/bg-nebula.jpg)", opacity: 0.34 }} />
       <div className="pointer-events-none fixed inset-0 bg-black/55 backdrop-blur-[2px]" />
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_18%_-5%,rgba(91,91,240,0.18),transparent_38%),radial-gradient(circle_at_85%_8%,rgba(155,107,255,0.12),transparent_40%),radial-gradient(circle_at_50%_115%,rgba(47,128,255,0.10),transparent_45%)]" />
       <div className="pointer-events-none fixed inset-0 grid-bg opacity-[0.11]" />
+      <div className="auth-orb" style={{ width: 520, height: 520, top: "-140px", left: "-120px", background: "radial-gradient(circle,rgba(47,128,255,0.4),transparent 70%)", opacity: 0.5, animation: "authOrb 22s ease-in-out infinite" }} aria-hidden />
+      <div className="auth-orb" style={{ width: 560, height: 560, bottom: "-180px", right: "-140px", background: "radial-gradient(circle,rgba(153,69,255,0.35),transparent 70%)", opacity: 0.45, animation: "authOrb 26s ease-in-out infinite reverse" }} aria-hidden />
 
           <section className="relative z-10 mx-auto grid min-h-screen w-full max-w-6xl gap-6 px-4 py-4 sm:px-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-        <div className="hidden lg:block">
+        <div className="auth-panel-in hidden lg:block">
+          <a href="/" className="mb-7 inline-flex items-center gap-2.5">
+            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[conic-gradient(from_140deg,#2F80FF,#9945FF,#14E0C8,#2F80FF)] p-[3px] shadow-[0_0_24px_rgba(47,128,255,0.5)]" style={{ animation: "authFloat 5s ease-in-out infinite" }}>
+              <img src="/og-logo.svg" alt="OrbitX" className="h-full w-full rounded-xl bg-black object-cover" />
+            </span>
+            <span className="text-lg font-black tracking-[0.14em]">ORBITX</span>
+          </a>
+
           <Button
             variant="ghost"
             onClick={() => navigate("/")}
@@ -198,8 +218,8 @@ const Auth = () => {
               { label: "Wallets", Icon: Fingerprint, text: "text-[#FFC53D]", bg: "bg-[#FFC53D]/10 border-[#FFC53D]/25" },
               { label: "Spaces", Icon: ShieldCheck, text: "text-[#9945FF]", bg: "bg-[#9945FF]/10 border-[#9945FF]/25" },
             ].map((item) => (
-              <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.055] p-4">
-                <div className={`mb-4 grid h-10 w-10 place-items-center rounded-2xl border ${item.bg} ${item.text}`}>
+              <div key={item.label} className="group rounded-2xl border border-white/10 bg-white/[0.055] p-4 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.08] hover:shadow-[0_16px_40px_-20px_rgba(47,128,255,0.5)]">
+                <div className={`mb-4 grid h-10 w-10 place-items-center rounded-2xl border ${item.bg} ${item.text} transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6`}>
                   <item.Icon className="h-5 w-5" />
                 </div>
                 <p className="font-black">{item.label}</p>
@@ -219,7 +239,7 @@ const Auth = () => {
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
 
-              <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-2.5 shadow-[0_40px_120px_-40px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.04)_inset] backdrop-blur-2xl">
+              <div className="auth-card-in rounded-[2rem] border border-white/10 bg-white/[0.04] p-2.5 shadow-[0_40px_120px_-40px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.04)_inset] backdrop-blur-2xl">
                 <div className="rounded-[1.6rem] border border-white/[0.08] bg-white/[0.03] p-4 sm:p-5 backdrop-blur-xl">
                 <div className="mb-6 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -240,14 +260,14 @@ const Auth = () => {
                   <button
                     type="button"
                     onClick={() => setMode("signin")}
-                    className={`min-h-11 rounded-[0.9rem] text-sm font-black transition ${mode === "signin" ? "bg-white text-[#07101d]" : "text-white/45"}`}
+                    className={`min-h-11 rounded-[0.9rem] text-sm font-black transition-all duration-300 ${mode === "signin" ? "scale-[1.02] bg-white text-[#07101d] shadow-[0_8px_24px_-10px_rgba(255,255,255,0.5)]" : "text-white/45 hover:text-white/70"}`}
                   >
                     Login
                   </button>
                   <button
                     type="button"
                     onClick={() => setMode("signup")}
-                    className={`min-h-11 rounded-[0.9rem] text-sm font-black transition ${mode === "signup" ? "bg-[#2F80FF] text-white" : "text-white/45"}`}
+                    className={`min-h-11 rounded-[0.9rem] text-sm font-black transition-all duration-300 ${mode === "signup" ? "scale-[1.02] bg-gradient-to-r from-[#2F80FF] to-[#9945FF] text-white shadow-[0_8px_24px_-10px_rgba(47,128,255,0.9)]" : "text-white/45 hover:text-white/70"}`}
                   >
                     Sign up
                   </button>
@@ -327,7 +347,8 @@ const Auth = () => {
                     </>
                   )}
 
-                  <Button type="submit" disabled={isSubmitting} className="min-h-[50px] w-full rounded-2xl bg-gradient-to-r from-[#2F80FF] to-[#9945FF] text-sm font-black text-white shadow-[0_18px_46px_-22px_rgba(47,128,255,0.9)] transition hover:brightness-110 active:scale-[0.98]">
+                  <Button type="submit" disabled={isSubmitting} className="group relative min-h-[50px] w-full overflow-hidden rounded-2xl bg-gradient-to-r from-[#2F80FF] to-[#9945FF] text-sm font-black text-white shadow-[0_18px_46px_-22px_rgba(47,128,255,0.9)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_22px_54px_-20px_rgba(47,128,255,1)] hover:brightness-110 active:scale-[0.98]">
+                    <span className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 skew-x-[-18deg] bg-white/30 opacity-0 transition-all duration-700 group-hover:left-[130%] group-hover:opacity-100" />
                     {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : copy.cta}
                   </Button>
                 </form>
@@ -351,6 +372,22 @@ const Auth = () => {
                 </div>
               </div>
             </div>
+
+            <footer className="mt-5 flex flex-col items-center gap-2 text-center">
+              <div className="flex items-center gap-4 text-[11px] font-semibold text-white/35">
+                <a href="/privacy" className="transition hover:text-white/70">Privacy</a>
+                <span className="h-3 w-px bg-white/10" />
+                <a href="/terms" className="transition hover:text-white/70">Terms</a>
+                <span className="h-3 w-px bg-white/10" />
+                <a href="https://x.com/orbitx_wrldbackup" target="_blank" rel="noreferrer" className="transition hover:text-white/70">Support</a>
+              </div>
+              <p className="text-[11px] font-medium text-white/30">
+                Built by{" "}
+                <a href="https://x.com/audifyx" target="_blank" rel="noreferrer" className="auth-built font-extrabold hover:brightness-125">
+                  @audifyx
+                </a>
+              </p>
+            </footer>
           </div>
         </div>
       </section>
